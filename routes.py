@@ -343,7 +343,9 @@ def create_employee():
             start_date=form.start_date.data,
             end_date=form.end_date.data,
             company_id=form.company_id.data,
-            is_active=form.is_active.data
+            is_active=form.is_active.data,
+            status=EmployeeStatus(form.status.data) if form.status.data else EmployeeStatus.ACTIVO,
+            status_start_date=form.start_date.data  # Por defecto, la fecha de inicio de estado es la misma de contratación
         )
         db.session.add(employee)
         db.session.commit()
@@ -425,6 +427,12 @@ def edit_employee(id):
             log_employee_change(employee, 'is_active', str(employee.is_active), str(form.is_active.data))
             employee.is_active = form.is_active.data
             
+        if str(employee.status.value if employee.status else 'activo') != form.status.data:
+            log_employee_change(employee, 'status', 
+                              employee.status.value if employee.status else 'activo', 
+                              form.status.data)
+            employee.status = EmployeeStatus(form.status.data)
+            
         employee.updated_at = datetime.utcnow()
         db.session.commit()
         
@@ -451,6 +459,56 @@ def delete_employee(id):
     log_activity(f'Empleado eliminado: {employee_name}')
     flash(f'Empleado "{employee_name}" eliminado correctamente.', 'success')
     return redirect(url_for('employee.list_employees'))
+    
+@employee_bp.route('/<int:id>/status', methods=['GET', 'POST'])
+@login_required
+def manage_status(id):
+    employee = Employee.query.get_or_404(id)
+    
+    # Check if user has permission to manage this employee's status
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para gestionar el estado de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeStatusForm(obj=employee)
+    
+    if form.validate_on_submit():
+        old_status = employee.status.value if employee.status else 'activo'
+        new_status = form.status.data
+        
+        if old_status != new_status:
+            log_employee_change(employee, 'status', old_status, new_status)
+            employee.status = EmployeeStatus(new_status)
+        
+        # Log changes to dates and notes if they've changed
+        if employee.status_start_date != form.status_start_date.data:
+            log_employee_change(employee, 'status_start_date', 
+                              employee.status_start_date.isoformat() if employee.status_start_date else None, 
+                              form.status_start_date.data.isoformat() if form.status_start_date.data else None)
+        
+        if employee.status_end_date != form.status_end_date.data:
+            log_employee_change(employee, 'status_end_date', 
+                              employee.status_end_date.isoformat() if employee.status_end_date else None, 
+                              form.status_end_date.data.isoformat() if form.status_end_date.data else None)
+        
+        if employee.status_notes != form.status_notes.data:
+            log_employee_change(employee, 'status_notes', employee.status_notes, form.status_notes.data)
+        
+        # Update the employee record with the new status information
+        employee.status = EmployeeStatus(form.status.data)
+        employee.status_start_date = form.status_start_date.data
+        employee.status_end_date = form.status_end_date.data
+        employee.status_notes = form.status_notes.data
+        employee.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_activity(f'Estado de empleado actualizado: {employee.first_name} {employee.last_name}')
+        flash(f'Estado del empleado "{employee.first_name} {employee.last_name}" actualizado correctamente.', 'success')
+        return redirect(url_for('employee.view_employee', id=employee.id))
+    
+    return render_template('employee_status.html', title=f'Gestionar Estado - {employee.first_name} {employee.last_name}', 
+                          form=form, employee=employee)
 
 @employee_bp.route('/<int:id>/documents')
 @login_required

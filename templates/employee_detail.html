@@ -69,9 +69,26 @@
                             
                             <dt class="col-sm-4">Estado:</dt>
                             <dd class="col-sm-8">
-                                <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                                    {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                <span class="badge 
+                                    {% if employee.status.value == 'activo' %}bg-success
+                                    {% elif employee.status.value == 'baja_medica' %}bg-warning
+                                    {% elif employee.status.value == 'excedencia' %}bg-info
+                                    {% elif employee.status.value == 'vacaciones' %}bg-primary
+                                    {% else %}bg-danger
+                                    {% endif %}">
+                                    {{ employee.status.name.capitalize() if employee.status else 'Activo' }}
                                 </span>
+                                {% if employee.status_start_date %}
+                                <small class="d-block mt-1">Desde: {{ employee.status_start_date.strftime('%d/%m/%Y') }}</small>
+                                {% endif %}
+                                {% if employee.status_end_date %}
+                                <small class="d-block">Hasta: {{ employee.status_end_date.strftime('%d/%m/%Y') }}</small>
+                                {% endif %}
+                                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+                                <a href="{{ url_for('employee.manage_status', id=employee.id) }}" class="btn btn-sm btn-outline-primary mt-2">
+                                    <i class="bi bi-arrow-repeat"></i> Cambiar Estado
+                                </a>
+                                {% endif %}
                             </dd>
                             
                             <dt class="col-sm-4">Fecha de Registro:</dt>
@@ -113,6 +130,12 @@
                         <a href="{{ url_for('employee.view_history', id=employee.id) }}" class="list-group-item list-group-item-action">
                             <i class="bi bi-clock-history"></i> Ver Historial de Cambios
                         </a>
+                        
+                        {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+                        <a href="{{ url_for('employee.manage_status', id=employee.id) }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-arrow-repeat"></i> Gestionar Estado
+                        </a>
+                        {% endif %}
                     </div>
                 </div>
             </div>

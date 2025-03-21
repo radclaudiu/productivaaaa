@@ -1,0 +1,117 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Cambiar Estado de {{ employee.first_name }} {{ employee.last_name }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card border-left-info shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="row no-gutters align-items-center">
+                                        <div class="col mr-2">
+                                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                                Estado Actual</div>
+                                            <div class="h5 mb-0 font-weight-bold">
+                                                <span class="badge 
+                                                {% if employee.status.value == 'activo' %}bg-success
+                                                {% elif employee.status.value == 'baja_medica' %}bg-warning
+                                                {% elif employee.status.value == 'excedencia' %}bg-info
+                                                {% elif employee.status.value == 'vacaciones' %}bg-primary
+                                                {% else %}bg-danger
+                                                {% endif %}">
+                                                {{ employee.status.name.capitalize() if employee.status else 'Activo' }}
+                                                </span>
+                                            </div>
+                                            {% if employee.status_start_date %}
+                                            <div class="text-xs text-muted mt-2">
+                                                Desde: {{ employee.status_start_date.strftime('%d/%m/%Y') }}
+                                            </div>
+                                            {% endif %}
+                                            {% if employee.status_end_date %}
+                                            <div class="text-xs text-muted">
+                                                Hasta: {{ employee.status_end_date.strftime('%d/%m/%Y') }}
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                        <div class="col-auto">
+                                            <i class="bi bi-person-badge fa-2x text-gray-300"></i>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% if employee.status_notes %}
+                        <div class="col-md-6">
+                            <div class="card border-left-warning shadow h-100 py-2">
+                                <div class="card-body">
+                                    <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                        Notas de Estado</div>
+                                    <div class="small status-notes">
+                                        {{ employee.status_notes }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+
+                    <form method="post" action="{{ url_for('employee.manage_status', id=employee.id) }}">
+                        {{ form.hidden_tag() }}
+                        <div class="row">
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.status.label(class="form-label") }}
+                                    {{ form.status(class="form-select") }}
+                                    {% for error in form.status.errors %}
+                                        <span class="text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6 mb-3">
+                                <div class="form-group">
+                                    {{ form.status_start_date.label(class="form-label") }}
+                                    {{ form.status_start_date(class="form-control", type="date") }}
+                                    {% for error in form.status_start_date.errors %}
+                                        <span class="text-danger">{{ error }}</span>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            {{ form.status_end_date.label(class="form-label") }}
+                            {{ form.status_end_date(class="form-control", type="date") }}
+                            {% for error in form.status_end_date.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                            <small class="form-text text-muted">Opcional. Solo es necesario para estados temporales como baja médica o vacaciones.</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            {{ form.status_notes.label(class="form-label") }}
+                            {{ form.status_notes(class="form-control", rows=4) }}
+                            {% for error in form.status_notes.errors %}
+                                <span class="text-danger">{{ error }}</span>
+                            {% endfor %}
+                            <small class="form-text text-muted">Añade notas relevantes sobre el cambio de estado (opcional).</small>
+                        </div>
+                        
+                        <div class="form-group d-flex justify-content-between">
+                            <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
