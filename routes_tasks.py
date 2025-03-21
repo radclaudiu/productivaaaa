@@ -4,6 +4,7 @@ from functools import wraps
 from datetime import datetime, date
 import os
 from werkzeug.utils import secure_filename
+from wtforms.validators import Optional
 
 from app import db
 from models import User, Company
