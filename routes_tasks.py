@@ -629,7 +629,8 @@ def create_task(location_id):
     return render_template('tasks/task_form.html',
                           title=f'Crear Tarea en {location.name}',
                           form=form,
-                          location=location)
+                          location=location,
+                          location_id=location_id)
 
 @tasks_bp.route('/tasks/<int:task_id>/daily-schedule', methods=['GET', 'POST'])
 @login_required
@@ -881,7 +882,8 @@ def edit_task(task_id):
                           title=f'Editar Tarea: {task.title}',
                           form=form,
                           task=task,
-                          location=task.location)
+                          location=task.location,
+                          location_id=task.location_id)
 
 @tasks_bp.route('/tasks/<int:task_id>/delete', methods=['POST'])
 @login_required
