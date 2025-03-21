@@ -134,7 +134,11 @@ def index():
         'total_locations': len(locations),
         'total_local_users': LocalUser.query.filter(LocalUser.location_id.in_([loc.id for loc in locations])).count() if locations else 0,
         'total_tasks': total_tasks,
-        'tasks_completed_today': TaskCompletion.query.filter(TaskCompletion.completion_date >= datetime.combine(today, datetime.min.time())).count()
+        'tasks_pending': pending_tasks,
+        'tasks_completed': completed_tasks,
+        'tasks_completed_today': TaskCompletion.query.filter(TaskCompletion.completion_date >= datetime.combine(today, datetime.min.time())).count(),
+        'tasks_today': len(today_tasks),
+        'tasks_expired': Task.query.filter_by(status=TaskStatus.VENCIDA).count()
     }
     
     return render_template('tasks/dashboard.html',
