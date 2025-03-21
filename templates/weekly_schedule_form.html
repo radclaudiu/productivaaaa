@@ -1,0 +1,358 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">{{ title }}</h1>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Horario Semanal</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <!-- Lunes -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Lunes</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            {{ form.lunes_is_working_day(class="form-check-input") }}
+                                            {{ form.lunes_is_working_day.label(class="form-check-label") }}
+                                            {% for error in form.lunes_is_working_day.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.lunes_start_time.label(class="form-label") }}
+                                            {{ form.lunes_start_time(class="form-control", type="time") }}
+                                            {% for error in form.lunes_start_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.lunes_end_time.label(class="form-label") }}
+                                            {{ form.lunes_end_time(class="form-control", type="time") }}
+                                            {% for error in form.lunes_end_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Martes -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Martes</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            {{ form.martes_is_working_day(class="form-check-input") }}
+                                            {{ form.martes_is_working_day.label(class="form-check-label") }}
+                                            {% for error in form.martes_is_working_day.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.martes_start_time.label(class="form-label") }}
+                                            {{ form.martes_start_time(class="form-control", type="time") }}
+                                            {% for error in form.martes_start_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.martes_end_time.label(class="form-label") }}
+                                            {{ form.martes_end_time(class="form-control", type="time") }}
+                                            {% for error in form.martes_end_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Miércoles -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Miércoles</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            {{ form.miercoles_is_working_day(class="form-check-input") }}
+                                            {{ form.miercoles_is_working_day.label(class="form-check-label") }}
+                                            {% for error in form.miercoles_is_working_day.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.miercoles_start_time.label(class="form-label") }}
+                                            {{ form.miercoles_start_time(class="form-control", type="time") }}
+                                            {% for error in form.miercoles_start_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.miercoles_end_time.label(class="form-label") }}
+                                            {{ form.miercoles_end_time(class="form-control", type="time") }}
+                                            {% for error in form.miercoles_end_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Jueves -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Jueves</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            {{ form.jueves_is_working_day(class="form-check-input") }}
+                                            {{ form.jueves_is_working_day.label(class="form-check-label") }}
+                                            {% for error in form.jueves_is_working_day.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.jueves_start_time.label(class="form-label") }}
+                                            {{ form.jueves_start_time(class="form-control", type="time") }}
+                                            {% for error in form.jueves_start_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.jueves_end_time.label(class="form-label") }}
+                                            {{ form.jueves_end_time(class="form-control", type="time") }}
+                                            {% for error in form.jueves_end_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Viernes -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Viernes</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            {{ form.viernes_is_working_day(class="form-check-input") }}
+                                            {{ form.viernes_is_working_day.label(class="form-check-label") }}
+                                            {% for error in form.viernes_is_working_day.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.viernes_start_time.label(class="form-label") }}
+                                            {{ form.viernes_start_time(class="form-control", type="time") }}
+                                            {% for error in form.viernes_start_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.viernes_end_time.label(class="form-label") }}
+                                            {{ form.viernes_end_time(class="form-control", type="time") }}
+                                            {% for error in form.viernes_end_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Sábado -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Sábado</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            {{ form.sabado_is_working_day(class="form-check-input") }}
+                                            {{ form.sabado_is_working_day.label(class="form-check-label") }}
+                                            {% for error in form.sabado_is_working_day.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.sabado_start_time.label(class="form-label") }}
+                                            {{ form.sabado_start_time(class="form-control", type="time") }}
+                                            {% for error in form.sabado_start_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.sabado_end_time.label(class="form-label") }}
+                                            {{ form.sabado_end_time(class="form-control", type="time") }}
+                                            {% for error in form.sabado_end_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Domingo -->
+                        <div class="card mb-3">
+                            <div class="card-header bg-light">
+                                <h5 class="mb-0">Domingo</h5>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <div class="form-check">
+                                            {{ form.domingo_is_working_day(class="form-check-input") }}
+                                            {{ form.domingo_is_working_day.label(class="form-check-label") }}
+                                            {% for error in form.domingo_is_working_day.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.domingo_start_time.label(class="form-label") }}
+                                            {{ form.domingo_start_time(class="form-control", type="time") }}
+                                            {% for error in form.domingo_start_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <div class="form-group">
+                                            {{ form.domingo_end_time.label(class="form-label") }}
+                                            {{ form.domingo_end_time(class="form-control", type="time") }}
+                                            {% for error in form.domingo_end_time.errors %}
+                                            <div class="invalid-feedback d-block">{{ error }}</div>
+                                            {% endfor %}
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                {{ form.submit(class="btn btn-primary") }}
+                                <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información del Empleado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+                            <p><strong>DNI/NIE:</strong> {{ employee.dni }}</p>
+                            <p><strong>Empresa:</strong> {{ employee.company.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Posición:</strong> {{ employee.position }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {% if employee.status and employee.status.value == 'activo' %}bg-success{% elif employee.status and employee.status.value == 'baja_medica' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ employee.status.name.capitalize() if employee.status else 'No definido' }}
+                                </span>
+                            </p>
+                            <p><strong>Tipo de Contrato:</strong> {{ employee.contract_type.name.capitalize() if employee.contract_type else 'No definido' }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// JavaScript para habilitar/deshabilitar campos de tiempo según el checkbox de día laborable
+document.addEventListener('DOMContentLoaded', function() {
+    // Función para manejar el cambio en un checkbox
+    function handleWorkingDayChange(day) {
+        const checkbox = document.getElementById(day + '_is_working_day');
+        const startTime = document.getElementById(day + '_start_time');
+        const endTime = document.getElementById(day + '_end_time');
+        
+        if (checkbox && startTime && endTime) {
+            // Si el checkbox no está marcado, deshabilitar los campos de hora
+            startTime.disabled = !checkbox.checked;
+            endTime.disabled = !checkbox.checked;
+        }
+    }
+    
+    // Lista de días de la semana
+    const days = ['lunes', 'martes', 'miercoles', 'jueves', 'viernes', 'sabado', 'domingo'];
+    
+    // Configurar los listeners para cada día
+    days.forEach(day => {
+        const checkbox = document.getElementById(day + '_is_working_day');
+        if (checkbox) {
+            // Inicializar el estado
+            handleWorkingDayChange(day);
+            
+            // Añadir listener para cambios
+            checkbox.addEventListener('change', function() {
+                handleWorkingDayChange(day);
+            });
+        }
+    });
+});
+</script>
+{% endblock %}
