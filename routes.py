@@ -864,6 +864,13 @@ def weekly_schedule(employee_id):
             start_time = getattr(form, f"{day_name}_start_time").data
             end_time = getattr(form, f"{day_name}_end_time").data
             
+            # Valores por defecto seguros para evitar errores NULL
+            if not start_time:
+                start_time = datetime.time(9, 0)  # 9:00 AM por defecto
+            
+            if not end_time:
+                end_time = datetime.time(18, 0)  # 6:00 PM por defecto
+            
             # Convertir el nombre del día a un WeekDay
             day_enum = WeekDay(day_name)
             
@@ -873,8 +880,8 @@ def weekly_schedule(employee_id):
                 day_of_week=day_enum
             ).first()
             
-            # Si no existe horario para este día y es un día laborable, crearlo
-            if not schedule and is_working_day:
+            # Si no existe horario para este día, crearlo independientemente de si es laborable o no
+            if not schedule:
                 schedule = EmployeeSchedule(
                     day_of_week=day_enum,
                     start_time=start_time,
@@ -883,12 +890,11 @@ def weekly_schedule(employee_id):
                     employee_id=employee_id
                 )
                 db.session.add(schedule)
-            # Si existe, actualizarlo
-            elif schedule:
+            # Si existe, actualizarlo en todos los casos
+            else:
                 schedule.is_working_day = is_working_day
-                if is_working_day:
-                    schedule.start_time = start_time
-                    schedule.end_time = end_time
+                schedule.start_time = start_time
+                schedule.end_time = end_time
         
         db.session.commit()
         log_activity(f'Horarios semanales actualizados para {employee.first_name} {employee.last_name}')
