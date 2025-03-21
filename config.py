@@ -3,7 +3,12 @@ import logging
 from datetime import timedelta
 
 # Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Usar INFO en lugar de DEBUG para reducir el verbosity
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] %(name)s: %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
 
 class Config:
     """Base configuration."""
@@ -16,6 +21,11 @@ class Config:
     SQLALCHEMY_ENGINE_OPTIONS = {
         "pool_recycle": 300,
         "pool_pre_ping": True,
+        "pool_size": 15,         # Aumentar el tamaño del pool de conexiones
+        "max_overflow": 10,      # Permitir 10 conexiones adicionales si el pool está lleno
+        "pool_timeout": 30,      # Timeout para obtener una conexión del pool (segundos)
+        "echo": False,           # Deshabilitar echo de las consultas SQL
+        "echo_pool": False,      # Deshabilitar echo del pool
     }
     
     # File upload configuration

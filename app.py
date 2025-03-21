@@ -9,8 +9,7 @@ from flask_wtf.csrf import CSRFProtect
 from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
 
-# Configure logging
-logging.basicConfig(level=logging.DEBUG)
+# Configure logging (ya configurado en config.py)
 logger = logging.getLogger(__name__)
 
 # Initialize SQLAlchemy base class
@@ -78,22 +77,46 @@ def create_app(config_class='config.Config'):
     def server_error_page(error):
         return render_template('errors/500.html'), 500
     
-    # Log activity middleware
+    # Log activity middleware (optimizado para reducir DB commits)
+    # Usar before_request y after_request para solo hacer commit después de la solicitud
+    activity_log_added = False
+    
     @app.before_request
     def log_activity():
-        if request.path.startswith('/static'):
-            return  # Skip static file requests
+        # Ignorar solicitudes estáticas y de monitoreo frecuentes
+        if (request.path.startswith('/static') or 
+            request.path == '/favicon.ico' or 
+            request.path == '/health'):
+            return  # Skip logging
             
         if current_user.is_authenticated:
             from models import ActivityLog
-            log_entry = ActivityLog(
-                user_id=current_user.id,
-                action=f"{request.method} {request.path}",
-                ip_address=request.remote_addr,
-                timestamp=datetime.utcnow()
-            )
-            db.session.add(log_entry)
-            db.session.commit()
+            
+            # Solo registrar acciones interesantes (no GETs a páginas comunes)
+            if request.method != 'GET' or not request.path.startswith(('/dashboard', '/employees')):
+                nonlocal activity_log_added
+                log_entry = ActivityLog(
+                    user_id=current_user.id,
+                    action=f"{request.method} {request.path}",
+                    ip_address=request.remote_addr,
+                    timestamp=datetime.utcnow()
+                )
+                db.session.add(log_entry)
+                activity_log_added = True
+    
+    @app.after_request
+    def commit_logs(response):
+        nonlocal activity_log_added
+        # Solo hacer commit si se agregó un log y no hubo errores
+        if activity_log_added and response.status_code < 400:
+            try:
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                logger.warning(f"Error al guardar log de actividad: {e}")
+            finally:
+                activity_log_added = False
+        return response
     
     # Initialize app config
     from config import Config
