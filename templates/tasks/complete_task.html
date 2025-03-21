@@ -1,0 +1,67 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-check-circle"></i> {{ title }}
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.local_user_tasks') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Tareas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Completar Tarea</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle"></i> Estás a punto de marcar esta tarea como completada.
+                    </div>
+                    
+                    <div class="card mb-4">
+                        <div class="card-header">
+                            <h5 class="card-title mb-0">
+                                {{ task.title }}
+                                <span class="badge bg-{{ task.priority.value|lower }}">{{ task.priority.value|capitalize }}</span>
+                            </h5>
+                        </div>
+                        <div class="card-body">
+                            {% if task.description %}
+                            <p class="card-text">{{ task.description }}</p>
+                            {% else %}
+                            <p class="text-muted">Sin descripción</p>
+                            {% endif %}
+                        </div>
+                    </div>
+                    
+                    <form method="post">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-3">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=4, placeholder="Opcional: añade comentarios sobre la tarea completada") }}
+                            {% for error in form.notes.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Puedes añadir notas o comentarios sobre cómo has completado la tarea.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('tasks.local_user_tasks') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {{ form.submit(class="btn btn-success") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

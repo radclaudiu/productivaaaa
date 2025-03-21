@@ -1,0 +1,98 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-calendar-check"></i> {{ title }}
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.list_tasks', location_id=task.location_id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Tareas
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Configurar Horario {{ schedule_type|capitalize }}</h6>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <i class="bi bi-info-circle-fill"></i>
+                        {% if schedule_type == 'diario' %}
+                        Esta tarea se ejecutará todos los días a la hora especificada.
+                        {% elif schedule_type == 'semanal' %}
+                        Esta tarea se ejecutará cada semana en el día seleccionado y la hora especificada.
+                        {% elif schedule_type == 'mensual' %}
+                        Esta tarea se ejecutará cada mes en el día seleccionado y la hora especificada.
+                        {% elif schedule_type == 'quincenal' %}
+                        Esta tarea se ejecutará cada quince días a partir de la fecha de inicio, a la hora especificada.
+                        {% endif %}
+                    </div>
+                    
+                    <form method="post">
+                        {{ form.hidden_tag() }}
+                        
+                        {% if schedule_type == 'semanal' %}
+                        <div class="form-group mb-3">
+                            {{ form.day_of_week.label(class="form-label") }}
+                            {{ form.day_of_week(class="form-select" + (" is-invalid" if form.day_of_week.errors else "")) }}
+                            {% for error in form.day_of_week.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        {% endif %}
+                        
+                        {% if schedule_type == 'mensual' %}
+                        <div class="form-group mb-3">
+                            {{ form.day_of_month.label(class="form-label") }}
+                            {{ form.day_of_month(class="form-control" + (" is-invalid" if form.day_of_month.errors else ""), type="number", min="1", max="31") }}
+                            {% for error in form.day_of_month.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <div class="form-text">Introduce un número entre 1 y 31.</div>
+                        </div>
+                        {% endif %}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.start_time.label(class="form-label") }}
+                                    {{ form.start_time(class="form-control" + (" is-invalid" if form.start_time.errors else ""), type="time") }}
+                                    {% for error in form.start_time.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.end_time.label(class="form-label") }}
+                                    {{ form.end_time(class="form-control" + (" is-invalid" if form.end_time.errors else ""), type="time") }}
+                                    {% for error in form.end_time.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle-fill"></i>
+                            Si no especificas una hora de inicio y fin, la tarea estará activa durante todo el día.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('tasks.list_tasks', location_id=task.location_id) }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

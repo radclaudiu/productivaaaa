@@ -1068,6 +1068,7 @@ def local_user_tasks():
     return render_template('tasks/local_user_tasks.html',
                           title=f'Tareas de {user.name}',
                           user=user,
+                          local_user=user,
                           location=location,
                           active_tasks=active_tasks)
 
