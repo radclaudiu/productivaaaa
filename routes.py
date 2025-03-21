@@ -968,18 +968,13 @@ def create_checkin(employee_id):
     form = EmployeeCheckInForm()
     
     if form.validate_on_submit():
-        # Asegurarnos de que check_in_time tiene un valor válido antes de combinar
-        check_in_time = datetime.combine(form.check_in_time.data, datetime.min.time()) if form.check_in_time.data else None
-        # Asegurarnos de que check_out_time tiene un valor válido antes de combinar
-        check_out_time = datetime.combine(form.check_out_time.data, datetime.min.time()) if form.check_out_time.data else None
+        # Combinar fecha y hora para la entrada
+        check_in_time = datetime.combine(form.check_in_date.data, form.check_in_time.data)
         
-        # Validar que al menos la fecha de entrada existe
-        if not check_in_time:
-            flash('La fecha de entrada es obligatoria', 'danger')
-            return render_template('checkin_form.html', 
-                                  title=f'Nuevo Fichaje para {employee.first_name} {employee.last_name}', 
-                                  form=form,
-                                  employee=employee)
+        # Combinar fecha y hora para la salida (si existe)
+        check_out_time = None
+        if form.check_out_time.data:
+            check_out_time = datetime.combine(form.check_in_date.data, form.check_out_time.data)
         
         checkin = EmployeeCheckIn(
             check_in_time=check_in_time,
@@ -1013,27 +1008,19 @@ def edit_checkin(id):
     form = EmployeeCheckInForm()
     
     if request.method == 'GET':
-        form.check_in_time.data = checkin.check_in_time.date()
-        form.check_out_time.data = checkin.check_out_time.date() if checkin.check_out_time else None
+        form.check_in_date.data = checkin.check_in_time.date()
+        form.check_in_time.data = checkin.check_in_time.time()
+        form.check_out_time.data = checkin.check_out_time.time() if checkin.check_out_time else None
         form.notes.data = checkin.notes
     
     if form.validate_on_submit():
-        # Asegurarnos de que check_in_time tiene un valor válido antes de combinar
-        if form.check_in_time.data:
-            check_in_time = datetime.combine(form.check_in_time.data, checkin.check_in_time.time())
-        else:
-            flash('La fecha de entrada es obligatoria', 'danger')
-            return render_template('checkin_form.html', 
-                                title=f'Editar Fichaje de {employee.first_name} {employee.last_name}', 
-                                form=form,
-                                employee=employee,
-                                checkin=checkin)
-                                
-        # Asegurarnos de que check_out_time tiene un valor válido antes de combinar
+        # Combinar fecha y hora para la entrada
+        check_in_time = datetime.combine(form.check_in_date.data, form.check_in_time.data)
+        
+        # Combinar fecha y hora para la salida (si existe)
         check_out_time = None
         if form.check_out_time.data:
-            check_out_time = datetime.combine(form.check_out_time.data, 
-                                            checkin.check_out_time.time() if checkin.check_out_time else datetime.min.time())
+            check_out_time = datetime.combine(form.check_in_date.data, form.check_out_time.data)
         
         checkin.check_in_time = check_in_time
         checkin.check_out_time = check_out_time
@@ -1104,6 +1091,59 @@ def export_checkins(employee_id):
     
     flash('Error al validar el formulario.', 'danger')
     return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
+
+@checkin_bp.route('/employee/<int:employee_id>/delete-by-date', methods=['GET', 'POST'])
+@manager_required
+def delete_checkins_by_date(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para eliminar los fichajes de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = ExportCheckInsForm()  # Reutilizamos el formulario de exportación para las fechas
+    form.submit.label.text = 'Eliminar Fichajes'  # Cambiamos el texto del botón
+    
+    if form.validate_on_submit():
+        start_date = form.start_date.data
+        end_date = form.end_date.data
+        
+        if not start_date or not end_date:
+            flash('Debe seleccionar fechas de inicio y fin.', 'warning')
+            return render_template('delete_checkins_form.html', 
+                                title=f'Eliminar Fichajes de {employee.first_name} {employee.last_name}', 
+                                form=form,
+                                employee=employee)
+        
+        # Crear objetos datetime para la comparación
+        start_datetime = datetime.combine(start_date, datetime.min.time())
+        end_datetime = datetime.combine(end_date, datetime.max.time())
+        
+        # Buscar fichajes en el rango de fechas
+        checkins_to_delete = EmployeeCheckIn.query.filter(
+            EmployeeCheckIn.employee_id == employee_id,
+            EmployeeCheckIn.check_in_time >= start_datetime,
+            EmployeeCheckIn.check_in_time <= end_datetime
+        ).all()
+        
+        if not checkins_to_delete:
+            flash('No se encontraron fichajes en el periodo seleccionado.', 'warning')
+        else:
+            count = len(checkins_to_delete)
+            for checkin in checkins_to_delete:
+                db.session.delete(checkin)
+            db.session.commit()
+            
+            log_activity(f'Eliminados {count} fichajes para {employee.first_name} {employee.last_name}')
+            flash(f'Se han eliminado {count} fichajes correctamente.', 'success')
+        
+        return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
+    
+    return render_template('delete_checkins_form.html', 
+                          title=f'Eliminar Fichajes de {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee)
 
 @checkin_bp.route('/employee/<int:employee_id>/generate', methods=['GET', 'POST'])
 @manager_required

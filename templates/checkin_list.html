@@ -9,16 +9,19 @@
             <div class="card">
                 <div class="card-header d-flex justify-content-between align-items-center">
                     <h5 class="mb-0">Fichajes</h5>
-                    <div>
+                    <div class="btn-group">
                         {% if current_user.is_admin() or current_user.is_gerente() %}
                         <a href="{{ url_for('checkin.create_checkin', employee_id=employee.id) }}" class="btn btn-primary btn-sm">
                             <i class="bi bi-plus-lg"></i> Nuevo Fichaje
                         </a>
                         {% if employee.schedules %}
                         <a href="{{ url_for('checkin.generate_checkins', employee_id=employee.id) }}" class="btn btn-success btn-sm">
-                            <i class="bi bi-calendar-check"></i> Generar Fichajes Automáticos
+                            <i class="bi bi-calendar-check"></i> Generar Automáticos
                         </a>
                         {% endif %}
+                        <a href="{{ url_for('checkin.delete_checkins_by_date', employee_id=employee.id) }}" class="btn btn-danger btn-sm">
+                            <i class="bi bi-trash"></i> Eliminar por Fecha
+                        </a>
                         {% endif %}
                         <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#exportModal">
                             <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF

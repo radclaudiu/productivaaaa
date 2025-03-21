@@ -1,0 +1,89 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">{{ title }}</h1>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Eliminar Fichajes por Fecha</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-warning mb-4">
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        Esta herramienta eliminará todos los fichajes del empleado en el rango de fechas seleccionado.
+                        <strong>Esta acción no se puede deshacer.</strong>
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.start_date.label(class="form-label") }}
+                                    {{ form.start_date(class="form-control", type="date") }}
+                                    {% for error in form.start_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.end_date.label(class="form-label") }}
+                                    {{ form.end_date(class="form-control", type="date") }}
+                                    {% for error in form.end_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                {{ form.submit(class="btn btn-danger") }}
+                                <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información del Empleado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+                            <p><strong>DNI/NIE:</strong> {{ employee.dni }}</p>
+                            <p><strong>Empresa:</strong> {{ employee.company.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Posición:</strong> {{ employee.position }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {% if employee.status.value == 'activo' %}bg-success{% elif employee.status.value == 'baja_medica' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ employee.status.name.capitalize() }}
+                                </span>
+                            </p>
+                            <p><strong>Tipo de Contrato:</strong> {{ employee.contract_type.name.capitalize() }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-secondary">
+                        <i class="bi bi-arrow-left"></i> Volver a Fichajes
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
