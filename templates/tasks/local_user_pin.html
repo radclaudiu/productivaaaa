@@ -1,18 +1,18 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<div class="container py-5">
+<div class="container-fluid py-5">
     <div class="row justify-content-center">
         <div class="col-md-6 col-lg-4">
-            <div class="card shadow-lg border-0 rounded-lg mt-5">
+            <div class="card shadow-lg border-0 rounded-3 mt-3">
                 <div class="card-header bg-primary text-white text-center">
-                    <h3 class="my-3">{{ user.name }} {{ user.last_name }}</h3>
+                    <h2 class="my-3">{{ user.name }} {{ user.last_name }}</h2>
                 </div>
                 <div class="card-body text-center">
                     <div class="mb-4">
                         {% if user.photo_path %}
                         <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" 
-                             class="rounded-circle img-fluid" style="max-width: 150px; height: 150px; object-fit: cover;" alt="{{ user.name }}">
+                             class="rounded-circle img-fluid user-photo" alt="{{ user.name }}">
                         {% else %}
                         <i class="bi bi-person-circle display-1"></i>
                         {% endif %}
@@ -24,9 +24,18 @@
                         {{ form.hidden_tag() }}
                         
                         <div class="form-group mb-4">
-                            <div class="pin-input-container text-center">
+                            <div class="pin-display mb-3">
+                                <div id="pinDisplay" class="pin-dots">
+                                    <span class="pin-dot"></span>
+                                    <span class="pin-dot"></span>
+                                    <span class="pin-dot"></span>
+                                    <span class="pin-dot"></span>
+                                </div>
+                            </div>
+                            
+                            <div class="pin-input-container d-none">
                                 {{ form.pin(class="form-control pin-input" + (" is-invalid" if form.pin.errors else ""), 
-                                    id="pinInput", style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center; max-width: 200px; margin: 0 auto;") }}
+                                    id="pinInput", autocomplete="off") }}
                                 
                                 {% for error in form.pin.errors %}
                                 <div class="invalid-feedback d-block">{{ error }}</div>
@@ -34,14 +43,40 @@
                             </div>
                         </div>
                         
+                        <!-- Numeric keypad -->
+                        <div class="numeric-keypad">
+                            <div class="row g-3 mb-2">
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="1">1</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="2">2</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="3">3</button></div>
+                            </div>
+                            <div class="row g-3 mb-2">
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="4">4</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="5">5</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="6">6</button></div>
+                            </div>
+                            <div class="row g-3 mb-2">
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="7">7</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="8">8</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="9">9</button></div>
+                            </div>
+                            <div class="row g-3">
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-danger w-100" id="clearPinBtn">C</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="0">0</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-warning w-100" id="deletePinBtn">⌫</button></div>
+                            </div>
+                        </div>
+                        
                         <div class="d-grid mt-4">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            {{ form.submit(class="btn btn-primary btn-lg", id="submitBtn") }}
                         </div>
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">
                     <div class="small">
-                        <a href="{{ url_for('tasks.local_portal', location_id=user.location_id) }}">Volver a selección de usuario</a>
+                        <a href="{{ url_for('tasks.local_portal', location_id=user.location_id) }}" class="btn btn-link">
+                            <i class="bi bi-arrow-left"></i> Volver a selección de usuario
+                        </a>
                     </div>
                 </div>
             </div>
@@ -51,29 +86,152 @@
 {% endblock %}
 
 {% block scripts %}
+<style>
+    body {
+        touch-action: manipulation;
+        overscroll-behavior: none;
+    }
+    
+    .user-photo {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border: 3px solid var(--bs-primary);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    /* Estilo para los puntos del PIN */
+    .pin-dots {
+        display: flex;
+        justify-content: center;
+        gap: 1rem;
+        margin: 1rem 0;
+    }
+    
+    .pin-dot {
+        display: block;
+        width: 20px;
+        height: 20px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        border: 2px solid #ced4da;
+        transition: all 0.2s;
+    }
+    
+    .pin-dot.filled {
+        background-color: var(--bs-primary);
+        border-color: var(--bs-primary);
+        transform: scale(1.1);
+    }
+    
+    /* Estilo para el teclado numérico */
+    .numeric-keypad {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+    
+    .keypad-btn, #clearPinBtn, #deletePinBtn {
+        font-size: 1.5rem;
+        padding: 0.75rem;
+        min-height: 60px;
+        touch-action: manipulation;
+    }
+    
+    /* Media queries para tablets */
+    @media (max-width: 768px) {
+        .keypad-btn, #clearPinBtn, #deletePinBtn {
+            font-size: 1.8rem;
+            min-height: 70px;
+        }
+        
+        .pin-dot {
+            width: 25px;
+            height: 25px;
+        }
+    }
+</style>
+
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         const pinInput = document.getElementById('pinInput');
+        const pinDisplay = document.getElementById('pinDisplay');
+        const pinDots = document.querySelectorAll('.pin-dot');
+        const keypadButtons = document.querySelectorAll('.keypad-btn');
+        const clearPinBtn = document.getElementById('clearPinBtn');
+        const deletePinBtn = document.getElementById('deletePinBtn');
+        const submitBtn = document.getElementById('submitBtn');
         
-        if (pinInput) {
-            // Auto focus on load
-            pinInput.focus();
-            
-            // Limitar a solo dígitos
-            pinInput.addEventListener('input', function(e) {
-                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
-            });
-            
-            // Submit form automáticamente al completar 4 dígitos
-            pinInput.addEventListener('input', function() {
-                if (this.value.length === 4) {
-                    // Submit form after a short delay to allow user to see the complete PIN
-                    setTimeout(() => {
-                        this.form.submit();
-                    }, 300);
+        // Ocultar el botón de enviar hasta que el PIN esté completo
+        submitBtn.style.display = 'none';
+        
+        // Actualizar el estado visual de los puntos
+        function updatePinDots() {
+            const pinLength = pinInput.value.length;
+            pinDots.forEach((dot, index) => {
+                if (index < pinLength) {
+                    dot.classList.add('filled');
+                } else {
+                    dot.classList.remove('filled');
                 }
             });
+            
+            // Mostrar/ocultar el botón de enviar
+            if (pinLength === 4) {
+                submitBtn.style.display = 'block';
+                // Submit form automáticamente después de un breve retraso
+                setTimeout(() => {
+                    submitBtn.form.submit();
+                }, 500);
+            } else {
+                submitBtn.style.display = 'none';
+            }
         }
+        
+        // Función para procesar la entrada PIN
+        function processPinInput(digit) {
+            if (pinInput.value.length < 4) {
+                pinInput.value += digit;
+                updatePinDots();
+            }
+        }
+        
+        // Configurar botones del teclado numérico
+        keypadButtons.forEach(btn => {
+            btn.addEventListener('click', function() {
+                const digit = this.getAttribute('data-number');
+                processPinInput(digit);
+            });
+        });
+        
+        // Configurar botón de borrar todo
+        clearPinBtn.addEventListener('click', function() {
+            pinInput.value = '';
+            updatePinDots();
+        });
+        
+        // Configurar botón de retroceso (borrar último dígito)
+        deletePinBtn.addEventListener('click', function() {
+            pinInput.value = pinInput.value.slice(0, -1);
+            updatePinDots();
+        });
+        
+        // También permitir entrada desde el teclado físico
+        document.addEventListener('keydown', function(e) {
+            if (e.key >= '0' && e.key <= '9' && pinInput.value.length < 4) {
+                processPinInput(e.key);
+            } else if (e.key === 'Backspace') {
+                pinInput.value = pinInput.value.slice(0, -1);
+                updatePinDots();
+            } else if (e.key === 'Delete') {
+                pinInput.value = '';
+                updatePinDots();
+            } else if (e.key === 'Enter' && pinInput.value.length === 4) {
+                submitBtn.form.submit();
+            }
+        });
+        
+        // Inicializar
+        updatePinDots();
     });
 </script>
 {% endblock %}

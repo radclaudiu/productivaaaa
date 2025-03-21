@@ -53,14 +53,60 @@
 
 {% block scripts %}
 <style>
-    .user-select-card {
-        cursor: pointer;
-        transition: transform 0.2s, box-shadow 0.2s;
+    body {
+        touch-action: manipulation;
+        overscroll-behavior: none;
     }
     
-    .user-select-card:hover {
+    .user-select-card {
+        cursor: pointer;
+        transition: transform 0.3s, box-shadow 0.3s;
+        border-radius: 15px;
+        overflow: hidden;
+    }
+    
+    .user-select-card:hover,
+    .user-select-card:active {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    
+    .rounded-circle {
+        width: 150px;
+        height: 150px;
+        object-fit: cover;
+        border: 3px solid var(--bs-primary);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .display-1 {
+        font-size: 6rem;
+        color: var(--bs-primary);
+    }
+    
+    /* Media queries para tablet y dispositivos móviles */
+    @media (max-width: 768px) {
+        .container-fluid {
+            padding-top: 2rem !important;
+            padding-bottom: 2rem !important;
+        }
+        
+        .display-4 {
+            font-size: 2.5rem;
+        }
+        
+        .card-body {
+            padding: 2rem 1rem;
+        }
+        
+        .rounded-circle {
+            width: 120px;
+            height: 120px;
+        }
+        
+        .display-1 {
+            font-size: 5rem;
+        }
     }
 </style>
 {% endblock %}

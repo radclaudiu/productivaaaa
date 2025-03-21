@@ -83,6 +83,33 @@ def create_app(config_class='config.Config'):
     def server_error_page(error):
         return render_template('errors/500.html'), 500
     
+    # Cargar ubicaciones disponibles para menú de navegación
+    @app.before_request
+    def load_locations():
+        from flask import g
+        from models_tasks import Location
+        from flask_login import current_user
+        
+        # Inicializar la lista de ubicaciones vacía por defecto
+        g.locations = []
+        
+        # Solo cargar ubicaciones si el usuario está autenticado
+        if current_user.is_authenticated:
+            try:
+                if current_user.is_admin():
+                    # Administradores ven todas las ubicaciones
+                    g.locations = Location.query.filter_by(is_active=True).all()
+                elif current_user.is_gerente() and current_user.company_id:
+                    # Gerentes solo ven ubicaciones de su empresa
+                    g.locations = Location.query.filter_by(
+                        company_id=current_user.company_id, 
+                        is_active=True
+                    ).all()
+            except Exception as e:
+                # Si hay un error, no mostrar ubicaciones
+                g.locations = []
+                logger.error(f"Error al cargar ubicaciones: {e}")
+    
     # Log activity middleware (optimizado para reducir DB commits)
     # Usar before_request y after_request para solo hacer commit después de la solicitud
     activity_log_added = False
