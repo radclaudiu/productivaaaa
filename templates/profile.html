@@ -58,8 +58,15 @@
                             <dt class="col-sm-4">Último acceso:</dt>
                             <dd class="col-sm-8">
                                 {% if current_user.activity_logs %}
-                                    {% set last_login = current_user.activity_logs|selectattr('action', 'search', 'Login exitoso')|list|sort(attribute='timestamp', reverse=true)|first %}
-                                    {% if last_login %}
+                                    {% set login_logs = [] %}
+                                    {% for log in current_user.activity_logs %}
+                                        {% if log.action and 'Login exitoso' in log.action %}
+                                            {% set _ = login_logs.append(log) %}
+                                        {% endif %}
+                                    {% endfor %}
+                                    
+                                    {% if login_logs %}
+                                        {% set last_login = login_logs|sort(attribute='timestamp', reverse=true)|first %}
                                         {{ last_login.timestamp.strftime('%d/%m/%Y %H:%M') }}
                                     {% else %}
                                         <span class="text-muted">No disponible</span>

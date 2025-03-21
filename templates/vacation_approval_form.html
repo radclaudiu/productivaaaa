@@ -91,11 +91,11 @@
                         <div class="col-md-6">
                             <p><strong>Posición:</strong> {{ employee.position }}</p>
                             <p><strong>Estado:</strong> 
-                                <span class="badge {% if employee.status.value == 'activo' %}bg-success{% elif employee.status.value == 'baja_medica' %}bg-warning{% else %}bg-danger{% endif %}">
-                                    {{ employee.status.name.capitalize() }}
+                                <span class="badge {% if employee.status and employee.status.value == 'activo' %}bg-success{% elif employee.status and employee.status.value == 'baja_medica' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ employee.status.name.capitalize() if employee.status else 'No definido' }}
                                 </span>
                             </p>
-                            <p><strong>Tipo de Contrato:</strong> {{ employee.contract_type.name.capitalize() }}</p>
+                            <p><strong>Tipo de Contrato:</strong> {{ employee.contract_type.name.capitalize() if employee.contract_type else 'No definido' }}</p>
                         </div>
                     </div>
                 </div>
