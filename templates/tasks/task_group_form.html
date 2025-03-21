@@ -1,0 +1,126 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container mt-4">
+    <h1 class="mb-4">{{ title }}</h1>
+    
+    <div class="row mb-4">
+        <div class="col">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.index') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.list_locations') }}">Locales</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.view_location', id=location.id) }}">{{ location.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.list_task_groups', id=location.id) }}">Grupos de Tareas</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">{{ 'Editar Grupo' if group else 'Nuevo Grupo' }}</li>
+                </ol>
+            </nav>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col">
+            <a href="{{ url_for('tasks.list_task_groups', id=location.id) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    {% include 'messages.html' %}
+    
+    <div class="row">
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>{{ 'Editar Grupo de Tareas' if group else 'Nuevo Grupo de Tareas' }}</h4>
+                </div>
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% for error in form.name.errors %}
+                            <div class="invalid-feedback">
+                                {{ error }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=4) }}
+                            {% for error in form.description.errors %}
+                            <div class="invalid-feedback">
+                                {{ error }}
+                            </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.color.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.color(class="form-control" + (" is-invalid" if form.color.errors else ""), type="color") }}
+                                <span class="input-group-text">{{ form.color.data or "#17a2b8" }}</span>
+                            </div>
+                            {% for error in form.color.errors %}
+                            <div class="invalid-feedback">
+                                {{ error }}
+                            </div>
+                            {% endfor %}
+                            <div class="form-text">
+                                Selecciona un color para identificar visualmente este grupo de tareas.
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3 d-none">
+                            {{ form.location_id.label(class="form-label") }}
+                            {{ form.location_id(class="form-control") }}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6">
+            <div class="card">
+                <div class="card-header">
+                    <h4>Información</h4>
+                </div>
+                <div class="card-body">
+                    <p>Los grupos de tareas permiten organizar tus tareas por zonas, áreas o cualquier otro criterio que facilite su gestión.</p>
+                    
+                    <h5 class="mt-3">Ventajas de usar grupos:</h5>
+                    <ul>
+                        <li>Organiza tareas por zonas o áreas de trabajo</li>
+                        <li>Asigna colores para identificar visualmente los grupos</li>
+                        <li>Filtra tareas por grupo para facilitar su gestión</li>
+                        <li>Mejora la visualización en el portal del usuario</li>
+                    </ul>
+                    
+                    <div class="mt-3 alert alert-info">
+                        <i class="fas fa-info-circle"></i> Después de crear un grupo, podrás asignar tareas a este grupo al crear o editar las tareas.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // Actualizar valor de texto cuando se cambia el color
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorInput = document.getElementById('color');
+        const colorText = colorInput.nextElementSibling;
+        
+        colorInput.addEventListener('input', function() {
+            colorText.textContent = this.value;
+        });
+    });
+</script>
+{% endblock %}

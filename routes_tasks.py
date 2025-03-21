@@ -714,6 +714,11 @@ def create_task(location_id):
     form = TaskForm()
     form.location_id.choices = [(location.id, location.name)]
     
+    # Cargar grupos de tareas disponibles para este local
+    groups = TaskGroup.query.filter_by(location_id=location_id).all()
+    group_choices = [(0, 'Ningún grupo')] + [(g.id, g.name) for g in groups]
+    form.group_id.choices = group_choices
+    
     if form.validate_on_submit():
         task = Task(
             title=form.title.data,
@@ -727,8 +732,32 @@ def create_task(location_id):
             status=TaskStatus.PENDIENTE
         )
         
+        # Asignar grupo de tareas si se seleccionó uno
+        if form.group_id.data and form.group_id.data != 0:
+            task.group_id = form.group_id.data
+        
         db.session.add(task)
         db.session.commit()
+        
+        # Para tareas personalizadas, guardar los días seleccionados
+        if task.frequency == TaskFrequency.PERSONALIZADA:
+            # Crear registros de días seleccionados
+            if form.monday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.LUNES))
+            if form.tuesday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.MARTES))
+            if form.wednesday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.MIERCOLES))
+            if form.thursday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.JUEVES))
+            if form.friday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.VIERNES))
+            if form.saturday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.SABADO))
+            if form.sunday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.DOMINGO))
+            
+            db.session.commit()
         
         # Redirigir a la página de programación según la frecuencia
         log_activity(f'Tarea creada: {task.title} en {location.name}')
@@ -962,6 +991,32 @@ def edit_task(task_id):
     form = TaskForm(obj=task)
     form.location_id.choices = [(task.location.id, task.location.name)]
     
+    # Cargar grupos de tareas disponibles para este local
+    groups = TaskGroup.query.filter_by(location_id=task.location_id).all()
+    group_choices = [(0, 'Ningún grupo')] + [(g.id, g.name) for g in groups]
+    form.group_id.choices = group_choices
+    
+    # Establecer el grupo seleccionado actualmente
+    if task.group_id:
+        form.group_id.data = task.group_id
+    else:
+        form.group_id.data = 0
+    
+    # Si es una tarea personalizada, marcar los días seleccionados
+    if task.frequency == TaskFrequency.PERSONALIZADA:
+        # Obtener los días de la semana configurados
+        weekdays = TaskWeekday.query.filter_by(task_id=task.id).all()
+        days_of_week = [day.day_of_week for day in weekdays]
+        
+        # Marcar los checkboxes correspondientes
+        form.monday.data = WeekDay.LUNES in days_of_week
+        form.tuesday.data = WeekDay.MARTES in days_of_week
+        form.wednesday.data = WeekDay.MIERCOLES in days_of_week
+        form.thursday.data = WeekDay.JUEVES in days_of_week
+        form.friday.data = WeekDay.VIERNES in days_of_week
+        form.saturday.data = WeekDay.SABADO in days_of_week
+        form.sunday.data = WeekDay.DOMINGO in days_of_week
+    
     # Guardar la frecuencia original
     original_frequency = task.frequency
     
@@ -973,7 +1028,36 @@ def edit_task(task_id):
         task.start_date = form.start_date.data
         task.end_date = form.end_date.data
         
+        # Actualizar grupo de tareas
+        if form.group_id.data and form.group_id.data != 0:
+            task.group_id = form.group_id.data
+        else:
+            task.group_id = None
+            
         db.session.commit()
+        
+        # Si la frecuencia es personalizada, actualizar los días de la semana
+        if task.frequency == TaskFrequency.PERSONALIZADA:
+            # Eliminar días existentes
+            TaskWeekday.query.filter_by(task_id=task.id).delete()
+            
+            # Crear nuevos registros de días seleccionados
+            if form.monday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.LUNES))
+            if form.tuesday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.MARTES))
+            if form.wednesday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.MIERCOLES))
+            if form.thursday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.JUEVES))
+            if form.friday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.VIERNES))
+            if form.saturday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.SABADO))
+            if form.sunday.data:
+                db.session.add(TaskWeekday(task_id=task.id, day_of_week=WeekDay.DOMINGO))
+            
+            db.session.commit()
         
         log_activity(f'Tarea actualizada: {task.title}')
         

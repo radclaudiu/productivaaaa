@@ -98,12 +98,92 @@
                             </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            {{ form.location_id.label(class="form-label") }}
-                            {{ form.location_id(class="form-select" + (" is-invalid" if form.location_id.errors else "")) }}
-                            {% for error in form.location_id.errors %}
-                            <div class="invalid-feedback">{{ error }}</div>
-                            {% endfor %}
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.location_id.label(class="form-label") }}
+                                    {{ form.location_id(class="form-select" + (" is-invalid" if form.location_id.errors else "")) }}
+                                    {% for error in form.location_id.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.group_id.label(class="form-label") }}
+                                    {{ form.group_id(class="form-select" + (" is-invalid" if form.group_id.errors else "")) }}
+                                    {% for error in form.group_id.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                    <div class="form-text">
+                                        Opcional. Agrupa tareas para mejor organización.
+                                        <a href="{{ url_for('tasks.list_task_groups', id=location_id) }}">Gestionar grupos</a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Campos para tareas de frecuencia personalizada -->
+                        <div id="customFrequencyFields" class="mb-3" style="display: none;">
+                            <div class="card border-info mb-3">
+                                <div class="card-header bg-info bg-opacity-25">
+                                    <h5 class="card-title mb-0">Días de la semana</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p class="card-text">Selecciona los días en los que esta tarea debe aparecer:</p>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                {{ form.monday(class="form-check-input") }}
+                                                {{ form.monday.label(class="form-check-label") }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                {{ form.tuesday(class="form-check-input") }}
+                                                {{ form.tuesday.label(class="form-check-label") }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                {{ form.wednesday(class="form-check-input") }}
+                                                {{ form.wednesday.label(class="form-check-label") }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row mb-2">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                {{ form.thursday(class="form-check-input") }}
+                                                {{ form.thursday.label(class="form-check-label") }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                {{ form.friday(class="form-check-input") }}
+                                                {{ form.friday.label(class="form-check-label") }}
+                                            </div>
+                                        </div>
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                {{ form.saturday(class="form-check-input") }}
+                                                {{ form.saturday.label(class="form-check-label") }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="row">
+                                        <div class="col-md-4">
+                                            <div class="form-check">
+                                                {{ form.sunday(class="form-check-input") }}
+                                                {{ form.sunday.label(class="form-check-label") }}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                         
                         <div class="alert alert-info mb-3">
@@ -120,4 +200,28 @@
         </div>
     </div>
 </div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const frequencySelect = document.getElementById('taskFrequency');
+        const customFields = document.getElementById('customFrequencyFields');
+        
+        // Función para mostrar/ocultar campos personalizados
+        function toggleCustomFields() {
+            if (frequencySelect.value === 'personalizada') {
+                customFields.style.display = 'block';
+            } else {
+                customFields.style.display = 'none';
+            }
+        }
+        
+        // Verificar estado inicial
+        toggleCustomFields();
+        
+        // Escuchar cambios en la selección
+        frequencySelect.addEventListener('change', toggleCustomFields);
+    });
+</script>
 {% endblock %}
