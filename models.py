@@ -108,15 +108,11 @@ class Company(db.Model):
         }
 
 class ContractType(enum.Enum):
-    INDEFINIDO = "indefinido"
-    TEMPORAL = "temporal"
-    PRACTICAS = "practicas"
-    FORMACION = "formacion"
-    OBRA = "obra"
-    TIEMPO_PARCIAL = "tiempo_parcial"
-    RELEVO = "relevo"
-    AUTONOMO = "autonomo"
-    MERCANTIL = "mercantil"
+    INDEFINIDO = "INDEFINIDO"
+    TEMPORAL = "TEMPORAL"
+    PRACTICAS = "PRACTICAS"
+    FORMACION = "FORMACION"
+    OBRA = "OBRA"
 
 class EmployeeStatus(enum.Enum):
     ACTIVO = "activo"
