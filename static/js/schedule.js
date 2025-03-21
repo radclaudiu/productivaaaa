@@ -2,10 +2,10 @@
  * Script para mejorar la interacción con el formulario de horarios semanales
  */
 document.addEventListener('DOMContentLoaded', function() {
-    // Manejar la visibilidad y habilitación de los campos de hora basados en el checkbox de día laborable
+    // Lista de todos los días de la semana
     const days = ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"];
     
-    // Función para actualizar el estado de los campos de hora
+    // Función para actualizar los campos de hora según si el día es laborable o no
     function updateTimeFields(dayName) {
         const checkbox = document.getElementById(`${dayName}_is_working_day`);
         const startTimeField = document.getElementById(`${dayName}_start_time`);
@@ -16,28 +16,42 @@ document.addEventListener('DOMContentLoaded', function() {
             startTimeField.disabled = !checkbox.checked;
             endTimeField.disabled = !checkbox.checked;
             
-            // Aplicar estilo para mostrar visualmente que los campos están deshabilitados
+            // Aplicar estilos visuales para mejorar la experiencia de usuario
             const timeFields = document.querySelectorAll(`.${dayName}-time-field`);
             timeFields.forEach(field => {
                 if (checkbox.checked) {
-                    field.classList.remove('text-muted');
+                    // Día laborable: normal
+                    field.classList.remove('opacity-50');
                     field.classList.remove('bg-light');
                 } else {
-                    field.classList.add('text-muted');
+                    // Día no laborable: deshabilitado visualmente
+                    field.classList.add('opacity-50');
                     field.classList.add('bg-light');
                 }
             });
+            
+            // Resaltar visualmente la fila del día
+            const dayRow = checkbox.closest('.day-row');
+            if (dayRow) {
+                if (checkbox.checked) {
+                    dayRow.classList.add('border-start', 'border-3', 'border-primary');
+                    dayRow.classList.remove('bg-light');
+                } else {
+                    dayRow.classList.remove('border-start', 'border-3', 'border-primary');
+                    dayRow.classList.add('bg-light');
+                }
+            }
         }
     }
     
-    // Configurar listeners para todos los días
+    // Inicializar y configurar eventos para todos los días
     days.forEach(day => {
         const checkbox = document.getElementById(`${day}_is_working_day`);
         if (checkbox) {
-            // Inicializar estado
+            // Aplicar estado inicial
             updateTimeFields(day);
             
-            // Añadir listener para cambios
+            // Añadir listener para cambios en tiempo real
             checkbox.addEventListener('change', function() {
                 updateTimeFields(day);
             });
