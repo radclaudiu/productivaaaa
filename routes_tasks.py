@@ -950,12 +950,12 @@ def local_portal(location_id):
     session['location_id'] = location_id
     
     # Obtener usuarios activos del local
-    users = LocalUser.query.filter_by(location_id=location_id, is_active=True).all()
+    local_users = LocalUser.query.filter_by(location_id=location_id, is_active=True).all()
     
     return render_template('tasks/local_portal.html',
                           title=f'Portal de {location.name}',
                           location=location,
-                          users=users)
+                          local_users=local_users)
 
 @tasks_bp.route('/local-user-login/<int:user_id>', methods=['GET', 'POST'])
 def local_user_login(user_id):
