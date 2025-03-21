@@ -1,9 +1,15 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import StringField, TextAreaField, SelectField, DateField, TimeField, IntegerField, PasswordField, BooleanField, SubmitField
+from wtforms import StringField, TextAreaField, SelectField, DateField, TimeField, IntegerField, PasswordField, BooleanField, SubmitField, SelectMultipleField, widgets
 from wtforms.validators import DataRequired, Length, Optional, NumberRange, ValidationError, EqualTo
 from datetime import date, datetime
 from models_tasks import TaskPriority, TaskFrequency, WeekDay
+
+# Widget personalizado para checkboxes con mejor visualización
+class MultiCheckboxField(SelectMultipleField):
+    """Campo personalizado para mostrar múltiples opciones como checkboxes."""
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
 
 class LocationForm(FlaskForm):
     name = StringField('Nombre del local', validators=[DataRequired(), Length(max=128)])

@@ -32,6 +32,36 @@ class WeekDay(enum.Enum):
     VIERNES = "viernes"
     SABADO = "sabado"
     DOMINGO = "domingo"
+
+class TaskGroup(db.Model):
+    __tablename__ = 'task_groups'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    description = db.Column(db.Text)
+    color = db.Column(db.String(7), default="#17a2b8")  # Color para identificar visualmente el grupo
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
+    location = db.relationship('Location', backref=db.backref('task_groups', lazy=True))
+    
+    # Tareas en este grupo
+    tasks = db.relationship('Task', back_populates='group')
+    
+    def __repr__(self):
+        return f'<TaskGroup {self.name}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'color': self.color,
+            'location_id': self.location_id,
+            'location_name': self.location.name if self.location else None
+        }
     
 class Location(db.Model):
     __tablename__ = 'locations'
@@ -136,8 +166,13 @@ class Task(db.Model):
     created_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
     created_by = db.relationship('User')
     
+    # Grupo de tareas
+    group_id = db.Column(db.Integer, db.ForeignKey('task_groups.id'), nullable=True)
+    group = db.relationship('TaskGroup', back_populates='tasks')
+    
     # Programación
     schedule_details = db.relationship('TaskSchedule', back_populates='task', cascade='all, delete-orphan')
+    weekdays = db.relationship('TaskWeekday', back_populates='task', cascade='all, delete-orphan')
     
     # Historial de completado
     completions = db.relationship('TaskCompletion', back_populates='task', cascade='all, delete-orphan')
@@ -172,8 +207,16 @@ class Task(db.Model):
         if self.start_date and today < self.start_date:
             return False
         
+        # Para tareas personalizadas con múltiples días, verificamos los días configurados
+        if self.frequency == TaskFrequency.PERSONALIZADA and self.weekdays:
+            for weekday_entry in self.weekdays:
+                if TaskWeekday.day_matches_today(weekday_entry.day_of_week):
+                    return True
+            # Si llegamos aquí, es que hoy no es uno de los días configurados
+            return False
+            
         # Si no hay programación específica (schedule_details está vacío),
-        # consideramos que la tarea está activa todos los días
+        # consideramos que la tarea está activa según su frecuencia
         if not self.schedule_details:
             # Para tareas diarias, siempre están activas
             if self.frequency == TaskFrequency.DIARIA:
@@ -259,6 +302,34 @@ class TaskSchedule(db.Model):
         # Si llegamos aquí y no hemos retornado, no está activa
         return False
         
+class TaskWeekday(db.Model):
+    """Modelo para almacenar los días de la semana en los que una tarea debe ejecutarse"""
+    __tablename__ = 'task_weekdays'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    day_of_week = db.Column(Enum(WeekDay), nullable=False)
+    
+    # Relaciones
+    task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
+    task = db.relationship('Task', back_populates='weekdays')
+    
+    def __repr__(self):
+        return f'<TaskWeekday {self.task.title} - {self.day_of_week.value}>'
+        
+    @classmethod
+    def day_matches_today(cls, weekday):
+        """Comprueba si el día de la semana corresponde al día actual"""
+        day_map = {
+            WeekDay.LUNES: 0,
+            WeekDay.MARTES: 1,
+            WeekDay.MIERCOLES: 2,
+            WeekDay.JUEVES: 3,
+            WeekDay.VIERNES: 4,
+            WeekDay.SABADO: 5,
+            WeekDay.DOMINGO: 6
+        }
+        return date.today().weekday() == day_map[weekday]
+
 class TaskCompletion(db.Model):
     __tablename__ = 'task_completions'
     
