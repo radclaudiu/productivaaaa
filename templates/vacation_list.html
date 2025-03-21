@@ -58,9 +58,7 @@
                                                             {% elif vacation.status.value == 'disfrutada' %} border-info
                                                             {% endif %}">
                                                             <div class="card-header bg-transparent
-                                                                {% if vacation.status.value == 'aprobada' %} text-success
-                                                                {% elif vacation.status.value == 'pendiente' %} text-warning
-                                                                {% elif vacation.status.value == 'denegada' %} text-danger
+                                                                {% if vacation.status.value == 'registrada' %} text-warning
                                                                 {% elif vacation.status.value == 'disfrutada' %} text-info
                                                                 {% endif %}">
                                                                 <div class="d-flex justify-content-between align-items-center">
@@ -69,9 +67,7 @@
                                                                         {{ vacation.start_date.strftime('%d/%m/%Y') }} - {{ vacation.end_date.strftime('%d/%m/%Y') }}
                                                                     </h6>
                                                                     <span class="badge 
-                                                                        {% if vacation.status.value == 'aprobada' %}bg-success
-                                                                        {% elif vacation.status.value == 'pendiente' %}bg-warning
-                                                                        {% elif vacation.status.value == 'denegada' %}bg-danger
+                                                                        {% if vacation.status.value == 'registrada' %}bg-warning
                                                                         {% elif vacation.status.value == 'disfrutada' %}bg-info
                                                                         {% endif %}">
                                                                         {{ vacation.status.name.capitalize() }}
@@ -87,16 +83,7 @@
                                                                         {{ vacation.total_days() }} días
                                                                     </div>
                                                                 </div>
-                                                                {% if vacation.approved_by %}
-                                                                <div class="row mb-2">
-                                                                    <div class="col-6">
-                                                                        <strong><i class="bi bi-person-check"></i> Aprobado por:</strong>
-                                                                    </div>
-                                                                    <div class="col-6 text-end">
-                                                                        {{ vacation.approved_by.first_name }} {{ vacation.approved_by.last_name }}
-                                                                    </div>
-                                                                </div>
-                                                                {% endif %}
+                                                                <!-- Sección de aprobación eliminada -->
                                                                 {% if vacation.notes %}
                                                                 <div class="row mb-2">
                                                                     <div class="col-12">
@@ -108,9 +95,6 @@
                                                             </div>
                                                             {% if current_user.is_admin() or current_user.is_gerente() %}
                                                             <div class="card-footer bg-transparent d-flex justify-content-end">
-                                                                <a href="{{ url_for('vacation.approve_vacation', id=vacation.id) }}" class="btn btn-sm btn-outline-success me-2">
-                                                                    <i class="bi bi-check-circle"></i> Gestionar
-                                                                </a>
                                                                 <form action="{{ url_for('vacation.delete_vacation', id=vacation.id) }}" method="POST" class="d-inline" 
                                                                     onsubmit="return confirm('¿Está seguro de eliminar estas vacaciones?');">
                                                                     <button type="submit" class="btn btn-sm btn-outline-danger">
