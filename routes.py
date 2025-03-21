@@ -8,9 +8,10 @@ from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 
 from app import db
-from models import User, Company, Employee, EmployeeDocument, EmployeeNote, UserRole, ContractType
+from models import User, Company, Employee, EmployeeDocument, EmployeeNote, UserRole, ContractType, EmployeeStatus
 from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeForm, 
-                  CompanyForm, EmployeeForm, EmployeeDocumentForm, EmployeeNoteForm, SearchForm)
+                  CompanyForm, EmployeeForm, EmployeeDocumentForm, EmployeeNoteForm, SearchForm,
+                  EmployeeStatusForm)
 from utils import (save_file, log_employee_change, log_activity, can_manage_company, 
                   can_manage_employee, can_view_employee, get_dashboard_stats)
 

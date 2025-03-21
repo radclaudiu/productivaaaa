@@ -5,7 +5,7 @@ from wtforms import BooleanField, DateField, HiddenField, EmailField, TelField, 
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional
 from datetime import date
 
-from models import User, ContractType, UserRole
+from models import User, ContractType, UserRole, EmployeeStatus
 
 class LoginForm(FlaskForm):
     username = StringField('Usuario', validators=[DataRequired(), Length(min=3, max=64)])
@@ -95,6 +95,8 @@ class EmployeeForm(FlaskForm):
     end_date = DateField('Fecha de Fin', validators=[Optional()])
     company_id = SelectField('Empresa', coerce=int, validators=[DataRequired()])
     is_active = BooleanField('Empleado Activo')
+    status = SelectField('Estado', choices=[(status.value, status.name.capitalize()) for status in EmployeeStatus], 
+                        default=EmployeeStatus.ACTIVO.value)
     submit = SubmitField('Guardar')
     
     def validate_end_date(form, field):
@@ -112,6 +114,17 @@ class EmployeeDocumentForm(FlaskForm):
 class EmployeeNoteForm(FlaskForm):
     content = TextAreaField('Nota', validators=[DataRequired()])
     submit = SubmitField('Guardar')
+
+class EmployeeStatusForm(FlaskForm):
+    status = SelectField('Estado', choices=[(status.value, status.name.capitalize()) for status in EmployeeStatus])
+    status_start_date = DateField('Fecha de Inicio', validators=[DataRequired()], default=date.today)
+    status_end_date = DateField('Fecha de Fin Prevista', validators=[Optional()])
+    status_notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('Actualizar Estado')
+    
+    def validate_status_end_date(form, field):
+        if field.data and form.status_start_date.data and field.data < form.status_start_date.data:
+            raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio.')
 
 class SearchForm(FlaskForm):
     query = StringField('Buscar', validators=[DataRequired()])
