@@ -1,0 +1,20 @@
+Quiero una pestaña de gestión de tareas bajo los botones de gestión de usuarios empresas empleados… con el nombre el botón de Tareas
+
+ Esta extension debe ser totalmente aislada de toda la aplicación anterior. Digámoslos que vamos a crear una app nueva dentro de ese botón.
+
+Debe de haber un dashboard donde habrá información quien cuantas tareas ha realizado que tareas se han quedado sin realizar cada semana informes semanales.
+
+En esa pestaña debo poder agregar locales por nombre y cada local asignarlo a una empresa disponible para ese usuario. Como un panel de control
+
+Dentro de cada local se deben poder asignar tareas y programar tareas con un programador de tareas.Cada usuario que tenga acceso a su empresa podrá ver sus locales en esta pestaña por ej si Jesus tiene acceso a la empresa x solo puede ver los locales de x
+
+Cada tarea debe tener su horario semanal por ejemplo debe poder asignarse dia de la semana cuando aparece la tarea y hora y esa tarea permanecerá durante todo el dia y la siguente semana volverá a aparecer el mismo dia a la misma hora. 
+
+Por otra parte cada local tendrá su usuario y contraseña y al acceder con ese usuario y contraseña, una vez loqueado el usuario debe de aparecer unos globos redondos con un nombre debajo en el globo debe ir la foto del empleado,
+ un botón de agregar nuevo empleado, al agregar nuevo empleado solamente le pedirá su nombre código pin y una foto.
+
+Al darle click a la foto del empleado se logeara dentro del local con su nombre pero antes le debe pedir un pin de 4 dígitos que asigno al crear el usuario.
+
+Un vez dentro de la aplicación deben aparecer las tareas asignadas previamente en el menú anterior de administrador por lista desplegable que tambiénn se asignara en el panel de control   y poder hacer check (una bola gris y al hacer check pasa a ser verde )en la tarea como que se ha realizado. Digámoslos que será una checklist digital y cada empleado al hacer el check en la tarea quedara registrado como que ha echo check con su nombre Identificamos quién realiza cada tarea o agregar notas. 
+
+Aunque tras entrar deben aparecer las tareas debe de haber unos botones en la parte superior para acceder a otros módulos que implementaremos mas tarde

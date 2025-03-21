@@ -47,6 +47,9 @@ def create_app(config_class='config.Config'):
         from models import (User, Company, Employee, ActivityLog, EmployeeDocument,
                            EmployeeNote, EmployeeHistory, EmployeeSchedule, 
                            EmployeeCheckIn, EmployeeVacation)
+        # Import task models
+        from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletion, 
+                                TaskPriority, TaskFrequency, TaskStatus, WeekDay)
         
         # Create admin user if it doesn't exist
         from utils import create_admin_user
@@ -55,6 +58,8 @@ def create_app(config_class='config.Config'):
     # Register blueprints
     from routes import (auth_bp, main_bp, company_bp, employee_bp, user_bp, 
                        schedule_bp, checkin_bp, vacation_bp)
+    from routes_tasks import tasks_bp
+    
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(company_bp)
@@ -63,6 +68,7 @@ def create_app(config_class='config.Config'):
     app.register_blueprint(schedule_bp)
     app.register_blueprint(checkin_bp)
     app.register_blueprint(vacation_bp)
+    app.register_blueprint(tasks_bp, url_prefix='/tasks')
     
     # Register error handlers
     @app.errorhandler(403)
