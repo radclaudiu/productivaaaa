@@ -65,9 +65,6 @@ def create_app(config_class='config.Config'):
     app.register_blueprint(checkin_bp)
     app.register_blueprint(vacation_bp)
     
-    # Import render_template early to avoid circular imports
-    from flask import render_template
-    
     # Register error handlers
     @app.errorhandler(403)
     def forbidden_page(error):
@@ -80,9 +77,6 @@ def create_app(config_class='config.Config'):
     @app.errorhandler(500)
     def server_error_page(error):
         return render_template('errors/500.html'), 500
-    
-    # Import current_user early to avoid circular imports
-    from flask_login import current_user
     
     # Log activity middleware
     @app.before_request
@@ -106,6 +100,10 @@ def create_app(config_class='config.Config'):
     Config.init_app(app)
     
     return app
+
+# Import these here to avoid circular imports
+from flask import render_template
+from flask_login import current_user
 
 # Create the application instance
 app = create_app()

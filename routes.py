@@ -790,17 +790,47 @@ def create_schedule(employee_id):
         flash('No tienes permiso para gestionar los horarios de este empleado.', 'danger')
         return redirect(url_for('employee.list_employees'))
     
+    form = EmployeeScheduleForm()
+    
+    if form.validate_on_submit():
+        schedule = EmployeeSchedule(
+            day_of_week=WeekDay(form.day_of_week.data),
+            start_time=form.start_time.data,
+            end_time=form.end_time.data,
+            is_working_day=form.is_working_day.data,
+            employee_id=employee_id
+        )
+        db.session.add(schedule)
+        db.session.commit()
+        
+        log_activity(f'Horario creado para {employee.first_name} {employee.last_name}')
+        flash('Horario creado correctamente.', 'success')
+        return redirect(url_for('schedule.list_schedules', employee_id=employee_id))
+    
+    return render_template('schedule_form.html', 
+                          title=f'Nuevo Horario para {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee)
+
+@schedule_bp.route('/employee/<int:employee_id>/weekly', methods=['GET', 'POST'])
+@manager_required
+def weekly_schedule(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para gestionar los horarios de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
     form = EmployeeWeeklyScheduleForm()
     
     # Si es una petición GET, cargar los horarios existentes
     if request.method == 'GET':
         # Obtener los horarios existentes para cada día
         schedules = EmployeeSchedule.query.filter_by(employee_id=employee_id).all()
-        day_schedules = {}
-        for schedule in schedules:
-            day_schedules[schedule.day_of_week.value] = schedule
+        day_schedules = {schedule.day_of_week.value: schedule for schedule in schedules}
         
-        # Establecer valores por defecto para cada día
+        # Cargar los datos en el formulario
         for day in ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]:
             if day in day_schedules:
                 schedule = day_schedules[day]
@@ -843,16 +873,14 @@ def create_schedule(employee_id):
                     schedule.end_time = end_time
         
         db.session.commit()
-        log_activity(f'Horarios creados para {employee.first_name} {employee.last_name}')
-        flash('Horarios creados correctamente.', 'success')
+        log_activity(f'Horarios semanales actualizados para {employee.first_name} {employee.last_name}')
+        flash('Horarios semanales actualizados correctamente.', 'success')
         return redirect(url_for('schedule.list_schedules', employee_id=employee_id))
     
     return render_template('weekly_schedule_form.html', 
-                          title=f'Horarios para {employee.first_name} {employee.last_name}', 
+                          title=f'Horario Semanal para {employee.first_name} {employee.last_name}', 
                           form=form,
                           employee=employee)
-
-
 
 @schedule_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
 @manager_required

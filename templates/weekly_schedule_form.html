@@ -23,9 +23,8 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="lunes_is_working_day" name="lunes_is_working_day" value="y" 
-                                                {% if form.lunes_is_working_day.data %}checked{% endif %}>
-                                            <label class="form-check-label" for="lunes_is_working_day">Laborable</label>
+                                            {{ form.lunes_is_working_day(class="form-check-input") }}
+                                            {{ form.lunes_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.lunes_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -33,9 +32,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="lunes_start_time">Entrada</label>
-                                            <input type="time" class="form-control" id="lunes_start_time" name="lunes_start_time" 
-                                                value="{{ form.lunes_start_time.data.strftime('%H:%M') if form.lunes_start_time.data else '' }}">
+                                            {{ form.lunes_start_time.label(class="form-label") }}
+                                            {{ form.lunes_start_time(class="form-control", type="time") }}
                                             {% for error in form.lunes_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -43,9 +41,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="lunes_end_time">Salida</label>
-                                            <input type="time" class="form-control" id="lunes_end_time" name="lunes_end_time"
-                                                value="{{ form.lunes_end_time.data.strftime('%H:%M') if form.lunes_end_time.data else '' }}">
+                                            {{ form.lunes_end_time.label(class="form-label") }}
+                                            {{ form.lunes_end_time(class="form-control", type="time") }}
                                             {% for error in form.lunes_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -64,9 +61,8 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="martes_is_working_day" name="martes_is_working_day" value="y" 
-                                                {% if form.martes_is_working_day.data %}checked{% endif %}>
-                                            <label class="form-check-label" for="martes_is_working_day">Laborable</label>
+                                            {{ form.martes_is_working_day(class="form-check-input") }}
+                                            {{ form.martes_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.martes_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -74,9 +70,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="martes_start_time">Entrada</label>
-                                            <input type="time" class="form-control" id="martes_start_time" name="martes_start_time"
-                                                value="{{ form.martes_start_time.data.strftime('%H:%M') if form.martes_start_time.data else '' }}">
+                                            {{ form.martes_start_time.label(class="form-label") }}
+                                            {{ form.martes_start_time(class="form-control", type="time") }}
                                             {% for error in form.martes_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -84,9 +79,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="martes_end_time">Salida</label>
-                                            <input type="time" class="form-control" id="martes_end_time" name="martes_end_time"
-                                                value="{{ form.martes_end_time.data.strftime('%H:%M') if form.martes_end_time.data else '' }}">
+                                            {{ form.martes_end_time.label(class="form-label") }}
+                                            {{ form.martes_end_time(class="form-control", type="time") }}
                                             {% for error in form.martes_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -105,9 +99,8 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="miercoles_is_working_day" name="miercoles_is_working_day" value="y" 
-                                                {% if form.miercoles_is_working_day.data %}checked{% endif %}>
-                                            <label class="form-check-label" for="miercoles_is_working_day">Laborable</label>
+                                            {{ form.miercoles_is_working_day(class="form-check-input") }}
+                                            {{ form.miercoles_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.miercoles_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -115,9 +108,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="miercoles_start_time">Entrada</label>
-                                            <input type="time" class="form-control" id="miercoles_start_time" name="miercoles_start_time"
-                                                value="{{ form.miercoles_start_time.data.strftime('%H:%M') if form.miercoles_start_time.data else '' }}">
+                                            {{ form.miercoles_start_time.label(class="form-label") }}
+                                            {{ form.miercoles_start_time(class="form-control", type="time") }}
                                             {% for error in form.miercoles_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -125,9 +117,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="miercoles_end_time">Salida</label>
-                                            <input type="time" class="form-control" id="miercoles_end_time" name="miercoles_end_time"
-                                                value="{{ form.miercoles_end_time.data.strftime('%H:%M') if form.miercoles_end_time.data else '' }}">
+                                            {{ form.miercoles_end_time.label(class="form-label") }}
+                                            {{ form.miercoles_end_time(class="form-control", type="time") }}
                                             {% for error in form.miercoles_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -146,9 +137,8 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="jueves_is_working_day" name="jueves_is_working_day" value="y" 
-                                                {% if form.jueves_is_working_day.data %}checked{% endif %}>
-                                            <label class="form-check-label" for="jueves_is_working_day">Laborable</label>
+                                            {{ form.jueves_is_working_day(class="form-check-input") }}
+                                            {{ form.jueves_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.jueves_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -156,9 +146,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="jueves_start_time">Entrada</label>
-                                            <input type="time" class="form-control" id="jueves_start_time" name="jueves_start_time"
-                                                value="{{ form.jueves_start_time.data.strftime('%H:%M') if form.jueves_start_time.data else '' }}">
+                                            {{ form.jueves_start_time.label(class="form-label") }}
+                                            {{ form.jueves_start_time(class="form-control", type="time") }}
                                             {% for error in form.jueves_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -166,9 +155,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="jueves_end_time">Salida</label>
-                                            <input type="time" class="form-control" id="jueves_end_time" name="jueves_end_time"
-                                                value="{{ form.jueves_end_time.data.strftime('%H:%M') if form.jueves_end_time.data else '' }}">
+                                            {{ form.jueves_end_time.label(class="form-label") }}
+                                            {{ form.jueves_end_time(class="form-control", type="time") }}
                                             {% for error in form.jueves_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -187,9 +175,8 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="viernes_is_working_day" name="viernes_is_working_day" value="y" 
-                                                {% if form.viernes_is_working_day.data %}checked{% endif %}>
-                                            <label class="form-check-label" for="viernes_is_working_day">Laborable</label>
+                                            {{ form.viernes_is_working_day(class="form-check-input") }}
+                                            {{ form.viernes_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.viernes_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -197,9 +184,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="viernes_start_time">Entrada</label>
-                                            <input type="time" class="form-control" id="viernes_start_time" name="viernes_start_time"
-                                                value="{{ form.viernes_start_time.data.strftime('%H:%M') if form.viernes_start_time.data else '' }}">
+                                            {{ form.viernes_start_time.label(class="form-label") }}
+                                            {{ form.viernes_start_time(class="form-control", type="time") }}
                                             {% for error in form.viernes_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -207,9 +193,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="viernes_end_time">Salida</label>
-                                            <input type="time" class="form-control" id="viernes_end_time" name="viernes_end_time"
-                                                value="{{ form.viernes_end_time.data.strftime('%H:%M') if form.viernes_end_time.data else '' }}">
+                                            {{ form.viernes_end_time.label(class="form-label") }}
+                                            {{ form.viernes_end_time(class="form-control", type="time") }}
                                             {% for error in form.viernes_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -228,9 +213,8 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="sabado_is_working_day" name="sabado_is_working_day" value="y" 
-                                                {% if form.sabado_is_working_day.data %}checked{% endif %}>
-                                            <label class="form-check-label" for="sabado_is_working_day">Laborable</label>
+                                            {{ form.sabado_is_working_day(class="form-check-input") }}
+                                            {{ form.sabado_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.sabado_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -238,9 +222,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="sabado_start_time">Entrada</label>
-                                            <input type="time" class="form-control" id="sabado_start_time" name="sabado_start_time"
-                                                value="{{ form.sabado_start_time.data.strftime('%H:%M') if form.sabado_start_time.data else '' }}">
+                                            {{ form.sabado_start_time.label(class="form-label") }}
+                                            {{ form.sabado_start_time(class="form-control", type="time") }}
                                             {% for error in form.sabado_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -248,9 +231,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="sabado_end_time">Salida</label>
-                                            <input type="time" class="form-control" id="sabado_end_time" name="sabado_end_time"
-                                                value="{{ form.sabado_end_time.data.strftime('%H:%M') if form.sabado_end_time.data else '' }}">
+                                            {{ form.sabado_end_time.label(class="form-label") }}
+                                            {{ form.sabado_end_time(class="form-control", type="time") }}
                                             {% for error in form.sabado_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -269,9 +251,8 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            <input type="checkbox" class="form-check-input" id="domingo_is_working_day" name="domingo_is_working_day" value="y" 
-                                                {% if form.domingo_is_working_day.data %}checked{% endif %}>
-                                            <label class="form-check-label" for="domingo_is_working_day">Laborable</label>
+                                            {{ form.domingo_is_working_day(class="form-check-input") }}
+                                            {{ form.domingo_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.domingo_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -279,9 +260,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="domingo_start_time">Entrada</label>
-                                            <input type="time" class="form-control" id="domingo_start_time" name="domingo_start_time"
-                                                value="{{ form.domingo_start_time.data.strftime('%H:%M') if form.domingo_start_time.data else '' }}">
+                                            {{ form.domingo_start_time.label(class="form-label") }}
+                                            {{ form.domingo_start_time(class="form-control", type="time") }}
                                             {% for error in form.domingo_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -289,9 +269,8 @@
                                     </div>
                                     <div class="col-md-4">
                                         <div class="form-group">
-                                            <label class="form-label" for="domingo_end_time">Salida</label>
-                                            <input type="time" class="form-control" id="domingo_end_time" name="domingo_end_time"
-                                                value="{{ form.domingo_end_time.data.strftime('%H:%M') if form.domingo_end_time.data else '' }}">
+                                            {{ form.domingo_end_time.label(class="form-label") }}
+                                            {{ form.domingo_end_time(class="form-control", type="time") }}
                                             {% for error in form.domingo_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -303,7 +282,7 @@
                         
                         <div class="row mt-4">
                             <div class="col-12">
-                                <button type="submit" class="btn btn-primary">Guardar Horarios</button>
+                                {{ form.submit(class="btn btn-primary") }}
                                 <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-secondary">Cancelar</a>
                             </div>
                         </div>
