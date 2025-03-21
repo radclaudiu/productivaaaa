@@ -47,9 +47,9 @@
                             </div>
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    {{ form.username.label(class="form-label") }}
-                                    {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
-                                    {% for error in form.username.errors %}
+                                    {{ form.last_name.label(class="form-label") }}
+                                    {{ form.last_name(class="form-control" + (" is-invalid" if form.last_name.errors else "")) }}
+                                    {% for error in form.last_name.errors %}
                                     <div class="invalid-feedback">{{ error }}</div>
                                     {% endfor %}
                                 </div>
