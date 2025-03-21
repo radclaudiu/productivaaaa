@@ -1,5 +1,10 @@
 {% extends "layout.html" %}
 
+{% block scripts %}
+{{ super() }}
+<script src="{{ url_for('static', filename='js/schedule.js') }}"></script>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <h1 class="h3 mb-4">{{ title }}</h1>
@@ -23,7 +28,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            {{ form.lunes_is_working_day(class="form-check-input") }}
+                                            {{ form.lunes_is_working_day(class="form-check-input", id="lunes_is_working_day") }}
                                             {{ form.lunes_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.lunes_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
@@ -31,18 +36,18 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group lunes-time-field">
                                             {{ form.lunes_start_time.label(class="form-label") }}
-                                            {{ form.lunes_start_time(class="form-control", type="time") }}
+                                            {{ form.lunes_start_time(class="form-control", type="time", id="lunes_start_time") }}
                                             {% for error in form.lunes_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group lunes-time-field">
                                             {{ form.lunes_end_time.label(class="form-label") }}
-                                            {{ form.lunes_end_time(class="form-control", type="time") }}
+                                            {{ form.lunes_end_time(class="form-control", type="time", id="lunes_end_time") }}
                                             {% for error in form.lunes_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -61,7 +66,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            {{ form.martes_is_working_day(class="form-check-input") }}
+                                            {{ form.martes_is_working_day(class="form-check-input", id="martes_is_working_day") }}
                                             {{ form.martes_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.martes_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
@@ -69,18 +74,18 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group martes-time-field">
                                             {{ form.martes_start_time.label(class="form-label") }}
-                                            {{ form.martes_start_time(class="form-control", type="time") }}
+                                            {{ form.martes_start_time(class="form-control", type="time", id="martes_start_time") }}
                                             {% for error in form.martes_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group martes-time-field">
                                             {{ form.martes_end_time.label(class="form-label") }}
-                                            {{ form.martes_end_time(class="form-control", type="time") }}
+                                            {{ form.martes_end_time(class="form-control", type="time", id="martes_end_time") }}
                                             {% for error in form.martes_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
