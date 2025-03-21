@@ -3,7 +3,7 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField
 from wtforms import BooleanField, DateField, HiddenField, EmailField, TelField, URLField, TimeField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional
-from datetime import date
+from datetime import date, datetime
 
 from models import User, ContractType, UserRole, EmployeeStatus, WeekDay, VacationStatus
 
@@ -208,14 +208,15 @@ class EmployeeWeeklyScheduleForm(FlaskForm):
         return True
 
 class EmployeeCheckInForm(FlaskForm):
-    check_in_time = DateField('Fecha de Entrada', validators=[DataRequired()], default=date.today)
-    check_out_time = DateField('Fecha de Salida', validators=[Optional()])
+    check_in_date = DateField('Fecha', validators=[DataRequired()], default=date.today)
+    check_in_time = TimeField('Hora de Entrada', validators=[DataRequired()], default=lambda: datetime.now().time().replace(second=0, microsecond=0))
+    check_out_time = TimeField('Hora de Salida', validators=[Optional()])
     notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
     submit = SubmitField('Registrar Fichaje')
     
     def validate_check_out_time(form, field):
         if field.data and form.check_in_time.data and field.data < form.check_in_time.data:
-            raise ValidationError('La fecha de salida debe ser posterior a la fecha de entrada.')
+            raise ValidationError('La hora de salida debe ser posterior a la hora de entrada.')
 
 class EmployeeVacationForm(FlaskForm):
     start_date = DateField('Fecha de Inicio', validators=[DataRequired()], default=date.today)

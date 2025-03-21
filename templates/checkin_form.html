@@ -15,20 +15,30 @@
                         {{ form.hidden_tag() }}
                         
                         <div class="row mb-3">
-                            <div class="col-md-6">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    {{ form.check_in_date.label(class="form-label") }}
+                                    {{ form.check_in_date(class="form-control", type="date") }}
+                                    {% for error in form.check_in_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">Seleccione la fecha del fichaje.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     {{ form.check_in_time.label(class="form-label") }}
-                                    {{ form.check_in_time(class="form-control", type="date") }}
+                                    {{ form.check_in_time(class="form-control", type="time") }}
                                     {% for error in form.check_in_time.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                     {% endfor %}
-                                    <small class="form-text text-muted">Seleccione la fecha de entrada.</small>
+                                    <small class="form-text text-muted">Hora de entrada.</small>
                                 </div>
                             </div>
-                            <div class="col-md-6">
+                            <div class="col-md-4">
                                 <div class="form-group">
                                     {{ form.check_out_time.label(class="form-label") }}
-                                    {{ form.check_out_time(class="form-control", type="date") }}
+                                    {{ form.check_out_time(class="form-control", type="time") }}
                                     {% for error in form.check_out_time.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                     {% endfor %}
