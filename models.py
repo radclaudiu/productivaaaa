@@ -131,8 +131,8 @@ class WeekDay(enum.Enum):
     DOMINGO = "domingo"
 
 class VacationStatus(enum.Enum):
-    REGISTRADA = "registrada"
-    DISFRUTADA = "disfrutada"
+    REGISTRADA = "REGISTRADA"
+    DISFRUTADA = "DISFRUTADA"
 
 class Employee(db.Model):
     __tablename__ = 'employees'
