@@ -141,6 +141,13 @@ class Employee(db.Model):
     first_name = db.Column(db.String(64), nullable=False)
     last_name = db.Column(db.String(64), nullable=False)
     dni = db.Column(db.String(16), unique=True, nullable=False)
+    # Nuevos campos adicionales
+    email = db.Column(db.String(120))
+    social_security_number = db.Column(db.String(32))
+    phone = db.Column(db.String(32))
+    address = db.Column(db.String(256))
+    contract_hours = db.Column(db.String(64))  # Horario en contrato
+    # Campos existentes
     position = db.Column(db.String(64))
     contract_type = db.Column(Enum(ContractType), default=ContractType.INDEFINIDO)
     bank_account = db.Column(db.String(64))
@@ -176,6 +183,13 @@ class Employee(db.Model):
             'last_name': self.last_name,
             'full_name': f"{self.first_name} {self.last_name}",
             'dni': self.dni,
+            # Nuevos campos en el diccionario
+            'email': self.email,
+            'social_security_number': self.social_security_number,
+            'phone': self.phone,
+            'address': self.address,
+            'contract_hours': self.contract_hours,
+            # Campos anteriores
             'position': self.position,
             'contract_type': self.contract_type.value if self.contract_type else None,
             'bank_account': self.bank_account,
