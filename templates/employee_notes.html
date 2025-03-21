@@ -1,0 +1,91 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-journal-text"></i> Notas de {{ employee.first_name }} {{ employee.last_name }}
+        </h1>
+        <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Perfil
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- New Note Form -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Añadir Nueva Nota</h6>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-3">
+                            {{ form.content.label(class="form-label required") }}
+                            {{ form.content(class="form-control", rows=6, placeholder="Escribe aquí tu nota...") }}
+                            {% for error in form.content.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notes List -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Historial de Notas</h6>
+                </div>
+                <div class="card-body">
+                    {% if notes %}
+                        <div style="max-height: 600px; overflow-y: auto;">
+                            {% for note in notes %}
+                                <div class="note-card">
+                                    <div class="card mb-3">
+                                        <div class="card-header d-flex justify-content-between align-items-center">
+                                            <span>
+                                                <i class="bi bi-person-circle"></i> {{ note.created_by.username if note.created_by else 'Sistema' }}
+                                            </span>
+                                            <span class="note-timestamp">
+                                                {{ note.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                            </span>
+                                        </div>
+                                        <div class="card-body">
+                                            <p class="card-text">{{ note.content }}</p>
+                                        </div>
+                                        <div class="card-footer bg-transparent">
+                                            {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) or (note.created_by_id == current_user.id) %}
+                                            <form action="{{ url_for('employee.delete_note', note_id=note.id) }}" method="post" class="d-inline">
+                                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                <button type="submit" class="btn btn-sm btn-danger float-end confirm-action"
+                                                        data-confirm-message="¿Estás seguro de querer eliminar esta nota? Esta acción no se puede deshacer.">
+                                                    <i class="bi bi-trash"></i> Eliminar
+                                                </button>
+                                            </form>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-journal-x fa-4x text-muted mb-3"></i>
+                            <h4 class="text-muted">No hay notas para mostrar</h4>
+                            <p class="text-muted">Añade la primera nota para este empleado</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

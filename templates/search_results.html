@@ -1,0 +1,149 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-search"></i> Resultados de Búsqueda
+        </h1>
+        <div>
+            <form class="d-flex" id="searchForm" action="{{ url_for('main.search') }}" method="get">
+                <div class="input-group">
+                    <input type="text" class="form-control" placeholder="Buscar..." name="query" value="{{ query }}">
+                    <button class="btn btn-primary" type="submit">
+                        <i class="bi bi-search"></i>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="alert alert-info">
+        <i class="bi bi-info-circle"></i> Resultados para: <strong>{{ query }}</strong>
+    </div>
+
+    <!-- Companies Results -->
+    {% if current_user.is_admin() or current_user.is_gerente() %}
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Empresas Encontradas</h6>
+        </div>
+        <div class="card-body">
+            {% if companies %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>CIF/NIF</th>
+                                <th>Ciudad</th>
+                                <th>Sector</th>
+                                <th>N° Empleados</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for company in companies %}
+                            <tr data-href="{{ url_for('company.view_company', id=company.id) }}">
+                                <td>{{ company.id }}</td>
+                                <td>{{ company.name }}</td>
+                                <td>{{ company.tax_id }}</td>
+                                <td>{{ company.city }}</td>
+                                <td>{{ company.sector }}</td>
+                                <td>{{ company.employees|length }}</td>
+                                <td>
+                                    <span class="badge {% if company.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ 'Activa' if company.is_active else 'Inactiva' }}
+                                    </span>
+                                </td>
+                                <td class="table-action-buttons">
+                                    <a href="{{ url_for('company.view_company', id=company.id) }}" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-building-slash fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No se encontraron empresas con los criterios de búsqueda.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+
+    <!-- Employees Results -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Empleados Encontrados</h6>
+        </div>
+        <div class="card-body">
+            {% if employees %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Puesto</th>
+                                <th>Empresa</th>
+                                <th>Tipo de Contrato</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in employees %}
+                            <tr data-href="{{ url_for('employee.view_employee', id=employee.id) }}">
+                                <td>{{ employee.id }}</td>
+                                <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                                <td>{{ employee.dni }}</td>
+                                <td>{{ employee.position }}</td>
+                                <td>{{ employee.company.name if employee.company else 'No asignada' }}</td>
+                                <td>{{ employee.contract_type.name if employee.contract_type else 'No definido' }}</td>
+                                <td>
+                                    <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td class="table-action-buttons">
+                                    <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-4">
+                    <i class="bi bi-people-fill fa-3x text-muted mb-3"></i>
+                    <p class="text-muted">No se encontraron empleados con los criterios de búsqueda.</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+
+    {% if not companies and not employees %}
+    <div class="text-center py-5">
+        <i class="bi bi-search fa-5x text-muted mb-4"></i>
+        <h3 class="text-muted">No se encontraron resultados</h3>
+        <p class="lead text-muted">Intenta con otros términos de búsqueda</p>
+    </div>
+    {% endif %}
+
+    <div class="d-grid gap-2 d-md-flex justify-content-md-center">
+        <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary">
+            <i class="bi bi-house"></i> Volver al Dashboard
+        </a>
+    </div>
+</div>
+{% endblock %}

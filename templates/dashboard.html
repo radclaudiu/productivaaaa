@@ -1,0 +1,213 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-speedometer"></i> Dashboard
+        </h1>
+        <div>
+            <span class="text-muted">Última actualización: {{ now().strftime('%d/%m/%Y %H:%M') }}</span>
+        </div>
+    </div>
+
+    <!-- Stat Cards -->
+    <div class="row">
+        {% if current_user.is_admin() %}
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-primary shadow h-100 py-2 dashboard-stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
+                                Empresas Registradas
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">{{ stats.total_companies }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-building fa-2x text-primary"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-success shadow h-100 py-2 dashboard-stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
+                                Total Empleados
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">{{ stats.total_employees }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-people fa-2x text-success"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-info shadow h-100 py-2 dashboard-stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
+                                Empleados Activos
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">{{ stats.active_employees }}</div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-person-check fa-2x text-info"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-xl-3 col-md-6 mb-4">
+            <div class="card border-left-warning shadow h-100 py-2 dashboard-stat-card">
+                <div class="card-body">
+                    <div class="row no-gutters align-items-center">
+                        <div class="col mr-2">
+                            <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
+                                Tasa de Actividad
+                            </div>
+                            <div class="h5 mb-0 font-weight-bold">
+                                {% if stats.total_employees > 0 %}
+                                    {{ (stats.active_employees / stats.total_employees * 100) | round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="col-auto">
+                            <i class="bi bi-graph-up fa-2x text-warning"></i>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Chart and Activity Row -->
+    <div class="row">
+        <!-- Contract Types Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Distribución por Tipo de Contrato</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="contractTypeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent Activity -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Actividad Reciente</h6>
+                </div>
+                <div class="card-body">
+                    <div class="activity-log" style="height: 300px; overflow-y: auto;">
+                        {% if stats.recent_activities %}
+                            {% for activity in stats.recent_activities %}
+                                <div class="activity-log-item p-2 mb-2 bg-dark">
+                                    <div class="d-flex justify-content-between">
+                                        <span>
+                                            <i class="bi bi-clock-history"></i> 
+                                            <strong>{{ activity.user.username if activity.user else 'Sistema' }}</strong>: 
+                                            {{ activity.action }}
+                                        </span>
+                                        <small class="text-muted">
+                                            {{ activity.timestamp.strftime('%d/%m/%Y %H:%M') }}
+                                        </small>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% else %}
+                            <div class="text-center py-5">
+                                <i class="bi bi-clock-history fa-3x text-muted mb-3"></i>
+                                <p class="text-muted">No hay actividad reciente para mostrar.</p>
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Quick Actions -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% if current_user.is_admin() %}
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('company.create_company') }}" class="btn btn-primary w-100">
+                                    <i class="bi bi-building-add"></i> Nueva Empresa
+                                </a>
+                            </div>
+                        {% endif %}
+                        
+                        {% if current_user.is_admin() or current_user.is_gerente() %}
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('employee.create_employee') }}" class="btn btn-success w-100">
+                                    <i class="bi bi-person-plus"></i> Nuevo Empleado
+                                </a>
+                            </div>
+                        {% endif %}
+                        
+                        {% if current_user.is_admin() %}
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('auth.register') }}" class="btn btn-info w-100">
+                                    <i class="bi bi-person-add"></i> Nuevo Usuario
+                                </a>
+                            </div>
+                        {% endif %}
+                        
+                        <div class="col-md-3 mb-3">
+                            <a href="{{ url_for('employee.list_employees') }}" class="btn btn-secondary w-100">
+                                <i class="bi bi-people"></i> Ver Empleados
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Prepare data for the contract type chart
+        const employeesByContract = {{ stats.employees_by_contract | tojson }};
+        
+        // Labels dictionary for contract types
+        const employeesLabels = {
+            'indefinido': 'Indefinido',
+            'temporal': 'Temporal',
+            'practicas': 'Prácticas',
+            'formacion': 'Formación',
+            'obra': 'Obra y Servicio'
+        };
+        
+        // Initialize dashboard charts
+        initDashboardCharts(employeesByContract, employeesLabels);
+    });
+</script>
+{% endblock %}

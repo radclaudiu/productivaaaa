@@ -1,0 +1,23 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8 text-center">
+            <h1 class="display-4 mb-4">
+                <i class="bi bi-building"></i> Gestión de Empresas y Empleados
+            </h1>
+            <p class="lead">
+                Sistema integral para la gestión eficiente de empresas y empleados
+            </p>
+            <hr class="my-4">
+            <p>
+                Inicie sesión para acceder al sistema.
+            </p>
+            <a href="{{ url_for('auth.login') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-box-arrow-in-right"></i> Iniciar Sesión
+            </a>
+        </div>
+    </div>
+</div>
+{% endblock %}

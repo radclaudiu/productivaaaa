@@ -1,0 +1,90 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-upload"></i> Subir Documento para {{ employee.first_name }} {{ employee.last_name }}
+        </h1>
+    </div>
+
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Formulario de Subida</h6>
+                    <div>
+                        <a href="{{ url_for('employee.list_documents', id=employee.id) }}" class="btn btn-sm btn-secondary">
+                            <i class="bi bi-arrow-left"></i> Volver a Documentos
+                        </a>
+                        <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-secondary">
+                            <i class="bi bi-person"></i> Volver al Perfil
+                        </a>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <form method="POST" action="" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="mb-4">
+                            <div class="alert alert-info" role="alert">
+                                <i class="bi bi-info-circle"></i> Tipos de archivos permitidos: PDF, DOC, DOCX, JPG, JPEG, PNG
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.file.label(class="form-label required") }}
+                            <div class="input-group">
+                                {{ form.file(class="form-control", id="fileInput") }}
+                            </div>
+                            <div id="filePreview" class="mt-2 d-none">
+                                <div class="alert alert-success">
+                                    <i class="bi bi-file-earmark-check"></i> 
+                                    Archivo seleccionado: <span id="fileName"></span>
+                                </div>
+                            </div>
+                            {% for error in form.file.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control", placeholder="Proporciona una breve descripción del documento") }}
+                            {% for error in form.description.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('employee.list_documents', id=employee.id) }}" class="btn btn-secondary me-md-2">
+                                <i class="bi bi-x-circle"></i> Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const fileInput = document.getElementById('fileInput');
+        const filePreview = document.getElementById('filePreview');
+        const fileName = document.getElementById('fileName');
+        
+        fileInput.addEventListener('change', function() {
+            if (fileInput.files.length > 0) {
+                fileName.textContent = fileInput.files[0].name;
+                filePreview.classList.remove('d-none');
+            } else {
+                filePreview.classList.add('d-none');
+            }
+        });
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,219 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-building"></i> {{ company.name }}
+        </h1>
+        <div>
+            {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == company.id) %}
+            <a href="{{ url_for('company.edit_company', id=company.id) }}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar Empresa
+            </a>
+            {% endif %}
+            
+            {% if current_user.is_admin() and company.employees|length == 0 %}
+            <form action="{{ url_for('company.delete_company', id=company.id) }}" method="post" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn btn-danger confirm-action" 
+                        data-confirm-message="¿Estás seguro de querer eliminar esta empresa? Esta acción no se puede deshacer.">
+                    <i class="bi bi-trash"></i> Eliminar Empresa
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Company Details -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Detalles de la Empresa</h6>
+                </div>
+                <div class="card-body">
+                    <div class="company-details">
+                        <dl class="row">
+                            <dt class="col-sm-4">Nombre:</dt>
+                            <dd class="col-sm-8">{{ company.name }}</dd>
+                            
+                            <dt class="col-sm-4">CIF/NIF:</dt>
+                            <dd class="col-sm-8">{{ company.tax_id }}</dd>
+                            
+                            <dt class="col-sm-4">Dirección:</dt>
+                            <dd class="col-sm-8">{{ company.address }}</dd>
+                            
+                            <dt class="col-sm-4">Ciudad:</dt>
+                            <dd class="col-sm-8">{{ company.city }}</dd>
+                            
+                            <dt class="col-sm-4">Código Postal:</dt>
+                            <dd class="col-sm-8">{{ company.postal_code }}</dd>
+                            
+                            <dt class="col-sm-4">País:</dt>
+                            <dd class="col-sm-8">{{ company.country }}</dd>
+                            
+                            <dt class="col-sm-4">Sector:</dt>
+                            <dd class="col-sm-8">{{ company.sector }}</dd>
+                            
+                            <dt class="col-sm-4">Teléfono:</dt>
+                            <dd class="col-sm-8">{{ company.phone }}</dd>
+                            
+                            <dt class="col-sm-4">Email:</dt>
+                            <dd class="col-sm-8">
+                                {% if company.email %}
+                                <a href="mailto:{{ company.email }}">{{ company.email }}</a>
+                                {% else %}
+                                <span class="text-muted">No disponible</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Sitio Web:</dt>
+                            <dd class="col-sm-8">
+                                {% if company.website %}
+                                <a href="{{ company.website }}" target="_blank">{{ company.website }}</a>
+                                {% else %}
+                                <span class="text-muted">No disponible</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Estado:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge {% if company.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Activa' if company.is_active else 'Inactiva' }}
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Fecha de Registro:</dt>
+                            <dd class="col-sm-8">{{ company.created_at.strftime('%d/%m/%Y') }}</dd>
+                            
+                            <dt class="col-sm-4">Última Actualización:</dt>
+                            <dd class="col-sm-8">{{ company.updated_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Company Stats -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Estadísticas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="stats-summary mb-4">
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h2 class="text-primary">{{ company.employees|length }}</h2>
+                                <p>Empleados Totales</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 class="text-success">{{ company.employees|selectattr('is_active', 'equalto', true)|list|length }}</h2>
+                                <p>Empleados Activos</p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="chart-container" style="height: 250px;">
+                        <canvas id="companyEmployeeChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Employee List -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 d-flex justify-content-between align-items-center">
+            <h6 class="m-0 font-weight-bold">Empleados de la Empresa</h6>
+            {% if current_user.is_admin() or current_user.is_gerente() %}
+            <a href="{{ url_for('employee.create_employee') }}" class="btn btn-sm btn-primary">
+                <i class="bi bi-person-plus"></i> Nuevo Empleado
+            </a>
+            {% endif %}
+        </div>
+        <div class="card-body">
+            {% if company.employees %}
+                <div class="table-responsive">
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>ID</th>
+                                <th>Nombre</th>
+                                <th>DNI</th>
+                                <th>Puesto</th>
+                                <th>Tipo de Contrato</th>
+                                <th>Fecha de Inicio</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for employee in company.employees %}
+                            <tr data-href="{{ url_for('employee.view_employee', id=employee.id) }}">
+                                <td>{{ employee.id }}</td>
+                                <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                                <td>{{ employee.dni }}</td>
+                                <td>{{ employee.position }}</td>
+                                <td>{{ employee.contract_type.name if employee.contract_type else 'No definido' }}</td>
+                                <td>{{ employee.start_date.strftime('%d/%m/%Y') if employee.start_date else 'No definida' }}</td>
+                                <td>
+                                    <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                        {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                    </span>
+                                </td>
+                                <td class="table-action-buttons">
+                                    <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-info">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    
+                                    {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == company.id) %}
+                                    <a href="{{ url_for('employee.edit_employee', id=employee.id) }}" class="btn btn-sm btn-warning">
+                                        <i class="bi bi-pencil"></i>
+                                    </a>
+                                    
+                                    <form action="{{ url_for('employee.delete_employee', id=employee.id) }}" method="post" class="d-inline">
+                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                        <button type="submit" class="btn btn-sm btn-danger confirm-action"
+                                                data-confirm-message="¿Estás seguro de querer eliminar este empleado? Esta acción no se puede deshacer.">
+                                            <i class="bi bi-trash"></i>
+                                        </button>
+                                    </form>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-people-fill fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No hay empleados registrados en esta empresa</h4>
+                    {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == company.id) %}
+                    <a href="{{ url_for('employee.create_employee') }}" class="btn btn-primary mt-3">
+                        <i class="bi bi-person-plus"></i> Añadir Primer Empleado
+                    </a>
+                    {% endif %}
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Company data for charts
+        const companyData = {
+            totalEmployees: {{ company.employees|length }},
+            activeEmployees: {{ company.employees|selectattr('is_active', 'equalto', true)|list|length }}
+        };
+        
+        // Initialize company employee chart
+        initCompanyEmployeeChart(companyData);
+    });
+</script>
+{% endblock %}

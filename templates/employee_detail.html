@@ -1,0 +1,249 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-person"></i> {{ employee.first_name }} {{ employee.last_name }}
+        </h1>
+        <div>
+            {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+            <a href="{{ url_for('employee.edit_employee', id=employee.id) }}" class="btn btn-warning">
+                <i class="bi bi-pencil"></i> Editar Empleado
+            </a>
+            
+            <form action="{{ url_for('employee.delete_employee', id=employee.id) }}" method="post" class="d-inline">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                <button type="submit" class="btn btn-danger confirm-action"
+                        data-confirm-message="¿Estás seguro de querer eliminar este empleado? Esta acción no se puede deshacer.">
+                    <i class="bi bi-trash"></i> Eliminar Empleado
+                </button>
+            </form>
+            {% endif %}
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Employee Details -->
+        <div class="col-lg-8 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Información Personal</h6>
+                </div>
+                <div class="card-body">
+                    <div class="employee-details">
+                        <dl class="row">
+                            <dt class="col-sm-4">Nombre Completo:</dt>
+                            <dd class="col-sm-8">{{ employee.first_name }} {{ employee.last_name }}</dd>
+                            
+                            <dt class="col-sm-4">DNI/NIE:</dt>
+                            <dd class="col-sm-8">{{ employee.dni }}</dd>
+                            
+                            <dt class="col-sm-4">Empresa:</dt>
+                            <dd class="col-sm-8">
+                                <a href="{{ url_for('company.view_company', id=employee.company_id) }}">
+                                    {{ employee.company.name }}
+                                </a>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Puesto:</dt>
+                            <dd class="col-sm-8">{{ employee.position }}</dd>
+                            
+                            <dt class="col-sm-4">Tipo de Contrato:</dt>
+                            <dd class="col-sm-8">{{ employee.contract_type.name if employee.contract_type else 'No definido' }}</dd>
+                            
+                            <dt class="col-sm-4">Cuenta Bancaria:</dt>
+                            <dd class="col-sm-8">{{ employee.bank_account or 'No disponible' }}</dd>
+                            
+                            <dt class="col-sm-4">Fecha de Inicio:</dt>
+                            <dd class="col-sm-8">{{ employee.start_date.strftime('%d/%m/%Y') if employee.start_date else 'No definida' }}</dd>
+                            
+                            <dt class="col-sm-4">Fecha de Fin:</dt>
+                            <dd class="col-sm-8">
+                                {% if employee.end_date %}
+                                    {{ employee.end_date.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                    <span class="text-muted">No definida</span>
+                                {% endif %}
+                            </dd>
+                            
+                            <dt class="col-sm-4">Estado:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                </span>
+                            </dd>
+                            
+                            <dt class="col-sm-4">Fecha de Registro:</dt>
+                            <dd class="col-sm-8">{{ employee.created_at.strftime('%d/%m/%Y') }}</dd>
+                            
+                            <dt class="col-sm-4">Última Actualización:</dt>
+                            <dd class="col-sm-8">{{ employee.updated_at.strftime('%d/%m/%Y %H:%M') }}</dd>
+                            
+                            {% if employee.user %}
+                            <dt class="col-sm-4">Usuario Asociado:</dt>
+                            <dd class="col-sm-8">{{ employee.user.username }}</dd>
+                            {% endif %}
+                        </dl>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Quick Actions -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Acciones Rápidas</h6>
+                </div>
+                <div class="card-body">
+                    <div class="list-group">
+                        <a href="{{ url_for('employee.list_documents', id=employee.id) }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-file-earmark"></i> Ver Documentos
+                        </a>
+                        
+                        <a href="{{ url_for('employee.upload_document', id=employee.id) }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-upload"></i> Subir Documento
+                        </a>
+                        
+                        <a href="{{ url_for('employee.manage_notes', id=employee.id) }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-journal-text"></i> Gestionar Notas
+                        </a>
+                        
+                        <a href="{{ url_for('employee.view_history', id=employee.id) }}" class="list-group-item list-group-item-action">
+                            <i class="bi bi-clock-history"></i> Ver Historial de Cambios
+                        </a>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Recent Documents -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Documentos Recientes</h6>
+                </div>
+                <div class="card-body">
+                    {% if employee.documents %}
+                        <div class="list-group">
+                            {% for document in employee.documents[:3] %}
+                                <a href="{{ url_for('employee.download_document', doc_id=document.id) }}" class="list-group-item list-group-item-action">
+                                    <div class="d-flex w-100 justify-content-between">
+                                        <h6 class="mb-1">{{ document.original_filename }}</h6>
+                                        <small>{{ document.uploaded_at.strftime('%d/%m/%Y') }}</small>
+                                    </div>
+                                    <small>{{ document.description or 'Sin descripción' }}</small>
+                                </a>
+                            {% endfor %}
+                        </div>
+                        {% if employee.documents|length > 3 %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('employee.list_documents', id=employee.id) }}" class="btn btn-sm btn-secondary">
+                                    Ver todos los documentos ({{ employee.documents|length }})
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="bi bi-file-earmark-x fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No hay documentos disponibles</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Notes and History Row -->
+    <div class="row">
+        <!-- Recent Notes -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Notas Recientes</h6>
+                    <a href="{{ url_for('employee.manage_notes', id=employee.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-journal-plus"></i> Gestionar Notas
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if employee.notes %}
+                        <div style="max-height: 300px; overflow-y: auto;">
+                            {% for note in employee.notes[:3] %}
+                                <div class="note-card">
+                                    <div class="card">
+                                        <div class="card-body">
+                                            <div class="d-flex justify-content-between">
+                                                <h6 class="card-title">
+                                                    <i class="bi bi-person-circle"></i> {{ note.created_by.username if note.created_by else 'Sistema' }}
+                                                </h6>
+                                                <span class="note-timestamp">{{ note.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
+                                            </div>
+                                            <p class="card-text">{{ note.content }}</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if employee.notes|length > 3 %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('employee.manage_notes', id=employee.id) }}" class="btn btn-sm btn-secondary">
+                                    Ver todas las notas ({{ employee.notes|length }})
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="bi bi-journal-x fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No hay notas disponibles</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Recent History -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 font-weight-bold">Historial Reciente</h6>
+                    <a href="{{ url_for('employee.view_history', id=employee.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-clock-history"></i> Ver Historial Completo
+                    </a>
+                </div>
+                <div class="card-body">
+                    {% if employee.history %}
+                        <div class="history-timeline">
+                            {% for item in employee.history[:5] %}
+                                <div class="history-item">
+                                    <div class="history-timestamp">
+                                        {{ item.changed_at.strftime('%d/%m/%Y %H:%M') }}
+                                    </div>
+                                    <div class="history-content">
+                                        <strong>{{ item.field_name }}</strong> cambiado de 
+                                        <span class="text-danger">{{ item.old_value or 'vacío' }}</span> a 
+                                        <span class="text-success">{{ item.new_value or 'vacío' }}</span>
+                                        {% if item.changed_by %}
+                                            por <span class="text-info">{{ item.changed_by.username }}</span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        {% if employee.history|length > 5 %}
+                            <div class="text-center mt-3">
+                                <a href="{{ url_for('employee.view_history', id=employee.id) }}" class="btn btn-sm btn-secondary">
+                                    Ver historial completo ({{ employee.history|length }} cambios)
+                                </a>
+                            </div>
+                        {% endif %}
+                    {% else %}
+                        <div class="text-center py-3">
+                            <i class="bi bi-clock-history fa-2x text-muted mb-2"></i>
+                            <p class="text-muted">No hay historial de cambios disponible</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

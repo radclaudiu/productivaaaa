@@ -1,0 +1,135 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h2 mb-0">
+            <i class="bi bi-clock-history"></i> Historial de {{ employee.first_name }} {{ employee.last_name }}
+        </h1>
+        <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver al Perfil
+        </a>
+    </div>
+
+    <div class="row">
+        <!-- History Chart -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Gráfico de Actividad</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="employeeHistoryChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- History Summary -->
+        <div class="col-lg-6 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Resumen de Cambios</h6>
+                </div>
+                <div class="card-body">
+                    {% if history %}
+                        <div class="row text-center">
+                            <div class="col-6">
+                                <h2 class="text-primary">{{ history|length }}</h2>
+                                <p>Cambios Totales</p>
+                            </div>
+                            <div class="col-6">
+                                <h2 class="text-success">{{ history|selectattr('changed_at', '>=', now().replace(month=now().month-1))|list|length }}</h2>
+                                <p>Últimos 30 Días</p>
+                            </div>
+                        </div>
+                        
+                        <div class="mt-4">
+                            <h6>Campos más modificados:</h6>
+                            <div class="table-responsive">
+                                <table class="table table-sm">
+                                    <thead>
+                                        <tr>
+                                            <th>Campo</th>
+                                            <th>Modificaciones</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% set field_counts = {} %}
+                                        {% for item in history %}
+                                            {% if item.field_name in field_counts %}
+                                                {% set _ = field_counts.update({item.field_name: field_counts[item.field_name] + 1}) %}
+                                            {% else %}
+                                                {% set _ = field_counts.update({item.field_name: 1}) %}
+                                            {% endif %}
+                                        {% endfor %}
+                                        
+                                        {% for field_name, count in field_counts|dictsort(by='value', reverse=true) %}
+                                            <tr>
+                                                <td>{{ field_name }}</td>
+                                                <td>{{ count }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-file-earmark-x fa-4x text-muted mb-3"></i>
+                            <p class="text-muted">No hay historial para mostrar</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Detailed History -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold">Historial Detallado</h6>
+        </div>
+        <div class="card-body">
+            {% if history %}
+                <div class="history-timeline">
+                    {% for item in history %}
+                        <div class="history-item">
+                            <div class="history-timestamp">
+                                {{ item.changed_at.strftime('%d/%m/%Y %H:%M') }}
+                            </div>
+                            <div class="history-content">
+                                <strong>{{ item.field_name }}</strong> cambió de 
+                                <span class="text-danger">{{ item.old_value or 'vacío' }}</span> a 
+                                <span class="text-success">{{ item.new_value or 'vacío' }}</span>
+                                {% if item.changed_by %}
+                                    por <span class="text-info">{{ item.changed_by.username }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    {% endfor %}
+                </div>
+            {% else %}
+                <div class="text-center py-5">
+                    <i class="bi bi-clock-history fa-4x text-muted mb-3"></i>
+                    <h4 class="text-muted">No hay historial de cambios disponible</h4>
+                    <p class="text-muted">Los cambios en los datos del empleado aparecerán aquí</p>
+                </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // History data for the chart
+        const historyData = {{ history|map(attribute='changed_at')|list|tojson }};
+        
+        // Initialize employee history chart
+        initEmployeeHistoryChart(historyData);
+    });
+</script>
+{% endblock %}

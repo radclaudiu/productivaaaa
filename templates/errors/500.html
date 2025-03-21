@@ -1,0 +1,26 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 text-center">
+            <div class="error-content">
+                <h1 class="display-1">500</h1>
+                <i class="bi bi-exclamation-triangle fa-5x text-danger mb-4"></i>
+                <h2 class="mb-4">Error del Servidor</h2>
+                <p class="lead">
+                    Lo sentimos, ha ocurrido un error inesperado en el servidor.
+                </p>
+                <p class="text-muted mb-4">
+                    Estamos trabajando para solucionarlo. Por favor, inténtalo de nuevo más tarde o contacta con el administrador del sistema.
+                </p>
+                <div class="mt-4">
+                    <a href="{{ url_for('main.index') }}" class="btn btn-primary">
+                        <i class="bi bi-house"></i> Volver al Inicio
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
