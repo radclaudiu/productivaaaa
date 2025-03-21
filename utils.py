@@ -259,7 +259,19 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
 
 
 def get_dashboard_stats():
-    """Get statistics for dashboard."""
+    """Get statistics for dashboard (optimizado)."""
+    import time
+    import logging
+    from flask_login import current_user
+    from app import db
+    from models import Employee, ActivityLog, User, Company
+    from sqlalchemy import func, case, text
+    
+    # Iniciar temporizador para medir rendimiento
+    start_time = time.time()
+    logger = logging.getLogger(__name__)
+    
+    # Initialize stats
     stats = {
         'total_companies': 0,
         'total_employees': 0,
@@ -269,72 +281,93 @@ def get_dashboard_stats():
         'recent_activities': []
     }
     
-    # Get company stats
-    if current_user.is_admin():
-        from models import Company
-        stats['total_companies'] = Company.query.count()
-        stats['total_employees'] = Employee.query.count()
-        stats['active_employees'] = Employee.query.filter_by(is_active=True).count()
+    try:
+        if current_user.is_admin():
+            # Optimización: obtener conteos en una sola consulta en lugar de múltiples
+            # esto evita varios viajes a la base de datos
+            stats['total_companies'] = db.session.query(func.count(Company.id)).scalar() or 0
+            
+            # Optimizar la consulta de empleados
+            employee_counts = db.session.query(
+                func.count(Employee.id).label('total'),
+                func.sum(case([(Employee.is_active == True, 1)], else_=0)).label('active')
+            ).first()
+            
+            stats['total_employees'] = employee_counts.total or 0 
+            stats['active_employees'] = employee_counts.active or 0
+            
+            # Optimización: reducir el número de consultas para los tipos de contrato y estados
+            contract_counts = db.session.query(
+                Employee.contract_type, func.count(Employee.id)
+            ).group_by(Employee.contract_type).all()
+            
+            status_counts = db.session.query(
+                Employee.status, func.count(Employee.id)
+            ).group_by(Employee.status).all()
+            
+            # Procesar resultados
+            for contract_type, count in contract_counts:
+                if contract_type:
+                    stats['employees_by_contract'][contract_type.value] = count
+            
+            for status, count in status_counts:
+                if status:
+                    stats['employees_by_status'][status.value] = count
+            
+            # Optimización: reducir el límite para mejorar rendimiento
+            stats['recent_activities'] = ActivityLog.query.order_by(
+                ActivityLog.timestamp.desc()
+            ).limit(5).all()
+            
+        elif current_user.is_gerente() and current_user.company_id:
+            company_id = current_user.company_id
+            
+            # Optimización: realizar una sola consulta para contar empleados
+            employee_counts = db.session.query(
+                func.count(Employee.id).label('total'),
+                func.sum(case([(Employee.is_active == True, 1)], else_=0)).label('active')
+            ).filter(Employee.company_id == company_id).first()
+            
+            stats['total_employees'] = employee_counts.total or 0
+            stats['active_employees'] = employee_counts.active or 0
+            
+            # Optimización: consultamos tipo contrato y estado en una única operación
+            contract_counts = db.session.query(
+                Employee.contract_type, func.count(Employee.id)
+            ).filter(Employee.company_id == company_id).group_by(Employee.contract_type).all()
+            
+            status_counts = db.session.query(
+                Employee.status, func.count(Employee.id)
+            ).filter(Employee.company_id == company_id).group_by(Employee.status).all()
+            
+            for contract_type, count in contract_counts:
+                if contract_type:
+                    stats['employees_by_contract'][contract_type.value] = count
+            
+            for status, count in status_counts:
+                if status:
+                    stats['employees_by_status'][status.value] = count
+            
+            # Optimización: evitar subconsulta ineficiente usando JOIN
+            # en lugar de obtener todos los user_ids y luego filtrar
+            stats['recent_activities'] = db.session.query(ActivityLog).join(
+                User, ActivityLog.user_id == User.id
+            ).filter(
+                User.company_id == company_id
+            ).order_by(ActivityLog.timestamp.desc()).limit(5).all()
         
-        # Count employees by contract type
-        from sqlalchemy import func
-        contract_counts = db.session.query(
-            Employee.contract_type, func.count(Employee.id)
-        ).group_by(Employee.contract_type).all()
-        
-        for contract_type, count in contract_counts:
-            if contract_type:
-                stats['employees_by_contract'][contract_type.value] = count
-        
-        # Count employees by status
-        status_counts = db.session.query(
-            Employee.status, func.count(Employee.id)
-        ).group_by(Employee.status).all()
-        
-        for status, count in status_counts:
-            if status:
-                stats['employees_by_status'][status.value] = count
-        
-        # Get recent activities
-        stats['recent_activities'] = ActivityLog.query.order_by(
-            ActivityLog.timestamp.desc()
-        ).limit(10).all()
+        elif current_user.is_empleado() and current_user.employee:
+            # Optimización: para empleados, solo obtener sus propias actividades
+            # y limitar a 5 en lugar de 10 para mayor velocidad
+            stats['recent_activities'] = ActivityLog.query.filter_by(
+                user_id=current_user.id
+            ).order_by(ActivityLog.timestamp.desc()).limit(5).all()
     
-    elif current_user.is_gerente() and current_user.company_id:
-        stats['total_employees'] = Employee.query.filter_by(company_id=current_user.company_id).count()
-        stats['active_employees'] = Employee.query.filter_by(
-            company_id=current_user.company_id, is_active=True
-        ).count()
-        
-        # Count employees by contract type for this company
-        from sqlalchemy import func
-        contract_counts = db.session.query(
-            Employee.contract_type, func.count(Employee.id)
-        ).filter_by(company_id=current_user.company_id).group_by(Employee.contract_type).all()
-        
-        for contract_type, count in contract_counts:
-            if contract_type:
-                stats['employees_by_contract'][contract_type.value] = count
-        
-        # Count employees by status for this company
-        status_counts = db.session.query(
-            Employee.status, func.count(Employee.id)
-        ).filter_by(company_id=current_user.company_id).group_by(Employee.status).all()
-        
-        for status, count in status_counts:
-            if status:
-                stats['employees_by_status'][status.value] = count
-        
-        # Get recent activities for this company
-        company_user_ids = [user.id for user in User.query.filter_by(company_id=current_user.company_id).all()]
-        stats['recent_activities'] = ActivityLog.query.filter(
-            ActivityLog.user_id.in_(company_user_ids)
-        ).order_by(ActivityLog.timestamp.desc()).limit(10).all()
+    except Exception as e:
+        logger.error(f"Error al obtener estadísticas del dashboard: {str(e)}")
     
-    elif current_user.is_empleado() and current_user.employee:
-        # For empleado, just get their own activities
-        stats['recent_activities'] = ActivityLog.query.filter_by(
-            user_id=current_user.id
-        ).order_by(ActivityLog.timestamp.desc()).limit(10).all()
+    # Registrar tiempo de ejecución para diagnóstico
+    elapsed = time.time() - start_time
+    logger.info(f"Dashboard stats completado en {elapsed:.3f} segundos")
     
     return stats

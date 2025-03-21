@@ -298,19 +298,37 @@ def delete_company(id):
 @employee_bp.route('/')
 @login_required
 def list_employees():
-    # Admin can see all employees
+    # Obtener parámetro de página, por defecto 1
+    page = request.args.get('page', 1, type=int)
+    per_page = 20  # Número de empleados por página
+    
+    # Preparar la consulta según el rol del usuario
     if current_user.is_admin():
-        employees = Employee.query.all()
-    # Gerente can only see employees from their company
+        # Para administradores, usar paginación para evitar cargar todos los empleados a la vez
+        query = Employee.query.order_by(Employee.last_name, Employee.first_name)
+    
+    # Gerente puede ver solo empleados de su empresa
     elif current_user.is_gerente() and current_user.company_id:
-        employees = Employee.query.filter_by(company_id=current_user.company_id).all()
-    # Empleado can only see themselves
+        query = Employee.query.filter_by(company_id=current_user.company_id).order_by(
+            Employee.last_name, Employee.first_name)
+    
+    # Empleado solo puede verse a sí mismo
     elif current_user.is_empleado() and current_user.employee:
+        # Para un solo empleado no necesitamos paginación
         employees = [current_user.employee]
+        return render_template('employee_list.html', title='Empleados', 
+                              employees=employees, pagination=None)
     else:
         employees = []
+        return render_template('employee_list.html', title='Empleados', 
+                              employees=employees, pagination=None)
     
-    return render_template('employee_list.html', title='Empleados', employees=employees)
+    # Ejecutar consulta paginada
+    pagination = query.paginate(page=page, per_page=per_page, error_out=False)
+    employees = pagination.items
+    
+    return render_template('employee_list.html', title='Empleados', 
+                          employees=employees, pagination=pagination)
 
 @employee_bp.route('/<int:id>')
 @login_required
