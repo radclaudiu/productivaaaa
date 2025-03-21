@@ -224,15 +224,10 @@
                                         <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-info mt-auto">
                                             <i class="fas fa-user-clock"></i> Ver Fichajes
                                         </a>
-                                        {% if current_user.is_admin() or current_user.is_gerente() %}
-                                        <a href="{{ url_for('checkin.create_checkin', employee_id=employee.id) }}" class="btn btn-outline-info mt-2">
-                                            <i class="fas fa-plus-circle"></i> Añadir Fichaje
-                                        </a>
-                                        {% if employee.schedules %}
+                                        {% if current_user.is_admin() or current_user.is_gerente() and employee.schedules %}
                                         <a href="{{ url_for('checkin.generate_checkins', employee_id=employee.id) }}" class="btn btn-outline-secondary mt-2">
                                             <i class="fas fa-magic"></i> Generar Fichajes
                                         </a>
-                                        {% endif %}
                                         {% endif %}
                                     </div>
                                 </div>
@@ -253,11 +248,6 @@
                                         <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-success mt-auto">
                                             <i class="fas fa-calendar-check"></i> Ver Vacaciones
                                         </a>
-                                        {% if current_user.is_admin() or current_user.is_gerente() %}
-                                        <a href="{{ url_for('vacation.create_vacation', employee_id=employee.id) }}" class="btn btn-outline-success mt-2">
-                                            <i class="fas fa-plus-circle"></i> Añadir Vacaciones
-                                        </a>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>

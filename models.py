@@ -303,18 +303,18 @@ class EmployeeCheckIn(db.Model):
     @staticmethod
     def generate_realistic_time(base_time, minutes_range=4):
         """Generate a realistic check-in or check-out time with random variation."""
-        # Random value between 1 and minutes_range
-        minutes_variation = random.randint(1, minutes_range)
-        # Random seconds between 0 and 59
-        seconds_variation = random.randint(0, 59)
+        # For check-in: ensure it's 1-4 minutes before scheduled time
+        # For check-out: ensure it's 1-4 minutes after scheduled time
         
-        # For check-in: subtract minutes (to arrive early)
-        # For check-out: add minutes (to leave late)
         if 'check_in' in str(base_time):
-            # Llegada anticipada: entre 1-4 minutos antes
+            # Llegada anticipada: entre 1-4 minutos antes (siempre por debajo de la hora programada)
+            minutes_variation = random.randint(1, minutes_range)
+            seconds_variation = random.randint(0, 59)
             return base_time - timedelta(minutes=minutes_variation, seconds=seconds_variation)
         else:
             # Salida posterior: entre 1-4 minutos después
+            minutes_variation = random.randint(1, minutes_range)
+            seconds_variation = random.randint(0, 59)
             return base_time + timedelta(minutes=minutes_variation, seconds=seconds_variation)
             
     @classmethod
