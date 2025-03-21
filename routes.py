@@ -1270,9 +1270,7 @@ def create_vacation(employee_id):
             employee_id=employee_id
         )
         
-        # Si lo crea un gerente o admin, se establece como creador
-        if not current_user.is_empleado():
-            vacation.approved_by_id = current_user.id
+        # Ya no se requiere asignar aprobador en el flujo simplificado
         
         db.session.add(vacation)
         db.session.commit()
