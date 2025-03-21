@@ -1,9 +1,11 @@
 import os
 import uuid
+import io
 from datetime import datetime
 from werkzeug.utils import secure_filename
-from flask import current_app, flash
+from flask import current_app, flash, request, send_file
 from flask_login import current_user
+from fpdf import FPDF
 
 from app import db
 from models import User, Employee, EmployeeHistory, UserRole, ActivityLog
@@ -121,6 +123,90 @@ def can_view_employee(employee):
         return True
         
     return False
+
+def generate_checkins_pdf(employee, start_date=None, end_date=None):
+    """Generate a PDF with employee check-ins between dates."""
+    from models import EmployeeCheckIn
+    from sqlalchemy import and_
+    
+    # Get employee check-ins filtered by date if provided
+    query = EmployeeCheckIn.query.filter_by(employee_id=employee.id)
+    
+    if start_date:
+        query = query.filter(EmployeeCheckIn.check_in_time >= start_date)
+    if end_date:
+        query = query.filter(EmployeeCheckIn.check_in_time <= end_date)
+    
+    check_ins = query.order_by(EmployeeCheckIn.check_in_time).all()
+    
+    # Create PDF
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Set fonts
+    pdf.set_font('Arial', 'B', 16)
+    
+    # Title
+    pdf.cell(0, 10, 'Registro de fichajes', 0, 1, 'C')
+    pdf.ln(5)
+    
+    # Company information
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, f'Empresa: {employee.company.name}', 0, 1)
+    pdf.set_font('Arial', '', 11)
+    pdf.cell(0, 7, f'CIF: {employee.company.tax_id}', 0, 1)
+    pdf.cell(0, 7, f'Dirección: {employee.company.address or ""}', 0, 1)
+    pdf.cell(0, 7, f'CP: {employee.company.postal_code or ""}, Ciudad: {employee.company.city or ""}', 0, 1)
+    pdf.ln(5)
+    
+    # Employee information
+    pdf.set_font('Arial', 'B', 12)
+    pdf.cell(0, 10, f'Empleado: {employee.first_name} {employee.last_name}', 0, 1)
+    pdf.set_font('Arial', '', 11)
+    pdf.cell(0, 7, f'DNI: {employee.dni}', 0, 1)
+    pdf.ln(10)
+    
+    # Check-ins table header
+    pdf.set_font('Arial', 'B', 11)
+    pdf.cell(60, 10, 'Fecha', 0, 0, 'C')
+    pdf.cell(40, 10, 'Entrada', 0, 0, 'C')
+    pdf.cell(40, 10, 'Salida', 0, 1, 'C')
+    pdf.ln(5)
+    
+    # Check-ins data
+    pdf.set_font('Arial', '', 10)
+    for checkin in check_ins:
+        # Format date and times
+        date_str = checkin.check_in_time.strftime('%d-%m-%Y')
+        check_in_str = checkin.check_in_time.strftime('%H:%M:%S')
+        check_out_str = checkin.check_out_time.strftime('%H:%M:%S') if checkin.check_out_time else '-'
+        
+        pdf.cell(60, 7, date_str, 0, 0, 'C')
+        pdf.cell(40, 7, check_in_str, 0, 0, 'C')
+        pdf.cell(40, 7, check_out_str, 0, 1, 'C')
+    
+    pdf.ln(10)
+    pdf.cell(0, 10, 'Estos fichajes han sido comprobados por el empleado.', 0, 1)
+    pdf.ln(20)
+    pdf.cell(0, 10, 'Firma :', 0, 1)
+    
+    # Save PDF to a bytes buffer
+    pdf_buffer = io.BytesIO()
+    pdf.output(dest='F', name=f"{employee.first_name}_{employee.last_name}_fichajes.pdf")
+    
+    # Reopen the file and read it into BytesIO buffer
+    with open(f"{employee.first_name}_{employee.last_name}_fichajes.pdf", 'rb') as f:
+        pdf_buffer.write(f.read())
+        
+    pdf_buffer.seek(0)
+    
+    # Delete the temporary file
+    if os.path.exists(f"{employee.first_name}_{employee.last_name}_fichajes.pdf"):
+        os.remove(f"{employee.first_name}_{employee.last_name}_fichajes.pdf")
+    
+    # Return PDF as a file-like object
+    return pdf_buffer
+
 
 def get_dashboard_stats():
     """Get statistics for dashboard."""

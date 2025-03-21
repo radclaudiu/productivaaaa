@@ -246,3 +246,12 @@ class GenerateCheckInsForm(FlaskForm):
     def validate_end_date(form, field):
         if field.data and form.start_date.data and field.data < form.start_date.data:
             raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio.')
+
+class ExportCheckInsForm(FlaskForm):
+    start_date = DateField('Fecha de Inicio', validators=[Optional()], default=lambda: date.today().replace(day=1))
+    end_date = DateField('Fecha de Fin', validators=[Optional()], default=date.today)
+    submit = SubmitField('Exportar a PDF')
+    
+    def validate_end_date(form, field):
+        if field.data and form.start_date.data and field.data < form.start_date.data:
+            raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio.')
