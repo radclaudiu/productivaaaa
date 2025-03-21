@@ -13,6 +13,7 @@ from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleFor
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
                         LocalUserPinForm, SearchForm)
 from utils import log_activity, can_manage_company, save_file
+from utils_tasks import create_default_local_user
 
 # Crear el Blueprint para las tareas
 tasks_bp = Blueprint('tasks', __name__)
