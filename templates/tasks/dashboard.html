@@ -154,11 +154,37 @@
 <style>
     .card {
         transition: transform 0.2s, box-shadow 0.2s;
+        background-color: var(--bs-card-bg);
+        border: 1px solid var(--bs-card-border-color);
     }
     
     .card:hover {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+    
+    .card-header.bg-primary {
+        background-color: var(--bs-primary) !important;
+    }
+    
+    .card-header.bg-light {
+        background-color: var(--bs-light) !important;
+    }
+    
+    .card.bg-primary {
+        background-color: var(--bs-primary) !important;
+    }
+    
+    .card.bg-light {
+        background-color: var(--bs-light) !important;
+    }
+    
+    .table {
+        background-color: var(--bs-body-bg);
+    }
+    
+    .table-light {
+        background-color: var(--bs-light);
     }
 </style>
 {% endblock %}

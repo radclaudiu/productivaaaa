@@ -1050,19 +1050,25 @@ def local_user_tasks():
     # Obtener tareas activas para hoy
     today = date.today()
     active_tasks = []
+    completed_tasks = []
     pending_tasks = Task.query.filter_by(location_id=location.id, status=TaskStatus.PENDIENTE).all()
+    
+    # Obtener todas las completadas de hoy
+    completions = TaskCompletion.query.filter_by(
+        local_user_id=user_id
+    ).filter(
+        db.func.date(TaskCompletion.completion_date) == today
+    ).order_by(
+        TaskCompletion.completion_date.desc()
+    ).all()
+    
+    # Lista de IDs de tareas completadas hoy
+    completed_task_ids = [completion.task_id for completion in completions]
     
     for task in pending_tasks:
         if task.is_due_today():
             # Verificar si ya ha sido completada hoy por este usuario
-            completion = TaskCompletion.query.filter_by(
-                task_id=task.id,
-                local_user_id=user_id
-            ).filter(
-                db.func.date(TaskCompletion.completion_date) == today
-            ).first()
-            
-            task.completed_today = completion is not None
+            task.completed_today = task.id in completed_task_ids
             active_tasks.append(task)
     
     return render_template('tasks/local_user_tasks.html',
@@ -1070,7 +1076,8 @@ def local_user_tasks():
                           user=user,
                           local_user=user,
                           location=location,
-                          active_tasks=active_tasks)
+                          active_tasks=active_tasks,
+                          completed_tasks=completions)
 
 @tasks_bp.route('/local-user/tasks/<int:task_id>/complete', methods=['GET', 'POST'])
 @local_user_required

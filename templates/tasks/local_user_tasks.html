@@ -19,10 +19,10 @@
             <div class="card shadow">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold">Tareas Pendientes para Hoy</h5>
-                    <span class="badge bg-info">{{ pending_tasks|length }} Tareas</span>
+                    <span class="badge bg-info">{{ active_tasks|length }} Tareas</span>
                 </div>
                 <div class="card-body">
-                    {% if pending_tasks %}
+                    {% if active_tasks %}
                     <div class="table-responsive">
                         <table class="table table-hover">
                             <thead>
@@ -34,7 +34,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for task in pending_tasks %}
+                                {% for task in active_tasks %}
                                 <tr>
                                     <td class="fw-bold">{{ task.title }}</td>
                                     <td>
@@ -50,9 +50,13 @@
                                     </td>
                                     <td>{{ task.description|truncate(100) if task.description else 'Sin descripción' }}</td>
                                     <td>
+                                        {% if task.completed_today %}
+                                        <span class="badge bg-success"><i class="bi bi-check-lg"></i> Completada</span>
+                                        {% else %}
                                         <a href="{{ url_for('tasks.complete_task', task_id=task.id) }}" class="btn btn-sm btn-success">
                                             <i class="bi bi-check-lg"></i> Completar
                                         </a>
+                                        {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
