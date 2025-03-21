@@ -1,7 +1,7 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify, session, current_app
 from flask_login import login_required, current_user
 from functools import wraps
-from datetime import datetime, date, timedelta
+from datetime import datetime, date
 import os
 from werkzeug.utils import secure_filename
 from wtforms.validators import Optional
@@ -1262,8 +1262,8 @@ def local_user_tasks(date_str=None):
         selected_date = today
     
     # Calcular fechas para el carrusel (día anterior, actual, siguiente)
-    prev_date = selected_date - timedelta(days=1)
-    next_date = selected_date + timedelta(days=1)
+    prev_date = selected_date - datetime.timedelta(days=1)
+    next_date = selected_date + datetime.timedelta(days=1)
     
     # Determinar los nombres de los días en español
     days_map = {
@@ -1305,7 +1305,6 @@ def local_user_tasks(date_str=None):
     active_tasks = []
     grouped_tasks = {}  # Diccionario para agrupar tareas por grupo
     ungrouped_tasks = [] # Lista para tareas sin grupo
-    completed_ungrouped_count = 0   # Contador para tareas sin grupo completadas
     pending_tasks = Task.query.filter_by(location_id=location.id, status=TaskStatus.PENDIENTE).all()
     
     # Obtener grupos de tareas para esta ubicación
@@ -1418,16 +1417,11 @@ def local_user_tasks(date_str=None):
                 if group_id not in grouped_tasks:
                     grouped_tasks[group_id] = {
                         'group': group_dict[group_id],
-                        'tasks': [],
-                        'completed_count': 0
+                        'tasks': []
                     }
                 grouped_tasks[group_id]['tasks'].append(task)
-                if task.completed_today:
-                    grouped_tasks[group_id]['completed_count'] = grouped_tasks[group_id].get('completed_count', 0) + 1
             else:
                 ungrouped_tasks.append(task)
-                if task.completed_today:
-                    completed_ungrouped_count += 1
     
     return render_template('tasks/local_user_tasks.html',
                           title=f'Tareas de {user.name}',
@@ -1441,8 +1435,7 @@ def local_user_tasks(date_str=None):
                           completed_tasks=user_completions,
                           selected_date=selected_date,
                           today=today, 
-                          date_carousel=date_carousel,
-                          completed_ungrouped_count=completed_ungrouped_count)
+                          date_carousel=date_carousel)
 
 @tasks_bp.route('/local-user/tasks/<int:task_id>/complete', methods=['GET', 'POST'])
 @local_user_required
