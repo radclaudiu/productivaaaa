@@ -54,9 +54,7 @@
                                                 {% for vacation in year_vacations|sort(attribute='start_date', reverse=true) %}
                                                     <div class="col-md-6 col-xl-4 mb-3">
                                                         <div class="card h-100 border
-                                                            {% if vacation.status.value == 'aprobada' %} border-success
-                                                            {% elif vacation.status.value == 'pendiente' %} border-warning
-                                                            {% elif vacation.status.value == 'denegada' %} border-danger
+                                                            {% if vacation.status.value == 'registrada' %} border-warning
                                                             {% elif vacation.status.value == 'disfrutada' %} border-info
                                                             {% endif %}">
                                                             <div class="card-header bg-transparent
