@@ -3,7 +3,7 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2"><i class="bi bi-grid"></i> Sistema de Gestión de Tareas</h1>
+        <h1 class="h2"><i class="bi bi-grid"></i> Gestión de Locales y Tareas</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
                 <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
@@ -13,66 +13,140 @@
         </div>
     </div>
 
-    <!-- Botones principales SIMPLIFICADOS -->
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card shadow h-100 text-center">
-                <div class="card-body py-5">
-                    <img src="{{ url_for('static', filename='icons/task-management.svg') }}" alt="Gestión de Tareas" class="mb-4" style="width: 80px; height: 80px;">
-                    <h3 class="card-title">Gestión de Tareas</h3>
-                    <p class="card-text">Administra tareas diarias y semanales</p>
-                    {% if locations %}
-                    <a href="{{ url_for('tasks.list_tasks', location_id=locations[0].id) }}" class="btn btn-primary btn-lg mt-2 w-100">
-                        <i class="bi bi-list-check"></i> Ir a Tareas
-                    </a>
-                    {% else %}
-                    <a href="{{ url_for('tasks.create_location') }}" class="btn btn-primary btn-lg mt-2 w-100">
-                        <i class="bi bi-plus-circle"></i> Crear Local Primero
-                    </a>
-                    {% endif %}
-                </div>
+    <!-- Sección de Agregar Local -->
+    {% if not locations %}
+    <div class="text-center py-5">
+        <i class="bi bi-building-add" style="font-size: 80px;"></i>
+        <h3 class="mt-4">No tienes ningún local configurado</h3>
+        <p class="text-muted">Primero debes crear un local para poder gestionar sus tareas</p>
+        <a href="{{ url_for('tasks.create_location') }}" class="btn btn-primary btn-lg mt-3">
+            <i class="bi bi-plus-circle"></i> Agregar Nuevo Local
+        </a>
+    </div>
+    {% else %}
+    
+    <!-- Lista de Locales Configurados -->
+    <div class="card shadow mb-4">
+        <div class="card-header py-3 bg-primary text-white">
+            <h6 class="m-0 fw-bold">Locales Configurados</h6>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            <th>Local</th>
+                            <th>Ubicación</th>
+                            <th>Tareas</th>
+                            <th>Empleados</th>
+                            <th class="text-end">Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for location in locations %}
+                        <tr>
+                            <td class="align-middle fw-bold">{{ location.name }}</td>
+                            <td class="align-middle">
+                                {% if location.city or location.postal_code %}
+                                {{ location.city if location.city else "" }} 
+                                {{ location.postal_code if location.postal_code else "" }}
+                                {% else %}
+                                <span class="text-muted small">Sin ubicación</span>
+                                {% endif %}
+                            </td>
+                            <td class="align-middle">
+                                <span class="badge bg-primary">{{ location.tasks|length }} tareas</span>
+                            </td>
+                            <td class="align-middle">
+                                <span class="badge bg-info">{{ location.local_users|length }} empleados</span>
+                            </td>
+                            <td class="text-end">
+                                <div class="btn-group">
+                                    <a href="{{ url_for('tasks.edit_location', id=location.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="bi bi-pencil"></i> Editar
+                                    </a>
+                                    <a href="{{ url_for('tasks.view_location', id=location.id) }}" class="btn btn-sm btn-outline-primary">
+                                        <i class="bi bi-eye"></i> Ver Detalles
+                                    </a>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
             </div>
         </div>
-        
-        <div class="col-md-4 mb-4">
-            <div class="card shadow h-100 text-center">
-                <div class="card-body py-5">
-                    <img src="{{ url_for('static', filename='icons/location-management.svg') }}" alt="Gestión de Locales" class="mb-4" style="width: 80px; height: 80px;">
-                    <h3 class="card-title">Gestión de Locales</h3>
-                    <p class="card-text">Configura locales y empleados</p>
-                    <a href="{{ url_for('tasks.list_locations') }}" class="btn btn-success btn-lg mt-2 w-100">
-                        <i class="bi bi-building"></i> Ir a Locales
-                    </a>
-                </div>
-            </div>
-        </div>
-        
-        <div class="col-md-4 mb-4">
-            <div class="card shadow h-100 text-center">
-                <div class="card-body py-5">
-                    <i class="bi bi-door-open text-primary" style="font-size: 80px;"></i>
-                    <h3 class="card-title">Acceso a Portales</h3>
-                    <p class="card-text">Accede a los portales locales</p>
-                    {% if locations %}
-                    <div class="dropdown">
-                        <button class="btn btn-info btn-lg mt-2 w-100 dropdown-toggle" type="button" id="dropdownPortales" data-bs-toggle="dropdown" aria-expanded="false">
-                            <i class="bi bi-building-lock"></i> Seleccionar Portal
-                        </button>
-                        <ul class="dropdown-menu w-100" aria-labelledby="dropdownPortales">
-                            {% for location in locations %}
-                            <li><a class="dropdown-item" href="{{ url_for('tasks.local_portal', location_id=location.id) }}">{{ location.name }}</a></li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    {% else %}
-                    <a href="{{ url_for('tasks.create_location') }}" class="btn btn-info btn-lg mt-2 w-100 disabled">
-                        <i class="bi bi-building-lock"></i> Sin Portales Disponibles
-                    </a>
-                    {% endif %}
-                </div>
-            </div>
+        <div class="card-footer bg-light">
+            <a href="{{ url_for('tasks.create_location') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Agregar Otro Local
+            </a>
         </div>
     </div>
+
+    <!-- Opciones de Administración por Local -->
+    <div class="row row-cols-1 row-cols-md-2 g-4 mb-4">
+        {% for location in locations %}
+        <div class="col">
+            <div class="card shadow h-100">
+                <div class="card-header bg-light">
+                    <h5 class="card-title mb-0">{{ location.name }}</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row g-3">
+                        <!-- Administración de Tareas -->
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-bold"><i class="bi bi-list-check"></i> Administración de Tareas</h6>
+                                    <div class="d-flex gap-2 mt-3">
+                                        <a href="{{ url_for('tasks.list_tasks', location_id=location.id) }}" class="btn btn-primary flex-grow-1">
+                                            <i class="bi bi-list"></i> Ver Todas
+                                        </a>
+                                        <a href="{{ url_for('tasks.create_task', location_id=location.id) }}" class="btn btn-outline-primary">
+                                            <i class="bi bi-plus-circle"></i> Nueva
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Administración de Empleados -->
+                        <div class="col-12">
+                            <div class="card bg-light">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-bold"><i class="bi bi-people"></i> Empleados del Local</h6>
+                                    <div class="d-flex gap-2 mt-3">
+                                        <a href="{{ url_for('tasks.list_local_users', location_id=location.id) }}" class="btn btn-success flex-grow-1">
+                                            <i class="bi bi-people"></i> Ver Todos
+                                        </a>
+                                        <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="btn btn-outline-success">
+                                            <i class="bi bi-person-plus"></i> Nuevo
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Acceso al Portal -->
+                        <div class="col-12">
+                            <div class="card bg-primary text-white">
+                                <div class="card-body py-4 text-center">
+                                    <h6 class="fw-bold mb-3"><i class="bi bi-door-open"></i> Acceso al Portal</h6>
+                                    <a href="{{ url_for('tasks.local_portal', location_id=location.id) }}" 
+                                       class="btn btn-light btn-lg d-block">
+                                        <i class="bi bi-box-arrow-in-right"></i> Entrar al Portal
+                                    </a>
+                                    <p class="mt-2 small">Acceso para empleados con PIN</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+    {% endif %}
 </div>
 {% endblock %}
 

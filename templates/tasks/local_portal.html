@@ -3,35 +3,41 @@
 {% block content %}
 <div class="container-fluid py-5">
     <div class="text-center mb-5">
-        <h1 class="display-4"><i class="bi bi-geo-alt"></i> {{ location.name }}</h1>
-        <p class="lead">Selecciona tu perfil para acceder a las tareas</p>
+        <h1 class="display-4"><i class="bi bi-building"></i> {{ location.name }}</h1>
+        <p class="lead">Toca tu nombre para acceder</p>
     </div>
     
-    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 justify-content-center">
-        {% for user in users %}
+    <div class="row row-cols-2 row-cols-md-3 row-cols-lg-4 g-4 justify-content-center">
+        {% for user in local_users %}
         <div class="col">
             <div class="card h-100 user-select-card">
-                <div class="card-body text-center">
+                <div class="card-body text-center p-4">
                     {% if user.photo_path %}
-                    <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" 
-                         class="rounded-circle img-fluid mb-3" style="max-width: 150px; height: 150px; object-fit: cover;" alt="{{ user.name }}">
+                    <img src="{{ url_for('static', filename=user.photo_path) }}" 
+                         class="rounded-circle mb-3" alt="{{ user.name }}">
                     {% else %}
-                    <i class="bi bi-person-circle display-1 mb-3"></i>
+                    <div class="avatar-circle mb-3">
+                        <span class="initials">{{ user.name[0] }}{{ user.last_name[0] }}</span>
+                    </div>
                     {% endif %}
-                    <h5 class="card-title">{{ user.name }} {{ user.last_name }}</h5>
+                    <h5 class="card-title">{{ user.name }}</h5>
+                    <p class="card-text text-muted">{{ user.last_name }}</p>
                     <a href="{{ url_for('tasks.local_user_login', user_id=user.id) }}" class="stretched-link"></a>
                 </div>
             </div>
         </div>
         {% endfor %}
         
-        <!-- Botón para Añadir Nuevo Usuario -->
+        <!-- Botón para Añadir Nuevo Usuario (solo para administradores) -->
         {% if current_user.is_authenticated and (current_user.is_admin() or current_user.is_gerente()) %}
         <div class="col">
             <div class="card h-100 border-primary">
-                <div class="card-body text-center">
-                    <i class="bi bi-person-plus display-1 mb-3 text-primary"></i>
+                <div class="card-body text-center p-4">
+                    <div class="avatar-circle mb-3 bg-primary">
+                        <i class="bi bi-plus-lg text-white"></i>
+                    </div>
                     <h5 class="card-title">Añadir Usuario</h5>
+                    <p class="card-text text-muted">Crear nuevo acceso</p>
                     <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="stretched-link"></a>
                 </div>
             </div>
@@ -40,12 +46,8 @@
     </div>
     
     <div class="text-center mt-5">
-        <a href="{{ url_for('tasks.portal_logout') }}" class="btn btn-secondary">
-            <i class="bi bi-arrow-left"></i> Volver a la Selección de Local
-        </a>
-        
-        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary ms-2">
-            <i class="bi bi-person-gear"></i> Acceso Administración
+        <a href="{{ url_for('tasks.index') }}" class="btn btn-lg btn-outline-secondary">
+            <i class="bi bi-arrow-left"></i> Volver
         </a>
     </div>
 </div>
@@ -60,52 +62,98 @@
     
     .user-select-card {
         cursor: pointer;
-        transition: transform 0.3s, box-shadow 0.3s;
+        transition: transform 0.2s, box-shadow 0.2s;
         border-radius: 15px;
         overflow: hidden;
+        border: 1px solid rgba(0,0,0,0.1);
     }
     
     .user-select-card:hover,
     .user-select-card:active {
         transform: translateY(-5px);
         box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+        border-color: var(--bs-primary);
     }
     
     .rounded-circle {
-        width: 150px;
-        height: 150px;
+        width: 120px;
+        height: 120px;
         object-fit: cover;
         border: 3px solid var(--bs-primary);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
+        margin: 0 auto;
     }
     
-    .display-1 {
-        font-size: 6rem;
-        color: var(--bs-primary);
+    .avatar-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background-color: var(--bs-primary);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto;
+        box-shadow: 0 5px 10px rgba(0,0,0,0.1);
     }
     
-    /* Media queries para tablet y dispositivos móviles */
+    .initials {
+        font-size: 3rem;
+        font-weight: bold;
+    }
+    
+    .bi-plus-lg {
+        font-size: 3rem;
+    }
+    
+    /* Colores aleatorios para avatares */
+    .col:nth-child(5n+1) .avatar-circle {
+        background-color: var(--bs-primary);
+    }
+    
+    .col:nth-child(5n+2) .avatar-circle {
+        background-color: var(--bs-success);
+    }
+    
+    .col:nth-child(5n+3) .avatar-circle {
+        background-color: var(--bs-info);
+    }
+    
+    .col:nth-child(5n+4) .avatar-circle {
+        background-color: var(--bs-warning);
+    }
+    
+    .col:nth-child(5n+5) .avatar-circle {
+        background-color: var(--bs-danger);
+    }
+    
+    /* Media queries para mejorar responsividad */
     @media (max-width: 768px) {
         .container-fluid {
-            padding-top: 2rem !important;
-            padding-bottom: 2rem !important;
+            padding-top: 1rem !important;
+            padding-bottom: 1rem !important;
         }
         
         .display-4 {
+            font-size: 2rem;
+        }
+        
+        .rounded-circle,
+        .avatar-circle {
+            width: 90px;
+            height: 90px;
+        }
+        
+        .initials {
             font-size: 2.5rem;
         }
         
-        .card-body {
-            padding: 2rem 1rem;
+        .card-title {
+            font-size: 1.1rem;
         }
         
-        .rounded-circle {
-            width: 120px;
-            height: 120px;
-        }
-        
-        .display-1 {
-            font-size: 5rem;
+        .card-text {
+            font-size: 0.9rem;
         }
     }
 </style>
