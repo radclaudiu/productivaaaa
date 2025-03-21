@@ -1262,8 +1262,8 @@ def local_user_tasks(date_str=None):
         selected_date = today
     
     # Calcular fechas para el carrusel (día anterior, actual, siguiente)
-    prev_date = selected_date - timedelta(days=1)
-    next_date = selected_date + timedelta(days=1)
+    prev_date = selected_date - datetime.timedelta(days=1)
+    next_date = selected_date + datetime.timedelta(days=1)
     
     # Determinar los nombres de los días en español
     days_map = {

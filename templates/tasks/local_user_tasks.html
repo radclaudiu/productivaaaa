@@ -1,5 +1,46 @@
 {% extends 'layout.html' %}
 
+{% block styles %}
+<style>
+    /* Estilos para el carrusel de fechas */
+    .day-selector {
+        display: inline-block;
+        padding: 10px 15px;
+        border-radius: 15px;
+        width: 80px;
+        transition: all 0.3s;
+        border: 2px solid transparent;
+    }
+    
+    .day-selector.active {
+        background-color: var(--bs-primary);
+        color: white;
+        box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        transform: scale(1.1);
+    }
+    
+    .day-selector:not(.active):hover {
+        background-color: rgba(13, 110, 253, 0.1);
+        cursor: pointer;
+        transform: scale(1.05);
+    }
+    
+    .day-name {
+        font-size: 1rem;
+        margin-bottom: 0.2rem;
+    }
+    
+    .day-number {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .today:not(.active) {
+        border: 2px solid var(--bs-primary);
+    }
+</style>
+{% endblock %}
+
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
