@@ -70,10 +70,10 @@
                             <dt class="col-sm-4">Estado:</dt>
                             <dd class="col-sm-8">
                                 <span class="badge 
-                                    {% if employee.status.value == 'activo' %}bg-success
-                                    {% elif employee.status.value == 'baja_medica' %}bg-warning
-                                    {% elif employee.status.value == 'excedencia' %}bg-info
-                                    {% elif employee.status.value == 'vacaciones' %}bg-primary
+                                    {% if employee.status and employee.status.value == 'activo' %}bg-success
+                                    {% elif employee.status and employee.status.value == 'baja_medica' %}bg-warning
+                                    {% elif employee.status and employee.status.value == 'excedencia' %}bg-info
+                                    {% elif employee.status and employee.status.value == 'vacaciones' %}bg-primary
                                     {% else %}bg-danger
                                     {% endif %}">
                                     {{ employee.status.name.capitalize() if employee.status else 'Activo' }}
