@@ -23,7 +23,11 @@
                 </div>
                 <div class="card-body">
                     {% if active_tasks %}
-                    <div class="table-responsive">
+                    
+                    <!-- Tareas sin grupo -->
+                    {% if ungrouped_tasks %}
+                    <h6 class="mb-3">Tareas Generales</h6>
+                    <div class="table-responsive mb-4">
                         <table class="table table-hover">
                             <thead>
                                 <tr>
@@ -34,7 +38,7 @@
                                 </tr>
                             </thead>
                             <tbody>
-                                {% for task in active_tasks %}
+                                {% for task in ungrouped_tasks %}
                                 <tr>
                                     <td class="fw-bold">{{ task.title }}</td>
                                     <td>
@@ -63,6 +67,81 @@
                             </tbody>
                         </table>
                     </div>
+                    {% endif %}
+                    
+                    <!-- Grupos de tareas (acordeón) -->
+                    {% if grouped_tasks %}
+                    <h6 class="mb-3">Tareas por Grupos</h6>
+                    <div class="accordion mb-4" id="taskGroupsAccordion">
+                        {% for group_id, group_data in grouped_tasks.items() %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ group_id }}">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" 
+                                        data-bs-target="#collapse{{ group_id }}" aria-expanded="true" 
+                                        aria-controls="collapse{{ group_id }}"
+                                        style="background-color: {{ group_data.group.color }}20; border-left: 5px solid {{ group_data.group.color }}">
+                                    <span class="fw-bold">{{ group_data.group.name }}</span>
+                                    <span class="badge bg-secondary ms-2">{{ group_data.tasks|length }} tareas</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ group_id }}" class="accordion-collapse collapse show" 
+                                 aria-labelledby="heading{{ group_id }}" data-bs-parent="#taskGroupsAccordion">
+                                <div class="accordion-body p-0">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover mb-0">
+                                            <thead>
+                                                <tr>
+                                                    <th>Tarea</th>
+                                                    <th>Prioridad</th>
+                                                    <th>Descripción</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for task in group_data.tasks %}
+                                                <tr>
+                                                    <td class="fw-bold">{{ task.title }}</td>
+                                                    <td>
+                                                        {% if task.priority.value == 'baja' %}
+                                                        <span class="badge bg-info">Baja</span>
+                                                        {% elif task.priority.value == 'media' %}
+                                                        <span class="badge bg-primary">Media</span>
+                                                        {% elif task.priority.value == 'alta' %}
+                                                        <span class="badge bg-warning">Alta</span>
+                                                        {% else %}
+                                                        <span class="badge bg-danger">Urgente</span>
+                                                        {% endif %}
+                                                    </td>
+                                                    <td>{{ task.description|truncate(100) if task.description else 'Sin descripción' }}</td>
+                                                    <td>
+                                                        {% if task.completed_today %}
+                                                        <span class="badge bg-success"><i class="bi bi-check-lg"></i> Completada</span>
+                                                        {% else %}
+                                                        <a href="{{ url_for('tasks.complete_task', task_id=task.id) }}" class="btn btn-sm btn-success">
+                                                            <i class="bi bi-check-lg"></i> Completar
+                                                        </a>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if not ungrouped_tasks and not grouped_tasks %}
+                    <div class="text-center py-5">
+                        <i class="bi bi-check-circle-fill text-success fs-1"></i>
+                        <h5 class="mt-3">¡No hay tareas pendientes para hoy!</h5>
+                        <p class="text-muted">Todas las tareas han sido completadas.</p>
+                    </div>
+                    {% endif %}
+                    
                     {% else %}
                     <div class="text-center py-5">
                         <i class="bi bi-check-circle-fill text-success fs-1"></i>

@@ -1253,8 +1253,13 @@ def local_user_tasks():
     # Obtener tareas activas para hoy
     today = date.today()
     active_tasks = []
-    completed_tasks = []
+    grouped_tasks = {}  # Diccionario para agrupar tareas por grupo
+    ungrouped_tasks = [] # Lista para tareas sin grupo
     pending_tasks = Task.query.filter_by(location_id=location.id, status=TaskStatus.PENDIENTE).all()
+    
+    # Obtener grupos de tareas para esta ubicación
+    task_groups = TaskGroup.query.filter_by(location_id=location.id).all()
+    group_dict = {group.id: group for group in task_groups}
     
     # Obtener todas las completadas de hoy
     completions = TaskCompletion.query.filter_by(
@@ -1273,6 +1278,18 @@ def local_user_tasks():
             # Verificar si ya ha sido completada hoy por este usuario
             task.completed_today = task.id in completed_task_ids
             active_tasks.append(task)
+            
+            # Agrupar por grupo si tiene uno
+            if task.group_id and task.group_id in group_dict:
+                group_id = task.group_id
+                if group_id not in grouped_tasks:
+                    grouped_tasks[group_id] = {
+                        'group': group_dict[group_id],
+                        'tasks': []
+                    }
+                grouped_tasks[group_id]['tasks'].append(task)
+            else:
+                ungrouped_tasks.append(task)
     
     return render_template('tasks/local_user_tasks.html',
                           title=f'Tareas de {user.name}',
@@ -1280,6 +1297,9 @@ def local_user_tasks():
                           local_user=user,
                           location=location,
                           active_tasks=active_tasks,
+                          ungrouped_tasks=ungrouped_tasks,
+                          grouped_tasks=grouped_tasks,
+                          task_groups=task_groups,
                           completed_tasks=completions)
 
 @tasks_bp.route('/local-user/tasks/<int:task_id>/complete', methods=['GET', 'POST'])
