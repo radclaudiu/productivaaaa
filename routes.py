@@ -2,7 +2,7 @@ import os
 from datetime import datetime
 from functools import wraps
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, send_from_directory
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, send_from_directory, send_file
 from flask_login import login_user, logout_user, login_required, current_user
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
@@ -14,9 +14,9 @@ from models import (User, Company, Employee, EmployeeDocument, EmployeeNote, Use
 from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeForm, 
                   CompanyForm, EmployeeForm, EmployeeDocumentForm, EmployeeNoteForm, SearchForm,
                   EmployeeStatusForm, EmployeeScheduleForm, EmployeeWeeklyScheduleForm, EmployeeCheckInForm, 
-                  EmployeeVacationForm, EmployeeVacationApprovalForm, GenerateCheckInsForm)
+                  EmployeeVacationForm, EmployeeVacationApprovalForm, GenerateCheckInsForm, ExportCheckInsForm)
 from utils import (save_file, log_employee_change, log_activity, can_manage_company, 
-                  can_manage_employee, can_view_employee, get_dashboard_stats)
+                  can_manage_employee, can_view_employee, get_dashboard_stats, generate_checkins_pdf)
 
 # Create blueprints
 auth_bp = Blueprint('auth', __name__)
@@ -944,12 +944,16 @@ def list_checkins(employee_id):
         flash('No tienes permiso para ver los fichajes de este empleado.', 'danger')
         return redirect(url_for('employee.list_employees'))
     
+    # Form for exporting check-ins to PDF
+    export_form = ExportCheckInsForm()
+    
     checkins = EmployeeCheckIn.query.filter_by(employee_id=employee_id).order_by(EmployeeCheckIn.check_in_time.desc()).all()
     
     return render_template('checkin_list.html', 
                           title=f'Fichajes de {employee.first_name} {employee.last_name}', 
                           employee=employee,
-                          checkins=checkins)
+                          checkins=checkins,
+                          export_form=export_form)
 
 @checkin_bp.route('/employee/<int:employee_id>/new', methods=['GET', 'POST'])
 @manager_required
@@ -1065,6 +1069,40 @@ def delete_checkin(id):
     
     log_activity(f'Fichaje eliminado para {employee.first_name} {employee.last_name}')
     flash('Fichaje eliminado correctamente.', 'success')
+    return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
+
+@checkin_bp.route('/employee/<int:employee_id>/export', methods=['POST'])
+@login_required
+def export_checkins(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to view this employee
+    if not can_view_employee(employee):
+        flash('No tienes permiso para exportar los fichajes de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = ExportCheckInsForm()
+    
+    if form.validate_on_submit():
+        start_date = form.start_date.data
+        end_date = form.end_date.data
+        
+        # Generate PDF
+        pdf_file = generate_checkins_pdf(employee, start_date, end_date)
+        
+        if not pdf_file:
+            flash('No se han podido generar el PDF de fichajes.', 'warning')
+            return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
+        
+        # Prepare filename for download
+        filename = f"fichajes_{employee.first_name.lower()}_{employee.last_name.lower()}_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.pdf"
+        
+        log_activity(f'Exportados fichajes a PDF para {employee.first_name} {employee.last_name}')
+        
+        # Send the file to the user
+        return send_file(pdf_file, as_attachment=True, download_name=filename, mimetype='application/pdf')
+    
+    flash('Error al validar el formulario.', 'danger')
     return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
 
 @checkin_bp.route('/employee/<int:employee_id>/generate', methods=['GET', 'POST'])
