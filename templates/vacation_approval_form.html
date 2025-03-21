@@ -6,42 +6,81 @@
     
     <div class="row">
         <div class="col-md-12 mb-4">
-            <div class="card">
-                <div class="card-header">
-                    <h5 class="mb-0">Aprobar/Denegar Solicitud de Vacaciones</h5>
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-calendar-check me-2"></i>Gestionar Solicitud de Vacaciones</h5>
                 </div>
                 <div class="card-body">
-                    <div class="row mb-4">
-                        <div class="col-md-6">
-                            <p><strong>Fecha de Inicio:</strong> {{ vacation.start_date.strftime('%d/%m/%Y') }}</p>
-                            <p><strong>Fecha de Fin:</strong> {{ vacation.end_date.strftime('%d/%m/%Y') }}</p>
-                            <p><strong>Total Días:</strong> {{ vacation.total_days() }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Estado Actual:</strong> 
-                                <span class="badge 
-                                          {% if vacation.status.value == 'aprobada' %}bg-success
-                                          {% elif vacation.status.value == 'pendiente' %}bg-warning
-                                          {% elif vacation.status.value == 'denegada' %}bg-danger
-                                          {% elif vacation.status.value == 'disfrutada' %}bg-info
-                                          {% endif %}">
-                                    {{ vacation.status.name.capitalize() }}
-                                </span>
-                            </p>
-                            <p><strong>Fecha de Solicitud:</strong> {{ vacation.created_at.strftime('%d/%m/%Y') }}</p>
-                            {% if vacation.notes %}
-                            <p><strong>Notas:</strong> {{ vacation.notes }}</p>
-                            {% endif %}
+                    <!-- Detalles de la solicitud -->
+                    <div class="mb-4">
+                        <div class="card border 
+                            {% if vacation.status.value == 'aprobada' %} border-success
+                            {% elif vacation.status.value == 'pendiente' %} border-warning
+                            {% elif vacation.status.value == 'denegada' %} border-danger
+                            {% elif vacation.status.value == 'disfrutada' %} border-info
+                            {% endif %}">
+                            <div class="card-header bg-transparent">
+                                <div class="d-flex justify-content-between align-items-center">
+                                    <h5 class="mb-0 {% if vacation.status.value == 'aprobada' %} text-success
+                                        {% elif vacation.status.value == 'pendiente' %} text-warning
+                                        {% elif vacation.status.value == 'denegada' %} text-danger
+                                        {% elif vacation.status.value == 'disfrutada' %} text-info
+                                        {% endif %}">
+                                        <i class="bi bi-calendar-range me-2"></i>
+                                        Periodo: {{ vacation.start_date.strftime('%d/%m/%Y') }} - {{ vacation.end_date.strftime('%d/%m/%Y') }}
+                                    </h5>
+                                    <span class="badge 
+                                        {% if vacation.status.value == 'aprobada' %}bg-success
+                                        {% elif vacation.status.value == 'pendiente' %}bg-warning
+                                        {% elif vacation.status.value == 'denegada' %}bg-danger
+                                        {% elif vacation.status.value == 'disfrutada' %}bg-info
+                                        {% endif %}">
+                                        {{ vacation.status.name.capitalize() }}
+                                    </span>
+                                </div>
+                            </div>
+                            <div class="card-body">
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-calendar-week fs-5 me-2"></i>
+                                            <span><strong>Total días:</strong> {{ vacation.total_days() }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-calendar-date fs-5 me-2"></i>
+                                            <span><strong>Solicitado:</strong> {{ vacation.created_at.strftime('%d/%m/%Y') }}</span>
+                                        </div>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-person fs-5 me-2"></i>
+                                            <span><strong>Empleado:</strong> {{ employee.first_name }} {{ employee.last_name }}</span>
+                                        </div>
+                                        <div class="d-flex align-items-center mb-2">
+                                            <i class="bi bi-building fs-5 me-2"></i>
+                                            <span><strong>Empresa:</strong> {{ employee.company.name }}</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                
+                                {% if vacation.notes %}
+                                <div class="alert alert-secondary">
+                                    <i class="bi bi-chat-left-text me-2"></i>
+                                    <strong>Notas del empleado:</strong> {{ vacation.notes }}
+                                </div>
+                                {% endif %}
+                            </div>
                         </div>
                     </div>
 
+                    <!-- Formulario de gestión -->
                     <form method="POST">
                         {{ form.hidden_tag() }}
                         
-                        <div class="row mb-3">
+                        <div class="row mb-4">
                             <div class="col-md-6">
                                 <div class="form-group">
-                                    {{ form.status.label(class="form-label") }}
+                                    <label class="form-label fw-bold"><i class="bi bi-check-circle me-2"></i>{{ form.status.label.text }}</label>
                                     {{ form.status(class="form-select") }}
                                     {% for error in form.status.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
@@ -50,23 +89,27 @@
                             </div>
                         </div>
                         
-                        <div class="row mb-3">
+                        <div class="row mb-4">
                             <div class="col-12">
                                 <div class="form-group">
-                                    {{ form.notes.label(class="form-label") }}
-                                    {{ form.notes(class="form-control", rows="3") }}
+                                    <label class="form-label fw-bold"><i class="bi bi-chat-right-text me-2"></i>{{ form.notes.label.text }}</label>
+                                    {{ form.notes(class="form-control", rows="3", placeholder="Añada comentarios sobre la aprobación o denegación de estas vacaciones...") }}
                                     {% for error in form.notes.errors %}
                                     <div class="invalid-feedback d-block">{{ error }}</div>
                                     {% endfor %}
-                                    <small class="form-text text-muted">Añada comentarios sobre la aprobación o denegación de estas vacaciones.</small>
+                                    <small class="form-text text-muted mt-1">Estos comentarios serán visibles para el empleado.</small>
                                 </div>
                             </div>
                         </div>
                         
                         <div class="row mt-4">
-                            <div class="col-12">
-                                {{ form.submit(class="btn btn-primary") }}
-                                <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-secondary">Cancelar</a>
+                            <div class="col-12 d-flex justify-content-between">
+                                <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-secondary">
+                                    <i class="bi bi-arrow-left me-2"></i>Volver
+                                </a>
+                                <div>
+                                    {{ form.submit(class="btn btn-primary px-4") }}
+                                </div>
                             </div>
                         </div>
                     </form>

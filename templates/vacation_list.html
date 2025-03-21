@@ -13,77 +13,126 @@
                         {% if current_user.is_admin() or current_user.is_gerente() or 
                               (current_user.is_empleado() and current_user.employee and current_user.employee.id == employee.id) %}
                         <a href="{{ url_for('vacation.create_vacation', employee_id=employee.id) }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> Solicitar Vacaciones
+                            <i class="bi bi-plus-circle"></i> Solicitar Vacaciones
                         </a>
                         {% endif %}
                     </div>
                 </div>
                 <div class="card-body">
                     {% if vacations %}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover">
-                            <thead>
-                                <tr>
-                                    <th>Inicio</th>
-                                    <th>Fin</th>
-                                    <th>Días</th>
-                                    <th>Estado</th>
-                                    <th>Aprobado por</th>
-                                    <th>Notas</th>
-                                    <th>Acciones</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                {% for vacation in vacations %}
-                                <tr>
-                                    <td>{{ vacation.start_date.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ vacation.end_date.strftime('%d/%m/%Y') }}</td>
-                                    <td>{{ vacation.total_days() }}</td>
-                                    <td>
-                                        <span class="badge 
-                                                  {% if vacation.status.value == 'aprobada' %}bg-success
-                                                  {% elif vacation.status.value == 'pendiente' %}bg-warning
-                                                  {% elif vacation.status.value == 'denegada' %}bg-danger
-                                                  {% elif vacation.status.value == 'disfrutada' %}bg-info
-                                                  {% endif %}">
-                                            {{ vacation.status.name.capitalize() }}
-                                        </span>
-                                    </td>
-                                    <td>
-                                        {% if vacation.approved_by %}
-                                        {{ vacation.approved_by.first_name }} {{ vacation.approved_by.last_name }}
-                                        {% else %}
-                                        -
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if vacation.notes %}
-                                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ vacation.notes }}">
-                                            <i class="fas fa-info-circle"></i>
+                        <!-- Agrupar vacaciones por año -->
+                        {% set years = {} %}
+                        {% for vacation in vacations %}
+                            {% set year = vacation.start_date.year %}
+                            {% if year not in years %}
+                                {% set _ = years.update({year: []}) %}
+                            {% endif %}
+                            {% set _ = years[year].append(vacation) %}
+                        {% endfor %}
+                        
+                        <div class="accordion mb-4" id="accordionVacations">
+                            {% for year, year_vacations in years|dictsort(reverse=true) %}
+                                <div class="accordion-item">
+                                    <h2 class="accordion-header" id="heading{{ year }}">
+                                        <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" 
+                                                data-bs-toggle="collapse" data-bs-target="#collapse{{ year }}" 
+                                                aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" 
+                                                aria-controls="collapse{{ year }}">
+                                            <strong>Año {{ year }}</strong>
+                                            <span class="badge bg-primary ms-2">{{ year_vacations|length }} periodos</span>
+                                            {% set total_days = 0 %}
+                                            {% for vacation in year_vacations %}
+                                                {% set total_days = total_days + vacation.total_days() %}
+                                            {% endfor %}
+                                            <span class="badge bg-info ms-2">{{ total_days }} días totales</span>
                                         </button>
-                                        {% endif %}
-                                    </td>
-                                    <td>
-                                        {% if current_user.is_admin() or current_user.is_gerente() %}
-                                        <a href="{{ url_for('vacation.approve_vacation', id=vacation.id) }}" class="btn btn-success btn-sm">
-                                            <i class="fas fa-check"></i>
-                                        </a>
-                                        <form action="{{ url_for('vacation.delete_vacation', id=vacation.id) }}" method="POST" class="d-inline" 
-                                              onsubmit="return confirm('¿Está seguro de eliminar estas vacaciones?');">
-                                            <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i>
-                                            </button>
-                                        </form>
-                                        {% endif %}
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
+                                    </h2>
+                                    <div id="collapse{{ year }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
+                                        aria-labelledby="heading{{ year }}" data-bs-parent="#accordionVacations">
+                                        <div class="accordion-body">
+                                            <div class="row">
+                                                {% for vacation in year_vacations|sort(attribute='start_date', reverse=true) %}
+                                                    <div class="col-md-6 col-xl-4 mb-3">
+                                                        <div class="card h-100 border
+                                                            {% if vacation.status.value == 'aprobada' %} border-success
+                                                            {% elif vacation.status.value == 'pendiente' %} border-warning
+                                                            {% elif vacation.status.value == 'denegada' %} border-danger
+                                                            {% elif vacation.status.value == 'disfrutada' %} border-info
+                                                            {% endif %}">
+                                                            <div class="card-header bg-transparent
+                                                                {% if vacation.status.value == 'aprobada' %} text-success
+                                                                {% elif vacation.status.value == 'pendiente' %} text-warning
+                                                                {% elif vacation.status.value == 'denegada' %} text-danger
+                                                                {% elif vacation.status.value == 'disfrutada' %} text-info
+                                                                {% endif %}">
+                                                                <div class="d-flex justify-content-between align-items-center">
+                                                                    <h6 class="mb-0">
+                                                                        <i class="bi bi-calendar-check"></i> 
+                                                                        {{ vacation.start_date.strftime('%d/%m/%Y') }} - {{ vacation.end_date.strftime('%d/%m/%Y') }}
+                                                                    </h6>
+                                                                    <span class="badge 
+                                                                        {% if vacation.status.value == 'aprobada' %}bg-success
+                                                                        {% elif vacation.status.value == 'pendiente' %}bg-warning
+                                                                        {% elif vacation.status.value == 'denegada' %}bg-danger
+                                                                        {% elif vacation.status.value == 'disfrutada' %}bg-info
+                                                                        {% endif %}">
+                                                                        {{ vacation.status.name.capitalize() }}
+                                                                    </span>
+                                                                </div>
+                                                            </div>
+                                                            <div class="card-body">
+                                                                <div class="row mb-2">
+                                                                    <div class="col-6">
+                                                                        <strong><i class="bi bi-calendar-week"></i> Duración:</strong>
+                                                                    </div>
+                                                                    <div class="col-6 text-end">
+                                                                        {{ vacation.total_days() }} días
+                                                                    </div>
+                                                                </div>
+                                                                {% if vacation.approved_by %}
+                                                                <div class="row mb-2">
+                                                                    <div class="col-6">
+                                                                        <strong><i class="bi bi-person-check"></i> Aprobado por:</strong>
+                                                                    </div>
+                                                                    <div class="col-6 text-end">
+                                                                        {{ vacation.approved_by.first_name }} {{ vacation.approved_by.last_name }}
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+                                                                {% if vacation.notes %}
+                                                                <div class="row mb-2">
+                                                                    <div class="col-12">
+                                                                        <strong><i class="bi bi-chat-left-text"></i> Notas:</strong>
+                                                                        <p class="mb-0 mt-1">{{ vacation.notes }}</p>
+                                                                    </div>
+                                                                </div>
+                                                                {% endif %}
+                                                            </div>
+                                                            {% if current_user.is_admin() or current_user.is_gerente() %}
+                                                            <div class="card-footer bg-transparent d-flex justify-content-end">
+                                                                <a href="{{ url_for('vacation.approve_vacation', id=vacation.id) }}" class="btn btn-sm btn-outline-success me-2">
+                                                                    <i class="bi bi-check-circle"></i> Gestionar
+                                                                </a>
+                                                                <form action="{{ url_for('vacation.delete_vacation', id=vacation.id) }}" method="POST" class="d-inline" 
+                                                                    onsubmit="return confirm('¿Está seguro de eliminar estas vacaciones?');">
+                                                                    <button type="submit" class="btn btn-sm btn-outline-danger">
+                                                                        <i class="bi bi-trash"></i> Eliminar
+                                                                    </button>
+                                                                </form>
+                                                            </div>
+                                                            {% endif %}
+                                                        </div>
+                                                    </div>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
                     {% else %}
                     <div class="alert alert-info">
-                        No hay vacaciones registradas para este empleado.
+                        <i class="bi bi-info-circle me-2"></i> No hay vacaciones registradas para este empleado.
                     </div>
                     {% endif %}
                 </div>
@@ -117,13 +166,13 @@
                 </div>
                 <div class="card-footer">
                     <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver a Detalles del Empleado
+                        <i class="bi bi-arrow-left"></i> Volver a Detalles del Empleado
                     </a>
                     <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-info">
-                        <i class="fas fa-calendar"></i> Ver Horarios
+                        <i class="bi bi-calendar-week"></i> Ver Horarios
                     </a>
                     <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-primary">
-                        <i class="fas fa-clock"></i> Ver Fichajes
+                        <i class="bi bi-clock"></i> Ver Fichajes
                     </a>
                 </div>
             </div>
