@@ -79,7 +79,7 @@ class LocalUser(db.Model):
     name = db.Column(db.String(64), nullable=False)
     last_name = db.Column(db.String(64), nullable=False)
     username = db.Column(db.String(128), nullable=False)  # Se generará automáticamente
-    pin = db.Column(db.String(10), nullable=False)  # PIN de 4 dígitos
+    pin = db.Column(db.String(256), nullable=False)  # PIN de 4 dígitos (almacenado como hash)
     photo_path = db.Column(db.String(256))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
