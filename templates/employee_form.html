@@ -125,6 +125,15 @@
                                     {% endfor %}
                                 </div>
                                 
+                                <div class="mb-3">
+                                    {{ form.contract_hours.label(class="form-label") }}
+                                    {{ form.contract_hours(class="form-control") }}
+                                    {% for error in form.contract_hours.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">Ejemplo: "40 horas semanales", "Media jornada", etc.</small>
+                                </div>
+                                
                                 <div class="form-check mb-3">
                                     {{ form.is_active(class="form-check-input") }}
                                     {{ form.is_active.label(class="form-check-label") }}

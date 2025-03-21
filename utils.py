@@ -146,17 +146,43 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
     
     try:
         # Create PDF
-        pdf = FPDF()
+        class PDF(FPDF):
+            def header(self):
+                # Título centrado, con línea de separación
+                self.set_font('Arial', 'B', 16)
+                self.cell(0, 10, 'Registro de fichajes', 0, 1, 'C')
+                
+                # Información de empresa y empleado
+                self.set_font('Arial', 'B', 11)
+                self.cell(0, 8, f'Empresa: {employee.company.name}', 0, 1)
+                self.set_font('Arial', '', 10)
+                self.cell(0, 6, f'CIF: {employee.company.tax_id}', 0, 1)
+                self.cell(0, 6, f'Dirección: {employee.company.address or ""}', 0, 1)
+                self.cell(0, 6, f'CP: {employee.company.postal_code or ""}, Ciudad: {employee.company.city or ""}', 0, 1)
+                
+                self.ln(5)
+                self.set_font('Arial', 'B', 11)
+                self.cell(0, 8, f'Empleado: {employee.first_name} {employee.last_name}', 0, 1)
+                self.set_font('Arial', '', 10)
+                self.cell(0, 6, f'DNI: {employee.dni}', 0, 1)
+                
+                # Mostrar el número de la seguridad social (si existe)
+                if hasattr(employee, 'social_security_number') and employee.social_security_number:
+                    self.cell(0, 6, f'NSS: {employee.social_security_number}', 0, 1)
+                
+                self.ln(5)
+                
+                # Línea decorativa
+                self.set_draw_color(100, 100, 100)
+                self.line(10, self.get_y(), 200, self.get_y())
+                self.ln(10)
+        
+        # Inicializar PDF
+        pdf = PDF()
+        pdf.set_auto_page_break(auto=True, margin=15)
         pdf.add_page()
         
-        # Set fonts
-        pdf.set_font('Arial', 'B', 14)
-        
-        # Title
-        pdf.cell(0, 8, 'Registro de fichajes', 0, 1, 'C')
-        
         # Date range information
-        pdf.set_font('Arial', '', 9)
         date_range = ""
         if start_date and end_date:
             date_range = f"Periodo: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
@@ -166,28 +192,35 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
             date_range = f"Hasta: {end_date.strftime('%d/%m/%Y')}"
         
         if date_range:
-            pdf.cell(0, 5, date_range, 0, 1, 'C')
+            pdf.set_font('Arial', 'I', 10)
+            pdf.cell(0, 6, date_range, 0, 1, 'C')
+            pdf.ln(5)
         
-        # Compact header with company and employee info in a single row
-        pdf.set_font('Arial', 'B', 10)
-        pdf.cell(0, 7, f'Empresa: {employee.company.name} - CIF: {employee.company.tax_id}', 0, 1)
-        pdf.set_font('Arial', '', 9)
-        pdf.cell(0, 5, f'Empleado: {employee.first_name} {employee.last_name} - DNI: {employee.dni} - Puesto: {employee.position or ""}', 0, 1)
-        pdf.ln(3)
+        # Check-ins table header - More centrado y con mejor formato
+        table_width = 160
+        date_width = 50
+        time_width = 55
         
-        # Check-ins table header - Removed Notes column
-        pdf.set_font('Arial', 'B', 9)
-        pdf.cell(50, 7, 'Fecha', 1, 0, 'C')
-        pdf.cell(35, 7, 'Entrada', 1, 0, 'C')
-        pdf.cell(35, 7, 'Salida', 1, 0, 'C')
-        pdf.cell(35, 7, 'Horas', 1, 1, 'C')
+        # Ajustar márgenes para centrar la tabla
+        margin_left = (210 - table_width) / 2
+        pdf.set_left_margin(margin_left)
+        
+        # Cabecera de tabla
+        pdf.set_font('Arial', 'B', 11)
+        pdf.cell(date_width, 10, 'Fecha', 0, 0, 'C')
+        pdf.cell(time_width, 10, 'Entrada', 0, 0, 'C')
+        pdf.cell(time_width, 10, 'Salida', 0, 1, 'C')
+        
+        # Línea separadora debajo de la cabecera
+        pdf.set_draw_color(100, 100, 100)
+        pdf.line(margin_left, pdf.get_y(), margin_left + table_width, pdf.get_y())
+        pdf.ln(2)
         
         # Check-ins data
-        pdf.set_font('Arial', '', 9)
-        total_hours = 0
+        pdf.set_font('Arial', '', 10)
         
-        # Adjust rows per page
-        max_rows_per_page = 35
+        # Ajustar para más entradas por página
+        max_rows_per_page = 22
         row_count = 0
         
         for checkin in check_ins:
@@ -196,53 +229,42 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
                 pdf.add_page()
                 
                 # Add header again on new page
-                pdf.set_font('Arial', 'B', 9)
-                pdf.cell(50, 7, 'Fecha', 1, 0, 'C')
-                pdf.cell(35, 7, 'Entrada', 1, 0, 'C')
-                pdf.cell(35, 7, 'Salida', 1, 0, 'C')
-                pdf.cell(35, 7, 'Horas', 1, 1, 'C')
+                pdf.set_left_margin(margin_left)
+                pdf.set_font('Arial', 'B', 11)
+                pdf.cell(date_width, 10, 'Fecha', 0, 0, 'C')
+                pdf.cell(time_width, 10, 'Entrada', 0, 0, 'C')
+                pdf.cell(time_width, 10, 'Salida', 0, 1, 'C')
                 
-                pdf.set_font('Arial', '', 9)
+                # Línea separadora debajo de la cabecera
+                pdf.set_draw_color(100, 100, 100)
+                pdf.line(margin_left, pdf.get_y(), margin_left + table_width, pdf.get_y())
+                pdf.ln(2)
+                
+                pdf.set_font('Arial', '', 10)
                 row_count = 0
             
             # Format date and times
-            date_str = checkin.check_in_time.strftime('%d/%m/%Y')
-            check_in_str = checkin.check_in_time.strftime('%H:%M')
-            check_out_str = checkin.check_out_time.strftime('%H:%M') if checkin.check_out_time else '-'
+            date_str = checkin.check_in_time.strftime('%d-%m-%Y')
+            check_in_str = checkin.check_in_time.strftime('%H:%M:%S')
+            check_out_str = checkin.check_out_time.strftime('%H:%M:%S') if checkin.check_out_time else ''
             
-            # Calculate hours
-            hours = 0
-            hours_str = '-'
-            if checkin.check_out_time:
-                hours = (checkin.check_out_time - checkin.check_in_time).total_seconds() / 3600
-                hours_str = f"{hours:.2f}"
-                total_hours += hours
-            
-            # Draw row without Notes column
-            pdf.cell(50, 6, date_str, 1, 0, 'C')
-            pdf.cell(35, 6, check_in_str, 1, 0, 'C')
-            pdf.cell(35, 6, check_out_str, 1, 0, 'C')
-            pdf.cell(35, 6, hours_str, 1, 1, 'C')
+            # Draw row 
+            pdf.cell(date_width, 10, date_str, 0, 0, 'C')
+            pdf.cell(time_width, 10, check_in_str, 0, 0, 'C')
+            pdf.cell(time_width, 10, check_out_str, 0, 1, 'C')
             
             row_count += 1
         
-        # Total hours
-        pdf.set_font('Arial', 'B', 9)
-        pdf.cell(120, 6, 'Total Horas:', 1, 0, 'R')
-        pdf.cell(35, 6, f"{total_hours:.2f}", 1, 1, 'C')
+        # Restaurar margen izquierdo
+        pdf.set_left_margin(10)
         
-        # Compact footer with signatures
-        pdf.ln(5)
-        pdf.set_font('Arial', '', 9)
-        current_date = datetime.now().strftime('%d/%m/%Y')
-        pdf.cell(0, 5, f'Fecha: {current_date}', 0, 1)
+        # Texto final y espacio para firma
+        pdf.ln(15)
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(0, 6, 'Estos fichajes han sido comprobados por el empleado.', 0, 1)
         
-        pdf.cell(90, 5, 'Firma del empleado:', 0, 0)
-        pdf.cell(90, 5, 'Firma del responsable:', 0, 1)
-        pdf.ln(10)
-        
-        pdf.cell(90, 5, '_______________________', 0, 0)
-        pdf.cell(90, 5, '_______________________', 0, 1)
+        pdf.ln(20)
+        pdf.cell(0, 6, 'Firma :', 0, 1)
         
         # Output PDF to BytesIO buffer
         pdf_output = pdf.output(dest='S').encode('latin1')
