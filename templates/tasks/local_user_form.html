@@ -56,28 +56,7 @@
                             </div>
                         </div>
                         
-                        {% if request.endpoint == 'tasks.create_local_user' %}
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    {{ form.password.label(class="form-label") }}
-                                    {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), type="password") }}
-                                    {% for error in form.password.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    {{ form.confirm_password.label(class="form-label") }}
-                                    {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), type="password") }}
-                                    {% for error in form.confirm_password.errors %}
-                                    <div class="invalid-feedback">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
-                        </div>
-                        {% endif %}
+                        <!-- Ya no se necesita sección de contraseña para usuarios locales -->
                         
                         <div class="row mb-3">
                             <div class="col-md-6">
@@ -128,39 +107,7 @@
                 </div>
             </div>
             
-            {% if request.endpoint == 'tasks.edit_local_user' %}
-            <div class="card shadow mt-4">
-                <div class="card-header py-3">
-                    <h6 class="m-0 fw-bold">Cambiar Contraseña</h6>
-                </div>
-                <div class="card-body">
-                    <form method="post" action="{{ url_for('tasks.reset_local_user_password', location_id=location.id, id=user.id) }}">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="new_password" class="form-label">Nueva Contraseña</label>
-                                    <input type="password" name="new_password" id="new_password" class="form-control" required>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="confirm_new_password" class="form-label">Confirmar Contraseña</label>
-                                    <input type="password" name="confirm_new_password" id="confirm_new_password" class="form-control" required>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                            <button type="submit" class="btn btn-warning">
-                                <i class="bi bi-key"></i> Actualizar Contraseña
-                            </button>
-                        </div>
-                    </form>
-                </div>
-            </div>
-            {% endif %}
+            <!-- Ya no se necesita la sección de cambio de contraseña para usuarios locales -->
         </div>
     </div>
 </div>

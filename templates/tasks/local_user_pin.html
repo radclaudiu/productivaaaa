@@ -1,30 +1,44 @@
 {% extends 'layout.html' %}
 
 {% block content %}
-<div class="container-fluid py-5">
+<div class="container-fluid py-3">
     <div class="row justify-content-center">
-        <div class="col-md-6 col-lg-4">
-            <div class="card shadow-lg border-0 rounded-3 mt-3">
-                <div class="card-header bg-primary text-white text-center">
-                    <h2 class="my-3">{{ user.name }} {{ user.last_name }}</h2>
-                </div>
-                <div class="card-body text-center">
-                    <div class="mb-4">
+        <div class="col-md-8 col-lg-5">
+            <div class="card shadow-lg border-0 rounded-4">
+                <div class="card-header bg-primary text-white text-center py-4">
+                    <div class="mb-3">
                         {% if user.photo_path %}
-                        <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" 
+                        <img src="{{ url_for('static', filename=user.photo_path) }}" 
                              class="rounded-circle img-fluid user-photo" alt="{{ user.name }}">
                         {% else %}
-                        <i class="bi bi-person-circle display-1"></i>
+                        <div class="avatar-circle">
+                            <span class="initials">{{ user.name[0] }}{{ user.last_name[0] }}</span>
+                        </div>
                         {% endif %}
                     </div>
-                    
-                    <p class="lead mb-4">Introduce tu PIN para acceder</p>
-                    
+                    <h2 class="mb-0">{{ user.name }}</h2>
+                    <p class="mb-0 opacity-75">{{ user.last_name }}</p>
+                </div>
+                <div class="card-body p-4 text-center">
                     <form method="post">
                         {{ form.hidden_tag() }}
                         
+                        <h3 class="mb-4">Introduce tu PIN</h3>
+                        
+                        {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                        {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                        {% endfor %}
+                        {% endif %}
+                        {% endwith %}
+                        
                         <div class="form-group mb-4">
-                            <div class="pin-display mb-3">
+                            <!-- PIN dots display -->
+                            <div class="pin-display mb-4">
                                 <div id="pinDisplay" class="pin-dots">
                                     <span class="pin-dot"></span>
                                     <span class="pin-dot"></span>
@@ -33,37 +47,37 @@
                                 </div>
                             </div>
                             
+                            <!-- Hidden real input -->
                             <div class="pin-input-container d-none">
-                                {{ form.pin(class="form-control pin-input" + (" is-invalid" if form.pin.errors else ""), 
-                                    id="pinInput", autocomplete="off") }}
+                                {{ form.pin(class="form-control", id="pinInput", autocomplete="off") }}
                                 
                                 {% for error in form.pin.errors %}
-                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                <div class="invalid-feedback d-block mb-3">{{ error }}</div>
                                 {% endfor %}
                             </div>
                         </div>
                         
                         <!-- Numeric keypad -->
                         <div class="numeric-keypad">
-                            <div class="row g-3 mb-2">
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="1">1</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="2">2</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="3">3</button></div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="1">1</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="2">2</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="3">3</button></div>
                             </div>
-                            <div class="row g-3 mb-2">
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="4">4</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="5">5</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="6">6</button></div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="4">4</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="5">5</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="6">6</button></div>
                             </div>
-                            <div class="row g-3 mb-2">
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="7">7</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="8">8</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="9">9</button></div>
+                            <div class="row g-3 mb-3">
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="7">7</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="8">8</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="9">9</button></div>
                             </div>
                             <div class="row g-3">
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-danger w-100" id="clearPinBtn">C</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-secondary w-100 keypad-btn" data-number="0">0</button></div>
-                                <div class="col-4"><button type="button" class="btn btn-lg btn-warning w-100" id="deletePinBtn">⌫</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-danger w-100" id="clearPinBtn"><i class="bi bi-x-lg"></i></button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-outline-primary w-100 keypad-btn" data-number="0">0</button></div>
+                                <div class="col-4"><button type="button" class="btn btn-lg btn-warning w-100" id="deletePinBtn"><i class="bi bi-backspace"></i></button></div>
                             </div>
                         </div>
                         
@@ -73,11 +87,9 @@
                     </form>
                 </div>
                 <div class="card-footer text-center py-3">
-                    <div class="small">
-                        <a href="{{ url_for('tasks.local_portal', location_id=user.location_id) }}" class="btn btn-link">
-                            <i class="bi bi-arrow-left"></i> Volver a selección de usuario
-                        </a>
-                    </div>
+                    <a href="{{ url_for('tasks.local_portal', location_id=user.location_id) }}" class="btn btn-outline-secondary btn-lg">
+                        <i class="bi bi-arrow-left"></i> Volver
+                    </a>
                 </div>
             </div>
         </div>
@@ -93,28 +105,48 @@
     }
     
     .user-photo {
-        width: 150px;
-        height: 150px;
+        width: 120px;
+        height: 120px;
         object-fit: cover;
-        border: 3px solid var(--bs-primary);
+        border: 3px solid white;
         box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        margin: 0 auto;
+    }
+    
+    .avatar-circle {
+        width: 120px;
+        height: 120px;
+        border-radius: 50%;
+        background-color: rgba(255,255,255,0.3);
+        color: white;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin: 0 auto;
+        border: 3px solid white;
+        box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+    }
+    
+    .initials {
+        font-size: 3rem;
+        font-weight: bold;
     }
     
     /* Estilo para los puntos del PIN */
     .pin-dots {
         display: flex;
         justify-content: center;
-        gap: 1rem;
+        gap: 1.5rem;
         margin: 1rem 0;
     }
     
     .pin-dot {
         display: block;
-        width: 20px;
-        height: 20px;
+        width: 25px;
+        height: 25px;
         border-radius: 50%;
         background-color: #e9ecef;
-        border: 2px solid #ced4da;
+        border: 2px solid rgba(0,0,0,0.1);
         transition: all 0.2s;
     }
     
@@ -126,27 +158,37 @@
     
     /* Estilo para el teclado numérico */
     .numeric-keypad {
-        max-width: 300px;
+        max-width: 350px;
         margin: 0 auto;
     }
     
     .keypad-btn, #clearPinBtn, #deletePinBtn {
-        font-size: 1.5rem;
+        font-size: 1.8rem;
+        font-weight: 500;
         padding: 0.75rem;
-        min-height: 60px;
+        min-height: 75px;
         touch-action: manipulation;
+        border-radius: 10px;
+    }
+    
+    .keypad-btn:active {
+        transform: scale(0.95);
     }
     
     /* Media queries para tablets */
     @media (max-width: 768px) {
         .keypad-btn, #clearPinBtn, #deletePinBtn {
-            font-size: 1.8rem;
-            min-height: 70px;
+            font-size: 2rem;
+            min-height: 85px;
         }
         
         .pin-dot {
-            width: 25px;
-            height: 25px;
+            width: 30px;
+            height: 30px;
+        }
+        
+        .pin-dots {
+            gap: 2rem;
         }
     }
 </style>
