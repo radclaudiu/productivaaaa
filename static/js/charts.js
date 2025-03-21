@@ -1,7 +1,7 @@
 // charts.js - Chart.js functionality for dashboard statistics
 
 // Function to initialize the dashboard charts
-function initDashboardCharts(employeesByContract, employeesLabels) {
+function initDashboardCharts(employeesByContract, employeesLabels, employeesByStatus, statusLabels) {
     // Contract types distribution chart
     if (document.getElementById('contractTypeChart')) {
         const contractCtx = document.getElementById('contractTypeChart').getContext('2d');
@@ -46,6 +46,60 @@ function initDashboardCharts(employeesByContract, employeesLabels) {
                     title: {
                         display: true,
                         text: 'Distribución por Tipo de Contrato',
+                        color: 'rgb(200, 200, 200)',
+                        font: {
+                            size: 16
+                        }
+                    }
+                }
+            }
+        });
+    }
+    
+    // Employee status distribution chart
+    if (document.getElementById('statusChart')) {
+        const statusCtx = document.getElementById('statusChart').getContext('2d');
+        
+        // Extract data from the data attributes
+        const statusChartLabels = [];
+        const statusData = [];
+        
+        for (const key in employeesByStatus) {
+            if (employeesByStatus.hasOwnProperty(key)) {
+                statusChartLabels.push(statusLabels[key] || key);
+                statusData.push(employeesByStatus[key]);
+            }
+        }
+        
+        const statusChart = new Chart(statusCtx, {
+            type: 'pie',
+            data: {
+                labels: statusChartLabels,
+                datasets: [{
+                    data: statusData,
+                    backgroundColor: [
+                        'rgba(75, 192, 192, 0.8)',
+                        'rgba(255, 99, 132, 0.8)',
+                        'rgba(255, 205, 86, 0.8)',
+                        'rgba(54, 162, 235, 0.8)',
+                        'rgba(153, 102, 255, 0.8)'
+                    ],
+                    borderWidth: 1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: {
+                        position: 'bottom',
+                        labels: {
+                            color: 'rgb(200, 200, 200)'
+                        }
+                    },
+                    title: {
+                        display: true,
+                        text: 'Distribución por Estado',
                         color: 'rgb(200, 200, 200)',
                         font: {
                             size: 16

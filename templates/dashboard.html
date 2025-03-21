@@ -97,7 +97,7 @@
     <!-- Chart and Activity Row -->
     <div class="row">
         <!-- Contract Types Chart -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold">Distribución por Tipo de Contrato</h6>
@@ -110,8 +110,22 @@
             </div>
         </div>
 
+        <!-- Employee Status Chart -->
+        <div class="col-lg-4 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Distribución por Estado</h6>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container" style="height: 300px;">
+                        <canvas id="statusChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+
         <!-- Recent Activity -->
-        <div class="col-lg-6 mb-4">
+        <div class="col-lg-4 mb-4">
             <div class="card shadow mb-4">
                 <div class="card-header py-3">
                     <h6 class="m-0 font-weight-bold">Actividad Reciente</h6>
@@ -196,6 +210,7 @@
     document.addEventListener('DOMContentLoaded', function() {
         // Prepare data for the contract type chart
         const employeesByContract = {{ stats.employees_by_contract | tojson }};
+        const employeesByStatus = {{ stats.employees_by_status | tojson }};
         
         // Labels dictionary for contract types
         const employeesLabels = {
@@ -203,11 +218,24 @@
             'temporal': 'Temporal',
             'practicas': 'Prácticas',
             'formacion': 'Formación',
-            'obra': 'Obra y Servicio'
+            'obra': 'Obra y Servicio',
+            'tiempo_parcial': 'Tiempo Parcial',
+            'relevo': 'Relevo',
+            'autonomo': 'Autónomo',
+            'mercantil': 'Mercantil'
+        };
+        
+        // Labels dictionary for employee status
+        const statusLabels = {
+            'activo': 'Activo',
+            'baja_medica': 'Baja Médica',
+            'excedencia': 'Excedencia',
+            'vacaciones': 'Vacaciones',
+            'inactivo': 'Inactivo'
         };
         
         // Initialize dashboard charts
-        initDashboardCharts(employeesByContract, employeesLabels);
+        initDashboardCharts(employeesByContract, employeesLabels, employeesByStatus, statusLabels);
     });
 </script>
 {% endblock %}

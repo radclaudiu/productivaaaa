@@ -129,6 +129,7 @@ def get_dashboard_stats():
         'total_employees': 0,
         'active_employees': 0,
         'employees_by_contract': {},
+        'employees_by_status': {},
         'recent_activities': []
     }
     
@@ -148,6 +149,15 @@ def get_dashboard_stats():
         for contract_type, count in contract_counts:
             if contract_type:
                 stats['employees_by_contract'][contract_type.value] = count
+        
+        # Count employees by status
+        status_counts = db.session.query(
+            Employee.status, func.count(Employee.id)
+        ).group_by(Employee.status).all()
+        
+        for status, count in status_counts:
+            if status:
+                stats['employees_by_status'][status.value] = count
         
         # Get recent activities
         stats['recent_activities'] = ActivityLog.query.order_by(
@@ -169,6 +179,15 @@ def get_dashboard_stats():
         for contract_type, count in contract_counts:
             if contract_type:
                 stats['employees_by_contract'][contract_type.value] = count
+        
+        # Count employees by status for this company
+        status_counts = db.session.query(
+            Employee.status, func.count(Employee.id)
+        ).filter_by(company_id=current_user.company_id).group_by(Employee.status).all()
+        
+        for status, count in status_counts:
+            if status:
+                stats['employees_by_status'][status.value] = count
         
         # Get recent activities for this company
         company_user_ids = [user.id for user in User.query.filter_by(company_id=current_user.company_id).all()]
