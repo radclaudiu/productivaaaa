@@ -13,8 +13,8 @@ from models import (User, Company, Employee, EmployeeDocument, EmployeeNote, Use
                    EmployeeVacation, VacationStatus, WeekDay)
 from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeForm, 
                   CompanyForm, EmployeeForm, EmployeeDocumentForm, EmployeeNoteForm, SearchForm,
-                  EmployeeStatusForm, EmployeeScheduleForm, EmployeeCheckInForm, EmployeeVacationForm,
-                  EmployeeVacationApprovalForm, GenerateCheckInsForm)
+                  EmployeeStatusForm, EmployeeScheduleForm, EmployeeWeeklyScheduleForm, EmployeeCheckInForm, 
+                  EmployeeVacationForm, EmployeeVacationApprovalForm, GenerateCheckInsForm)
 from utils import (save_file, log_employee_change, log_activity, can_manage_company, 
                   can_manage_employee, can_view_employee, get_dashboard_stats)
 
@@ -809,6 +809,76 @@ def create_schedule(employee_id):
     
     return render_template('schedule_form.html', 
                           title=f'Nuevo Horario para {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee)
+
+@schedule_bp.route('/employee/<int:employee_id>/weekly', methods=['GET', 'POST'])
+@manager_required
+def weekly_schedule(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para gestionar los horarios de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeWeeklyScheduleForm()
+    
+    # Si es una petición GET, cargar los horarios existentes
+    if request.method == 'GET':
+        # Obtener los horarios existentes para cada día
+        schedules = EmployeeSchedule.query.filter_by(employee_id=employee_id).all()
+        day_schedules = {schedule.day_of_week.value: schedule for schedule in schedules}
+        
+        # Cargar los datos en el formulario
+        for day in ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]:
+            if day in day_schedules:
+                schedule = day_schedules[day]
+                setattr(form, f"{day}_is_working_day", schedule.is_working_day)
+                setattr(form, f"{day}_start_time", schedule.start_time)
+                setattr(form, f"{day}_end_time", schedule.end_time)
+    
+    if form.validate_on_submit():
+        # Para cada día de la semana, crear o actualizar el horario
+        for day_name in ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]:
+            # Obtener los datos del formulario para este día
+            is_working_day = getattr(form, f"{day_name}_is_working_day").data
+            start_time = getattr(form, f"{day_name}_start_time").data
+            end_time = getattr(form, f"{day_name}_end_time").data
+            
+            # Convertir el nombre del día a un WeekDay
+            day_enum = WeekDay(day_name)
+            
+            # Buscar un horario existente para este día
+            schedule = EmployeeSchedule.query.filter_by(
+                employee_id=employee_id, 
+                day_of_week=day_enum
+            ).first()
+            
+            # Si no existe horario para este día y es un día laborable, crearlo
+            if not schedule and is_working_day:
+                schedule = EmployeeSchedule(
+                    day_of_week=day_enum,
+                    start_time=start_time,
+                    end_time=end_time,
+                    is_working_day=is_working_day,
+                    employee_id=employee_id
+                )
+                db.session.add(schedule)
+            # Si existe, actualizarlo
+            elif schedule:
+                schedule.is_working_day = is_working_day
+                if is_working_day:
+                    schedule.start_time = start_time
+                    schedule.end_time = end_time
+        
+        db.session.commit()
+        log_activity(f'Horarios semanales actualizados para {employee.first_name} {employee.last_name}')
+        flash('Horarios semanales actualizados correctamente.', 'success')
+        return redirect(url_for('schedule.list_schedules', employee_id=employee_id))
+    
+    return render_template('weekly_schedule_form.html', 
+                          title=f'Horario Semanal para {employee.first_name} {employee.last_name}', 
                           form=form,
                           employee=employee)
 
