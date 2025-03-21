@@ -316,19 +316,38 @@ def list_employees():
     elif current_user.is_empleado() and current_user.employee:
         # Para un solo empleado no necesitamos paginación
         employees = [current_user.employee]
+        # Agrupar empleado por empresa para visualización consistente
+        company_name = current_user.employee.company.name if current_user.employee.company else "Sin Empresa Asignada"
+        employees_by_company = {company_name: [current_user.employee]}
         return render_template('employee_list.html', title='Empleados', 
-                              employees=employees, pagination=None)
+                              employees=employees, employees_by_company=employees_by_company, pagination=None)
     else:
         employees = []
+        employees_by_company = {}
         return render_template('employee_list.html', title='Empleados', 
-                              employees=employees, pagination=None)
+                              employees=employees, employees_by_company=employees_by_company, pagination=None)
     
     # Ejecutar consulta paginada
     pagination = query.paginate(page=page, per_page=per_page, error_out=False)
     employees = pagination.items
     
+    # Agrupar empleados por empresa
+    employees_by_company = {}
+    for employee in employees:
+        company_name = employee.company.name if employee.company else "Sin Empresa Asignada"
+        if company_name not in employees_by_company:
+            employees_by_company[company_name] = []
+        employees_by_company[company_name].append(employee)
+    
+    # Ordenar empresas alfabéticamente
+    sorted_employees_by_company = {}
+    for company_name in sorted(employees_by_company.keys()):
+        sorted_employees_by_company[company_name] = employees_by_company[company_name]
+    
     return render_template('employee_list.html', title='Empleados', 
-                          employees=employees, pagination=pagination)
+                          employees=employees, 
+                          employees_by_company=sorted_employees_by_company,
+                          pagination=pagination)
 
 @employee_bp.route('/<int:id>')
 @login_required

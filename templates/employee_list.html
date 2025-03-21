@@ -44,60 +44,137 @@
         </div>
         <div class="card-body">
             {% if employees %}
-                <div class="table-responsive">
-                    <table class="table table-hover" id="employeeTable">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>Nombre</th>
-                                <th>DNI</th>
-                                <th>Puesto</th>
-                                <th>Empresa</th>
-                                <th>Tipo de Contrato</th>
-                                <th>Fecha de Inicio</th>
-                                <th>Estado</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for employee in employees %}
-                            <tr data-href="{{ url_for('employee.view_employee', id=employee.id) }}" data-status="{{ 'active' if employee.is_active else 'inactive' }}">
-                                <td>{{ employee.id }}</td>
-                                <td>{{ employee.first_name }} {{ employee.last_name }}</td>
-                                <td>{{ employee.dni }}</td>
-                                <td>{{ employee.position }}</td>
-                                <td>{{ employee.company.name if employee.company else 'No asignada' }}</td>
-                                <td>{{ employee.contract_type.name if employee.contract_type else 'No definido' }}</td>
-                                <td>{{ employee.start_date.strftime('%d/%m/%Y') if employee.start_date else 'No definida' }}</td>
-                                <td>
-                                    <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                                        {{ 'Activo' if employee.is_active else 'Inactivo' }}
-                                    </span>
-                                </td>
-                                <td class="table-action-buttons">
-                                    <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-info">
-                                        <i class="bi bi-eye"></i>
-                                    </a>
-                                    
-                                    {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
-                                    <a href="{{ url_for('employee.edit_employee', id=employee.id) }}" class="btn btn-sm btn-warning">
-                                        <i class="bi bi-pencil"></i>
-                                    </a>
-                                    
-                                    <form action="{{ url_for('employee.delete_employee', id=employee.id) }}" method="post" class="d-inline">
-                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                        <button type="submit" class="btn btn-sm btn-danger confirm-action"
-                                                data-confirm-message="¿Estás seguro de querer eliminar este empleado? Esta acción no se puede deshacer.">
-                                            <i class="bi bi-trash"></i>
-                                        </button>
-                                    </form>
-                                    {% endif %}
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
+                {% if employees_by_company %}
+                    <!-- Empleados agrupados por empresa -->
+                    <div class="accordion mb-4" id="accordionCompanies">
+                        {% for company_name, company_employees in employees_by_company.items() %}
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="heading{{ loop.index }}">
+                                <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" 
+                                        data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" 
+                                        aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" 
+                                        aria-controls="collapse{{ loop.index }}">
+                                    <strong>{{ company_name }}</strong>
+                                    <span class="badge bg-primary ms-2">{{ company_employees|length }} empleados</span>
+                                </button>
+                            </h2>
+                            <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
+                                aria-labelledby="heading{{ loop.index }}" data-bs-parent="#accordionCompanies">
+                                <div class="accordion-body">
+                                    <div class="table-responsive">
+                                        <table class="table table-hover company-employee-table">
+                                            <thead>
+                                                <tr>
+                                                    <th>ID</th>
+                                                    <th>Nombre</th>
+                                                    <th>DNI</th>
+                                                    <th>Puesto</th>
+                                                    <th>Tipo de Contrato</th>
+                                                    <th>Fecha de Inicio</th>
+                                                    <th>Estado</th>
+                                                    <th>Acciones</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                                {% for employee in company_employees %}
+                                                <tr data-href="{{ url_for('employee.view_employee', id=employee.id) }}" data-status="{{ 'active' if employee.is_active else 'inactive' }}">
+                                                    <td>{{ employee.id }}</td>
+                                                    <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                                                    <td>{{ employee.dni }}</td>
+                                                    <td>{{ employee.position }}</td>
+                                                    <td>{{ employee.contract_type.name if employee.contract_type else 'No definido' }}</td>
+                                                    <td>{{ employee.start_date.strftime('%d/%m/%Y') if employee.start_date else 'No definida' }}</td>
+                                                    <td>
+                                                        <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                                            {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="table-action-buttons">
+                                                        <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-info">
+                                                            <i class="bi bi-eye"></i>
+                                                        </a>
+                                                        
+                                                        {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+                                                        <a href="{{ url_for('employee.edit_employee', id=employee.id) }}" class="btn btn-sm btn-warning">
+                                                            <i class="bi bi-pencil"></i>
+                                                        </a>
+                                                        
+                                                        <form action="{{ url_for('employee.delete_employee', id=employee.id) }}" method="post" class="d-inline">
+                                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                                            <button type="submit" class="btn btn-sm btn-danger confirm-action"
+                                                                    data-confirm-message="¿Estás seguro de querer eliminar este empleado? Esta acción no se puede deshacer.">
+                                                                <i class="bi bi-trash"></i>
+                                                            </button>
+                                                        </form>
+                                                        {% endif %}
+                                                    </td>
+                                                </tr>
+                                                {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% else %}
+                    <!-- Vista tradicional de tabla sin agrupar (fallback) -->
+                    <div class="table-responsive">
+                        <table class="table table-hover" id="employeeTable">
+                            <thead>
+                                <tr>
+                                    <th>ID</th>
+                                    <th>Nombre</th>
+                                    <th>DNI</th>
+                                    <th>Puesto</th>
+                                    <th>Empresa</th>
+                                    <th>Tipo de Contrato</th>
+                                    <th>Fecha de Inicio</th>
+                                    <th>Estado</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for employee in employees %}
+                                <tr data-href="{{ url_for('employee.view_employee', id=employee.id) }}" data-status="{{ 'active' if employee.is_active else 'inactive' }}">
+                                    <td>{{ employee.id }}</td>
+                                    <td>{{ employee.first_name }} {{ employee.last_name }}</td>
+                                    <td>{{ employee.dni }}</td>
+                                    <td>{{ employee.position }}</td>
+                                    <td>{{ employee.company.name if employee.company else 'No asignada' }}</td>
+                                    <td>{{ employee.contract_type.name if employee.contract_type else 'No definido' }}</td>
+                                    <td>{{ employee.start_date.strftime('%d/%m/%Y') if employee.start_date else 'No definida' }}</td>
+                                    <td>
+                                        <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                        </span>
+                                    </td>
+                                    <td class="table-action-buttons">
+                                        <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-info">
+                                            <i class="bi bi-eye"></i>
+                                        </a>
+                                        
+                                        {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+                                        <a href="{{ url_for('employee.edit_employee', id=employee.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-pencil"></i>
+                                        </a>
+                                        
+                                        <form action="{{ url_for('employee.delete_employee', id=employee.id) }}" method="post" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                            <button type="submit" class="btn btn-sm btn-danger confirm-action"
+                                                    data-confirm-message="¿Estás seguro de querer eliminar este empleado? Esta acción no se puede deshacer.">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                {% endif %}
                 
                 <!-- Paginación -->
                 {% if pagination and pagination.pages > 1 %}
