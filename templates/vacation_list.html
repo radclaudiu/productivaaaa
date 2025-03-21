@@ -40,11 +40,11 @@
                                                 aria-controls="collapse{{ year }}">
                                             <strong>Año {{ year }}</strong>
                                             <span class="badge bg-primary ms-2">{{ year_vacations|length }} periodos</span>
-                                            {% set total_days = 0 %}
+                                            {% set total_days = namespace(value=0) %}
                                             {% for vacation in year_vacations %}
-                                                {% set total_days = total_days + vacation.total_days() %}
+                                                {% set total_days.value = total_days.value + vacation.total_days() %}
                                             {% endfor %}
-                                            <span class="badge bg-info ms-2">{{ total_days }} días totales</span>
+                                            <span class="badge bg-info ms-2">{{ total_days.value }} días totales</span>
                                         </button>
                                     </h2>
                                     <div id="collapse{{ year }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
