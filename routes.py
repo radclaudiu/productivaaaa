@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, time
 from functools import wraps
 
 from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, send_from_directory, send_file
@@ -866,10 +866,10 @@ def weekly_schedule(employee_id):
             
             # Valores por defecto seguros para evitar errores NULL
             if not start_time:
-                start_time = datetime.time(9, 0)  # 9:00 AM por defecto
+                start_time = time(9, 0)  # 9:00 AM por defecto
             
             if not end_time:
-                end_time = datetime.time(18, 0)  # 6:00 PM por defecto
+                end_time = time(18, 0)  # 6:00 PM por defecto
             
             # Convertir el nombre del día a un WeekDay
             day_enum = WeekDay(day_name)
