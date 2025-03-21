@@ -1261,8 +1261,29 @@ def local_user_tasks():
     task_groups = TaskGroup.query.filter_by(location_id=location.id).all()
     group_dict = {group.id: group for group in task_groups}
     
-    # Obtener todas las completadas de hoy
-    completions = TaskCompletion.query.filter_by(
+    # Obtener todas las completadas de HOY, incluyendo información de quién las completó
+    all_completions_today = db.session.query(
+        TaskCompletion, LocalUser
+    ).join(
+        LocalUser, TaskCompletion.local_user_id == LocalUser.id
+    ).filter(
+        TaskCompletion.task_id.in_([t.id for t in pending_tasks]),
+        db.func.date(TaskCompletion.completion_date) == today
+    ).order_by(
+        TaskCompletion.completion_date.desc()
+    ).all()
+    
+    # Crear un diccionario de información de completado por tarea
+    completion_info = {}
+    for completion, local_user in all_completions_today:
+        completion_info[completion.task_id] = {
+            'user': f"{local_user.name} {local_user.last_name}",
+            'time': completion.completion_date.strftime('%H:%M'),
+            'completed_by_me': local_user.id == user_id
+        }
+    
+    # Completiones específicas para este usuario
+    user_completions = TaskCompletion.query.filter_by(
         local_user_id=user_id
     ).filter(
         db.func.date(TaskCompletion.completion_date) == today
@@ -1270,13 +1291,18 @@ def local_user_tasks():
         TaskCompletion.completion_date.desc()
     ).all()
     
-    # Lista de IDs de tareas completadas hoy
-    completed_task_ids = [completion.task_id for completion in completions]
+    # Lista de IDs de tareas completadas hoy (por cualquier usuario local)
+    completed_task_ids = [c.task_id for c, _ in all_completions_today]
     
     for task in pending_tasks:
         if task.is_due_today():
-            # Verificar si ya ha sido completada hoy por este usuario
+            # Verificar si ya ha sido completada hoy
             task.completed_today = task.id in completed_task_ids
+            
+            # Agregar información de quién completó la tarea
+            if task.id in completion_info:
+                task.completion_info = completion_info[task.id]
+            
             active_tasks.append(task)
             
             # Agrupar por grupo si tiene uno
@@ -1300,12 +1326,12 @@ def local_user_tasks():
                           ungrouped_tasks=ungrouped_tasks,
                           grouped_tasks=grouped_tasks,
                           task_groups=task_groups,
-                          completed_tasks=completions)
+                          completed_tasks=user_completions)
 
 @tasks_bp.route('/local-user/tasks/<int:task_id>/complete', methods=['GET', 'POST'])
 @local_user_required
 def complete_task(task_id):
-    """Marcar una tarea como completada"""
+    """Marcar una tarea como completada (versión con formulario)"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
     task = Task.query.get_or_404(task_id)
@@ -1349,6 +1375,59 @@ def complete_task(task_id):
                           form=form,
                           task=task,
                           user=user)
+
+@tasks_bp.route('/local-user/tasks/<int:task_id>/ajax-complete', methods=['POST'])
+@local_user_required
+def ajax_complete_task(task_id):
+    """Marcar una tarea como completada (versión AJAX)"""
+    user_id = session['local_user_id']
+    user = LocalUser.query.get_or_404(user_id)
+    task = Task.query.get_or_404(task_id)
+    
+    # Verificar que la solicitud es AJAX
+    if not request.is_json:
+        return jsonify({'error': 'Se requiere petición JSON'}), 400
+    
+    # Verificar que la tarea pertenece al local del usuario
+    if task.location_id != user.location_id:
+        return jsonify({'error': 'Tarea no válida para este local'}), 403
+    
+    # Verificar si ya ha sido completada hoy por este usuario
+    today = date.today()
+    existing_completion = TaskCompletion.query.filter_by(
+        task_id=task.id,
+        local_user_id=user_id
+    ).filter(
+        db.func.date(TaskCompletion.completion_date) == today
+    ).first()
+    
+    if existing_completion:
+        return jsonify({'error': 'Ya has completado esta tarea hoy'}), 400
+    
+    # Obtener notas (opcional)
+    data = request.json
+    notes = data.get('notes', '')
+    
+    # Crear registro de tarea completada
+    completion = TaskCompletion(
+        task_id=task.id,
+        local_user_id=user_id,
+        notes=notes
+    )
+    
+    db.session.add(completion)
+    db.session.commit()
+    
+    log_activity(f'Tarea completada (AJAX): {task.title} por {user.name}')
+    
+    # Devolver información para actualizar la UI
+    return jsonify({
+        'success': True,
+        'taskId': task.id,
+        'taskTitle': task.title,
+        'completedBy': f"{user.name} {user.last_name}",
+        'completedAt': datetime.now().strftime('%H:%M')
+    })
 
 # API para estadísticas en tiempo real
 @tasks_bp.route('/api/task-stats')
