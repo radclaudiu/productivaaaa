@@ -1243,15 +1243,65 @@ def portal_logout():
     return redirect(url_for('tasks.index'))
 
 @tasks_bp.route('/local-user/tasks')
+@tasks_bp.route('/local-user/tasks/<string:date_str>')
 @local_user_required
-def local_user_tasks():
+def local_user_tasks(date_str=None):
     """Panel de tareas para usuario local"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
     location = user.location
     
-    # Obtener tareas activas para hoy
+    # Determinar la fecha de las tareas (hoy por defecto, o la especificada)
     today = date.today()
+    if date_str:
+        try:
+            selected_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+        except ValueError:
+            selected_date = today
+    else:
+        selected_date = today
+    
+    # Calcular fechas para el carrusel (día anterior, actual, siguiente)
+    prev_date = selected_date - timedelta(days=1)
+    next_date = selected_date + timedelta(days=1)
+    
+    # Determinar los nombres de los días en español
+    days_map = {
+        0: 'LUN',
+        1: 'MAR',
+        2: 'MIÉ',
+        3: 'JUE',
+        4: 'VIE', 
+        5: 'SÁB',
+        6: 'DOM'
+    }
+    
+    # Configurar el carrusel de fechas
+    date_carousel = [
+        {
+            'date': prev_date,
+            'day_name': days_map[prev_date.weekday()],
+            'day': prev_date.day,
+            'url': url_for('tasks.local_user_tasks', date_str=prev_date.strftime('%Y-%m-%d')),
+            'active': False
+        },
+        {
+            'date': selected_date,
+            'day_name': days_map[selected_date.weekday()],
+            'day': selected_date.day,
+            'url': url_for('tasks.local_user_tasks', date_str=selected_date.strftime('%Y-%m-%d')),
+            'active': True
+        },
+        {
+            'date': next_date, 
+            'day_name': days_map[next_date.weekday()],
+            'day': next_date.day,
+            'url': url_for('tasks.local_user_tasks', date_str=next_date.strftime('%Y-%m-%d')),
+            'active': False
+        }
+    ]
+    
+    # Inicializar colecciones
     active_tasks = []
     grouped_tasks = {}  # Diccionario para agrupar tareas por grupo
     ungrouped_tasks = [] # Lista para tareas sin grupo
@@ -1261,42 +1311,98 @@ def local_user_tasks():
     task_groups = TaskGroup.query.filter_by(location_id=location.id).all()
     group_dict = {group.id: group for group in task_groups}
     
-    # Obtener todas las completadas de HOY, incluyendo información de quién las completó
-    all_completions_today = db.session.query(
+    # Obtener todas las completadas de la fecha seleccionada
+    all_completions = db.session.query(
         TaskCompletion, LocalUser
     ).join(
         LocalUser, TaskCompletion.local_user_id == LocalUser.id
     ).filter(
         TaskCompletion.task_id.in_([t.id for t in pending_tasks]),
-        db.func.date(TaskCompletion.completion_date) == today
+        db.func.date(TaskCompletion.completion_date) == selected_date
     ).order_by(
         TaskCompletion.completion_date.desc()
     ).all()
     
     # Crear un diccionario de información de completado por tarea
     completion_info = {}
-    for completion, local_user in all_completions_today:
+    for completion, local_user in all_completions:
         completion_info[completion.task_id] = {
             'user': f"{local_user.name} {local_user.last_name}",
             'time': completion.completion_date.strftime('%H:%M'),
             'completed_by_me': local_user.id == user_id
         }
     
-    # Completiones específicas para este usuario
+    # Completiones específicas para este usuario en la fecha seleccionada
     user_completions = TaskCompletion.query.filter_by(
         local_user_id=user_id
     ).filter(
-        db.func.date(TaskCompletion.completion_date) == today
+        db.func.date(TaskCompletion.completion_date) == selected_date
     ).order_by(
         TaskCompletion.completion_date.desc()
     ).all()
     
-    # Lista de IDs de tareas completadas hoy (por cualquier usuario local)
-    completed_task_ids = [c.task_id for c, _ in all_completions_today]
+    # Lista de IDs de tareas completadas en la fecha seleccionada
+    completed_task_ids = [c.task_id for c, _ in all_completions]
+    
+    # Función auxiliar para comprobar si una tarea debe aparecer en la fecha seleccionada
+    def task_is_due_on_date(task, check_date):
+        # Si la fecha está fuera del rango de fechas de la tarea, no es debido
+        if task.start_date and check_date < task.start_date:
+            return False
+        if task.end_date and check_date > task.end_date:
+            return False
+        
+        # Verificar frecuencia
+        if task.frequency == TaskFrequency.DIARIA:
+            return True
+        
+        # Para tareas semanales, verificar día de la semana
+        if task.frequency == TaskFrequency.SEMANAL:
+            weekday_name = WeekDay(days_map[check_date.weekday()].lower())
+            for schedule in task.schedule_details:
+                if schedule.day_of_week and schedule.day_of_week.value == weekday_name.value:
+                    return True
+            return False
+        
+        # Para tareas quincenales, verificar quincena
+        if task.frequency == TaskFrequency.QUINCENAL:
+            start_date = task.start_date or task.created_at.date()
+            days_diff = (check_date - start_date).days
+            return days_diff % 14 == 0
+        
+        # Para tareas mensuales, verificar día del mes
+        if task.frequency == TaskFrequency.MENSUAL:
+            # Si hay horario mensual definido, verificar día del mes
+            schedules = [s for s in task.schedule_details if s.day_of_month]
+            if schedules:
+                return any(s.day_of_month == check_date.day for s in schedules)
+            # Si no hay horario específico, usar el día de inicio como referencia
+            start_date = task.start_date or task.created_at.date()
+            return start_date.day == check_date.day
+        
+        # Para tareas personalizadas, verificar días específicos
+        if task.frequency == TaskFrequency.PERSONALIZADA:
+            # Verificar si alguno de los días de la semana coincide
+            weekday_value = days_map[check_date.weekday()].lower()
+            for weekday in task.weekdays:
+                if weekday.day_of_week.value == weekday_value:
+                    return True
+            return False
+        
+        return False
     
     for task in pending_tasks:
-        if task.is_due_today():
-            # Verificar si ya ha sido completada hoy
+        # Usar la nueva función para verificar tareas en fechas específicas
+        task_due = False
+        if selected_date == today:
+            # Para hoy, usar el método existente por compatibilidad
+            task_due = task.is_due_today()
+        else:
+            # Para otras fechas, usar nuestra nueva lógica
+            task_due = task_is_due_on_date(task, selected_date)
+            
+        if task_due:
+            # Verificar si ya ha sido completada
             task.completed_today = task.id in completed_task_ids
             
             # Agregar información de quién completó la tarea
@@ -1326,7 +1432,10 @@ def local_user_tasks():
                           ungrouped_tasks=ungrouped_tasks,
                           grouped_tasks=grouped_tasks,
                           task_groups=task_groups,
-                          completed_tasks=user_completions)
+                          completed_tasks=user_completions,
+                          selected_date=selected_date,
+                          today=today, 
+                          date_carousel=date_carousel)
 
 @tasks_bp.route('/local-user/tasks/<int:task_id>/complete', methods=['GET', 'POST'])
 @local_user_required

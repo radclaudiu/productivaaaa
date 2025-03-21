@@ -14,11 +14,40 @@
         </div>
     </div>
 
+    <!-- Carrusel de Fechas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex justify-content-between align-items-center">
+                        {% for date_item in date_carousel %}
+                            <a href="{{ date_item.url }}" class="text-decoration-none">
+                                <div class="text-center day-selector {% if date_item.active %}active{% endif %} {% if date_item.date == today %}today{% endif %}">
+                                    <div class="day-name {% if date_item.active %}fw-bold{% endif %}">{{ date_item.day_name }}</div>
+                                    <div class="day-number">{{ date_item.day }}</div>
+                                    {% if date_item.date == today %}
+                                        <div class="badge badge-sm bg-primary mt-1">Hoy</div>
+                                    {% endif %}
+                                </div>
+                            </a>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <div class="row">
         <div class="col-12 mb-4">
             <div class="card shadow">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h5 class="m-0 fw-bold">Tareas Pendientes para Hoy</h5>
+                    <h5 class="m-0 fw-bold">
+                        {% if selected_date == today %}
+                            Tareas Pendientes para Hoy
+                        {% else %}
+                            Tareas para {{ selected_date.strftime('%d/%m/%Y') }}
+                        {% endif %}
+                    </h5>
                     <span class="badge bg-info">{{ active_tasks|length }} Tareas</span>
                 </div>
                 <div class="card-body">
