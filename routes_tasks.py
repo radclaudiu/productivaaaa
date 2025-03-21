@@ -492,9 +492,7 @@ def edit_local_user(location_id, id):
         flash(f'Usuario "{user.name}" actualizado correctamente.', 'success')
         return redirect(url_for('tasks.list_local_users', location_id=location_id))
     
-    # Eliminar valores de los campos sensibles
-    form.password.data = ''
-    form.confirm_password.data = ''
+    # Eliminar valores del campo PIN para seguridad
     form.pin.data = ''
     
     return render_template('tasks/local_user_form.html',
@@ -959,14 +957,14 @@ def local_portal(location_id):
 def local_user_login(user_id):
     """Login con PIN para empleado local"""
     if 'location_id' not in session:
-        return redirect(url_for('tasks.local_login'))
+        return redirect(url_for('tasks.index'))
     
     user = LocalUser.query.get_or_404(user_id)
     
     # Verificar que pertenece al local correcto
     if user.location_id != session['location_id']:
         flash('Usuario no válido para este local.', 'danger')
-        return redirect(url_for('tasks.local_portal'))
+        return redirect(url_for('tasks.local_portal', location_id=session['location_id']))
     
     form = LocalUserPinForm()
     
@@ -989,9 +987,14 @@ def local_user_login(user_id):
 @tasks_bp.route('/local-logout')
 def local_logout():
     """Cerrar sesión de usuario local"""
+    location_id = session.get('location_id')
     session.pop('local_user_id', None)
     flash('Has cerrado sesión correctamente.', 'success')
-    return redirect(url_for('tasks.local_portal'))
+    
+    if location_id:
+        return redirect(url_for('tasks.local_portal', location_id=location_id))
+    else:
+        return redirect(url_for('tasks.index'))
 
 @tasks_bp.route('/portal-logout')
 def portal_logout():
@@ -1000,7 +1003,7 @@ def portal_logout():
     session.pop('local_user_username', None)
     session.pop('local_user_id', None)
     flash('Has cerrado sesión del portal correctamente.', 'success')
-    return redirect(url_for('tasks.local_login'))
+    return redirect(url_for('tasks.index'))
 
 @tasks_bp.route('/local-user/tasks')
 @local_user_required

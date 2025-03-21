@@ -18,7 +18,7 @@
                     {% else %}
                     <i class="bi bi-person-circle display-1 mb-3"></i>
                     {% endif %}
-                    <h5 class="card-title">{{ user.name }}</h5>
+                    <h5 class="card-title">{{ user.name }} {{ user.last_name }}</h5>
                     <a href="{{ url_for('tasks.local_user_login', user_id=user.id) }}" class="stretched-link"></a>
                 </div>
             </div>
