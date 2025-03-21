@@ -16,15 +16,11 @@ class LocationForm(FlaskForm):
     submit = SubmitField('Guardar')
 
 class LocalUserForm(FlaskForm):
-    name = StringField('Nombre completo', validators=[DataRequired(), Length(max=64)])
-    username = StringField('Nombre de usuario', validators=[DataRequired(), Length(min=3, max=64)])
-    password = PasswordField('Contraseña', validators=[DataRequired(), Length(min=4)])
-    confirm_password = PasswordField('Confirmar Contraseña', 
-                                    validators=[DataRequired(), EqualTo('password', message='Las contraseñas deben coincidir')])
+    name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
+    last_name = StringField('Apellidos', validators=[DataRequired(), Length(max=64)])
     pin = StringField('PIN (4 dígitos)', validators=[
         DataRequired(), 
         Length(min=4, max=4, message='El PIN debe tener exactamente 4 dígitos'),
-        # Validación para asegurar que solo son dígitos
     ])
     photo = FileField('Foto', validators=[
         Optional(),
@@ -96,10 +92,7 @@ class TaskCompletionForm(FlaskForm):
     notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
     submit = SubmitField('Marcar como Completada')
 
-class LocalUserLoginForm(FlaskForm):
-    username = StringField('Usuario', validators=[DataRequired()])
-    password = PasswordField('Contraseña', validators=[DataRequired()])
-    submit = SubmitField('Iniciar Sesión')
+# Eliminada la clase LocalUserLoginForm ya que no se usará más
 
 class LocalUserPinForm(FlaskForm):
     pin = StringField('PIN (4 dígitos)', validators=[

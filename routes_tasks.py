@@ -10,7 +10,7 @@ from app import db
 from models import User, Company
 from models_tasks import Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, TaskFrequency, TaskStatus, WeekDay
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
-                        MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, LocalUserLoginForm, 
+                        MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
                         LocalUserPinForm, SearchForm)
 from utils import log_activity, can_manage_company, save_file
 

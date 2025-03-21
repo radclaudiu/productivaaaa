@@ -77,8 +77,8 @@ class LocalUser(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(64), nullable=False)
-    username = db.Column(db.String(64), unique=True, nullable=False)
-    password_hash = db.Column(db.String(256), nullable=False)
+    last_name = db.Column(db.String(64), nullable=False)
+    username = db.Column(db.String(128), nullable=False)  # Se generará automáticamente
     pin = db.Column(db.String(10), nullable=False)  # PIN de 4 dígitos
     photo_path = db.Column(db.String(256))
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -93,13 +93,7 @@ class LocalUser(db.Model):
     completed_tasks = db.relationship('TaskCompletion', back_populates='local_user')
     
     def __repr__(self):
-        return f'<LocalUser {self.name}>'
-    
-    def set_password(self, password):
-        self.password_hash = generate_password_hash(password)
-        
-    def check_password(self, password):
-        return check_password_hash(self.password_hash, password)
+        return f'<LocalUser {self.name} {self.last_name}>'
     
     def set_pin(self, pin):
         # Almacenamos el PIN como hash por seguridad
@@ -107,6 +101,9 @@ class LocalUser(db.Model):
         
     def check_pin(self, pin):
         return check_password_hash(self.pin, pin)
+    
+    def get_full_name(self):
+        return f"{self.name} {self.last_name}"
     
     def to_dict(self):
         return {
