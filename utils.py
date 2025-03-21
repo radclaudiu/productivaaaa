@@ -150,14 +150,13 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
         pdf.add_page()
         
         # Set fonts
-        pdf.set_font('Arial', 'B', 16)
+        pdf.set_font('Arial', 'B', 14)
         
         # Title
-        pdf.cell(0, 10, 'Registro de fichajes', 0, 1, 'C')
-        pdf.ln(5)
+        pdf.cell(0, 8, 'Registro de fichajes', 0, 1, 'C')
         
         # Date range information
-        pdf.set_font('Arial', '', 10)
+        pdf.set_font('Arial', '', 9)
         date_range = ""
         if start_date and end_date:
             date_range = f"Periodo: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
@@ -167,38 +166,45 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
             date_range = f"Hasta: {end_date.strftime('%d/%m/%Y')}"
         
         if date_range:
-            pdf.cell(0, 7, date_range, 0, 1, 'C')
-            pdf.ln(3)
+            pdf.cell(0, 5, date_range, 0, 1, 'C')
         
-        # Company information
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, f'Empresa: {employee.company.name}', 0, 1)
-        pdf.set_font('Arial', '', 11)
-        pdf.cell(0, 7, f'CIF: {employee.company.tax_id}', 0, 1)
-        pdf.cell(0, 7, f'Dirección: {employee.company.address or ""}', 0, 1)
-        pdf.cell(0, 7, f'CP: {employee.company.postal_code or ""}, Ciudad: {employee.company.city or ""}', 0, 1)
-        pdf.ln(5)
+        # Compact header with company and employee info in a single row
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(0, 7, f'Empresa: {employee.company.name} - CIF: {employee.company.tax_id}', 0, 1)
+        pdf.set_font('Arial', '', 9)
+        pdf.cell(0, 5, f'Empleado: {employee.first_name} {employee.last_name} - DNI: {employee.dni} - Puesto: {employee.position or ""}', 0, 1)
+        pdf.ln(3)
         
-        # Employee information
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, f'Empleado: {employee.first_name} {employee.last_name}', 0, 1)
-        pdf.set_font('Arial', '', 11)
-        pdf.cell(0, 7, f'DNI: {employee.dni}', 0, 1)
-        pdf.cell(0, 7, f'Posición: {employee.position or ""}', 0, 1)
-        pdf.ln(10)
-        
-        # Check-ins table header
-        pdf.set_font('Arial', 'B', 11)
-        pdf.cell(40, 10, 'Fecha', 1, 0, 'C')
-        pdf.cell(30, 10, 'Entrada', 1, 0, 'C')
-        pdf.cell(30, 10, 'Salida', 1, 0, 'C')
-        pdf.cell(30, 10, 'Horas', 1, 0, 'C')
-        pdf.cell(60, 10, 'Notas', 1, 1, 'C')
+        # Check-ins table header - Removed Notes column
+        pdf.set_font('Arial', 'B', 9)
+        pdf.cell(50, 7, 'Fecha', 1, 0, 'C')
+        pdf.cell(35, 7, 'Entrada', 1, 0, 'C')
+        pdf.cell(35, 7, 'Salida', 1, 0, 'C')
+        pdf.cell(35, 7, 'Horas', 1, 1, 'C')
         
         # Check-ins data
-        pdf.set_font('Arial', '', 10)
+        pdf.set_font('Arial', '', 9)
         total_hours = 0
+        
+        # Adjust rows per page
+        max_rows_per_page = 35
+        row_count = 0
+        
         for checkin in check_ins:
+            # Add a new page if necessary
+            if row_count >= max_rows_per_page:
+                pdf.add_page()
+                
+                # Add header again on new page
+                pdf.set_font('Arial', 'B', 9)
+                pdf.cell(50, 7, 'Fecha', 1, 0, 'C')
+                pdf.cell(35, 7, 'Entrada', 1, 0, 'C')
+                pdf.cell(35, 7, 'Salida', 1, 0, 'C')
+                pdf.cell(35, 7, 'Horas', 1, 1, 'C')
+                
+                pdf.set_font('Arial', '', 9)
+                row_count = 0
+            
             # Format date and times
             date_str = checkin.check_in_time.strftime('%d/%m/%Y')
             check_in_str = checkin.check_in_time.strftime('%H:%M')
@@ -212,39 +218,31 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
                 hours_str = f"{hours:.2f}"
                 total_hours += hours
             
-            # Notes (truncated if too long)
-            notes = checkin.notes if checkin.notes else ""
-            if len(notes) > 25:
-                notes = notes[:22] + "..."
+            # Draw row without Notes column
+            pdf.cell(50, 6, date_str, 1, 0, 'C')
+            pdf.cell(35, 6, check_in_str, 1, 0, 'C')
+            pdf.cell(35, 6, check_out_str, 1, 0, 'C')
+            pdf.cell(35, 6, hours_str, 1, 1, 'C')
             
-            pdf.cell(40, 7, date_str, 1, 0, 'C')
-            pdf.cell(30, 7, check_in_str, 1, 0, 'C')
-            pdf.cell(30, 7, check_out_str, 1, 0, 'C')
-            pdf.cell(30, 7, hours_str, 1, 0, 'C')
-            pdf.cell(60, 7, notes, 1, 1, 'L')
+            row_count += 1
         
         # Total hours
-        pdf.set_font('Arial', 'B', 10)
-        pdf.cell(100, 7, 'Total Horas:', 1, 0, 'R')
-        pdf.cell(30, 7, f"{total_hours:.2f}", 1, 0, 'C')
-        pdf.cell(60, 7, '', 1, 1, 'L')
+        pdf.set_font('Arial', 'B', 9)
+        pdf.cell(120, 6, 'Total Horas:', 1, 0, 'R')
+        pdf.cell(35, 6, f"{total_hours:.2f}", 1, 1, 'C')
         
-        pdf.ln(10)
-        pdf.cell(0, 10, 'Estos fichajes han sido verificados y comprobados.', 0, 1)
-        
-        # Date and signature spaces
-        pdf.ln(15)
-        pdf.set_font('Arial', '', 10)
+        # Compact footer with signatures
+        pdf.ln(5)
+        pdf.set_font('Arial', '', 9)
         current_date = datetime.now().strftime('%d/%m/%Y')
-        pdf.cell(0, 7, f'Fecha: {current_date}', 0, 1)
+        pdf.cell(0, 5, f'Fecha: {current_date}', 0, 1)
+        
+        pdf.cell(90, 5, 'Firma del empleado:', 0, 0)
+        pdf.cell(90, 5, 'Firma del responsable:', 0, 1)
         pdf.ln(10)
         
-        pdf.cell(90, 7, 'Firma del empleado:', 0, 0)
-        pdf.cell(90, 7, 'Firma del responsable:', 0, 1)
-        pdf.ln(15)
-        
-        pdf.cell(90, 7, '_______________________', 0, 0)
-        pdf.cell(90, 7, '_______________________', 0, 1)
+        pdf.cell(90, 5, '_______________________', 0, 0)
+        pdf.cell(90, 5, '_______________________', 0, 1)
         
         # Output PDF to BytesIO buffer
         pdf_output = pdf.output(dest='S').encode('latin1')
