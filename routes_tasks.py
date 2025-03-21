@@ -289,10 +289,11 @@ def view_location(id):
         flash('No tienes permiso para ver este local.', 'danger')
         return redirect(url_for('tasks.index'))
     
-    # Obtener tareas activas para hoy
+    # Obtener tareas para hoy
     today = date.today()
     active_tasks = []
     pending_tasks = Task.query.filter_by(location_id=location.id, status=TaskStatus.PENDIENTE).all()
+    completed_tasks = Task.query.filter_by(location_id=location.id, status=TaskStatus.COMPLETADA).all()
     
     for task in pending_tasks:
         if task.is_due_today():
@@ -310,12 +311,53 @@ def view_location(id):
                          .limit(10)
                          .all())
     
+    # Generar datos para el gráfico de completados mensuales
+    last_6_months = []
+    monthly_counts = []
+    current_month = datetime.now().month
+    current_year = datetime.now().year
+    
+    for i in range(5, -1, -1):
+        month = (current_month - i) % 12
+        if month == 0:
+            month = 12
+        year = current_year if month <= current_month else current_year - 1
+        
+        month_start = datetime(year, month, 1)
+        if month == 12:
+            next_month_start = datetime(year + 1, 1, 1)
+        else:
+            next_month_start = datetime(year, month + 1, 1)
+            
+        # Obtener completados de este mes
+        month_count = TaskCompletion.query\
+            .join(Task, TaskCompletion.task_id == Task.id)\
+            .filter(Task.location_id == location.id)\
+            .filter(TaskCompletion.completion_date >= month_start)\
+            .filter(TaskCompletion.completion_date < next_month_start)\
+            .count()
+            
+        # Formato del mes en español
+        month_names = ["Ene", "Feb", "Mar", "Abr", "May", "Jun", "Jul", "Ago", "Sep", "Oct", "Nov", "Dic"]
+        month_label = f"{month_names[month-1]} {year}"
+        
+        last_6_months.append(month_label)
+        monthly_counts.append(month_count)
+    
+    # Obtener el enlace directo al portal
+    portal_url = url_for('tasks.local_portal', location_id=location.id, _external=True)
+    
     return render_template('tasks/location_detail.html',
                           title=f'Local: {location.name}',
                           location=location,
                           active_tasks=active_tasks,
+                          pending_tasks=pending_tasks,
+                          completed_tasks=completed_tasks,
                           local_users=local_users,
-                          recent_completions=recent_completions)
+                          recent_completions=recent_completions,
+                          monthly_labels=last_6_months,
+                          monthly_counts=monthly_counts,
+                          portal_url=portal_url)
 
 # Rutas para gestión de usuarios locales
 @tasks_bp.route('/locations/<int:location_id>/users')
