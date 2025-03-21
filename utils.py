@@ -290,7 +290,7 @@ def get_dashboard_stats():
             # Optimizar la consulta de empleados
             employee_counts = db.session.query(
                 func.count(Employee.id).label('total'),
-                func.sum(case([(Employee.is_active == True, 1)], else_=0)).label('active')
+                func.sum(case((Employee.is_active == True, 1), else_=0)).label('active')
             ).first()
             
             stats['total_employees'] = employee_counts.total or 0 
@@ -325,7 +325,7 @@ def get_dashboard_stats():
             # Optimización: realizar una sola consulta para contar empleados
             employee_counts = db.session.query(
                 func.count(Employee.id).label('total'),
-                func.sum(case([(Employee.is_active == True, 1)], else_=0)).label('active')
+                func.sum(case((Employee.is_active == True, 1), else_=0)).label('active')
             ).filter(Employee.company_id == company_id).first()
             
             stats['total_employees'] = employee_counts.total or 0
