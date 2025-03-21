@@ -761,3 +761,389 @@ def delete_user(id):
     log_activity(f'Usuario eliminado: {username}')
     flash(f'Usuario "{username}" eliminado correctamente.', 'success')
     return redirect(url_for('user.list_users'))
+
+# Schedules routes
+@schedule_bp.route('/employee/<int:employee_id>')
+@login_required
+def list_schedules(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to view this employee
+    if not can_view_employee(employee):
+        flash('No tienes permiso para ver los horarios de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    schedules = EmployeeSchedule.query.filter_by(employee_id=employee_id).all()
+    
+    return render_template('schedule_list.html', 
+                          title=f'Horarios de {employee.first_name} {employee.last_name}', 
+                          employee=employee,
+                          schedules=schedules)
+
+@schedule_bp.route('/employee/<int:employee_id>/new', methods=['GET', 'POST'])
+@manager_required
+def create_schedule(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para gestionar los horarios de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeScheduleForm()
+    
+    if form.validate_on_submit():
+        schedule = EmployeeSchedule(
+            day_of_week=WeekDay(form.day_of_week.data),
+            start_time=form.start_time.data,
+            end_time=form.end_time.data,
+            is_working_day=form.is_working_day.data,
+            employee_id=employee_id
+        )
+        db.session.add(schedule)
+        db.session.commit()
+        
+        log_activity(f'Horario creado para {employee.first_name} {employee.last_name}')
+        flash('Horario creado correctamente.', 'success')
+        return redirect(url_for('schedule.list_schedules', employee_id=employee_id))
+    
+    return render_template('schedule_form.html', 
+                          title=f'Nuevo Horario para {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee)
+
+@schedule_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
+@manager_required
+def edit_schedule(id):
+    schedule = EmployeeSchedule.query.get_or_404(id)
+    employee = Employee.query.get_or_404(schedule.employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para editar los horarios de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeScheduleForm(obj=schedule)
+    
+    if form.validate_on_submit():
+        schedule.day_of_week = WeekDay(form.day_of_week.data)
+        schedule.start_time = form.start_time.data
+        schedule.end_time = form.end_time.data
+        schedule.is_working_day = form.is_working_day.data
+        schedule.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_activity(f'Horario actualizado para {employee.first_name} {employee.last_name}')
+        flash('Horario actualizado correctamente.', 'success')
+        return redirect(url_for('schedule.list_schedules', employee_id=schedule.employee_id))
+    
+    return render_template('schedule_form.html', 
+                          title=f'Editar Horario de {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee,
+                          schedule=schedule)
+
+@schedule_bp.route('/<int:id>/delete', methods=['POST'])
+@manager_required
+def delete_schedule(id):
+    schedule = EmployeeSchedule.query.get_or_404(id)
+    employee = Employee.query.get_or_404(schedule.employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para eliminar los horarios de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    employee_id = schedule.employee_id
+    db.session.delete(schedule)
+    db.session.commit()
+    
+    log_activity(f'Horario eliminado para {employee.first_name} {employee.last_name}')
+    flash('Horario eliminado correctamente.', 'success')
+    return redirect(url_for('schedule.list_schedules', employee_id=employee_id))
+
+# Check-ins routes
+@checkin_bp.route('/employee/<int:employee_id>')
+@login_required
+def list_checkins(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to view this employee
+    if not can_view_employee(employee):
+        flash('No tienes permiso para ver los fichajes de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    checkins = EmployeeCheckIn.query.filter_by(employee_id=employee_id).order_by(EmployeeCheckIn.check_in_time.desc()).all()
+    
+    return render_template('checkin_list.html', 
+                          title=f'Fichajes de {employee.first_name} {employee.last_name}', 
+                          employee=employee,
+                          checkins=checkins)
+
+@checkin_bp.route('/employee/<int:employee_id>/new', methods=['GET', 'POST'])
+@manager_required
+def create_checkin(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para gestionar los fichajes de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeCheckInForm()
+    
+    if form.validate_on_submit():
+        check_in_time = datetime.combine(form.check_in_time.data, datetime.min.time())
+        check_out_time = datetime.combine(form.check_out_time.data, datetime.min.time()) if form.check_out_time.data else None
+        
+        checkin = EmployeeCheckIn(
+            check_in_time=check_in_time,
+            check_out_time=check_out_time,
+            notes=form.notes.data,
+            employee_id=employee_id
+        )
+        db.session.add(checkin)
+        db.session.commit()
+        
+        log_activity(f'Fichaje creado para {employee.first_name} {employee.last_name}')
+        flash('Fichaje creado correctamente.', 'success')
+        return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
+    
+    return render_template('checkin_form.html', 
+                          title=f'Nuevo Fichaje para {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee)
+
+@checkin_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
+@manager_required
+def edit_checkin(id):
+    checkin = EmployeeCheckIn.query.get_or_404(id)
+    employee = Employee.query.get_or_404(checkin.employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para editar los fichajes de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeCheckInForm()
+    
+    if request.method == 'GET':
+        form.check_in_time.data = checkin.check_in_time.date()
+        form.check_out_time.data = checkin.check_out_time.date() if checkin.check_out_time else None
+        form.notes.data = checkin.notes
+    
+    if form.validate_on_submit():
+        check_in_time = datetime.combine(form.check_in_time.data, checkin.check_in_time.time())
+        check_out_time = None
+        if form.check_out_time.data:
+            check_out_time = datetime.combine(form.check_out_time.data, 
+                                            checkin.check_out_time.time() if checkin.check_out_time else datetime.min.time())
+        
+        checkin.check_in_time = check_in_time
+        checkin.check_out_time = check_out_time
+        checkin.notes = form.notes.data
+        checkin.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_activity(f'Fichaje actualizado para {employee.first_name} {employee.last_name}')
+        flash('Fichaje actualizado correctamente.', 'success')
+        return redirect(url_for('checkin.list_checkins', employee_id=checkin.employee_id))
+    
+    return render_template('checkin_form.html', 
+                          title=f'Editar Fichaje de {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee,
+                          checkin=checkin)
+
+@checkin_bp.route('/<int:id>/delete', methods=['POST'])
+@manager_required
+def delete_checkin(id):
+    checkin = EmployeeCheckIn.query.get_or_404(id)
+    employee = Employee.query.get_or_404(checkin.employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para eliminar los fichajes de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    employee_id = checkin.employee_id
+    db.session.delete(checkin)
+    db.session.commit()
+    
+    log_activity(f'Fichaje eliminado para {employee.first_name} {employee.last_name}')
+    flash('Fichaje eliminado correctamente.', 'success')
+    return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
+
+@checkin_bp.route('/employee/<int:employee_id>/generate', methods=['GET', 'POST'])
+@manager_required
+def generate_checkins(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para generar fichajes para este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    # Check if employee has schedules
+    if not employee.schedules:
+        flash('El empleado no tiene horarios definidos. Por favor, defina los horarios primero.', 'warning')
+        return redirect(url_for('schedule.list_schedules', employee_id=employee_id))
+    
+    form = GenerateCheckInsForm()
+    
+    if form.validate_on_submit():
+        start_date = form.start_date.data
+        end_date = form.end_date.data
+        
+        # Generate check-ins
+        check_ins = EmployeeCheckIn.generate_check_ins_for_schedule(employee, start_date, end_date)
+        
+        if not check_ins:
+            flash('No se han podido generar fichajes para el periodo seleccionado.', 'warning')
+        else:
+            # Save check-ins to database
+            for check_in in check_ins:
+                db.session.add(check_in)
+            db.session.commit()
+            
+            log_activity(f'Fichajes generados para {employee.first_name} {employee.last_name}')
+            flash(f'Se han generado {len(check_ins)} fichajes correctamente.', 'success')
+        
+        return redirect(url_for('checkin.list_checkins', employee_id=employee_id))
+    
+    return render_template('generate_checkins_form.html', 
+                          title=f'Generar Fichajes para {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee)
+
+# Vacations routes
+@vacation_bp.route('/employee/<int:employee_id>')
+@login_required
+def list_vacations(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to view this employee
+    if not can_view_employee(employee):
+        flash('No tienes permiso para ver las vacaciones de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    vacations = EmployeeVacation.query.filter_by(employee_id=employee_id).order_by(EmployeeVacation.start_date.desc()).all()
+    
+    return render_template('vacation_list.html', 
+                          title=f'Vacaciones de {employee.first_name} {employee.last_name}', 
+                          employee=employee,
+                          vacations=vacations)
+
+@vacation_bp.route('/employee/<int:employee_id>/new', methods=['GET', 'POST'])
+@login_required
+def create_vacation(employee_id):
+    employee = Employee.query.get_or_404(employee_id)
+    
+    # Check if user has permission to view this employee
+    if not (can_manage_employee(employee) or 
+            (current_user.is_empleado() and current_user.employee and current_user.employee.id == employee_id)):
+        flash('No tienes permiso para gestionar las vacaciones de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeVacationForm()
+    
+    if form.validate_on_submit():
+        # Check if the vacation period overlaps with existing vacations
+        overlapping_vacations = EmployeeVacation.query.filter_by(employee_id=employee_id).all()
+        for v in overlapping_vacations:
+            if v.overlaps_with(form.start_date.data, form.end_date.data):
+                flash('El periodo de vacaciones se solapa con otro existente.', 'danger')
+                return render_template('vacation_form.html', 
+                                      title=f'Nuevas Vacaciones para {employee.first_name} {employee.last_name}', 
+                                      form=form,
+                                      employee=employee)
+        
+        # If EMPLEADO role, status is always PENDIENTE
+        status = VacationStatus.PENDIENTE
+        if not current_user.is_empleado() and form.status.data:
+            status = VacationStatus(form.status.data)
+        
+        vacation = EmployeeVacation(
+            start_date=form.start_date.data,
+            end_date=form.end_date.data,
+            status=status,
+            notes=form.notes.data,
+            employee_id=employee_id
+        )
+        
+        # If GERENTE or ADMIN approves, set approved_by
+        if not current_user.is_empleado() and status == VacationStatus.APROBADA:
+            vacation.approved_by_id = current_user.id
+        
+        db.session.add(vacation)
+        db.session.commit()
+        
+        log_activity(f'Vacaciones creadas para {employee.first_name} {employee.last_name}')
+        flash('Vacaciones creadas correctamente.', 'success')
+        return redirect(url_for('vacation.list_vacations', employee_id=employee_id))
+    
+    return render_template('vacation_form.html', 
+                          title=f'Nuevas Vacaciones para {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee)
+
+@vacation_bp.route('/<int:id>/approve', methods=['GET', 'POST'])
+@manager_required
+def approve_vacation(id):
+    vacation = EmployeeVacation.query.get_or_404(id)
+    employee = Employee.query.get_or_404(vacation.employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para aprobar vacaciones de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    form = EmployeeVacationApprovalForm()
+    form.status.data = vacation.status.value
+    
+    if form.validate_on_submit():
+        vacation.status = VacationStatus(form.status.data)
+        
+        if form.notes.data:
+            vacation.notes = form.notes.data
+            
+        # Update approved_by if status is APROBADA
+        if vacation.status == VacationStatus.APROBADA:
+            vacation.approved_by_id = current_user.id
+        else:
+            vacation.approved_by_id = None
+            
+        vacation.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_activity(f'Vacaciones actualizadas para {employee.first_name} {employee.last_name}')
+        flash('Estado de vacaciones actualizado correctamente.', 'success')
+        return redirect(url_for('vacation.list_vacations', employee_id=vacation.employee_id))
+    
+    return render_template('vacation_approval_form.html', 
+                          title=f'Aprobar Vacaciones de {employee.first_name} {employee.last_name}', 
+                          form=form,
+                          employee=employee,
+                          vacation=vacation)
+
+@vacation_bp.route('/<int:id>/delete', methods=['POST'])
+@manager_required
+def delete_vacation(id):
+    vacation = EmployeeVacation.query.get_or_404(id)
+    employee = Employee.query.get_or_404(vacation.employee_id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para eliminar vacaciones de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    employee_id = vacation.employee_id
+    db.session.delete(vacation)
+    db.session.commit()
+    
+    log_activity(f'Vacaciones eliminadas para {employee.first_name} {employee.last_name}')
+    flash('Vacaciones eliminadas correctamente.', 'success')
+    return redirect(url_for('vacation.list_vacations', employee_id=employee_id))
