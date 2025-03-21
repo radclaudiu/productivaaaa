@@ -1,0 +1,108 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">{{ title }}</h1>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Generar Fichajes Automáticos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info mb-4">
+                        <i class="fas fa-info-circle me-2"></i>
+                        Esta herramienta generará fichajes automáticos para este empleado, basados en su horario asignado. 
+                        Los fichajes tendrán una pequeña variación aleatoria para simular la entrada/salida real.
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.start_date.label(class="form-label") }}
+                                    {{ form.start_date(class="form-control", type="date") }}
+                                    {% for error in form.start_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.end_date.label(class="form-label") }}
+                                    {{ form.end_date(class="form-control", type="date") }}
+                                    {% for error in form.end_date.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                {{ form.submit(class="btn btn-primary") }}
+                                <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Horarios Configurados</h5>
+                </div>
+                <div class="card-body">
+                    {% if employee.schedules %}
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Día</th>
+                                    <th>Entrada</th>
+                                    <th>Salida</th>
+                                    <th>Día Laborable</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in employee.schedules %}
+                                <tr>
+                                    <td>{{ schedule.day_of_week.name.capitalize() }}</td>
+                                    <td>{{ schedule.start_time.strftime('%H:%M') }}</td>
+                                    <td>{{ schedule.end_time.strftime('%H:%M') }}</td>
+                                    <td>
+                                        {% if schedule.is_working_day %}
+                                        <span class="badge bg-success">Sí</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">No</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-warning">
+                        Este empleado no tiene horarios definidos. 
+                        <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}">Defina los horarios primero</a>.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-info">
+                        <i class="fas fa-calendar"></i> Gestionar Horarios
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">{{ title }}</h1>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Formulario de Fichaje</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST" enctype="multipart/form-data">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.check_in_time.label(class="form-label") }}
+                                    {{ form.check_in_time(class="form-control", type="date") }}
+                                    {% for error in form.check_in_time.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">Seleccione la fecha de entrada.</small>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.check_out_time.label(class="form-label") }}
+                                    {{ form.check_out_time(class="form-control", type="date") }}
+                                    {% for error in form.check_out_time.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">Opcional. Dejar en blanco si no se ha producido la salida.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    {{ form.notes.label(class="form-label") }}
+                                    {{ form.notes(class="form-control", rows="3") }}
+                                    {% for error in form.notes.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                {{ form.submit(class="btn btn-primary") }}
+                                <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información del Empleado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+                            <p><strong>DNI/NIE:</strong> {{ employee.dni }}</p>
+                            <p><strong>Empresa:</strong> {{ employee.company.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Posición:</strong> {{ employee.position }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {% if employee.status.value == 'activo' %}bg-success{% elif employee.status.value == 'baja_medica' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ employee.status.name.capitalize() }}
+                                </span>
+                            </p>
+                            <p><strong>Tipo de Contrato:</strong> {{ employee.contract_type.name.capitalize() }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

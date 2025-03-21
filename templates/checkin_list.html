@@ -1,0 +1,151 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">{{ title }}</h1>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Fichajes</h5>
+                    <div>
+                        {% if current_user.is_admin() or current_user.is_gerente() %}
+                        <a href="{{ url_for('checkin.create_checkin', employee_id=employee.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-plus"></i> Nuevo Fichaje
+                        </a>
+                        {% if employee.schedules %}
+                        <a href="{{ url_for('checkin.generate_checkins', employee_id=employee.id) }}" class="btn btn-success btn-sm">
+                            <i class="fas fa-calendar-check"></i> Generar Fichajes Automáticos
+                        </a>
+                        {% endif %}
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    {% if checkins %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Entrada</th>
+                                    <th>Salida</th>
+                                    <th>Horas</th>
+                                    <th>Generado</th>
+                                    <th>Notas</th>
+                                    <th>Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for checkin in checkins %}
+                                <tr>
+                                    <td>{{ checkin.check_in_time.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ checkin.check_in_time.strftime('%H:%M') }}</td>
+                                    <td>
+                                        {% if checkin.check_out_time %}
+                                        {{ checkin.check_out_time.strftime('%H:%M') }}
+                                        {% else %}
+                                        <span class="badge bg-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if checkin.check_out_time %}
+                                        {% set hours = ((checkin.check_out_time - checkin.check_in_time).total_seconds() / 3600) %}
+                                        {{ '%0.2f'|format(hours) }}
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if checkin.is_generated %}
+                                        <span class="badge bg-info">Auto</span>
+                                        {% else %}
+                                        <span class="badge bg-secondary">Manual</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if checkin.notes %}
+                                        <button type="button" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ checkin.notes }}">
+                                            <i class="fas fa-info-circle"></i>
+                                        </button>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if current_user.is_admin() or current_user.is_gerente() %}
+                                        <a href="{{ url_for('checkin.edit_checkin', id=checkin.id) }}" class="btn btn-info btn-sm">
+                                            <i class="fas fa-edit"></i>
+                                        </a>
+                                        <form action="{{ url_for('checkin.delete_checkin', id=checkin.id) }}" method="POST" class="d-inline" 
+                                              onsubmit="return confirm('¿Está seguro de eliminar este fichaje?');">
+                                            <button type="submit" class="btn btn-danger btn-sm">
+                                                <i class="fas fa-trash"></i>
+                                            </button>
+                                        </form>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info">
+                        No hay fichajes registrados para este empleado.
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información del Empleado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+                            <p><strong>DNI/NIE:</strong> {{ employee.dni }}</p>
+                            <p><strong>Empresa:</strong> {{ employee.company.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Posición:</strong> {{ employee.position }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {% if employee.status.value == 'activo' %}bg-success{% elif employee.status.value == 'baja_medica' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ employee.status.name.capitalize() }}
+                                </span>
+                            </p>
+                            <p><strong>Tipo de Contrato:</strong> {{ employee.contract_type.name.capitalize() }}</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-secondary">
+                        <i class="fas fa-arrow-left"></i> Volver a Detalles del Empleado
+                    </a>
+                    <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-info">
+                        <i class="fas fa-calendar"></i> Ver Horarios
+                    </a>
+                    <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-primary">
+                        <i class="fas fa-umbrella-beach"></i> Ver Vacaciones
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+{% block scripts %}
+<script>
+    // Initialize tooltips
+    var tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'))
+    var tooltipList = tooltipTriggerList.map(function (tooltipTriggerEl) {
+        return new bootstrap.Tooltip(tooltipTriggerEl)
+    })
+</script>
+{% endblock %}
+{% endblock %}

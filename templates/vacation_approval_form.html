@@ -1,0 +1,106 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <h1 class="h3 mb-4">{{ title }}</h1>
+    
+    <div class="row">
+        <div class="col-md-12 mb-4">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Aprobar/Denegar Solicitud de Vacaciones</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <p><strong>Fecha de Inicio:</strong> {{ vacation.start_date.strftime('%d/%m/%Y') }}</p>
+                            <p><strong>Fecha de Fin:</strong> {{ vacation.end_date.strftime('%d/%m/%Y') }}</p>
+                            <p><strong>Total Días:</strong> {{ vacation.total_days() }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Estado Actual:</strong> 
+                                <span class="badge 
+                                          {% if vacation.status.value == 'aprobada' %}bg-success
+                                          {% elif vacation.status.value == 'pendiente' %}bg-warning
+                                          {% elif vacation.status.value == 'denegada' %}bg-danger
+                                          {% elif vacation.status.value == 'disfrutada' %}bg-info
+                                          {% endif %}">
+                                    {{ vacation.status.name.capitalize() }}
+                                </span>
+                            </p>
+                            <p><strong>Fecha de Solicitud:</strong> {{ vacation.created_at.strftime('%d/%m/%Y') }}</p>
+                            {% if vacation.notes %}
+                            <p><strong>Notas:</strong> {{ vacation.notes }}</p>
+                            {% endif %}
+                        </div>
+                    </div>
+
+                    <form method="POST">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.status.label(class="form-label") }}
+                                    {{ form.status(class="form-select") }}
+                                    {% for error in form.status.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-group">
+                                    {{ form.notes.label(class="form-label") }}
+                                    {{ form.notes(class="form-control", rows="3") }}
+                                    {% for error in form.notes.errors %}
+                                    <div class="invalid-feedback d-block">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">Añada comentarios sobre la aprobación o denegación de estas vacaciones.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                {{ form.submit(class="btn btn-primary") }}
+                                <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-secondary">Cancelar</a>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mt-3">
+        <div class="col-md-12">
+            <div class="card">
+                <div class="card-header">
+                    <h5 class="mb-0">Información del Empleado</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Nombre:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+                            <p><strong>DNI/NIE:</strong> {{ employee.dni }}</p>
+                            <p><strong>Empresa:</strong> {{ employee.company.name }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Posición:</strong> {{ employee.position }}</p>
+                            <p><strong>Estado:</strong> 
+                                <span class="badge {% if employee.status.value == 'activo' %}bg-success{% elif employee.status.value == 'baja_medica' %}bg-warning{% else %}bg-danger{% endif %}">
+                                    {{ employee.status.name.capitalize() }}
+                                </span>
+                            </p>
+                            <p><strong>Tipo de Contrato:</strong> {{ employee.contract_type.name.capitalize() }}</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
