@@ -12,6 +12,9 @@
                 <a href="{{ url_for('tasks.view_location', id=location.id) }}" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Volver al Local
                 </a>
+                <a href="{{ url_for('tasks.list_task_groups', id=location.id) }}" class="btn btn-sm btn-info">
+                    <i class="bi bi-tags"></i> Gestionar Grupos
+                </a>
                 <a href="{{ url_for('tasks.create_task', location_id=location.id) }}" class="btn btn-sm btn-primary">
                     <i class="bi bi-plus-lg"></i> Nueva Tarea
                 </a>
@@ -51,6 +54,7 @@
                             <thead>
                                 <tr>
                                     <th>Título</th>
+                                    <th>Grupo</th>
                                     <th>Frecuencia</th>
                                     <th>Prioridad</th>
                                     <th>Estado</th>
@@ -63,6 +67,15 @@
                                 {% for task in tasks %}
                                 <tr class="task-row" data-status="{{ task.status.value }}">
                                     <td>{{ task.title }}</td>
+                                    <td>
+                                        {% if task.group %}
+                                        <span class="badge" style="background-color: {{ task.group.color }}; color: {{ '#000' if task.group.color|lower == '#ffffff' or task.group.color|lower == '#ffff00' or task.group.color|lower == '#ffd700' else '#fff' }}">
+                                            {{ task.group.name }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
                                     <td>{{ task.frequency.name.capitalize() }}</td>
                                     <td>
                                         {% if task.priority.value == 'baja' %}
@@ -157,7 +170,8 @@
             
             rows.forEach(row => {
                 const title = row.cells[0].textContent.toLowerCase();
-                if (title.includes(searchTerm)) {
+                const groupName = row.cells[1].textContent.trim().toLowerCase();
+                if (title.includes(searchTerm) || groupName.includes(searchTerm)) {
                     // Mantener el filtro actual
                     const activeFilter = document.querySelector('.filter-btn.active').getAttribute('data-filter');
                     if (activeFilter === 'all') {
