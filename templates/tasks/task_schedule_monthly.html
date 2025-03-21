@@ -1,0 +1,115 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-calendar-month"></i> Configurar Horario Mensual
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.view_task', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Detalles
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">Tarea: {{ task.title }}</h6>
+                    <span class="badge bg-primary">Frecuencia: Mensual</span>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle"></i> Configura el día del mes y el horario para esta tarea. La tarea se ejecutará el mismo día cada mes.
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    {{ form.day_of_month.label(class="form-label") }}
+                                    {{ form.day_of_month(class="form-control" + (" is-invalid" if form.day_of_month.errors else ""), min="1", max="31") }}
+                                    {% for error in form.day_of_month.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                    <div class="form-text">Número entre 1 y 31. Si el mes no tiene ese día, se ejecutará el último día del mes.</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    {{ form.start_time.label(class="form-label") }}
+                                    {{ form.start_time(class="form-control" + (" is-invalid" if form.start_time.errors else ""), type="time") }}
+                                    {% for error in form.start_time.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                    <div class="form-text">Hora de inicio recomendada (opcional)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    {{ form.end_time.label(class="form-label") }}
+                                    {{ form.end_time(class="form-control" + (" is-invalid" if form.end_time.errors else ""), type="time") }}
+                                    {% for error in form.end_time.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                    <div class="form-text">Hora de finalización recomendada (opcional)</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('tasks.view_task', task_id=task.id) }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if schedules %}
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Horarios Configurados</h6>
+                </div>
+                <div class="card-body">
+                    <div class="table-responsive">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Día del Mes</th>
+                                    <th>Hora de Inicio</th>
+                                    <th>Hora de Fin</th>
+                                    <th class="text-end">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for schedule in schedules %}
+                                <tr>
+                                    <td>{{ schedule.day_of_month }}</td>
+                                    <td>{{ schedule.start_time.strftime('%H:%M') if schedule.start_time else 'No establecida' }}</td>
+                                    <td>{{ schedule.end_time.strftime('%H:%M') if schedule.end_time else 'No establecida' }}</td>
+                                    <td class="text-end">
+                                        <form method="post" action="{{ url_for('tasks.delete_schedule', schedule_id=schedule.id) }}" class="d-inline">
+                                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este horario?')">
+                                                <i class="bi bi-trash"></i>
+                                            </button>
+                                        </form>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

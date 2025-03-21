@@ -1,0 +1,85 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-check-circle"></i> Completar Tarea
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                {% if session.get('is_local_user') %}
+                <a href="{{ url_for('tasks.local_user_tasks') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Tareas
+                </a>
+                {% else %}
+                <a href="{{ url_for('tasks.view_task', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Detalles
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex flex-wrap justify-content-between align-items-center">
+                    <h5 class="m-0 fw-bold">{{ task.title }}</h5>
+                    <div>
+                        {% if task.priority.value == 'baja' %}
+                        <span class="badge bg-info">Prioridad Baja</span>
+                        {% elif task.priority.value == 'media' %}
+                        <span class="badge bg-primary">Prioridad Media</span>
+                        {% elif task.priority.value == 'alta' %}
+                        <span class="badge bg-warning">Prioridad Alta</span>
+                        {% else %}
+                        <span class="badge bg-danger">Prioridad Urgente</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Local:</h6>
+                        <p>{{ task.location.name }}</p>
+                    </div>
+                    
+                    {% if task.description %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Descripción:</h6>
+                        <p>{{ task.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <hr>
+                    
+                    <form method="post">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-4">
+                            {{ form.notes.label(class="form-label") }}
+                            {{ form.notes(class="form-control" + (" is-invalid" if form.notes.errors else ""), rows=3, placeholder="Puedes añadir observaciones o comentarios sobre la tarea realizada...") }}
+                            {% for error in form.notes.errors %}
+                            <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle"></i> Al marcar esta tarea como completada, se registrará la fecha y hora actual como fecha de completado.
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            {% if session.get('is_local_user') %}
+                            <a href="{{ url_for('tasks.local_user_tasks') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {% else %}
+                            <a href="{{ url_for('tasks.view_task', task_id=task.id) }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {% endif %}
+                            {{ form.submit(class="btn btn-success") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,68 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4"><i class="bi bi-geo-alt"></i> Gestión de Tareas</h1>
+        <p class="lead">Selecciona un Local para ver sus tareas</p>
+    </div>
+    
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 justify-content-center">
+        {% for location in locations %}
+        <div class="col">
+            <div class="card h-100 location-card">
+                <div class="card-body text-center">
+                    <i class="bi bi-building display-1 mb-3"></i>
+                    <h5 class="card-title">{{ location.name }}</h5>
+                    <p class="card-text text-muted">{{ location.address }}</p>
+                    <a href="{{ url_for('tasks.local_portal', location_id=location.id) }}" class="stretched-link"></a>
+                </div>
+                <div class="card-footer text-center bg-transparent">
+                    <small class="text-muted">{{ location.city }} {% if location.postal_code %}({{ location.postal_code }}){% endif %}</small>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Botón para Añadir Nuevo Local -->
+        {% if current_user.is_authenticated and (current_user.is_admin() or current_user.is_gerente()) %}
+        <div class="col">
+            <div class="card h-100 border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-plus-circle display-1 mb-3 text-primary"></i>
+                    <h5 class="card-title">Nuevo Local</h5>
+                    <p class="card-text text-muted">Añadir un nuevo local al sistema</p>
+                    <a href="{{ url_for('tasks.create_location') }}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="text-center mt-5">
+        {% if current_user.is_authenticated %}
+        <a href="{{ url_for('tasks.index') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-grid"></i> Dashboard de Tareas
+        </a>
+        {% else %}
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary">
+            <i class="bi bi-person-gear"></i> Acceso Administración
+        </a>
+        {% endif %}
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .location-card {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .location-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}

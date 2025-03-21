@@ -1,0 +1,270 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-list-check"></i> Detalles de Tarea
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.list_tasks', location_id=task.location_id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Lista
+                </a>
+                <a href="{{ url_for('tasks.edit_task', task_id=task.id) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-pencil"></i> Editar
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-8">
+            <!-- Detalles de la tarea -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="m-0 fw-bold">{{ task.title }}</h5>
+                    <div>
+                        {% if task.status.value == 'pendiente' %}
+                        <span class="badge bg-warning">Pendiente</span>
+                        {% elif task.status.value == 'completada' %}
+                        <span class="badge bg-success">Completada</span>
+                        {% elif task.status.value == 'vencida' %}
+                        <span class="badge bg-danger">Vencida</span>
+                        {% else %}
+                        <span class="badge bg-secondary">Cancelada</span>
+                        {% endif %}
+                        
+                        {% if task.priority.value == 'baja' %}
+                        <span class="badge bg-info">Prioridad Baja</span>
+                        {% elif task.priority.value == 'media' %}
+                        <span class="badge bg-primary">Prioridad Media</span>
+                        {% elif task.priority.value == 'alta' %}
+                        <span class="badge bg-warning">Prioridad Alta</span>
+                        {% else %}
+                        <span class="badge bg-danger">Prioridad Urgente</span>
+                        {% endif %}
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-3">
+                            <p class="mb-0 text-muted">Local:</p>
+                            <p class="fw-bold">{{ task.location.name }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-0 text-muted">Frecuencia:</p>
+                            <p class="fw-bold">{{ task.frequency.name.capitalize() }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-0 text-muted">Fecha inicio:</p>
+                            <p class="fw-bold">{{ task.start_date.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                        <div class="col-md-3">
+                            <p class="mb-0 text-muted">Fecha fin:</p>
+                            <p class="fw-bold">{% if task.end_date %}{{ task.end_date.strftime('%d/%m/%Y') }}{% else %}No definida{% endif %}</p>
+                        </div>
+                    </div>
+                    
+                    {% if task.description %}
+                    <div class="mb-4">
+                        <h6 class="fw-bold">Descripción:</h6>
+                        <p>{{ task.description }}</p>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mb-3">
+                        <h6 class="fw-bold">Horarios Programados:</h6>
+                        {% if task.schedule_details %}
+                        {% if task.frequency.value == 'diaria' %}
+                            {% for schedule in task.schedule_details %}
+                            <div class="alert alert-light">
+                                <i class="bi bi-calendar-check"></i> 
+                                <strong>Diaria</strong>: 
+                                {% if schedule.start_time and schedule.end_time %}
+                                De {{ schedule.start_time.strftime('%H:%M') }} a {{ schedule.end_time.strftime('%H:%M') }}
+                                {% elif schedule.start_time %}
+                                A partir de las {{ schedule.start_time.strftime('%H:%M') }}
+                                {% elif schedule.end_time %}
+                                Hasta las {{ schedule.end_time.strftime('%H:%M') }}
+                                {% else %}
+                                Sin horario específico
+                                {% endif %}
+                                
+                                <a href="{{ url_for('tasks.configure_daily_schedule', task_id=task.id) }}" class="ms-2 text-primary">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        {% elif task.frequency.value == 'semanal' %}
+                            {% for schedule in task.schedule_details %}
+                            <div class="alert alert-light">
+                                <i class="bi bi-calendar-week"></i> 
+                                <strong>{{ schedule.day_of_week.name.capitalize() }}</strong>: 
+                                {% if schedule.start_time and schedule.end_time %}
+                                De {{ schedule.start_time.strftime('%H:%M') }} a {{ schedule.end_time.strftime('%H:%M') }}
+                                {% elif schedule.start_time %}
+                                A partir de las {{ schedule.start_time.strftime('%H:%M') }}
+                                {% elif schedule.end_time %}
+                                Hasta las {{ schedule.end_time.strftime('%H:%M') }}
+                                {% else %}
+                                Sin horario específico
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            <div class="mt-2">
+                                <a href="{{ url_for('tasks.configure_weekly_schedule', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-plus-circle"></i> Añadir Día
+                                </a>
+                            </div>
+                        {% elif task.frequency.value == 'mensual' %}
+                            {% for schedule in task.schedule_details %}
+                            <div class="alert alert-light">
+                                <i class="bi bi-calendar-month"></i> 
+                                <strong>Día {{ schedule.day_of_month }} de cada mes</strong>: 
+                                {% if schedule.start_time and schedule.end_time %}
+                                De {{ schedule.start_time.strftime('%H:%M') }} a {{ schedule.end_time.strftime('%H:%M') }}
+                                {% elif schedule.start_time %}
+                                A partir de las {{ schedule.start_time.strftime('%H:%M') }}
+                                {% elif schedule.end_time %}
+                                Hasta las {{ schedule.end_time.strftime('%H:%M') }}
+                                {% else %}
+                                Sin horario específico
+                                {% endif %}
+                            </div>
+                            {% endfor %}
+                            <div class="mt-2">
+                                <a href="{{ url_for('tasks.configure_monthly_schedule', task_id=task.id) }}" class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-plus-circle"></i> Añadir Día del Mes
+                                </a>
+                            </div>
+                        {% elif task.frequency.value == 'quincenal' %}
+                            {% for schedule in task.schedule_details %}
+                            <div class="alert alert-light">
+                                <i class="bi bi-calendar2-week"></i> 
+                                <strong>Cada dos semanas</strong>: 
+                                {% if schedule.start_time and schedule.end_time %}
+                                De {{ schedule.start_time.strftime('%H:%M') }} a {{ schedule.end_time.strftime('%H:%M') }}
+                                {% elif schedule.start_time %}
+                                A partir de las {{ schedule.start_time.strftime('%H:%M') }}
+                                {% elif schedule.end_time %}
+                                Hasta las {{ schedule.end_time.strftime('%H:%M') }}
+                                {% else %}
+                                Sin horario específico
+                                {% endif %}
+                                
+                                <a href="{{ url_for('tasks.configure_biweekly_schedule', task_id=task.id) }}" class="ms-2 text-primary">
+                                    <i class="bi bi-pencil-square"></i>
+                                </a>
+                            </div>
+                            {% endfor %}
+                        {% endif %}
+                        {% else %}
+                        <div class="alert alert-warning">
+                            <i class="bi bi-exclamation-triangle"></i> No hay horarios configurados.
+                            
+                            <div class="mt-2">
+                                {% if task.frequency.value == 'diaria' %}
+                                <a href="{{ url_for('tasks.configure_daily_schedule', task_id=task.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Configurar Horario Diario
+                                </a>
+                                {% elif task.frequency.value == 'semanal' %}
+                                <a href="{{ url_for('tasks.configure_weekly_schedule', task_id=task.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Configurar Horario Semanal
+                                </a>
+                                {% elif task.frequency.value == 'mensual' %}
+                                <a href="{{ url_for('tasks.configure_monthly_schedule', task_id=task.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Configurar Horario Mensual
+                                </a>
+                                {% elif task.frequency.value == 'quincenal' %}
+                                <a href="{{ url_for('tasks.configure_biweekly_schedule', task_id=task.id) }}" class="btn btn-sm btn-primary">
+                                    <i class="bi bi-plus-circle"></i> Configurar Horario Quincenal
+                                </a>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% endif %}
+                    </div>
+                    
+                    {% if task.status.value == 'pendiente' %}
+                    <div class="mt-4 text-end">
+                        <form action="{{ url_for('tasks.complete_task', task_id=task.id) }}" method="get">
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-check-circle"></i> Marcar como Completada
+                            </button>
+                        </form>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4">
+            <!-- Historial de completados -->
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h5 class="m-0 fw-bold">Historial de Completados</h5>
+                </div>
+                <div class="card-body">
+                    {% if task.completions %}
+                    <div class="list-group">
+                        {% for completion in task.completions|sort(attribute='completion_date', reverse=True) %}
+                        <div class="list-group-item border-0">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ completion.local_user.name }}</h6>
+                                <small class="text-muted">{{ completion.completion_date.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </div>
+                            {% if completion.notes %}
+                            <p class="mb-1 small">{{ completion.notes }}</p>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history fs-1 text-muted"></i>
+                        <p class="mt-3">Esta tarea no ha sido completada aún.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <!-- Metadatos -->
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h5 class="m-0 fw-bold">Información Adicional</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <p class="mb-0 text-muted">Creada:</p>
+                            <p>{{ task.created_at.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                        <div class="col-6">
+                            <p class="mb-0 text-muted">Última modificación:</p>
+                            <p>{{ task.updated_at.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                    </div>
+                    {% if task.created_by %}
+                    <div class="row">
+                        <div class="col-12">
+                            <p class="mb-0 text-muted">Creada por:</p>
+                            <p>{{ task.created_by.first_name }} {{ task.created_by.last_name }}</p>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="mt-3 d-grid">
+                        <form method="post" action="{{ url_for('tasks.delete_task', task_id=task.id) }}" onsubmit="return confirm('¿Estás seguro de que deseas eliminar esta tarea? Esta acción no se puede deshacer.')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-danger btn-sm">
+                                <i class="bi bi-trash"></i> Eliminar Tarea
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

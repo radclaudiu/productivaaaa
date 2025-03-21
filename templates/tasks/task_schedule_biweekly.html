@@ -1,0 +1,96 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2">
+            <i class="bi bi-calendar2-week"></i> Configurar Horario Quincenal
+        </h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.view_task', task_id=task.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Detalles
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-6 mx-auto">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h6 class="m-0 fw-bold">Tarea: {{ task.title }}</h6>
+                    <span class="badge bg-primary">Frecuencia: Quincenal</span>
+                </div>
+                <div class="card-body">
+                    <form method="post">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="alert alert-info mb-4">
+                            <i class="bi bi-info-circle"></i> Configura el horario para esta tarea quincenal. La tarea se ejecutará cada dos semanas a partir de la fecha de inicio configurada.
+                        </div>
+                        
+                        <div class="row mb-4">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.start_time.label(class="form-label") }}
+                                    {{ form.start_time(class="form-control" + (" is-invalid" if form.start_time.errors else ""), type="time") }}
+                                    {% for error in form.start_time.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                    <div class="form-text">Hora de inicio recomendada (opcional)</div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.end_time.label(class="form-label") }}
+                                    {{ form.end_time(class="form-control" + (" is-invalid" if form.end_time.errors else ""), type="time") }}
+                                    {% for error in form.end_time.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                    {% endfor %}
+                                    <div class="form-text">Hora de finalización recomendada (opcional)</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('tasks.view_task', task_id=task.id) }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            {% if schedule %}
+            <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Horario Actual</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Hora de inicio:</strong></p>
+                            <p class="fs-5">{{ schedule.start_time.strftime('%H:%M') if schedule.start_time else 'No establecida' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p class="mb-1"><strong>Hora de fin:</strong></p>
+                            <p class="fs-5">{{ schedule.end_time.strftime('%H:%M') if schedule.end_time else 'No establecida' }}</p>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-end">
+                        {% if schedule %}
+                        <form method="post" action="{{ url_for('tasks.delete_schedule', schedule_id=schedule.id) }}" class="d-inline">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-sm btn-danger" onclick="return confirm('¿Estás seguro de eliminar este horario?')">
+                                <i class="bi bi-trash"></i> Eliminar Horario
+                            </button>
+                        </form>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}
