@@ -74,12 +74,12 @@
                                     <td>
                                         {% if current_user.is_admin() or current_user.is_gerente() %}
                                         <a href="{{ url_for('checkin.edit_checkin', id=checkin.id) }}" class="btn btn-info btn-sm">
-                                            <i class="fas fa-edit"></i>
+                                            <i class="bi bi-pencil-square"></i> Editar
                                         </a>
                                         <form action="{{ url_for('checkin.delete_checkin', id=checkin.id) }}" method="POST" class="d-inline" 
                                               onsubmit="return confirm('¿Está seguro de eliminar este fichaje?');">
                                             <button type="submit" class="btn btn-danger btn-sm">
-                                                <i class="fas fa-trash"></i>
+                                                <i class="bi bi-trash"></i> Eliminar
                                             </button>
                                         </form>
                                         {% endif %}
@@ -125,13 +125,13 @@
                 </div>
                 <div class="card-footer">
                     <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-secondary">
-                        <i class="fas fa-arrow-left"></i> Volver a Detalles del Empleado
+                        <i class="bi bi-arrow-left"></i> Volver a Detalles del Empleado
                     </a>
                     <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-info">
-                        <i class="fas fa-calendar"></i> Ver Horarios
+                        <i class="bi bi-calendar-week"></i> Ver Horarios
                     </a>
                     <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-primary">
-                        <i class="fas fa-umbrella-beach"></i> Ver Vacaciones
+                        <i class="bi bi-sun"></i> Ver Vacaciones
                     </a>
                 </div>
             </div>
