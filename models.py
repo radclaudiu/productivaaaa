@@ -312,9 +312,11 @@ class EmployeeCheckIn(db.Model):
         
         # For check-in: subtract minutes (to arrive early)
         # For check-out: add minutes (to leave late)
-        if 'check_in' in base_time.__str__():
+        if 'check_in' in str(base_time):
+            # Llegada anticipada: entre 1-4 minutos antes
             return base_time - timedelta(minutes=minutes_variation, seconds=seconds_variation)
         else:
+            # Salida posterior: entre 1-4 minutos después
             return base_time + timedelta(minutes=minutes_variation, seconds=seconds_variation)
             
     @classmethod

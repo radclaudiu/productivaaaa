@@ -947,12 +947,39 @@ def list_checkins(employee_id):
     # Form for exporting check-ins to PDF
     export_form = ExportCheckInsForm()
     
-    checkins = EmployeeCheckIn.query.filter_by(employee_id=employee_id).order_by(EmployeeCheckIn.check_in_time.desc()).all()
+    # Obtener todos los fichajes ordenados por fecha
+    all_checkins = EmployeeCheckIn.query.filter_by(employee_id=employee_id).order_by(EmployeeCheckIn.check_in_time.desc()).all()
+    
+    # Agrupar fichajes por semana
+    from datetime import timedelta
+    from itertools import groupby
+    
+    # Función para obtener la fecha de inicio de la semana (lunes)
+    def get_week_start(check_in_time):
+        # Obtener el número de día de la semana (0 = lunes, 6 = domingo)
+        weekday = check_in_time.weekday()
+        # Restar días para obtener el lunes
+        monday = check_in_time.date() - timedelta(days=weekday)
+        return monday
+    
+    # Crear un diccionario para agrupar por semanas
+    checkins_by_week = {}
+    
+    for checkin in all_checkins:
+        week_start = get_week_start(checkin.check_in_time)
+        week_end = week_start + timedelta(days=6)
+        week_label = f"{week_start.strftime('%d/%m/%Y')} - {week_end.strftime('%d/%m/%Y')}"
+        
+        if week_label not in checkins_by_week:
+            checkins_by_week[week_label] = []
+        
+        checkins_by_week[week_label].append(checkin)
     
     return render_template('checkin_list.html', 
                           title=f'Fichajes de {employee.first_name} {employee.last_name}', 
                           employee=employee,
-                          checkins=checkins,
+                          checkins=all_checkins,
+                          checkins_by_week=checkins_by_week,
                           export_form=export_form)
 
 @checkin_bp.route('/employee/<int:employee_id>/new', methods=['GET', 'POST'])
