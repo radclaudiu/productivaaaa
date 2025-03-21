@@ -131,9 +131,7 @@ class WeekDay(enum.Enum):
     DOMINGO = "domingo"
 
 class VacationStatus(enum.Enum):
-    PENDIENTE = "pendiente"
-    APROBADA = "aprobada"
-    DENEGADA = "denegada"
+    REGISTRADA = "registrada"
     DISFRUTADA = "disfrutada"
 
 class Employee(db.Model):
@@ -347,7 +345,7 @@ class EmployeeCheckIn(db.Model):
         # Check if employee is on vacation for any days in range
         vacation_days = set()
         for vacation in employee.vacations:
-            if vacation.status == VacationStatus.APROBADA or vacation.status == VacationStatus.DISFRUTADA:
+            if vacation.status == VacationStatus.REGISTRADA or vacation.status == VacationStatus.DISFRUTADA:
                 current_day = vacation.start_date
                 while current_day <= vacation.end_date:
                     vacation_days.add(current_day)
@@ -405,7 +403,7 @@ class EmployeeVacation(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     start_date = db.Column(db.Date, nullable=False)
     end_date = db.Column(db.Date, nullable=False)
-    status = db.Column(Enum(VacationStatus), default=VacationStatus.PENDIENTE)
+    status = db.Column(Enum(VacationStatus), default=VacationStatus.REGISTRADA)
     is_signed = db.Column(db.Boolean, default=False)
     is_enjoyed = db.Column(db.Boolean, default=False)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)

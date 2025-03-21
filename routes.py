@@ -14,7 +14,7 @@ from models import (User, Company, Employee, EmployeeDocument, EmployeeNote, Use
 from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeForm, 
                   CompanyForm, EmployeeForm, EmployeeDocumentForm, EmployeeNoteForm, SearchForm,
                   EmployeeStatusForm, EmployeeScheduleForm, EmployeeWeeklyScheduleForm, EmployeeCheckInForm, 
-                  EmployeeVacationForm, EmployeeVacationApprovalForm, GenerateCheckInsForm, ExportCheckInsForm)
+                  EmployeeVacationForm, GenerateCheckInsForm, ExportCheckInsForm)
 from utils import (save_file, log_employee_change, log_activity, can_manage_company, 
                   can_manage_employee, can_view_employee, get_dashboard_stats, generate_checkins_pdf)
 
@@ -950,36 +950,39 @@ def list_checkins(employee_id):
     # Obtener todos los fichajes ordenados por fecha
     all_checkins = EmployeeCheckIn.query.filter_by(employee_id=employee_id).order_by(EmployeeCheckIn.check_in_time.desc()).all()
     
-    # Agrupar fichajes por semana
-    from datetime import timedelta
-    from itertools import groupby
+    # Agrupar fichajes por mes
+    from datetime import datetime
     
-    # Función para obtener la fecha de inicio de la semana (lunes)
-    def get_week_start(check_in_time):
-        # Obtener el número de día de la semana (0 = lunes, 6 = domingo)
-        weekday = check_in_time.weekday()
-        # Restar días para obtener el lunes
-        monday = check_in_time.date() - timedelta(days=weekday)
-        return monday
+    # Función para obtener el mes y año
+    def get_month_year(check_in_time):
+        return (check_in_time.year, check_in_time.month)
     
-    # Crear un diccionario para agrupar por semanas
-    checkins_by_week = {}
+    # Crear un diccionario para agrupar por meses
+    checkins_by_month = {}
     
     for checkin in all_checkins:
-        week_start = get_week_start(checkin.check_in_time)
-        week_end = week_start + timedelta(days=6)
-        week_label = f"{week_start.strftime('%d/%m/%Y')} - {week_end.strftime('%d/%m/%Y')}"
+        year_month = get_month_year(checkin.check_in_time)
+        year = year_month[0]
+        month = year_month[1]
         
-        if week_label not in checkins_by_week:
-            checkins_by_week[week_label] = []
+        # Obtener el nombre del mes en español
+        month_names = [
+            'Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+            'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'
+        ]
+        month_name = month_names[month - 1]
+        month_label = f"{month_name} {year}"
         
-        checkins_by_week[week_label].append(checkin)
+        if month_label not in checkins_by_month:
+            checkins_by_month[month_label] = []
+        
+        checkins_by_month[month_label].append(checkin)
     
     return render_template('checkin_list.html', 
                           title=f'Fichajes de {employee.first_name} {employee.last_name}', 
                           employee=employee,
                           checkins=all_checkins,
-                          checkins_by_week=checkins_by_week,
+                          checkins_by_month=checkins_by_month,
                           export_form=export_form)
 
 @checkin_bp.route('/employee/<int:employee_id>/new', methods=['GET', 'POST'])
@@ -1256,10 +1259,8 @@ def create_vacation(employee_id):
                                       form=form,
                                       employee=employee)
         
-        # If EMPLEADO role, status is always PENDIENTE
-        status = VacationStatus.PENDIENTE
-        if not current_user.is_empleado() and form.status.data:
-            status = VacationStatus(form.status.data)
+        # Simplificado: siempre REGISTRADA
+        status = VacationStatus.REGISTRADA
         
         vacation = EmployeeVacation(
             start_date=form.start_date.data,
@@ -1269,8 +1270,8 @@ def create_vacation(employee_id):
             employee_id=employee_id
         )
         
-        # If GERENTE or ADMIN approves, set approved_by
-        if not current_user.is_empleado() and status == VacationStatus.APROBADA:
+        # Si lo crea un gerente o admin, se establece como creador
+        if not current_user.is_empleado():
             vacation.approved_by_id = current_user.id
         
         db.session.add(vacation)
@@ -1285,45 +1286,7 @@ def create_vacation(employee_id):
                           form=form,
                           employee=employee)
 
-@vacation_bp.route('/<int:id>/approve', methods=['GET', 'POST'])
-@manager_required
-def approve_vacation(id):
-    vacation = EmployeeVacation.query.get_or_404(id)
-    employee = Employee.query.get_or_404(vacation.employee_id)
-    
-    # Check if user has permission to manage this employee
-    if not can_manage_employee(employee):
-        flash('No tienes permiso para aprobar vacaciones de este empleado.', 'danger')
-        return redirect(url_for('employee.list_employees'))
-    
-    form = EmployeeVacationApprovalForm()
-    form.status.data = vacation.status.value
-    
-    if form.validate_on_submit():
-        vacation.status = VacationStatus(form.status.data)
-        
-        if form.notes.data:
-            vacation.notes = form.notes.data
-            
-        # Update approved_by if status is APROBADA
-        if vacation.status == VacationStatus.APROBADA:
-            vacation.approved_by_id = current_user.id
-        else:
-            vacation.approved_by_id = None
-            
-        vacation.updated_at = datetime.utcnow()
-        
-        db.session.commit()
-        
-        log_activity(f'Vacaciones actualizadas para {employee.first_name} {employee.last_name}')
-        flash('Estado de vacaciones actualizado correctamente.', 'success')
-        return redirect(url_for('vacation.list_vacations', employee_id=vacation.employee_id))
-    
-    return render_template('vacation_approval_form.html', 
-                          title=f'Aprobar Vacaciones de {employee.first_name} {employee.last_name}', 
-                          form=form,
-                          employee=employee,
-                          vacation=vacation)
+# Se eliminó la ruta de aprobación de vacaciones, ya no es necesaria con el flujo simplificado
 
 @vacation_bp.route('/<int:id>/delete', methods=['POST'])
 @manager_required

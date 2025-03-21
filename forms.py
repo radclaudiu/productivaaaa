@@ -221,23 +221,14 @@ class EmployeeCheckInForm(FlaskForm):
 class EmployeeVacationForm(FlaskForm):
     start_date = DateField('Fecha de Inicio', validators=[DataRequired()], default=date.today)
     end_date = DateField('Fecha de Fin', validators=[DataRequired()])
-    status = SelectField('Estado', choices=[(status.value, status.name.capitalize()) for status in VacationStatus],
-                        default=VacationStatus.PENDIENTE.value)
     notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
-    submit = SubmitField('Solicitar Vacaciones')
+    submit = SubmitField('Registrar Vacaciones')
     
     def validate_end_date(form, field):
         if field.data and form.start_date.data and field.data < form.start_date.data:
             raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio.')
 
-class EmployeeVacationApprovalForm(FlaskForm):
-    status = SelectField('Estado', choices=[
-        (VacationStatus.PENDIENTE.value, 'Pendiente'),
-        (VacationStatus.APROBADA.value, 'Aprobada'),
-        (VacationStatus.DENEGADA.value, 'Denegada'),
-    ])
-    notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
-    submit = SubmitField('Actualizar Estado')
+# Clase de aprobación de vacaciones eliminada, ya que no se requiere aprobación
 
 class GenerateCheckInsForm(FlaskForm):
     start_date = DateField('Fecha de Inicio', validators=[DataRequired()], default=date.today)

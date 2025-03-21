@@ -29,17 +29,17 @@
                     </div>
                 </div>
                 <div class="card-body">
-                    {% if checkins_by_week %}
+                    {% if checkins_by_month %}
                         <div class="accordion mb-4" id="accordionCheckins">
-                            {% for week_label, week_checkins in checkins_by_week.items() %}
+                            {% for month_label, month_checkins in checkins_by_month.items() %}
                                 <div class="accordion-item">
                                     <h2 class="accordion-header" id="heading{{ loop.index }}">
                                         <button class="accordion-button {% if not loop.first %}collapsed{% endif %}" type="button" 
                                                 data-bs-toggle="collapse" data-bs-target="#collapse{{ loop.index }}" 
                                                 aria-expanded="{% if loop.first %}true{% else %}false{% endif %}" 
                                                 aria-controls="collapse{{ loop.index }}">
-                                            <strong>Semana: {{ week_label }}</strong>
-                                            <span class="badge bg-primary ms-2">{{ week_checkins|length }} fichajes</span>
+                                            <strong><i class="bi bi-calendar3 me-2"></i>{{ month_label }}</strong>
+                                            <span class="badge bg-primary ms-2">{{ month_checkins|length }} fichajes</span>
                                         </button>
                                     </h2>
                                     <div id="collapse{{ loop.index }}" class="accordion-collapse collapse {% if loop.first %}show{% endif %}" 
@@ -59,7 +59,7 @@
                                                         </tr>
                                                     </thead>
                                                     <tbody>
-                                                        {% for checkin in week_checkins %}
+                                                        {% for checkin in month_checkins|sort(attribute='check_in_time', reverse=true) %}
                                                         <tr>
                                                             <td>{{ checkin.check_in_time.strftime('%d/%m/%Y') }}</td>
                                                             <td>{{ checkin.check_in_time.strftime('%H:%M') }}</td>
@@ -117,7 +117,7 @@
                         </div>
                     {% else %}
                         <div class="alert alert-info">
-                            No hay fichajes registrados para este empleado.
+                            <i class="bi bi-info-circle me-2"></i>No hay fichajes registrados para este empleado.
                         </div>
                     {% endif %}
                 </div>
