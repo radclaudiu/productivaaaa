@@ -413,8 +413,7 @@ class EmployeeVacation(db.Model):
     # Relationships
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     employee = db.relationship('Employee', back_populates='vacations')
-    approved_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
-    approved_by = db.relationship('User')
+    # Removed approved_by references as part of vacation workflow simplification
     
     def __repr__(self):
         return f'<EmployeeVacation {self.employee.last_name} - {self.start_date} to {self.end_date}>'
@@ -430,7 +429,6 @@ class EmployeeVacation(db.Model):
             'notes': self.notes,
             'employee_id': self.employee_id,
             'employee_name': f"{self.employee.first_name} {self.employee.last_name}" if self.employee else None,
-            'approved_by': self.approved_by.username if self.approved_by else None,
             'duration_days': (self.end_date - self.start_date).days + 1 if self.start_date and self.end_date else 0
         }
     
