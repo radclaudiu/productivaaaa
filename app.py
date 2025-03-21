@@ -45,22 +45,25 @@ def create_app(config_class='config.Config'):
     
     # Import models to ensure they're registered with SQLAlchemy
     with app.app_context():
-        from models import User, Company, Employee, ActivityLog, EmployeeDocument
-        
-        # Create all database tables
-        db.create_all()
+        from models import (User, Company, Employee, ActivityLog, EmployeeDocument,
+                           EmployeeNote, EmployeeHistory, EmployeeSchedule, 
+                           EmployeeCheckIn, EmployeeVacation)
         
         # Create admin user if it doesn't exist
         from utils import create_admin_user
         create_admin_user()
     
     # Register blueprints
-    from routes import auth_bp, main_bp, company_bp, employee_bp, user_bp
+    from routes import (auth_bp, main_bp, company_bp, employee_bp, user_bp, 
+                       schedule_bp, checkin_bp, vacation_bp)
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(company_bp)
     app.register_blueprint(employee_bp)
     app.register_blueprint(user_bp)
+    app.register_blueprint(schedule_bp)
+    app.register_blueprint(checkin_bp)
+    app.register_blueprint(vacation_bp)
     
     # Register error handlers
     @app.errorhandler(403)
