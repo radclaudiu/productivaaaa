@@ -141,6 +141,72 @@ class EmployeeScheduleForm(FlaskForm):
         if form.start_time.data and field.data and field.data <= form.start_time.data:
             raise ValidationError('La hora de salida debe ser posterior a la hora de entrada.')
 
+class EmployeeWeeklyScheduleForm(FlaskForm):
+    # Lunes
+    lunes_is_working_day = BooleanField('Laborable', default=True)
+    lunes_start_time = TimeField('Entrada', validators=[Optional()])
+    lunes_end_time = TimeField('Salida', validators=[Optional()])
+    
+    # Martes
+    martes_is_working_day = BooleanField('Laborable', default=True)
+    martes_start_time = TimeField('Entrada', validators=[Optional()])
+    martes_end_time = TimeField('Salida', validators=[Optional()])
+    
+    # Miércoles
+    miercoles_is_working_day = BooleanField('Laborable', default=True)
+    miercoles_start_time = TimeField('Entrada', validators=[Optional()])
+    miercoles_end_time = TimeField('Salida', validators=[Optional()])
+    
+    # Jueves
+    jueves_is_working_day = BooleanField('Laborable', default=True)
+    jueves_start_time = TimeField('Entrada', validators=[Optional()])
+    jueves_end_time = TimeField('Salida', validators=[Optional()])
+    
+    # Viernes
+    viernes_is_working_day = BooleanField('Laborable', default=True)
+    viernes_start_time = TimeField('Entrada', validators=[Optional()])
+    viernes_end_time = TimeField('Salida', validators=[Optional()])
+    
+    # Sábado
+    sabado_is_working_day = BooleanField('Laborable', default=False)
+    sabado_start_time = TimeField('Entrada', validators=[Optional()])
+    sabado_end_time = TimeField('Salida', validators=[Optional()])
+    
+    # Domingo
+    domingo_is_working_day = BooleanField('Laborable', default=False)
+    domingo_start_time = TimeField('Entrada', validators=[Optional()])
+    domingo_end_time = TimeField('Salida', validators=[Optional()])
+    
+    submit = SubmitField('Guardar Horarios')
+    
+    def validate(self):
+        if not super().validate():
+            return False
+        
+        # Verificar que para cada día marcado como laborable se hayan introducido horas
+        for day in ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]:
+            is_working_day = getattr(self, f"{day}_is_working_day").data
+            start_time = getattr(self, f"{day}_start_time").data
+            end_time = getattr(self, f"{day}_end_time").data
+            
+            if is_working_day:
+                if not start_time:
+                    field = getattr(self, f"{day}_start_time")
+                    field.errors = ["Este campo es obligatorio para días laborables."]
+                    return False
+                
+                if not end_time:
+                    field = getattr(self, f"{day}_end_time")
+                    field.errors = ["Este campo es obligatorio para días laborables."]
+                    return False
+                
+                if end_time <= start_time:
+                    field = getattr(self, f"{day}_end_time")
+                    field.errors = ["La hora de salida debe ser posterior a la hora de entrada."]
+                    return False
+        
+        return True
+
 class EmployeeCheckInForm(FlaskForm):
     check_in_time = DateField('Fecha de Entrada', validators=[DataRequired()], default=date.today)
     check_out_time = DateField('Fecha de Salida', validators=[Optional()])
