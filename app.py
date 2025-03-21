@@ -29,7 +29,6 @@ def create_app(config_class='config.Config'):
     
     # Load configuration
     app.config.from_object(config_class)
-    app.secret_key = os.environ.get("SESSION_SECRET")
     
     # Initialize extensions
     db.init_app(app)
