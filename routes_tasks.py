@@ -394,15 +394,19 @@ def create_local_user(location_id):
     form = LocalUserForm()
     
     if form.validate_on_submit():
+        # Generar nombre de usuario automáticamente (nombre + apellido + timestamp)
+        timestamp = datetime.now().strftime('%y%m%d%H%M%S')
+        username = f"{form.name.data.lower()}_{form.last_name.data.lower()}_{timestamp}"
+        
         user = LocalUser(
             name=form.name.data,
-            username=form.username.data,
+            last_name=form.last_name.data,
+            username=username,
             location_id=location_id,
             is_active=form.is_active.data
         )
         
-        # Establecer contraseña y PIN
-        user.set_password(form.password.data)
+        # Establecer PIN de acceso
         user.set_pin(form.pin.data)
         
         # Guardar foto si se proporciona
@@ -449,20 +453,14 @@ def edit_local_user(location_id, id):
         flash('No tienes permiso para editar usuarios en este local.', 'danger')
         return redirect(url_for('tasks.list_locations'))
     
-    # Crear formulario sin los campos de contraseña y PIN
+    # Crear formulario, PIN opcional para editarlo
     form = LocalUserForm(obj=user)
-    form.password.validators = []  # Hacer el campo de contraseña opcional
-    form.confirm_password.validators = []
     form.pin.validators = [Optional()]  # Hacer el PIN opcional
     
     if form.validate_on_submit():
         user.name = form.name.data
-        user.username = form.username.data
+        user.last_name = form.last_name.data
         user.is_active = form.is_active.data
-        
-        # Actualizar contraseña solo si se proporciona
-        if form.password.data:
-            user.set_password(form.password.data)
         
         # Actualizar PIN solo si se proporciona
         if form.pin.data:
@@ -938,37 +936,18 @@ def view_task(task_id):
 # Portal de acceso para usuarios locales
 @tasks_bp.route('/local-login', methods=['GET', 'POST'])
 def local_login():
-    """Página de login para usuarios locales"""
-    form = LocalUserLoginForm()
-    
-    if form.validate_on_submit():
-        user = LocalUser.query.filter_by(username=form.username.data).first()
-        
-        if user and user.check_password(form.password.data):
-            # Almacenar ID de local en sesión para PIN
-            session['location_id'] = user.location_id
-            session['local_user_username'] = user.username
-            
-            log_activity(f'Acceso a portal de local: {user.location.name}')
-            flash(f'Bienvenido al portal de {user.location.name}', 'success')
-            return redirect(url_for('tasks.local_portal'))
-        else:
-            flash('Usuario o contraseña incorrectos.', 'danger')
-    
-    return render_template('tasks/local_login.html',
-                          title='Acceso a Portal de Local',
-                          form=form)
+    """Redirigir a la página de login para usuarios locales (obsoleta)"""
+    return redirect(url_for('tasks.index'))
 
-@tasks_bp.route('/local-portal')
-def local_portal():
+@tasks_bp.route('/local-portal/<int:location_id>')
+def local_portal(location_id):
     """Portal de acceso para un local"""
-    if 'location_id' not in session:
-        return redirect(url_for('tasks.local_login'))
-    
-    location_id = session['location_id']
     location = Location.query.get_or_404(location_id)
     
-    # Obtener usuarios del local
+    # Guardar ID del local en la sesión
+    session['location_id'] = location_id
+    
+    # Obtener usuarios activos del local
     users = LocalUser.query.filter_by(location_id=location_id, is_active=True).all()
     
     return render_template('tasks/local_portal.html',
