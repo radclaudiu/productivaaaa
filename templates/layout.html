@@ -56,6 +56,13 @@
                         </a>
                     </li>
                     
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint.startswith('tasks.') %}active{% endif %}" 
+                           href="{{ url_for('tasks.index') }}">
+                            <i class="bi bi-list-check"></i> Tareas
+                        </a>
+                    </li>
+                    
                     {% if current_user.is_admin() %}
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint.startswith('user.') %}active{% endif %}" 
@@ -131,6 +138,13 @@
                             <a class="nav-link {% if request.endpoint.startswith('employee.') %}active{% endif %}" 
                                href="{{ url_for('employee.list_employees') }}">
                                 <i class="bi bi-people"></i> Empleados
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint.startswith('tasks.') %}active{% endif %}" 
+                               href="{{ url_for('tasks.index') }}">
+                                <i class="bi bi-list-check"></i> Tareas
                             </a>
                         </li>
                         
