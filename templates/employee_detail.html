@@ -289,12 +289,13 @@
                                         Configuración de los horarios laborales del empleado
                                     </p>
                                     <div class="d-grid gap-2">
-                                        <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-primary mt-auto mb-2">
-                                            <i class="fas fa-calendar-alt"></i> Ver Horarios
-                                        </a>
                                         {% if current_user.is_admin() or current_user.is_gerente() %}
-                                        <a href="{{ url_for('schedule.weekly_schedule', employee_id=employee.id) }}" class="btn btn-success mt-auto">
-                                            <i class="fas fa-calendar-week"></i> Horario Semanal
+                                        <a href="{{ url_for('schedule.weekly_schedule', employee_id=employee.id) }}" class="btn btn-primary mt-auto">
+                                            <i class="fas fa-calendar-week"></i> Gestionar Horario
+                                        </a>
+                                        {% else %}
+                                        <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-primary mt-auto">
+                                            <i class="fas fa-calendar-alt"></i> Ver Horario
                                         </a>
                                         {% endif %}
                                     </div>
@@ -342,8 +343,8 @@
                 <div class="card-footer py-3">
                     <div class="row text-center">
                         <div class="col-md-4">
-                            <a href="{{ url_for('schedule.create_schedule', employee_id=employee.id) }}" class="btn btn-sm btn-outline-primary">
-                                <i class="fas fa-plus-circle"></i> Añadir Horario
+                            <a href="{{ url_for('schedule.weekly_schedule', employee_id=employee.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-calendar-week"></i> Gestionar Horario
                             </a>
                         </div>
                         <div class="col-md-4">

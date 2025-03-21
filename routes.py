@@ -834,9 +834,9 @@ def weekly_schedule(employee_id):
         for day in ["lunes", "martes", "miercoles", "jueves", "viernes", "sabado", "domingo"]:
             if day in day_schedules:
                 schedule = day_schedules[day]
-                setattr(form, f"{day}_is_working_day", schedule.is_working_day)
-                setattr(form, f"{day}_start_time", schedule.start_time)
-                setattr(form, f"{day}_end_time", schedule.end_time)
+                getattr(form, f"{day}_is_working_day").data = schedule.is_working_day
+                getattr(form, f"{day}_start_time").data = schedule.start_time
+                getattr(form, f"{day}_end_time").data = schedule.end_time
     
     if form.validate_on_submit():
         # Para cada día de la semana, crear o actualizar el horario

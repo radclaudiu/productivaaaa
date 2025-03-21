@@ -11,15 +11,20 @@
                     <h5 class="mb-0">Horarios</h5>
                     {% if current_user.is_admin() or current_user.is_gerente() %}
                     <div>
-                        <a href="{{ url_for('schedule.weekly_schedule', employee_id=employee.id) }}" class="btn btn-success btn-sm me-2">
-                            <i class="fas fa-calendar-week"></i> Horario Semanal
-                        </a>
-                        <a href="{{ url_for('schedule.create_schedule', employee_id=employee.id) }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> Nuevo Horario
+                        <a href="{{ url_for('schedule.weekly_schedule', employee_id=employee.id) }}" class="btn btn-primary btn-sm">
+                            <i class="fas fa-calendar-week"></i> Gestionar Horario Semanal
                         </a>
                     </div>
                     {% endif %}
                 </div>
+                
+                {% if current_user.is_admin() or current_user.is_gerente() %}
+                <div class="card-body bg-light mb-3">
+                    <div class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> <strong>Recomendación:</strong> Utilice el <a href="{{ url_for('schedule.weekly_schedule', employee_id=employee.id) }}" class="alert-link">Horario Semanal</a> para gestionar de forma más eficiente todos los días de la semana a la vez.
+                    </div>
+                </div>
+                {% endif %}
                 <div class="card-body">
                     {% if schedules %}
                     <div class="table-responsive">
