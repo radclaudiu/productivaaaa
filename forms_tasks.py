@@ -70,8 +70,8 @@ class TaskForm(FlaskForm):
         if field.data and form.start_date.data and field.data < form.start_date.data:
             raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio')
             
-    def validate(self):
-        if not super(TaskForm, self).validate():
+    def validate(self, **kwargs):
+        if not super(TaskForm, self).validate(**kwargs):
             return False
             
         # Verificar que si la frecuencia es personalizada, al menos un día está marcado
