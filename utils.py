@@ -127,7 +127,9 @@ def can_view_employee(employee):
 def generate_checkins_pdf(employee, start_date=None, end_date=None):
     """Generate a PDF with employee check-ins between dates."""
     from models import EmployeeCheckIn
-    from sqlalchemy import and_
+    import io
+    from fpdf import FPDF
+    from datetime import datetime
     
     # Get employee check-ins filtered by date if provided
     query = EmployeeCheckIn.query.filter_by(employee_id=employee.id)
@@ -139,73 +141,121 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
     
     check_ins = query.order_by(EmployeeCheckIn.check_in_time).all()
     
-    # Create PDF
-    pdf = FPDF()
-    pdf.add_page()
-    
-    # Set fonts
-    pdf.set_font('Arial', 'B', 16)
-    
-    # Title
-    pdf.cell(0, 10, 'Registro de fichajes', 0, 1, 'C')
-    pdf.ln(5)
-    
-    # Company information
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, f'Empresa: {employee.company.name}', 0, 1)
-    pdf.set_font('Arial', '', 11)
-    pdf.cell(0, 7, f'CIF: {employee.company.tax_id}', 0, 1)
-    pdf.cell(0, 7, f'Dirección: {employee.company.address or ""}', 0, 1)
-    pdf.cell(0, 7, f'CP: {employee.company.postal_code or ""}, Ciudad: {employee.company.city or ""}', 0, 1)
-    pdf.ln(5)
-    
-    # Employee information
-    pdf.set_font('Arial', 'B', 12)
-    pdf.cell(0, 10, f'Empleado: {employee.first_name} {employee.last_name}', 0, 1)
-    pdf.set_font('Arial', '', 11)
-    pdf.cell(0, 7, f'DNI: {employee.dni}', 0, 1)
-    pdf.ln(10)
-    
-    # Check-ins table header
-    pdf.set_font('Arial', 'B', 11)
-    pdf.cell(60, 10, 'Fecha', 0, 0, 'C')
-    pdf.cell(40, 10, 'Entrada', 0, 0, 'C')
-    pdf.cell(40, 10, 'Salida', 0, 1, 'C')
-    pdf.ln(5)
-    
-    # Check-ins data
-    pdf.set_font('Arial', '', 10)
-    for checkin in check_ins:
-        # Format date and times
-        date_str = checkin.check_in_time.strftime('%d-%m-%Y')
-        check_in_str = checkin.check_in_time.strftime('%H:%M:%S')
-        check_out_str = checkin.check_out_time.strftime('%H:%M:%S') if checkin.check_out_time else '-'
-        
-        pdf.cell(60, 7, date_str, 0, 0, 'C')
-        pdf.cell(40, 7, check_in_str, 0, 0, 'C')
-        pdf.cell(40, 7, check_out_str, 0, 1, 'C')
-    
-    pdf.ln(10)
-    pdf.cell(0, 10, 'Estos fichajes han sido comprobados por el empleado.', 0, 1)
-    pdf.ln(20)
-    pdf.cell(0, 10, 'Firma :', 0, 1)
-    
-    # Save PDF to a bytes buffer
+    # Create PDF with direct BytesIO output
     pdf_buffer = io.BytesIO()
-    pdf.output(dest='F', name=f"{employee.first_name}_{employee.last_name}_fichajes.pdf")
     
-    # Reopen the file and read it into BytesIO buffer
-    with open(f"{employee.first_name}_{employee.last_name}_fichajes.pdf", 'rb') as f:
-        pdf_buffer.write(f.read())
+    try:
+        # Create PDF
+        pdf = FPDF()
+        pdf.add_page()
         
-    pdf_buffer.seek(0)
+        # Set fonts
+        pdf.set_font('Arial', 'B', 16)
+        
+        # Title
+        pdf.cell(0, 10, 'Registro de fichajes', 0, 1, 'C')
+        pdf.ln(5)
+        
+        # Date range information
+        pdf.set_font('Arial', '', 10)
+        date_range = ""
+        if start_date and end_date:
+            date_range = f"Periodo: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
+        elif start_date:
+            date_range = f"Desde: {start_date.strftime('%d/%m/%Y')}"
+        elif end_date:
+            date_range = f"Hasta: {end_date.strftime('%d/%m/%Y')}"
+        
+        if date_range:
+            pdf.cell(0, 7, date_range, 0, 1, 'C')
+            pdf.ln(3)
+        
+        # Company information
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, f'Empresa: {employee.company.name}', 0, 1)
+        pdf.set_font('Arial', '', 11)
+        pdf.cell(0, 7, f'CIF: {employee.company.tax_id}', 0, 1)
+        pdf.cell(0, 7, f'Dirección: {employee.company.address or ""}', 0, 1)
+        pdf.cell(0, 7, f'CP: {employee.company.postal_code or ""}, Ciudad: {employee.company.city or ""}', 0, 1)
+        pdf.ln(5)
+        
+        # Employee information
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, f'Empleado: {employee.first_name} {employee.last_name}', 0, 1)
+        pdf.set_font('Arial', '', 11)
+        pdf.cell(0, 7, f'DNI: {employee.dni}', 0, 1)
+        pdf.cell(0, 7, f'Posición: {employee.position or ""}', 0, 1)
+        pdf.ln(10)
+        
+        # Check-ins table header
+        pdf.set_font('Arial', 'B', 11)
+        pdf.cell(40, 10, 'Fecha', 1, 0, 'C')
+        pdf.cell(30, 10, 'Entrada', 1, 0, 'C')
+        pdf.cell(30, 10, 'Salida', 1, 0, 'C')
+        pdf.cell(30, 10, 'Horas', 1, 0, 'C')
+        pdf.cell(60, 10, 'Notas', 1, 1, 'C')
+        
+        # Check-ins data
+        pdf.set_font('Arial', '', 10)
+        total_hours = 0
+        for checkin in check_ins:
+            # Format date and times
+            date_str = checkin.check_in_time.strftime('%d/%m/%Y')
+            check_in_str = checkin.check_in_time.strftime('%H:%M')
+            check_out_str = checkin.check_out_time.strftime('%H:%M') if checkin.check_out_time else '-'
+            
+            # Calculate hours
+            hours = 0
+            hours_str = '-'
+            if checkin.check_out_time:
+                hours = (checkin.check_out_time - checkin.check_in_time).total_seconds() / 3600
+                hours_str = f"{hours:.2f}"
+                total_hours += hours
+            
+            # Notes (truncated if too long)
+            notes = checkin.notes if checkin.notes else ""
+            if len(notes) > 25:
+                notes = notes[:22] + "..."
+            
+            pdf.cell(40, 7, date_str, 1, 0, 'C')
+            pdf.cell(30, 7, check_in_str, 1, 0, 'C')
+            pdf.cell(30, 7, check_out_str, 1, 0, 'C')
+            pdf.cell(30, 7, hours_str, 1, 0, 'C')
+            pdf.cell(60, 7, notes, 1, 1, 'L')
+        
+        # Total hours
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(100, 7, 'Total Horas:', 1, 0, 'R')
+        pdf.cell(30, 7, f"{total_hours:.2f}", 1, 0, 'C')
+        pdf.cell(60, 7, '', 1, 1, 'L')
+        
+        pdf.ln(10)
+        pdf.cell(0, 10, 'Estos fichajes han sido verificados y comprobados.', 0, 1)
+        
+        # Date and signature spaces
+        pdf.ln(15)
+        pdf.set_font('Arial', '', 10)
+        current_date = datetime.now().strftime('%d/%m/%Y')
+        pdf.cell(0, 7, f'Fecha: {current_date}', 0, 1)
+        pdf.ln(10)
+        
+        pdf.cell(90, 7, 'Firma del empleado:', 0, 0)
+        pdf.cell(90, 7, 'Firma del responsable:', 0, 1)
+        pdf.ln(15)
+        
+        pdf.cell(90, 7, '_______________________', 0, 0)
+        pdf.cell(90, 7, '_______________________', 0, 1)
+        
+        # Output PDF to BytesIO buffer
+        pdf_output = pdf.output(dest='S').encode('latin1')
+        pdf_buffer.write(pdf_output)
+        pdf_buffer.seek(0)
+        
+        return pdf_buffer
     
-    # Delete the temporary file
-    if os.path.exists(f"{employee.first_name}_{employee.last_name}_fichajes.pdf"):
-        os.remove(f"{employee.first_name}_{employee.last_name}_fichajes.pdf")
-    
-    # Return PDF as a file-like object
-    return pdf_buffer
+    except Exception as e:
+        print(f"Error generating PDF: {e}")
+        return None
 
 
 def get_dashboard_stats():

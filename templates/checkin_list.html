@@ -12,14 +12,17 @@
                     <div>
                         {% if current_user.is_admin() or current_user.is_gerente() %}
                         <a href="{{ url_for('checkin.create_checkin', employee_id=employee.id) }}" class="btn btn-primary btn-sm">
-                            <i class="fas fa-plus"></i> Nuevo Fichaje
+                            <i class="bi bi-plus-lg"></i> Nuevo Fichaje
                         </a>
                         {% if employee.schedules %}
                         <a href="{{ url_for('checkin.generate_checkins', employee_id=employee.id) }}" class="btn btn-success btn-sm">
-                            <i class="fas fa-calendar-check"></i> Generar Fichajes Automáticos
+                            <i class="bi bi-calendar-check"></i> Generar Fichajes Automáticos
                         </a>
                         {% endif %}
                         {% endif %}
+                        <button type="button" class="btn btn-info btn-sm" data-bs-toggle="modal" data-bs-target="#exportModal">
+                            <i class="bi bi-file-earmark-pdf"></i> Exportar a PDF
+                        </button>
                     </div>
                 </div>
                 <div class="card-body">
@@ -67,7 +70,7 @@
                                     <td>
                                         {% if checkin.notes %}
                                         <button type="button" class="btn btn-sm btn-info" data-bs-toggle="tooltip" data-bs-placement="top" title="{{ checkin.notes }}">
-                                            <i class="fas fa-info-circle"></i>
+                                            <i class="bi bi-info-circle"></i>
                                         </button>
                                         {% endif %}
                                     </td>
@@ -135,6 +138,36 @@
                     </a>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para exportar fichajes a PDF -->
+<div class="modal fade" id="exportModal" tabindex="-1" aria-labelledby="exportModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="exportModalLabel">Exportar Fichajes a PDF</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <form action="{{ url_for('checkin.export_checkins', employee_id=employee.id) }}" method="POST">
+                <div class="modal-body">
+                    {{ export_form.hidden_tag() }}
+                    <div class="mb-3">
+                        {{ export_form.start_date.label(class="form-label") }}
+                        {{ export_form.start_date(class="form-control", type="date") }}
+                    </div>
+                    <div class="mb-3">
+                        {{ export_form.end_date.label(class="form-label") }}
+                        {{ export_form.end_date(class="form-control", type="date") }}
+                    </div>
+                    <p class="text-muted small">Si no selecciona fechas, se exportarán todos los fichajes.</p>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                    {{ export_form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
         </div>
     </div>
 </div>
