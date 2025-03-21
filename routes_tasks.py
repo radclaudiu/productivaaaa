@@ -953,6 +953,33 @@ def local_portal(location_id):
     # Obtener usuarios activos del local
     local_users = LocalUser.query.filter_by(location_id=location_id, is_active=True).all()
     
+    # Si no hay usuarios, crear un admin por defecto
+    if not local_users:
+        try:
+            # Crear usuario admin por defecto
+            admin_user = LocalUser(
+                name="Admin",
+                last_name="Local",
+                username=f"admin_{location_id}",
+                is_active=True,
+                location_id=location_id
+            )
+            
+            # Establecer PIN 1234
+            admin_user.set_pin("1234")
+            
+            db.session.add(admin_user)
+            db.session.commit()
+            
+            # Refrescar la lista de usuarios
+            local_users = [admin_user]
+            
+            # Mostrar mensaje informativo 
+            flash("Se ha creado un usuario administrador por defecto con PIN: 1234", "info")
+            
+        except Exception as e:
+            flash(f"No se pudo crear el usuario por defecto: {str(e)}", "warning")
+    
     return render_template('tasks/local_portal.html',
                           title=f'Portal de {location.name}',
                           location=location,
