@@ -1,0 +1,228 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-geo-alt"></i> {{ location.name }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.list_locations') }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver a Locales
+                </a>
+                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == location.company_id) %}
+                <a href="{{ url_for('tasks.edit_location', id=location.id) }}" class="btn btn-sm btn-warning">
+                    <i class="bi bi-pencil"></i> Editar Local
+                </a>
+                {% endif %}
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Información del Local -->
+        <div class="col-md-4 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold">Información del Local</h6>
+                    {% if location.is_active %}
+                    <span class="badge bg-success">Activo</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inactivo</span>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-muted">Empresa</h6>
+                        <p>{{ location.company.name }}</p>
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-muted">Dirección</h6>
+                        <p>{{ location.address or 'No especificada' }}</p>
+                    </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-muted">Ciudad</h6>
+                            <p>{{ location.city or 'No especificada' }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="fw-bold text-muted">Código Postal</h6>
+                            <p>{{ location.postal_code or 'No especificado' }}</p>
+                        </div>
+                    </div>
+                    {% if location.description %}
+                    <div class="mb-3">
+                        <h6 class="fw-bold text-muted">Descripción</h6>
+                        <p>{{ location.description }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Tareas Activas Hoy -->
+        <div class="col-md-8 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold">Tareas Activas Hoy</h6>
+                    {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == location.company_id) %}
+                    <a href="{{ url_for('tasks.create_task', location_id=location.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-plus-lg"></i> Nueva Tarea
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if active_tasks %}
+                    <div class="list-group">
+                        {% for task in active_tasks %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ task.title }}</h6>
+                                <small>
+                                    {% if task.priority.value == 'baja' %}
+                                    <span class="badge bg-info">Baja</span>
+                                    {% elif task.priority.value == 'media' %}
+                                    <span class="badge bg-primary">Media</span>
+                                    {% elif task.priority.value == 'alta' %}
+                                    <span class="badge bg-warning">Alta</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Urgente</span>
+                                    {% endif %}
+                                </small>
+                            </div>
+                            <p class="mb-1">{{ task.description|truncate(100) if task.description else 'Sin descripción' }}</p>
+                            <small>Frecuencia: {{ task.frequency.name|capitalize }}</small>
+                            <div class="mt-2">
+                                <a href="{{ url_for('tasks.view_task', task_id=task.id) }}" class="btn btn-sm btn-info">
+                                    <i class="bi bi-eye"></i> Ver Detalles
+                                </a>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-calendar-check fs-1 text-muted"></i>
+                        <p class="mt-3">No hay tareas activas para hoy.</p>
+                        {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == location.company_id) %}
+                        <a href="{{ url_for('tasks.create_task', location_id=location.id) }}" class="btn btn-primary">
+                            <i class="bi bi-plus-lg"></i> Crear Nueva Tarea
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <!-- Usuarios Locales -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3 d-flex flex-row align-items-center justify-content-between">
+                    <h6 class="m-0 fw-bold">Usuarios del Local</h6>
+                    {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == location.company_id) %}
+                    <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="btn btn-sm btn-primary">
+                        <i class="bi bi-person-plus"></i> Nuevo Usuario
+                    </a>
+                    {% endif %}
+                </div>
+                <div class="card-body">
+                    {% if local_users %}
+                    <div class="row row-cols-1 row-cols-md-3 g-4">
+                        {% for user in local_users %}
+                        <div class="col">
+                            <div class="card h-100">
+                                {% if user.photo_path %}
+                                <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" class="card-img-top" alt="{{ user.name }}">
+                                {% else %}
+                                <div class="text-center pt-3">
+                                    <i class="bi bi-person-circle fs-1"></i>
+                                </div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ user.name }}</h6>
+                                    <p class="card-text"><small>{{ user.username }}</small></p>
+                                    {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == location.company_id) %}
+                                    <div class="d-grid gap-2">
+                                        <a href="{{ url_for('tasks.edit_local_user', location_id=location.id, id=user.id) }}" class="btn btn-sm btn-warning">
+                                            <i class="bi bi-pencil"></i> Editar
+                                        </a>
+                                    </div>
+                                    {% endif %}
+                                </div>
+                                <div class="card-footer">
+                                    {% if user.is_active %}
+                                    <small class="text-success"><i class="bi bi-check-circle"></i> Activo</small>
+                                    {% else %}
+                                    <small class="text-danger"><i class="bi bi-x-circle"></i> Inactivo</small>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-people fs-1 text-muted"></i>
+                        <p class="mt-3">No hay usuarios registrados para este local.</p>
+                        {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == location.company_id) %}
+                        <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="btn btn-primary">
+                            <i class="bi bi-person-plus"></i> Crear Primer Usuario
+                        </a>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        <!-- Actividad Reciente -->
+        <div class="col-md-6 mb-4">
+            <div class="card shadow h-100">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">Tareas Completadas Recientemente</h6>
+                </div>
+                <div class="card-body">
+                    {% if recent_completions %}
+                    <div class="list-group">
+                        {% for completion, task, local_user in recent_completions %}
+                        <div class="list-group-item list-group-item-action">
+                            <div class="d-flex w-100 justify-content-between">
+                                <h6 class="mb-1">{{ task.title }}</h6>
+                                <small>{{ completion.completion_date.strftime('%d/%m/%Y %H:%M') }}</small>
+                            </div>
+                            <p class="mb-1">Completada por: {{ local_user.name }}</p>
+                            {% if completion.notes %}
+                            <small>Notas: {{ completion.notes|truncate(100) }}</small>
+                            {% endif %}
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% else %}
+                    <div class="text-center py-4">
+                        <i class="bi bi-clock-history fs-1 text-muted"></i>
+                        <p class="mt-3">No hay tareas completadas recientemente.</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Enlace al Portal de Usuarios -->
+    <div class="row">
+        <div class="col-12 mb-4">
+            <div class="card shadow">
+                <div class="card-body text-center py-4">
+                    <h5 class="mb-3">Portal de Usuarios para {{ location.name }}</h5>
+                    <p class="mb-3">Los empleados de este local pueden acceder al portal para gestionar las tareas diarias.</p>
+                    <a href="{{ url_for('tasks.local_login') }}" class="btn btn-lg btn-primary">
+                        <i class="bi bi-door-open"></i> Acceder al Portal
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

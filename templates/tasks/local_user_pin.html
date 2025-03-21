@@ -1,0 +1,79 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container py-5">
+    <div class="row justify-content-center">
+        <div class="col-md-6 col-lg-4">
+            <div class="card shadow-lg border-0 rounded-lg mt-5">
+                <div class="card-header bg-primary text-white text-center">
+                    <h3 class="my-3">{{ user.name }}</h3>
+                </div>
+                <div class="card-body text-center">
+                    <div class="mb-4">
+                        {% if user.photo_path %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" 
+                             class="rounded-circle img-fluid" style="max-width: 150px; height: 150px; object-fit: cover;" alt="{{ user.name }}">
+                        {% else %}
+                        <i class="bi bi-person-circle display-1"></i>
+                        {% endif %}
+                    </div>
+                    
+                    <p class="lead mb-4">Introduce tu PIN para acceder</p>
+                    
+                    <form method="post">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="form-group mb-4">
+                            <div class="pin-input-container text-center">
+                                {{ form.pin(class="form-control pin-input" + (" is-invalid" if form.pin.errors else ""), 
+                                    id="pinInput", style="font-size: 1.5rem; letter-spacing: 0.5rem; text-align: center; max-width: 200px; margin: 0 auto;") }}
+                                
+                                {% for error in form.pin.errors %}
+                                <div class="invalid-feedback d-block">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                        </div>
+                    </form>
+                </div>
+                <div class="card-footer text-center py-3">
+                    <div class="small">
+                        <a href="{{ url_for('tasks.local_portal') }}">Volver a selección de usuario</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const pinInput = document.getElementById('pinInput');
+        
+        if (pinInput) {
+            // Auto focus on load
+            pinInput.focus();
+            
+            // Limitar a solo dígitos
+            pinInput.addEventListener('input', function(e) {
+                this.value = this.value.replace(/[^0-9]/g, '').slice(0, 4);
+            });
+            
+            // Submit form automáticamente al completar 4 dígitos
+            pinInput.addEventListener('input', function() {
+                if (this.value.length === 4) {
+                    // Submit form after a short delay to allow user to see the complete PIN
+                    setTimeout(() => {
+                        this.form.submit();
+                    }, 300);
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

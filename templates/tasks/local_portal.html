@@ -1,0 +1,66 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4"><i class="bi bi-geo-alt"></i> {{ location.name }}</h1>
+        <p class="lead">Selecciona tu perfil para acceder a las tareas</p>
+    </div>
+    
+    <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4 justify-content-center">
+        {% for user in users %}
+        <div class="col">
+            <div class="card h-100 user-select-card">
+                <div class="card-body text-center">
+                    {% if user.photo_path %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" 
+                         class="rounded-circle img-fluid mb-3" style="max-width: 150px; height: 150px; object-fit: cover;" alt="{{ user.name }}">
+                    {% else %}
+                    <i class="bi bi-person-circle display-1 mb-3"></i>
+                    {% endif %}
+                    <h5 class="card-title">{{ user.name }}</h5>
+                    <a href="{{ url_for('tasks.local_user_login', user_id=user.id) }}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        <!-- Botón para Añadir Nuevo Usuario -->
+        {% if current_user.is_authenticated and (current_user.is_admin() or current_user.is_gerente()) %}
+        <div class="col">
+            <div class="card h-100 border-primary">
+                <div class="card-body text-center">
+                    <i class="bi bi-person-plus display-1 mb-3 text-primary"></i>
+                    <h5 class="card-title">Añadir Usuario</h5>
+                    <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="stretched-link"></a>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+    </div>
+    
+    <div class="text-center mt-5">
+        <a href="{{ url_for('tasks.portal_logout') }}" class="btn btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a la Selección de Local
+        </a>
+        
+        <a href="{{ url_for('auth.login') }}" class="btn btn-outline-secondary ms-2">
+            <i class="bi bi-person-gear"></i> Acceso Administración
+        </a>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .user-select-card {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .user-select-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+    }
+</style>
+{% endblock %}

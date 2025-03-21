@@ -1,0 +1,107 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
+        <h1 class="h2"><i class="bi bi-people"></i> Usuarios del Local: {{ location.name }}</h1>
+        <div class="btn-toolbar mb-2 mb-md-0">
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.view_location', id=location.id) }}" class="btn btn-sm btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Local
+                </a>
+                <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="btn btn-sm btn-primary">
+                    <i class="bi bi-person-plus"></i> Nuevo Usuario
+                </a>
+            </div>
+        </div>
+    </div>
+
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 fw-bold">Usuarios Registrados</h6>
+        </div>
+        <div class="card-body">
+            {% if users %}
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+                {% for user in users %}
+                <div class="col">
+                    <div class="card h-100">
+                        {% if user.photo_path %}
+                        <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" class="card-img-top" alt="{{ user.name }}">
+                        {% else %}
+                        <div class="text-center pt-3">
+                            <i class="bi bi-person-circle fs-1"></i>
+                        </div>
+                        {% endif %}
+                        <div class="card-body">
+                            <h5 class="card-title">{{ user.name }}</h5>
+                            <p class="card-text">
+                                <small class="text-muted">Usuario: {{ user.username }}</small>
+                            </p>
+                            <div class="d-grid gap-2">
+                                <a href="{{ url_for('tasks.edit_local_user', location_id=location.id, id=user.id) }}" class="btn btn-warning">
+                                    <i class="bi bi-pencil"></i> Editar
+                                </a>
+                                <button type="button" class="btn btn-danger" 
+                                        onclick="confirmDelete('{{ url_for('tasks.delete_local_user', location_id=location.id, id=user.id) }}', '{{ user.name }}')">
+                                    <i class="bi bi-trash"></i> Eliminar
+                                </button>
+                            </div>
+                        </div>
+                        <div class="card-footer text-center">
+                            {% if user.is_active %}
+                            <span class="badge bg-success">Usuario Activo</span>
+                            {% else %}
+                            <span class="badge bg-danger">Usuario Inactivo</span>
+                            {% endif %}
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+            {% else %}
+            <div class="text-center py-4">
+                <i class="bi bi-exclamation-circle fs-1 text-muted"></i>
+                <p class="mt-3">No hay usuarios registrados para este local.</p>
+                <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="btn btn-primary">
+                    <i class="bi bi-person-plus"></i> Crear Primer Usuario
+                </a>
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmación de eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body" id="deleteModalBody">
+                ¿Estás seguro de que deseas eliminar este usuario?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="deleteForm" method="post">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function confirmDelete(url, name) {
+        document.getElementById('deleteModalBody').textContent = `¿Estás seguro de que deseas eliminar al usuario "${name}"?`;
+        document.getElementById('deleteForm').action = url;
+        
+        var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
+        deleteModal.show();
+    }
+</script>
+{% endblock %}
