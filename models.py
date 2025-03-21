@@ -317,14 +317,13 @@ class EmployeeCheckIn(db.Model):
         # For check-in: subtract minutes (to arrive early)
         # For check-out: add minutes (to leave late)
         if 'check_in' in base_time.__str__():
-            return base_time - datetime.timedelta(minutes=minutes_variation, seconds=seconds_variation)
+            return base_time - timedelta(minutes=minutes_variation, seconds=seconds_variation)
         else:
-            return base_time + datetime.timedelta(minutes=minutes_variation, seconds=seconds_variation)
+            return base_time + timedelta(minutes=minutes_variation, seconds=seconds_variation)
             
     @classmethod
     def generate_check_ins_for_schedule(cls, employee, start_date, end_date):
         """Generate check-ins for an employee based on their schedule."""
-        from datetime import timedelta
         
         if not employee.schedules:
             return []

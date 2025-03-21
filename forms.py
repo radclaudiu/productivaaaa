@@ -1,11 +1,11 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField
-from wtforms import BooleanField, DateField, HiddenField, EmailField, TelField, URLField
+from wtforms import BooleanField, DateField, HiddenField, EmailField, TelField, URLField, TimeField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional
 from datetime import date
 
-from models import User, ContractType, UserRole, EmployeeStatus
+from models import User, ContractType, UserRole, EmployeeStatus, WeekDay, VacationStatus
 
 class LoginForm(FlaskForm):
     username = StringField('Usuario', validators=[DataRequired(), Length(min=3, max=64)])
@@ -129,3 +129,54 @@ class EmployeeStatusForm(FlaskForm):
 class SearchForm(FlaskForm):
     query = StringField('Buscar', validators=[DataRequired()])
     submit = SubmitField('Buscar')
+
+class EmployeeScheduleForm(FlaskForm):
+    day_of_week = SelectField('Día de la Semana', choices=[(day.value, day.name.capitalize()) for day in WeekDay])
+    start_time = TimeField('Hora de Entrada', validators=[DataRequired()])
+    end_time = TimeField('Hora de Salida', validators=[DataRequired()])
+    is_working_day = BooleanField('Día Laborable', default=True)
+    submit = SubmitField('Guardar Horario')
+    
+    def validate_end_time(form, field):
+        if form.start_time.data and field.data and field.data <= form.start_time.data:
+            raise ValidationError('La hora de salida debe ser posterior a la hora de entrada.')
+
+class EmployeeCheckInForm(FlaskForm):
+    check_in_time = DateField('Fecha de Entrada', validators=[DataRequired()], default=date.today)
+    check_out_time = DateField('Fecha de Salida', validators=[Optional()])
+    notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('Registrar Fichaje')
+    
+    def validate_check_out_time(form, field):
+        if field.data and form.check_in_time.data and field.data < form.check_in_time.data:
+            raise ValidationError('La fecha de salida debe ser posterior a la fecha de entrada.')
+
+class EmployeeVacationForm(FlaskForm):
+    start_date = DateField('Fecha de Inicio', validators=[DataRequired()], default=date.today)
+    end_date = DateField('Fecha de Fin', validators=[DataRequired()])
+    status = SelectField('Estado', choices=[(status.value, status.name.capitalize()) for status in VacationStatus],
+                        default=VacationStatus.PENDIENTE.value)
+    notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('Solicitar Vacaciones')
+    
+    def validate_end_date(form, field):
+        if field.data and form.start_date.data and field.data < form.start_date.data:
+            raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio.')
+
+class EmployeeVacationApprovalForm(FlaskForm):
+    status = SelectField('Estado', choices=[
+        (VacationStatus.PENDIENTE.value, 'Pendiente'),
+        (VacationStatus.APROBADA.value, 'Aprobada'),
+        (VacationStatus.DENEGADA.value, 'Denegada'),
+    ])
+    notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
+    submit = SubmitField('Actualizar Estado')
+
+class GenerateCheckInsForm(FlaskForm):
+    start_date = DateField('Fecha de Inicio', validators=[DataRequired()], default=date.today)
+    end_date = DateField('Fecha de Fin', validators=[DataRequired()])
+    submit = SubmitField('Generar Fichajes')
+    
+    def validate_end_date(form, field):
+        if field.data and form.start_date.data and field.data < form.start_date.data:
+            raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio.')

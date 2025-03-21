@@ -8,10 +8,13 @@ from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
 
 from app import db
-from models import User, Company, Employee, EmployeeDocument, EmployeeNote, UserRole, ContractType, EmployeeStatus
+from models import (User, Company, Employee, EmployeeDocument, EmployeeNote, UserRole, 
+                   ContractType, EmployeeStatus, EmployeeSchedule, EmployeeCheckIn, 
+                   EmployeeVacation, VacationStatus, WeekDay)
 from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeForm, 
                   CompanyForm, EmployeeForm, EmployeeDocumentForm, EmployeeNoteForm, SearchForm,
-                  EmployeeStatusForm)
+                  EmployeeStatusForm, EmployeeScheduleForm, EmployeeCheckInForm, EmployeeVacationForm,
+                  EmployeeVacationApprovalForm, GenerateCheckInsForm)
 from utils import (save_file, log_employee_change, log_activity, can_manage_company, 
                   can_manage_employee, can_view_employee, get_dashboard_stats)
 
@@ -21,6 +24,9 @@ main_bp = Blueprint('main', __name__)
 company_bp = Blueprint('company', __name__, url_prefix='/companies')
 employee_bp = Blueprint('employee', __name__, url_prefix='/employees')
 user_bp = Blueprint('user', __name__, url_prefix='/users')
+schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedules')
+checkin_bp = Blueprint('checkin', __name__, url_prefix='/checkins')
+vacation_bp = Blueprint('vacation', __name__, url_prefix='/vacations')
 
 # Decorator for admin-only routes
 def admin_required(f):
