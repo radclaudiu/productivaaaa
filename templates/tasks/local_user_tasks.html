@@ -4,290 +4,291 @@
 <style>
     /* Estilos generales */
     body {
-        background-color: #f8f9fa;
+        background-color: #f0f0f0;
+        font-family: Arial, sans-serif;
     }
     
-    /* Estilos para el carrusel de fechas */
-    .date-selector {
-        display: flex;
-        justify-content: space-between;
+    /* Barra de navegación superior */
+    .top-navbar {
         background-color: #fff;
-        border-radius: 8px;
-        margin-bottom: 20px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
+        padding: 10px 15px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        z-index: 1000;
+        height: 50px;
     }
     
-    .day-selector {
+    /* Barra lateral */
+    .side-navbar {
+        background-color: #f9f9f9;
+        width: 60px;
+        position: fixed;
+        top: 50px;
+        left: 0;
+        bottom: 0;
+        z-index: 900;
+        border-right: 1px solid #e0e0e0;
+    }
+    
+    .side-nav-item {
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        height: 60px;
+        color: #666;
+        transition: all 0.3s;
+    }
+    
+    .side-nav-item.active {
+        background-color: #4A90E2;
+        color: white;
+    }
+    
+    /* Área de contenido principal */
+    .main-content {
+        margin-left: 60px;
+        margin-top: 50px;
+        padding: 0;
+    }
+    
+    /* Carrusel de fechas */
+    .date-carousel {
+        display: flex;
+        background-color: #fff;
+        padding: 10px 0;
+        border-bottom: 1px solid #e0e0e0;
+    }
+    
+    .date-item {
         flex: 1;
         text-align: center;
-        padding: 10px 5px;
-        border-radius: 0;
-        transition: all 0.2s;
-        border-bottom: 3px solid transparent;
-    }
-    
-    .day-selector.active {
-        background-color: rgba(13, 110, 253, 0.1);
-        border-bottom: 3px solid var(--bs-primary);
-        font-weight: bold;
-    }
-    
-    .day-selector:not(.active):hover {
-        background-color: rgba(0,0,0,0.03);
+        padding: 5px 0;
         cursor: pointer;
+        border-bottom: 2px solid transparent;
     }
     
-    .day-name {
-        font-size: 0.9rem;
-        margin-bottom: 0.2rem;
+    .date-item.active {
+        border-bottom-color: #4A90E2;
+        background-color: #f0f7ff;
     }
     
-    .day-number {
-        font-size: 1.3rem;
+    .date-day {
+        font-size: 11px;
+        text-transform: uppercase;
+        color: #666;
+    }
+    
+    .date-number {
+        font-size: 18px;
         font-weight: bold;
     }
     
-    /* Estilos para la barra lateral de grupos */
-    .task-groups-sidebar {
+    /* Grupos de tareas */
+    .task-group {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        border-left: 5px solid #4A90E2;
+        margin-bottom: 2px;
         background-color: #fff;
-        border-radius: 8px;
-        box-shadow: 0 2px 5px rgba(0,0,0,0.05);
-        height: calc(100vh - 160px);
-        overflow-y: auto;
-    }
-    
-    .task-group-item {
-        padding: 15px 20px;
-        border-left: 5px solid transparent;
-        transition: all 0.2s;
         cursor: pointer;
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 5px;
     }
     
-    .task-group-item:hover {
-        background-color: rgba(0,0,0,0.03);
+    .task-group:hover {
+        background-color: #f5f5f5;
     }
     
-    .task-group-item.active {
-        background-color: rgba(13, 110, 253, 0.1);
-        border-left-color: var(--bs-primary);
+    .group-info {
+        flex-grow: 1;
     }
     
-    /* Estilos para las tarjetas de tareas */
+    .group-name {
+        font-weight: bold;
+        margin-bottom: 0;
+    }
+    
+    .group-time {
+        font-size: 12px;
+        color: #999;
+    }
+    
+    .task-counter {
+        font-size: 12px;
+        padding: 2px 6px;
+        border-radius: 10px;
+        background-color: #eee;
+    }
+    
+    /* Tareas */
     .task-card {
-        margin-bottom: 15px;
-        border-radius: 8px;
-        transition: all 0.2s;
-        border-left: 5px solid #17a2b8;
-    }
-    
-    .task-card:hover {
-        transform: translateY(-2px);
-        box-shadow: 0 5px 15px rgba(0,0,0,0.08);
-    }
-    
-    .task-card .card-header {
-        background-color: rgba(23, 162, 184, 0.1);
-        font-weight: bold;
-    }
-    
-    .task-card.completed {
-        border-left-color: #28a745;
-        opacity: 0.8;
-    }
-    
-    .task-card.completed .card-header {
-        background-color: rgba(40, 167, 69, 0.1);
-    }
-    
-    /* Para simular el contenido de la captura de pantalla */
-    .completion-progress {
-        width: 40px;
-        height: 40px;
-        border-radius: 50%;
-        border: 3px solid #28a745;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-weight: bold;
-        color: #28a745;
-    }
-    
-    .task-header {
+        padding: 15px;
+        border-left: 5px solid #4A90E2;
+        background-color: #fff;
+        margin-bottom: 1px;
         display: flex;
         align-items: center;
         justify-content: space-between;
-        padding: 10px 15px;
-        background-color: #f8f9fa;
-        border-bottom: 1px solid #eee;
-        margin-bottom: 15px;
-        border-radius: 8px;
     }
     
-    .user-avatar {
+    .task-title {
+        font-weight: bold;
+        margin-bottom: 0;
+        flex-grow: 1;
+    }
+    
+    .task-badge {
+        margin-left: 10px;
+        display: inline-block;
+        min-width: 35px;
+        text-align: center;
+    }
+    
+    /* Círculo de progreso */
+    .circle-progress {
         width: 40px;
         height: 40px;
         border-radius: 50%;
-        background-color: #6f42c1;
-        color: white;
+        border: 3px solid #4caf50;
         display: flex;
-        align-items: center;
         justify-content: center;
+        align-items: center;
         font-weight: bold;
+        color: #4caf50;
         margin-right: 10px;
     }
     
-    .sidebar-icon {
-        font-size: 1.5rem;
-        margin-right: 15px;
-        color: #6c757d;
+    /* Contenedores para la estructura principal */
+    .left-side {
+        border-right: 1px solid #e0e0e0;
+        background-color: #f5f5f5;
+        height: calc(100vh - 50px);
+        overflow-y: auto;
+    }
+    
+    .right-side {
+        background-color: #f9f9f9;
+        height: calc(100vh - 50px);
+        overflow-y: auto;
+    }
+    
+    /* Chevron/arrow icon */
+    .chevron-right {
+        color: #ccc;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-2">
-    <div class="row mb-2">
-        <div class="col-12">
-            <!-- Cabecera con nombre del usuario -->
-            <div class="d-flex justify-content-between align-items-center">
-                <h2>Tareas</h2>
-                <div class="d-flex align-items-center">
-                    <span class="mr-2">{{ local_user.name }} {{ local_user.last_name }}</span>
-                    <a href="{{ url_for('tasks.local_logout') }}" class="btn btn-link text-secondary">
-                        <i class="bi bi-box-arrow-right fs-4"></i>
-                    </a>
-                </div>
-            </div>
+<div class="container-fluid p-0">
+    <!-- Top navbar con título de la app -->
+    <div class="d-flex justify-content-between align-items-center p-3 bg-white mb-0 border-bottom">
+        <h5 class="m-0">Tareas</h5>
+        <div class="d-flex align-items-center">
+            <span class="me-2">{{ local_user.name }}</span>
+            <span class="badge rounded-pill bg-primary">{{ location.name }}</span>
+            <a href="{{ url_for('tasks.local_logout') }}" class="btn btn-link text-secondary">
+                <i class="bi bi-box-arrow-right"></i>
+            </a>
         </div>
     </div>
     
-    <!-- Carrusel de Fechas -->
-    <div class="row mb-3">
-        <div class="col-12">
-            <div class="date-selector">
-                {% for date_item in date_carousel %}
-                    <a href="{{ date_item.url }}" class="text-decoration-none">
-                        <div class="day-selector {% if date_item.active %}active{% endif %}">
-                            <div class="day-name">{{ date_item.day_name }}</div>
-                            <div class="day-number">{{ date_item.day }}</div>
-                            {% if date_item.date == today %}
-                                <small class="text-primary">Hoy</small>
-                            {% endif %}
-                        </div>
-                    </a>
-                {% endfor %}
+    <!-- Carrusel de fechas -->
+    <div class="container-fluid p-0 border-bottom bg-white">
+        <div class="row g-0">
+            {% for date_item in date_carousel %}
+            <div class="col-4">
+                <a href="{{ date_item.url }}" class="text-decoration-none">
+                    <div class="date-item text-center p-2 {% if date_item.active %}active{% endif %}">
+                        <div class="date-day">{{ date_item.day_name }}</div>
+                        <div class="date-number">{{ date_item.day }}</div>
+                        {% if date_item.date == today %}
+                        <small class="text-primary">Hoy</small>
+                        {% endif %}
+                    </div>
+                </a>
             </div>
+            {% endfor %}
         </div>
     </div>
     
-    <div class="row">
+    <div class="row g-0">
         <!-- Barra lateral con grupos de tareas -->
-        <div class="col-md-3 mb-3">
-            <div class="task-groups-sidebar">
-                <div class="p-3 mb-2 border-bottom">
-                    <h5 class="mb-0">Grupos de Tareas</h5>
+        <div class="col-md-3 left-side border-end">
+            <!-- Grupo Todo el día -->
+            <div class="task-group active" data-group-id="all">
+                <div class="circle-progress">77%</div>
+                <div class="group-info">
+                    <div class="group-name">Todo el día</div>
+                    <div class="group-time">De 00:00h</div>
                 </div>
-                
-                <!-- Elemento "Todo el día" con progreso -->
-                <div class="task-group-item active" data-group-id="all">
-                    <div class="d-flex align-items-center">
-                        <div class="completion-progress">77%</div>
-                        <div class="ms-3">
-                            <div class="fw-bold">Todo el día</div>
-                            <small class="text-muted">De 00:00h</small>
-                        </div>
-                    </div>
-                </div>
-                
-                <!-- Grupos de tareas -->
-                {% for group_id, group_data in grouped_tasks.items() %}
-                <div class="task-group-item" data-group-id="{{ group_id }}" style="border-left-color: {{ group_data.group.color }};">
-                    <div>
-                        <div class="fw-bold">{{ group_data.group.name }}</div>
-                        <small class="text-muted">{{ group_data.tasks|length }} tareas</small>
-                    </div>
-                    <div class="badge {% if group_data.completed_count == group_data.tasks|length %}bg-success{% else %}bg-secondary{% endif %}">
-                        {{ group_data.completed_count or 0 }}/{{ group_data.tasks|length }}
-                    </div>
-                </div>
-                {% endfor %}
-                
-                {% if ungrouped_tasks %}
-                <div class="task-group-item" data-group-id="ungrouped">
-                    <div>
-                        <div class="fw-bold">Tareas Generales</div>
-                        <small class="text-muted">{{ ungrouped_tasks|length }} tareas</small>
-                    </div>
-                    <div class="badge bg-secondary">
-                        {{ completed_ungrouped_count or 0 }}/{{ ungrouped_tasks|length }}
-                    </div>
-                </div>
-                {% endif %}
-            </div>
-        </div>
-        
-        <!-- Contenido principal con tareas -->
-        <div class="col-md-9">
-            <div class="p-3 bg-white rounded shadow-sm mb-3">
-                <h5 class="mb-0">
-                    {% if selected_date == today %}
-                        Tareas para hoy
-                    {% else %}
-                        Tareas para {{ selected_date.strftime('%d/%m/%Y') }}
-                    {% endif %}
-                    <span class="badge bg-info float-end">{{ active_tasks|length }} tareas</span>
-                </h5>
             </div>
             
+            <!-- Grupos de tareas -->
+            {% for group_id, group_data in grouped_tasks.items() %}
+            <div class="task-group" data-group-id="{{ group_id }}" style="border-left-color: {{ group_data.group.color }};">
+                <div class="group-info">
+                    <div class="group-name">{{ group_data.group.name }}</div>
+                    <div class="group-time">{{ group_data.tasks|length }} tareas</div>
+                </div>
+                <div class="task-counter {% if group_data.completed_count == group_data.tasks|length %}bg-success text-white{% endif %}">
+                    {{ group_data.completed_count or 0 }}/{{ group_data.tasks|length }}
+                </div>
+                <i class="bi bi-chevron-right chevron-right ms-2"></i>
+            </div>
+            {% endfor %}
+            
+            {% if ungrouped_tasks %}
+            <div class="task-group" data-group-id="ungrouped">
+                <div class="group-info">
+                    <div class="group-name">Tareas Generales</div>
+                    <div class="group-time">{{ ungrouped_tasks|length }} tareas</div>
+                </div>
+                <div class="task-counter">
+                    {{ completed_ungrouped_count or 0 }}/{{ ungrouped_tasks|length }}
+                </div>
+                <i class="bi bi-chevron-right chevron-right ms-2"></i>
+            </div>
+            {% endif %}
+        </div>
+        
+        <!-- Panel principal con las tareas -->
+        <div class="col-md-9 right-side pt-0">
             <!-- Lista de tareas -->
             <div id="tasks-container">
                 {% for group_id, group_data in grouped_tasks.items() %}
                 <div class="task-group-content" id="group-{{ group_id }}">
                     {% for task in group_data.tasks %}
-                    <div class="card task-card mb-3 {% if task.completed_today %}completed{% endif %}" style="border-left-color: {{ group_data.group.color }};">
-                        <div class="card-header d-flex justify-content-between align-items-center" style="background-color: {{ group_data.group.color }}10;">
-                            <h6 class="mb-0">{{ task.title }}</h6>
-                            <div>
-                                {% if task.priority.value == 'baja' %}
-                                <span class="badge bg-info">Baja</span>
-                                {% elif task.priority.value == 'media' %}
-                                <span class="badge bg-primary">Media</span>
-                                {% elif task.priority.value == 'alta' %}
-                                <span class="badge bg-warning">Alta</span>
-                                {% else %}
-                                <span class="badge bg-danger">Urgente</span>
-                                {% endif %}
-                                
+                    <div class="task-card" style="border-left-color: {{ group_data.group.color }};">
+                        <div class="task-title">{{ task.title }}</div>
+                        <div class="d-flex align-items-center">
+                            {% if task.priority.value == 'baja' %}
+                            <span class="badge bg-info task-badge">Baja</span>
+                            {% elif task.priority.value == 'media' %}
+                            <span class="badge bg-primary task-badge">Media</span>
+                            {% elif task.priority.value == 'alta' %}
+                            <span class="badge bg-warning task-badge">Alta</span>
+                            {% else %}
+                            <span class="badge bg-danger task-badge">Urgente</span>
+                            {% endif %}
+                            
+                            {% if task.completed_today %}
+                            <span class="badge bg-success task-badge">
+                                <i class="bi bi-check-lg"></i>
+                            </span>
+                            {% else %}
+                            <button type="button" onclick="completeTask({{ task.id }}, '{{ local_user.name }} {{ local_user.last_name }}')" class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            {% endif %}
+                            
+                            <span class="task-badge">
                                 {% if task.completed_today %}
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-lg"></i> Completada
-                                </span>
+                                {{ task.completion_info.time }}
                                 {% endif %}
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">{{ task.description or 'Sin descripción' }}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                {% if task.completed_today %}
-                                <small class="text-muted">
-                                    Completada por {{ task.completion_info.user }} a las {{ task.completion_info.time }}
-                                </small>
-                                {% else %}
-                                <button type="button" onclick="completeTask({{ task.id }}, '{{ local_user.name }} {{ local_user.last_name }}')" class="btn btn-sm btn-success complete-task-btn" data-task-id="{{ task.id }}">
-                                    <i class="bi bi-check-lg"></i> Completar
-                                </button>
-                                {% endif %}
-                                
-                                {% if task.completion_info %}
-                                <span class="badge bg-light text-dark">
-                                    <i class="bi bi-person"></i> {{ task.completion_info.user }}
-                                </span>
-                                {% endif %}
-                            </div>
+                            </span>
                         </div>
                     </div>
                     {% endfor %}
@@ -297,46 +298,34 @@
                 {% if ungrouped_tasks %}
                 <div class="task-group-content" id="group-ungrouped">
                     {% for task in ungrouped_tasks %}
-                    <div class="card task-card mb-3 {% if task.completed_today %}completed{% endif %}">
-                        <div class="card-header d-flex justify-content-between align-items-center">
-                            <h6 class="mb-0">{{ task.title }}</h6>
-                            <div>
-                                {% if task.priority.value == 'baja' %}
-                                <span class="badge bg-info">Baja</span>
-                                {% elif task.priority.value == 'media' %}
-                                <span class="badge bg-primary">Media</span>
-                                {% elif task.priority.value == 'alta' %}
-                                <span class="badge bg-warning">Alta</span>
-                                {% else %}
-                                <span class="badge bg-danger">Urgente</span>
-                                {% endif %}
-                                
+                    <div class="task-card">
+                        <div class="task-title">{{ task.title }}</div>
+                        <div class="d-flex align-items-center">
+                            {% if task.priority.value == 'baja' %}
+                            <span class="badge bg-info task-badge">Baja</span>
+                            {% elif task.priority.value == 'media' %}
+                            <span class="badge bg-primary task-badge">Media</span>
+                            {% elif task.priority.value == 'alta' %}
+                            <span class="badge bg-warning task-badge">Alta</span>
+                            {% else %}
+                            <span class="badge bg-danger task-badge">Urgente</span>
+                            {% endif %}
+                            
+                            {% if task.completed_today %}
+                            <span class="badge bg-success task-badge">
+                                <i class="bi bi-check-lg"></i>
+                            </span>
+                            {% else %}
+                            <button type="button" onclick="completeTask({{ task.id }}, '{{ local_user.name }} {{ local_user.last_name }}')" class="btn btn-sm btn-outline-success complete-task-btn" data-task-id="{{ task.id }}">
+                                <i class="bi bi-check-lg"></i>
+                            </button>
+                            {% endif %}
+                            
+                            <span class="task-badge">
                                 {% if task.completed_today %}
-                                <span class="badge bg-success">
-                                    <i class="bi bi-check-lg"></i> Completada
-                                </span>
+                                {{ task.completion_info.time }}
                                 {% endif %}
-                            </div>
-                        </div>
-                        <div class="card-body">
-                            <p class="card-text">{{ task.description or 'Sin descripción' }}</p>
-                            <div class="d-flex justify-content-between align-items-center">
-                                {% if task.completed_today %}
-                                <small class="text-muted">
-                                    Completada por {{ task.completion_info.user }} a las {{ task.completion_info.time }}
-                                </small>
-                                {% else %}
-                                <button type="button" onclick="completeTask({{ task.id }}, '{{ local_user.name }} {{ local_user.last_name }}')" class="btn btn-sm btn-success complete-task-btn" data-task-id="{{ task.id }}">
-                                    <i class="bi bi-check-lg"></i> Completar
-                                </button>
-                                {% endif %}
-                                
-                                {% if task.completion_info %}
-                                <span class="badge bg-light text-dark">
-                                    <i class="bi bi-person"></i> {{ task.completion_info.user }}
-                                </span>
-                                {% endif %}
-                            </div>
+                            </span>
                         </div>
                     </div>
                     {% endfor %}
@@ -369,10 +358,10 @@
         showAllTasks();
         
         // Agregar manejadores de eventos a los elementos de grupo
-        document.querySelectorAll('.task-group-item').forEach(function(groupItem) {
+        document.querySelectorAll('.task-group').forEach(function(groupItem) {
             groupItem.addEventListener('click', function() {
                 // Desactivar cualquier grupo activo
-                document.querySelectorAll('.task-group-item').forEach(function(item) {
+                document.querySelectorAll('.task-group').forEach(function(item) {
                     item.classList.remove('active');
                 });
                 
@@ -393,10 +382,10 @@
         });
         
         // Activar el elemento "Todo el día"
-        document.querySelectorAll('.task-group-item').forEach(function(item) {
+        document.querySelectorAll('.task-group').forEach(function(item) {
             item.classList.remove('active');
         });
-        document.querySelector('.task-group-item[data-group-id="all"]').classList.add('active');
+        document.querySelector('.task-group[data-group-id="all"]').classList.add('active');
     }
     
     // Mostrar tareas para un grupo específico
