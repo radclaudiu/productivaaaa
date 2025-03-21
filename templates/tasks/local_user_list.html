@@ -3,7 +3,10 @@
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
-        <h1 class="h2"><i class="bi bi-people"></i> Usuarios del Local: {{ location.name }}</h1>
+        <h1 class="h2">
+            <i class="bi bi-people"></i> Usuarios del Local
+            <span class="badge bg-info">{{ location.name }}</span>
+        </h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
                 <a href="{{ url_for('tasks.view_location', id=location.id) }}" class="btn btn-sm btn-outline-secondary">
@@ -16,78 +19,82 @@
         </div>
     </div>
 
-    <div class="card shadow mb-4">
-        <div class="card-header py-3">
-            <h6 class="m-0 fw-bold">Usuarios Registrados</h6>
+    <div class="row mb-4">
+        <div class="col-md-8">
+            <div class="input-group">
+                <input type="text" class="form-control" id="userSearch" placeholder="Buscar usuario...">
+                <span class="input-group-text"><i class="bi bi-search"></i></span>
+            </div>
         </div>
-        <div class="card-body">
-            {% if users %}
-            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
-                {% for user in users %}
-                <div class="col">
-                    <div class="card h-100">
-                        {% if user.photo_path %}
-                        <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" class="card-img-top" alt="{{ user.name }}">
-                        {% else %}
-                        <div class="text-center pt-3">
-                            <i class="bi bi-person-circle fs-1"></i>
-                        </div>
-                        {% endif %}
-                        <div class="card-body">
-                            <h5 class="card-title">{{ user.name }}</h5>
-                            <p class="card-text">
-                                <small class="text-muted">Usuario: {{ user.username }}</small>
-                            </p>
-                            <div class="d-grid gap-2">
-                                <a href="{{ url_for('tasks.edit_local_user', location_id=location.id, id=user.id) }}" class="btn btn-warning">
-                                    <i class="bi bi-pencil"></i> Editar
-                                </a>
-                                <button type="button" class="btn btn-danger" 
-                                        onclick="confirmDelete('{{ url_for('tasks.delete_local_user', location_id=location.id, id=user.id) }}', '{{ user.name }}')">
-                                    <i class="bi bi-trash"></i> Eliminar
-                                </button>
+        <div class="col-md-4 text-md-end">
+            <div class="btn-group">
+                <button type="button" class="btn btn-outline-secondary active filter-btn" data-filter="all">Todos</button>
+                <button type="button" class="btn btn-outline-success filter-btn" data-filter="active">Activos</button>
+                <button type="button" class="btn btn-outline-danger filter-btn" data-filter="inactive">Inactivos</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-xl-3 g-4">
+        {% for user in users %}
+        <div class="col user-item" data-status="{% if user.is_active %}active{% else %}inactive{% endif %}">
+            <div class="card h-100 shadow {% if not user.is_active %}border-danger{% endif %}">
+                <div class="card-header py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="m-0 fw-bold">{{ user.name }}</h5>
+                    {% if user.is_active %}
+                    <span class="badge bg-success">Activo</span>
+                    {% else %}
+                    <span class="badge bg-danger">Inactivo</span>
+                    {% endif %}
+                </div>
+                <div class="card-body text-center">
+                    {% if user.photo_path %}
+                    <img src="{{ url_for('static', filename='uploads/' + user.photo_path) }}" 
+                         class="rounded-circle img-fluid mb-3" style="width: 120px; height: 120px; object-fit: cover;" alt="{{ user.name }}">
+                    {% else %}
+                    <i class="bi bi-person-circle display-3 mb-3"></i>
+                    {% endif %}
+                    
+                    <p class="mb-1"><strong>Usuario:</strong> {{ user.username }}</p>
+                    <p class="mb-0"><strong>PIN:</strong> <span class="text-secondary">••••</span></p>
+                    
+                    <div class="mt-4">
+                        {% set completed_count = user.completed_tasks|length %}
+                        <div class="card bg-light mb-3">
+                            <div class="card-body py-2">
+                                <h5 class="card-title">{{ completed_count }}</h5>
+                                <p class="card-text small mb-0">Tareas Completadas</p>
                             </div>
-                        </div>
-                        <div class="card-footer text-center">
-                            {% if user.is_active %}
-                            <span class="badge bg-success">Usuario Activo</span>
-                            {% else %}
-                            <span class="badge bg-danger">Usuario Inactivo</span>
-                            {% endif %}
                         </div>
                     </div>
                 </div>
-                {% endfor %}
+                <div class="card-footer py-3 bg-transparent">
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('tasks.edit_local_user', location_id=location.id, id=user.id) }}" class="btn btn-outline-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <form method="post" action="{{ url_for('tasks.delete_local_user', location_id=location.id, id=user.id) }}" 
+                              onsubmit="return confirm('¿Estás seguro de que deseas eliminar a este usuario? Esta acción no se puede deshacer.')">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <button type="submit" class="btn btn-outline-danger">
+                                <i class="bi bi-trash"></i> Eliminar
+                            </button>
+                        </form>
+                    </div>
+                </div>
             </div>
-            {% else %}
-            <div class="text-center py-4">
-                <i class="bi bi-exclamation-circle fs-1 text-muted"></i>
-                <p class="mt-3">No hay usuarios registrados para este local.</p>
-                <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="btn btn-primary">
-                    <i class="bi bi-person-plus"></i> Crear Primer Usuario
-                </a>
-            </div>
-            {% endif %}
         </div>
-    </div>
-</div>
-
-<!-- Modal para confirmación de eliminación -->
-<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-            </div>
-            <div class="modal-body" id="deleteModalBody">
-                ¿Estás seguro de que deseas eliminar este usuario?
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                <form id="deleteForm" method="post">
-                    <button type="submit" class="btn btn-danger">Eliminar</button>
-                </form>
+        {% endfor %}
+        
+        <!-- Botón para Añadir Nuevo Usuario -->
+        <div class="col">
+            <div class="card h-100 border-primary new-user-card">
+                <div class="card-body d-flex flex-column justify-content-center align-items-center">
+                    <i class="bi bi-person-plus display-1 mb-3 text-primary"></i>
+                    <h5 class="card-title">Nuevo Usuario</h5>
+                    <p class="text-muted">Añadir un nuevo usuario al local</p>
+                    <a href="{{ url_for('tasks.create_local_user', location_id=location.id) }}" class="stretched-link"></a>
+                </div>
             </div>
         </div>
     </div>
@@ -96,12 +103,65 @@
 
 {% block scripts %}
 <script>
-    function confirmDelete(url, name) {
-        document.getElementById('deleteModalBody').textContent = `¿Estás seguro de que deseas eliminar al usuario "${name}"?`;
-        document.getElementById('deleteForm').action = url;
+    document.addEventListener('DOMContentLoaded', function() {
+        // Filtrado por estado
+        const filterButtons = document.querySelectorAll('.filter-btn');
+        filterButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                // Actualizar estado activo de los botones
+                filterButtons.forEach(btn => btn.classList.remove('active'));
+                this.classList.add('active');
+                
+                const filter = this.getAttribute('data-filter');
+                const items = document.querySelectorAll('.user-item');
+                
+                items.forEach(item => {
+                    if (filter === 'all') {
+                        item.style.display = '';
+                    } else {
+                        const status = item.getAttribute('data-status');
+                        item.style.display = (status === filter) ? '' : 'none';
+                    }
+                });
+            });
+        });
         
-        var deleteModal = new bootstrap.Modal(document.getElementById('deleteModal'));
-        deleteModal.show();
-    }
+        // Búsqueda de usuarios
+        const searchInput = document.getElementById('userSearch');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const items = document.querySelectorAll('.user-item');
+            
+            items.forEach(item => {
+                const userName = item.querySelector('.card-header h5').textContent.toLowerCase();
+                const userUsername = item.querySelector('.card-body p:first-of-type').textContent.toLowerCase();
+                
+                if (userName.includes(searchTerm) || userUsername.includes(searchTerm)) {
+                    // Mantener el filtro actual
+                    const activeFilter = document.querySelector('.filter-btn.active').getAttribute('data-filter');
+                    if (activeFilter === 'all') {
+                        item.style.display = '';
+                    } else {
+                        const status = item.getAttribute('data-status');
+                        item.style.display = (status === activeFilter) ? '' : 'none';
+                    }
+                } else {
+                    item.style.display = 'none';
+                }
+            });
+        });
+    });
 </script>
+
+<style>
+    .new-user-card {
+        cursor: pointer;
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+    
+    .new-user-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+</style>
 {% endblock %}

@@ -4,7 +4,7 @@
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">
-            {% if location %}
+            {% if request.endpoint == 'tasks.edit_location' %}
             <i class="bi bi-pencil-square"></i> Editar Local
             {% else %}
             <i class="bi bi-plus-square"></i> Nuevo Local
@@ -20,8 +20,17 @@
     </div>
 
     <div class="row">
-        <div class="col-md-8 mx-auto">
+        <div class="col-lg-8 mx-auto">
             <div class="card shadow">
+                <div class="card-header py-3">
+                    <h6 class="m-0 fw-bold">
+                        {% if request.endpoint == 'tasks.edit_location' %}
+                        Modificar Local
+                        {% else %}
+                        Nuevo Local
+                        {% endif %}
+                    </h6>
+                </div>
                 <div class="card-body">
                     <form method="post">
                         {{ form.hidden_tag() }}
@@ -78,13 +87,13 @@
                         
                         <div class="form-group mb-3">
                             {{ form.description.label(class="form-label") }}
-                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=4) }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=3) }}
                             {% for error in form.description.errors %}
                             <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
                         </div>
                         
-                        <div class="form-check mb-3">
+                        <div class="form-check form-switch mb-4">
                             {{ form.is_active(class="form-check-input" + (" is-invalid" if form.is_active.errors else "")) }}
                             {{ form.is_active.label(class="form-check-label") }}
                             {% for error in form.is_active.errors %}
