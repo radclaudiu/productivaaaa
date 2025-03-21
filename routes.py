@@ -894,8 +894,18 @@ def create_checkin(employee_id):
     form = EmployeeCheckInForm()
     
     if form.validate_on_submit():
-        check_in_time = datetime.combine(form.check_in_time.data, datetime.min.time())
+        # Asegurarnos de que check_in_time tiene un valor válido antes de combinar
+        check_in_time = datetime.combine(form.check_in_time.data, datetime.min.time()) if form.check_in_time.data else None
+        # Asegurarnos de que check_out_time tiene un valor válido antes de combinar
         check_out_time = datetime.combine(form.check_out_time.data, datetime.min.time()) if form.check_out_time.data else None
+        
+        # Validar que al menos la fecha de entrada existe
+        if not check_in_time:
+            flash('La fecha de entrada es obligatoria', 'danger')
+            return render_template('checkin_form.html', 
+                                  title=f'Nuevo Fichaje para {employee.first_name} {employee.last_name}', 
+                                  form=form,
+                                  employee=employee)
         
         checkin = EmployeeCheckIn(
             check_in_time=check_in_time,
@@ -934,7 +944,18 @@ def edit_checkin(id):
         form.notes.data = checkin.notes
     
     if form.validate_on_submit():
-        check_in_time = datetime.combine(form.check_in_time.data, checkin.check_in_time.time())
+        # Asegurarnos de que check_in_time tiene un valor válido antes de combinar
+        if form.check_in_time.data:
+            check_in_time = datetime.combine(form.check_in_time.data, checkin.check_in_time.time())
+        else:
+            flash('La fecha de entrada es obligatoria', 'danger')
+            return render_template('checkin_form.html', 
+                                title=f'Editar Fichaje de {employee.first_name} {employee.last_name}', 
+                                form=form,
+                                employee=employee,
+                                checkin=checkin)
+                                
+        # Asegurarnos de que check_out_time tiene un valor válido antes de combinar
         check_out_time = None
         if form.check_out_time.data:
             check_out_time = datetime.combine(form.check_out_time.data, 

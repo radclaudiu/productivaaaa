@@ -268,5 +268,97 @@
             </div>
         </div>
     </div>
+    
+    <!-- Horarios, Fichajes y Vacaciones -->
+    <div class="row">
+        <div class="col-lg-12 mb-4">
+            <div class="card shadow mb-4">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold">Gestión de Horarios y Asistencia</h6>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-calendar fa-2x mb-3 text-primary"></i><br>
+                                        Horarios
+                                    </h5>
+                                    <p class="card-text mb-4">
+                                        Configuración de los horarios laborales del empleado
+                                    </p>
+                                    <a href="{{ url_for('schedule.list_schedules', employee_id=employee.id) }}" class="btn btn-primary mt-auto">
+                                        <i class="fas fa-calendar-alt"></i> Ver Horarios
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-clock fa-2x mb-3 text-info"></i><br>
+                                        Fichajes
+                                    </h5>
+                                    <p class="card-text mb-4">
+                                        Registro de entradas y salidas del empleado
+                                    </p>
+                                    <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-info mt-auto">
+                                        <i class="fas fa-user-clock"></i> Ver Fichajes
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="col-md-4 mb-3">
+                            <div class="card h-100">
+                                <div class="card-body d-flex flex-column">
+                                    <h5 class="card-title">
+                                        <i class="fas fa-umbrella-beach fa-2x mb-3 text-success"></i><br>
+                                        Vacaciones
+                                    </h5>
+                                    <p class="card-text mb-4">
+                                        Gestión de periodos vacacionales y ausencias
+                                    </p>
+                                    <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-success mt-auto">
+                                        <i class="fas fa-calendar-check"></i> Ver Vacaciones
+                                    </a>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                {% if current_user.is_admin() or current_user.is_gerente() %}
+                <div class="card-footer py-3">
+                    <div class="row text-center">
+                        <div class="col-md-4">
+                            <a href="{{ url_for('schedule.create_schedule', employee_id=employee.id) }}" class="btn btn-sm btn-outline-primary">
+                                <i class="fas fa-plus-circle"></i> Añadir Horario
+                            </a>
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('checkin.create_checkin', employee_id=employee.id) }}" class="btn btn-sm btn-outline-info">
+                                <i class="fas fa-plus-circle"></i> Añadir Fichaje
+                            </a>
+                            {% if employee.schedules %}
+                            <a href="{{ url_for('checkin.generate_checkins', employee_id=employee.id) }}" class="btn btn-sm btn-outline-secondary ml-2">
+                                <i class="fas fa-magic"></i> Generar Fichajes
+                            </a>
+                            {% endif %}
+                        </div>
+                        <div class="col-md-4">
+                            <a href="{{ url_for('vacation.create_vacation', employee_id=employee.id) }}" class="btn btn-sm btn-outline-success">
+                                <i class="fas fa-plus-circle"></i> Añadir Vacaciones
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+    </div>
 </div>
 {% endblock %}
