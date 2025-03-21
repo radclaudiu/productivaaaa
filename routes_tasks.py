@@ -101,14 +101,53 @@ def index():
     # Calcular porcentaje de tareas completadas
     completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
     
+    # Preparar datos para los gráficos
+    location_names = [loc.name for loc in locations]
+    pending_tasks_by_location = []
+    completed_tasks_by_location = []
+    
+    for loc in locations:
+        pending_count = Task.query.filter_by(location_id=loc.id, status=TaskStatus.PENDIENTE).count()
+        completed_count = Task.query.filter_by(location_id=loc.id, status=TaskStatus.COMPLETADA).count()
+        pending_tasks_by_location.append(pending_count)
+        completed_tasks_by_location.append(completed_count)
+    
+    # Contar tareas por estado
+    task_status_counts = [
+        Task.query.filter_by(status=TaskStatus.PENDIENTE).count(),
+        Task.query.filter_by(status=TaskStatus.COMPLETADA).count(),
+        Task.query.filter_by(status=TaskStatus.VENCIDA).count(),
+        Task.query.filter_by(status=TaskStatus.CANCELADA).count()
+    ]
+    
+    # Obtener tareas pendientes para hoy
+    today = date.today()
+    today_tasks = []
+    for loc in locations:
+        tasks = Task.query.filter_by(location_id=loc.id, status=TaskStatus.PENDIENTE).all()
+        for task in tasks:
+            if task.is_due_today():
+                today_tasks.append(task)
+    
+    # Preparar estadísticas
+    stats = {
+        'total_locations': len(locations),
+        'total_local_users': LocalUser.query.filter(LocalUser.location_id.in_([loc.id for loc in locations])).count() if locations else 0,
+        'total_tasks': total_tasks,
+        'tasks_completed_today': TaskCompletion.query.filter(TaskCompletion.completion_date >= datetime.combine(today, datetime.min.time())).count()
+    }
+    
     return render_template('tasks/dashboard.html',
                           title='Dashboard de Tareas',
+                          stats=stats,
                           locations=locations,
-                          total_tasks=total_tasks,
-                          pending_tasks=pending_tasks,
-                          completed_tasks=completed_tasks,
+                          pending_tasks=today_tasks,
                           completion_rate=completion_rate,
-                          recent_completions=recent_completions)
+                          recent_completions=recent_completions,
+                          location_names=location_names,
+                          pending_tasks_by_location=pending_tasks_by_location,
+                          completed_tasks_by_location=completed_tasks_by_location,
+                          task_status_counts=task_status_counts)
 
 # Rutas para gestión de locales
 @tasks_bp.route('/locations')
