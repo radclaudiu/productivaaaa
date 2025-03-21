@@ -112,6 +112,17 @@ class ContractType(enum.Enum):
     PRACTICAS = "practicas"
     FORMACION = "formacion"
     OBRA = "obra"
+    TIEMPO_PARCIAL = "tiempo_parcial"
+    RELEVO = "relevo"
+    AUTONOMO = "autonomo"
+    MERCANTIL = "mercantil"
+
+class EmployeeStatus(enum.Enum):
+    ACTIVO = "activo"
+    BAJA_MEDICA = "baja_medica"
+    EXCEDENCIA = "excedencia"
+    VACACIONES = "vacaciones"
+    INACTIVO = "inactivo"
 
 class Employee(db.Model):
     __tablename__ = 'employees'
@@ -128,6 +139,10 @@ class Employee(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
+    status = db.Column(Enum(EmployeeStatus), default=EmployeeStatus.ACTIVO)
+    status_start_date = db.Column(db.Date)
+    status_end_date = db.Column(db.Date)
+    status_notes = db.Column(db.Text)
     
     # Relationships
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
@@ -154,6 +169,9 @@ class Employee(db.Model):
             'start_date': self.start_date.isoformat() if self.start_date else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'is_active': self.is_active,
+            'status': self.status.value if self.status else 'activo',
+            'status_start_date': self.status_start_date.isoformat() if self.status_start_date else None,
+            'status_end_date': self.status_end_date.isoformat() if self.status_end_date else None,
             'company_id': self.company_id,
             'company_name': self.company.name if self.company else None
         }

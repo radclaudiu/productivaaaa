@@ -113,7 +113,7 @@ def index():
 @login_required
 def dashboard():
     stats = get_dashboard_stats()
-    return render_template('dashboard.html', title='Dashboard', stats=stats)
+    return render_template('dashboard.html', title='Dashboard', stats=stats, datetime=datetime)
 
 @main_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
