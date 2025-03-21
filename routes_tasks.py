@@ -8,10 +8,10 @@ from wtforms.validators import Optional
 
 from app import db
 from models import User, Company
-from models_tasks import Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, TaskFrequency, TaskStatus, WeekDay
+from models_tasks import Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, TaskFrequency, TaskStatus, WeekDay, TaskGroup, TaskWeekday
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
-                        LocalUserPinForm, SearchForm)
+                        LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm)
 from utils import log_activity, can_manage_company, save_file
 from utils_tasks import create_default_local_user
 
@@ -282,6 +282,125 @@ def delete_location(id):
     log_activity(f'Local eliminado: {name}')
     flash(f'Local "{name}" eliminado correctamente.', 'success')
     return redirect(url_for('tasks.list_locations'))
+
+@tasks_bp.route('/locations/<int:id>/groups')
+@login_required
+@manager_required
+def list_task_groups(id):
+    """Lista de grupos de tareas para un local"""
+    location = Location.query.get_or_404(id)
+    
+    # Verificar permisos (admin o gerente de la empresa)
+    if not current_user.is_admin() and (not current_user.is_gerente() or current_user.company_id != location.company_id):
+        flash('No tienes permiso para ver los grupos de este local.', 'danger')
+        return redirect(url_for('tasks.list_locations'))
+    
+    # Obtener todos los grupos para este local
+    groups = TaskGroup.query.filter_by(location_id=id).all()
+    
+    return render_template('tasks/task_group_list.html',
+                          title=f'Grupos de Tareas - {location.name}',
+                          location=location,
+                          groups=groups)
+
+@tasks_bp.route('/locations/<int:location_id>/groups/create', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def create_task_group(location_id):
+    """Crear un nuevo grupo de tareas"""
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar permisos (admin o gerente de la empresa)
+    if not current_user.is_admin() and (not current_user.is_gerente() or current_user.company_id != location.company_id):
+        flash('No tienes permiso para crear grupos en este local.', 'danger')
+        return redirect(url_for('tasks.list_locations'))
+    
+    form = TaskGroupForm()
+    form.location_id.choices = [(location.id, location.name)]
+    form.location_id.data = location.id
+    
+    if form.validate_on_submit():
+        group = TaskGroup(
+            name=form.name.data,
+            description=form.description.data,
+            color=form.color.data,
+            location_id=location.id
+        )
+        
+        db.session.add(group)
+        db.session.commit()
+        
+        log_activity(f'Grupo de tareas creado: {group.name} para local {location.name}')
+        flash(f'Grupo "{group.name}" creado correctamente.', 'success')
+        return redirect(url_for('tasks.list_task_groups', id=location.id))
+    
+    return render_template('tasks/task_group_form.html',
+                          title='Crear Nuevo Grupo de Tareas',
+                          form=form,
+                          location=location)
+
+@tasks_bp.route('/task-groups/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def edit_task_group(id):
+    """Editar un grupo de tareas existente"""
+    group = TaskGroup.query.get_or_404(id)
+    location = group.location
+    
+    # Verificar permisos (admin o gerente de la empresa)
+    if not current_user.is_admin() and (not current_user.is_gerente() or current_user.company_id != location.company_id):
+        flash('No tienes permiso para editar este grupo.', 'danger')
+        return redirect(url_for('tasks.list_locations'))
+    
+    form = TaskGroupForm(obj=group)
+    form.location_id.choices = [(location.id, location.name)]
+    
+    if form.validate_on_submit():
+        group.name = form.name.data
+        group.description = form.description.data
+        group.color = form.color.data
+        
+        db.session.commit()
+        
+        log_activity(f'Grupo de tareas actualizado: {group.name}')
+        flash(f'Grupo "{group.name}" actualizado correctamente.', 'success')
+        return redirect(url_for('tasks.list_task_groups', id=location.id))
+    
+    return render_template('tasks/task_group_form.html',
+                          title=f'Editar Grupo: {group.name}',
+                          form=form,
+                          group=group,
+                          location=location)
+
+@tasks_bp.route('/task-groups/<int:id>/delete', methods=['POST'])
+@login_required
+@manager_required
+def delete_task_group(id):
+    """Eliminar un grupo de tareas"""
+    group = TaskGroup.query.get_or_404(id)
+    location = group.location
+    
+    # Verificar permisos (admin o gerente de la empresa)
+    if not current_user.is_admin() and (not current_user.is_gerente() or current_user.company_id != location.company_id):
+        flash('No tienes permiso para eliminar este grupo.', 'danger')
+        return redirect(url_for('tasks.list_locations'))
+    
+    # Verificar si hay tareas asignadas al grupo
+    tasks = Task.query.filter_by(group_id=id).all()
+    if tasks:
+        # Actualizar las tareas para desasociarlas del grupo
+        for task in tasks:
+            task.group_id = None
+        db.session.commit()
+    
+    name = group.name
+    location_id = location.id
+    db.session.delete(group)
+    db.session.commit()
+    
+    log_activity(f'Grupo de tareas eliminado: {name}')
+    flash(f'Grupo "{name}" eliminado correctamente.', 'success')
+    return redirect(url_for('tasks.list_task_groups', id=location_id))
 
 @tasks_bp.route('/locations/<int:id>')
 @login_required

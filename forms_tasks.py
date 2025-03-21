@@ -47,11 +47,42 @@ class TaskForm(FlaskForm):
     start_date = DateField('Fecha de inicio', validators=[DataRequired()], default=date.today)
     end_date = DateField('Fecha de fin', validators=[Optional()])
     location_id = SelectField('Local', coerce=int, validators=[DataRequired()])
+    group_id = SelectField('Grupo de tareas', coerce=int, validators=[Optional()])
+    
+    # Días de la semana para frecuencia personalizada
+    monday = BooleanField('Lunes', default=False)
+    tuesday = BooleanField('Martes', default=False)
+    wednesday = BooleanField('Miércoles', default=False)
+    thursday = BooleanField('Jueves', default=False)
+    friday = BooleanField('Viernes', default=False)
+    saturday = BooleanField('Sábado', default=False)
+    sunday = BooleanField('Domingo', default=False)
+    
     submit = SubmitField('Guardar Tarea')
+    
+    def __init__(self, *args, **kwargs):
+        super(TaskForm, self).__init__(*args, **kwargs)
+        # Añadir opción para "Sin grupo"
+        if self.group_id.choices and self.group_id.choices[0][0] != 0:
+            self.group_id.choices.insert(0, (0, 'Sin grupo'))
     
     def validate_end_date(form, field):
         if field.data and form.start_date.data and field.data < form.start_date.data:
             raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio')
+            
+    def validate(self):
+        if not super(TaskForm, self).validate():
+            return False
+            
+        # Verificar que si la frecuencia es personalizada, al menos un día está marcado
+        if self.frequency.data == TaskFrequency.PERSONALIZADA.value:
+            if not (self.monday.data or self.tuesday.data or self.wednesday.data or 
+                    self.thursday.data or self.friday.data or self.saturday.data or 
+                    self.sunday.data):
+                self.frequency.errors.append('Debes seleccionar al menos un día de la semana para tareas personalizadas')
+                return False
+                
+        return True
 
 class DailyScheduleForm(FlaskForm):
     start_time = TimeField('Hora de inicio', validators=[Optional()])
@@ -110,6 +141,25 @@ class LocalUserPinForm(FlaskForm):
     def validate_pin(form, field):
         if not field.data.isdigit():
             raise ValidationError('El PIN debe contener solo números')
+
+class TaskGroupForm(FlaskForm):
+    name = StringField('Nombre del grupo', validators=[DataRequired(), Length(max=64)])
+    description = TextAreaField('Descripción', validators=[Optional(), Length(max=500)])
+    color = StringField('Color (formato hex)', validators=[DataRequired(), Length(min=4, max=7)])
+    location_id = SelectField('Local', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Guardar Grupo')
+
+class CustomWeekdaysForm(FlaskForm):
+    weekdays = MultiCheckboxField('Días de la semana', choices=[
+        (day.value, day.name.capitalize()) for day in WeekDay
+    ], validators=[DataRequired(message='Debes seleccionar al menos un día de la semana')])
+    start_time = TimeField('Hora de inicio', validators=[Optional()])
+    end_time = TimeField('Hora de fin', validators=[Optional()])
+    submit = SubmitField('Guardar Configuración')
+    
+    def validate_end_time(form, field):
+        if field.data and form.start_time.data and field.data < form.start_time.data:
+            raise ValidationError('La hora de fin debe ser posterior a la hora de inicio')
 
 class SearchForm(FlaskForm):
     query = StringField('Buscar', validators=[DataRequired()])
