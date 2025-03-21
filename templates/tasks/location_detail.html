@@ -15,6 +15,9 @@
                 <a href="{{ url_for('tasks.edit_location', id=location.id) }}" class="btn btn-sm btn-primary">
                     <i class="bi bi-pencil"></i> Editar
                 </a>
+                <a href="{{ url_for('tasks.list_task_groups', id=location.id) }}" class="btn btn-sm btn-info">
+                    <i class="bi bi-tags"></i> Grupos
+                </a>
                 <a href="{{ url_for('tasks.local_portal', location_id=location.id) }}" class="btn btn-sm btn-success">
                     <i class="bi bi-person-badge"></i> Acceso de Personal
                 </a>
@@ -191,6 +194,7 @@
                                     <thead>
                                         <tr>
                                             <th>Título</th>
+                                            <th>Grupo</th>
                                             <th>Prioridad</th>
                                             <th>Frecuencia</th>
                                             <th>Fecha Inicio</th>
@@ -201,6 +205,15 @@
                                         {% for task in pending_tasks %}
                                         <tr>
                                             <td>{{ task.title }}</td>
+                                            <td>
+                                                {% if task.group %}
+                                                <span class="badge" style="background-color: {{ task.group.color }}; color: {{ '#000' if task.group.color|lower == '#ffffff' or task.group.color|lower == '#ffff00' or task.group.color|lower == '#ffd700' else '#fff' }}">
+                                                    {{ task.group.name }}
+                                                </span>
+                                                {% else %}
+                                                <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 {% if task.priority.value == 'baja' %}
                                                 <span class="badge bg-info">Baja</span>
@@ -282,6 +295,7 @@
                                     <thead>
                                         <tr>
                                             <th>Título</th>
+                                            <th>Grupo</th>
                                             <th>Prioridad</th>
                                             <th>Estado</th>
                                             <th>Frecuencia</th>
@@ -292,6 +306,15 @@
                                         {% for task in location.tasks %}
                                         <tr>
                                             <td>{{ task.title }}</td>
+                                            <td>
+                                                {% if task.group %}
+                                                <span class="badge" style="background-color: {{ task.group.color }}; color: {{ '#000' if task.group.color|lower == '#ffffff' or task.group.color|lower == '#ffff00' or task.group.color|lower == '#ffd700' else '#fff' }}">
+                                                    {{ task.group.name }}
+                                                </span>
+                                                {% else %}
+                                                <span class="text-muted">—</span>
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 {% if task.priority.value == 'baja' %}
                                                 <span class="badge bg-info">Baja</span>
@@ -360,6 +383,7 @@
                             <thead>
                                 <tr>
                                     <th>Tarea</th>
+                                    <th>Grupo</th>
                                     <th>Prioridad</th>
                                     <th>Frecuencia</th>
                                     <th>Acciones</th>
@@ -369,6 +393,15 @@
                                 {% for task in active_tasks %}
                                 <tr>
                                     <td>{{ task.title }}</td>
+                                    <td>
+                                        {% if task.group %}
+                                        <span class="badge" style="background-color: {{ task.group.color }}; color: {{ '#000' if task.group.color|lower == '#ffffff' or task.group.color|lower == '#ffff00' or task.group.color|lower == '#ffd700' else '#fff' }}">
+                                            {{ task.group.name }}
+                                        </span>
+                                        {% else %}
+                                        <span class="text-muted">—</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if task.priority.value == 'baja' %}
                                         <span class="badge bg-info">Baja</span>
