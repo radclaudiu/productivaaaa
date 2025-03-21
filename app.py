@@ -33,6 +33,8 @@ def create_app(config_class='config.Config'):
     # Initialize extensions
     db.init_app(app)
     login_manager.init_app(app)
+    # Temporarily disable CSRF for debugging
+    app.config['WTF_CSRF_ENABLED'] = False
     csrf.init_app(app)
     migrate.init_app(app, db)
     
