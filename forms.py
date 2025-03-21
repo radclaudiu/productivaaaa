@@ -179,7 +179,7 @@ class EmployeeWeeklyScheduleForm(FlaskForm):
     
     submit = SubmitField('Guardar Horarios')
     
-    def validate(self):
+    def validate(self, **kwargs):
         if not super().validate():
             return False
         

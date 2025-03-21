@@ -104,7 +104,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            {{ form.miercoles_is_working_day(class="form-check-input") }}
+                                            {{ form.miercoles_is_working_day(class="form-check-input", id="miercoles_is_working_day") }}
                                             {{ form.miercoles_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.miercoles_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
@@ -112,18 +112,18 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group miercoles-time-field">
                                             {{ form.miercoles_start_time.label(class="form-label") }}
-                                            {{ form.miercoles_start_time(class="form-control", type="time") }}
+                                            {{ form.miercoles_start_time(class="form-control", type="time", id="miercoles_start_time") }}
                                             {% for error in form.miercoles_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group miercoles-time-field">
                                             {{ form.miercoles_end_time.label(class="form-label") }}
-                                            {{ form.miercoles_end_time(class="form-control", type="time") }}
+                                            {{ form.miercoles_end_time(class="form-control", type="time", id="miercoles_end_time") }}
                                             {% for error in form.miercoles_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -142,7 +142,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            {{ form.jueves_is_working_day(class="form-check-input") }}
+                                            {{ form.jueves_is_working_day(class="form-check-input", id="jueves_is_working_day") }}
                                             {{ form.jueves_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.jueves_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
@@ -150,18 +150,18 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group jueves-time-field">
                                             {{ form.jueves_start_time.label(class="form-label") }}
-                                            {{ form.jueves_start_time(class="form-control", type="time") }}
+                                            {{ form.jueves_start_time(class="form-control", type="time", id="jueves_start_time") }}
                                             {% for error in form.jueves_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group jueves-time-field">
                                             {{ form.jueves_end_time.label(class="form-label") }}
-                                            {{ form.jueves_end_time(class="form-control", type="time") }}
+                                            {{ form.jueves_end_time(class="form-control", type="time", id="jueves_end_time") }}
                                             {% for error in form.jueves_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -180,7 +180,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            {{ form.viernes_is_working_day(class="form-check-input") }}
+                                            {{ form.viernes_is_working_day(class="form-check-input", id="viernes_is_working_day") }}
                                             {{ form.viernes_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.viernes_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
@@ -188,18 +188,18 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group viernes-time-field">
                                             {{ form.viernes_start_time.label(class="form-label") }}
-                                            {{ form.viernes_start_time(class="form-control", type="time") }}
+                                            {{ form.viernes_start_time(class="form-control", type="time", id="viernes_start_time") }}
                                             {% for error in form.viernes_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group viernes-time-field">
                                             {{ form.viernes_end_time.label(class="form-label") }}
-                                            {{ form.viernes_end_time(class="form-control", type="time") }}
+                                            {{ form.viernes_end_time(class="form-control", type="time", id="viernes_end_time") }}
                                             {% for error in form.viernes_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -218,7 +218,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            {{ form.sabado_is_working_day(class="form-check-input") }}
+                                            {{ form.sabado_is_working_day(class="form-check-input", id="sabado_is_working_day") }}
                                             {{ form.sabado_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.sabado_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
@@ -226,18 +226,18 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group sabado-time-field">
                                             {{ form.sabado_start_time.label(class="form-label") }}
-                                            {{ form.sabado_start_time(class="form-control", type="time") }}
+                                            {{ form.sabado_start_time(class="form-control", type="time", id="sabado_start_time") }}
                                             {% for error in form.sabado_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group sabado-time-field">
                                             {{ form.sabado_end_time.label(class="form-label") }}
-                                            {{ form.sabado_end_time(class="form-control", type="time") }}
+                                            {{ form.sabado_end_time(class="form-control", type="time", id="sabado_end_time") }}
                                             {% for error in form.sabado_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
@@ -256,7 +256,7 @@
                                 <div class="row mb-3">
                                     <div class="col-md-4">
                                         <div class="form-check">
-                                            {{ form.domingo_is_working_day(class="form-check-input") }}
+                                            {{ form.domingo_is_working_day(class="form-check-input", id="domingo_is_working_day") }}
                                             {{ form.domingo_is_working_day.label(class="form-check-label") }}
                                             {% for error in form.domingo_is_working_day.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
@@ -264,18 +264,18 @@
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group domingo-time-field">
                                             {{ form.domingo_start_time.label(class="form-label") }}
-                                            {{ form.domingo_start_time(class="form-control", type="time") }}
+                                            {{ form.domingo_start_time(class="form-control", type="time", id="domingo_start_time") }}
                                             {% for error in form.domingo_start_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
                                         </div>
                                     </div>
                                     <div class="col-md-4">
-                                        <div class="form-group">
+                                        <div class="form-group domingo-time-field">
                                             {{ form.domingo_end_time.label(class="form-label") }}
-                                            {{ form.domingo_end_time(class="form-control", type="time") }}
+                                            {{ form.domingo_end_time(class="form-control", type="time", id="domingo_end_time") }}
                                             {% for error in form.domingo_end_time.errors %}
                                             <div class="invalid-feedback d-block">{{ error }}</div>
                                             {% endfor %}
