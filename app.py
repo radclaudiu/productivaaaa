@@ -89,6 +89,7 @@ def create_app(config_class='config.Config'):
         from flask import g
         from models_tasks import Location
         from flask_login import current_user
+        from sqlalchemy import or_
         
         # Inicializar la lista de ubicaciones vacía por defecto
         g.locations = []
@@ -99,11 +100,18 @@ def create_app(config_class='config.Config'):
                 if current_user.is_admin():
                     # Administradores ven todas las ubicaciones
                     g.locations = Location.query.filter_by(is_active=True).all()
-                elif current_user.is_gerente() and current_user.company_id:
-                    # Gerentes solo ven ubicaciones de su empresa
-                    g.locations = Location.query.filter_by(
-                        company_id=current_user.company_id, 
-                        is_active=True
+                elif current_user.is_gerente():
+                    # Gerentes ven ubicaciones de todas sus empresas
+                    if not current_user.companies:
+                        return  # No hay empresas asignadas
+                    
+                    # Obtener todos los IDs de las empresas del usuario
+                    company_ids = [company.id for company in current_user.companies]
+                    
+                    # Buscar ubicaciones de todas las empresas asignadas al gerente
+                    g.locations = Location.query.filter(
+                        Location.company_id.in_(company_ids),
+                        Location.is_active == True
                     ).all()
             except Exception as e:
                 # Si hay un error, no mostrar ubicaciones
@@ -112,7 +120,6 @@ def create_app(config_class='config.Config'):
     
     # Log activity middleware (optimizado para reducir DB commits)
     # Usar before_request y after_request para solo hacer commit después de la solicitud
-    activity_log_added = False
     
     @app.before_request
     def log_activity():
@@ -123,32 +130,19 @@ def create_app(config_class='config.Config'):
             return  # Skip logging
             
         if current_user.is_authenticated:
-            from models import ActivityLog
-            
-            # Solo registrar acciones interesantes (no GETs a páginas comunes)
-            if request.method != 'GET' or not request.path.startswith(('/dashboard', '/employees')):
-                nonlocal activity_log_added
-                log_entry = ActivityLog(
-                    user_id=current_user.id,
-                    action=f"{request.method} {request.path}",
-                    ip_address=request.remote_addr,
-                    timestamp=datetime.utcnow()
-                )
-                db.session.add(log_entry)
-                activity_log_added = True
+            try:
+                # Solo registrar acciones interesantes (no GETs a páginas comunes)
+                if request.method != 'GET' or not request.path.startswith(('/dashboard', '/employees')):
+                    # Usar la función de utils.py para registrar en lugar de hacerlo directamente aquí
+                    from utils import log_activity as log_activity_util
+                    log_activity_util(f"{request.method} {request.path}")
+            except Exception as e:
+                # Si hay un error, registrar pero no interrumpir el flujo
+                logger.error(f"Error al registrar actividad: {e}")
     
     @app.after_request
-    def commit_logs(response):
-        nonlocal activity_log_added
-        # Solo hacer commit si se agregó un log y no hubo errores
-        if activity_log_added and response.status_code < 400:
-            try:
-                db.session.commit()
-            except Exception as e:
-                db.session.rollback()
-                logger.warning(f"Error al guardar log de actividad: {e}")
-            finally:
-                activity_log_added = False
+    def after_request_handler(response):
+        # Mantenemos esto por compatibilidad pero la lógica se movió a utils.py
         return response
     
     # Initialize app config

@@ -74,14 +74,24 @@ def log_employee_change(employee, field_name, old_value, new_value):
 
 def log_activity(action, user_id=None):
     """Log user activity."""
-    log = ActivityLog(
-        user_id=user_id or (current_user.id if current_user.is_authenticated else None),
-        action=action,
-        ip_address=request.remote_addr if 'request' in globals() else None,
-        timestamp=datetime.utcnow()
-    )
-    db.session.add(log)
-    db.session.commit()
+    try:
+        # Crear una nueva sesión para evitar problemas con transacciones abiertas
+        log = ActivityLog(
+            user_id=user_id or (current_user.id if current_user.is_authenticated else None),
+            action=action,
+            ip_address=request.remote_addr if request else None,
+            timestamp=datetime.utcnow()
+        )
+        db.session.add(log)
+        
+        try:
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error al registrar actividad: {e}")
+    except Exception as e:
+        # Si hay cualquier error, que no impacte el flujo principal de la aplicación
+        current_app.logger.error(f"Error general en log_activity: {e}")
 
 def can_manage_company(company_id):
     """Check if current user can manage the company."""
