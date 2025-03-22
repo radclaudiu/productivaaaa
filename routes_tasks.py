@@ -1644,36 +1644,24 @@ def ajax_complete_task(task_id):
 @login_required
 @manager_required
 def regenerate_password(location_id):
-    """Regenera la contraseña del portal de un local y la devuelve"""
+    """Devuelve la contraseña fija del portal de un local"""
     location = Location.query.get_or_404(location_id)
     
     # Verificar permisos (admin o gerente de la empresa)
     if not current_user.is_admin() and (not current_user.is_gerente() or current_user.company_id != location.company_id):
-        return jsonify({'error': 'No tienes permiso para regenerar la contraseña de este local'}), 403
+        return jsonify({'error': 'No tienes permiso para obtener la contraseña de este local'}), 403
     
-    # Si es GET con show_only=true, solo devuelve la contraseña actual sin regenerarla
-    if request.method == 'GET' and request.args.get('show_only') == 'true':
-        # Obtener la contraseña actual usando la misma función pero sin actualizar
-        current_password = regenerate_portal_password(location_id, only_return=True)
-        if not current_password:
-            return jsonify({'error': 'Error al obtener la contraseña'}), 500
-        
-        return jsonify({'success': True, 'password': current_password})
+    # Devolver la contraseña fija
+    fixed_password = location.portal_fixed_password
     
-    # Si es POST, regenera la contraseña
-    new_password = regenerate_portal_password(location_id)
-    if not new_password:
-        return jsonify({'error': 'Error al regenerar la contraseña'}), 500
-    
-    log_activity(f'Contraseña de portal regenerada para el local: {location.name}')
-    return jsonify({'success': True, 'password': new_password})
+    return jsonify({'success': True, 'password': fixed_password})
 
 # API para obtener credenciales del portal
 @tasks_bp.route('/api/get-portal-credentials/<int:location_id>', methods=['GET'])
 @login_required
 @manager_required
 def get_portal_credentials(location_id):
-    """Obtiene las credenciales del portal (solo el username)"""
+    """Obtiene las credenciales fijas del portal"""
     location = Location.query.get_or_404(location_id)
     
     # Verificar permisos (admin o gerente de la empresa)
@@ -1682,7 +1670,8 @@ def get_portal_credentials(location_id):
     
     return jsonify({
         'success': True,
-        'username': location.portal_username
+        'username': location.portal_fixed_username,
+        'password': location.portal_fixed_password
     })
 
 # API para estadísticas en tiempo real
