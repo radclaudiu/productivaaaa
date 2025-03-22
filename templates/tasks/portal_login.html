@@ -20,6 +20,31 @@
                         {% endif %}
                     </div>
                     
+                    <!-- Información de credenciales fijas -->
+                    <div class="alert alert-info mb-4">
+                        <h6 class="fw-bold mb-2"><i class="fas fa-info-circle"></i> Credenciales de acceso:</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Usuario</span>
+                                    <input type="text" class="form-control form-control-sm" value="{{ location.portal_fixed_username }}" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('{{ location.portal_fixed_username }}')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Contraseña</span>
+                                    <input type="text" class="form-control form-control-sm" value="{{ location.portal_fixed_password }}" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('{{ location.portal_fixed_password }}')">
+                                        <i class="fas fa-copy"></i>
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
                     <form method="POST" action="{{ url_for('tasks.portal_login', location_id=location.id) }}">
                         {{ form.hidden_tag() }}
                         
@@ -90,7 +115,50 @@
                 eyeIcon.classList.add('fa-eye');
             }
         });
+        
+        // Autocompletar los campos con las credenciales fijas
+        const usernameField = document.getElementById('username');
+        const passwordField = document.getElementById('password');
+        
+        if (usernameField && passwordField) {
+            usernameField.value = "{{ location.portal_fixed_username }}";
+            passwordField.value = "{{ location.portal_fixed_password }}";
+        }
     });
+    
+    // Función para copiar al portapapeles
+    function copyToClipboard(text) {
+        // Crear un elemento temporal
+        const tempInput = document.createElement('input');
+        tempInput.value = text;
+        document.body.appendChild(tempInput);
+        
+        // Seleccionar y copiar
+        tempInput.select();
+        document.execCommand('copy');
+        
+        // Eliminar el elemento temporal
+        document.body.removeChild(tempInput);
+        
+        // Mostrar notificación (opcional)
+        const notification = document.createElement('div');
+        notification.textContent = '¡Copiado!';
+        notification.style.position = 'fixed';
+        notification.style.bottom = '20px';
+        notification.style.left = '50%';
+        notification.style.transform = 'translateX(-50%)';
+        notification.style.padding = '10px 20px';
+        notification.style.backgroundColor = 'rgba(0, 123, 255, 0.9)';
+        notification.style.color = 'white';
+        notification.style.borderRadius = '5px';
+        notification.style.zIndex = '1000';
+        
+        document.body.appendChild(notification);
+        
+        setTimeout(function() {
+            document.body.removeChild(notification);
+        }, 2000);
+    }
 </script>
 {% endblock %}
 {% endblock %}
