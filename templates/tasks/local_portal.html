@@ -46,9 +46,18 @@
     </div>
     
     <div class="text-center mt-5">
-        <a href="{{ url_for('tasks.index') }}" class="btn btn-lg btn-outline-secondary">
-            <i class="bi bi-arrow-left"></i> Volver
-        </a>
+        <div class="row justify-content-center">
+            <div class="col-auto">
+                <a href="{{ url_for('tasks.portal_selection') }}" class="btn btn-lg btn-outline-secondary mx-2">
+                    <i class="bi bi-arrow-left"></i> Volver a Portales
+                </a>
+            </div>
+            <div class="col-auto">
+                <a href="{{ url_for('tasks.portal_logout') }}" class="btn btn-lg btn-outline-danger mx-2">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
+                </a>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}

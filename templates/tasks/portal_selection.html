@@ -1,0 +1,55 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card mb-4 shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Selección de Portal</h4>
+                </div>
+                <div class="card-body">
+                    <p class="lead text-center mb-4">Seleccione el portal al que desea acceder:</p>
+                    
+                    {% if locations %}
+                        <div class="row row-cols-1 row-cols-md-2 g-4">
+                            {% for location in locations %}
+                                <div class="col">
+                                    <div class="card h-100 border-primary">
+                                        <div class="card-body text-center">
+                                            <h5 class="card-title">{{ location.name }}</h5>
+                                            {% if location.address or location.city %}
+                                                <p class="card-text text-muted">
+                                                    {% if location.address %}{{ location.address }}{% endif %}
+                                                    {% if location.address and location.city %}, {% endif %}
+                                                    {% if location.city %}{{ location.city }}{% endif %}
+                                                </p>
+                                            {% endif %}
+                                        </div>
+                                        <div class="card-footer bg-transparent border-top-0 text-center">
+                                            <a href="{{ url_for('tasks.portal_login', location_id=location.id) }}" 
+                                               class="btn btn-primary btn-lg px-4">
+                                                Acceder
+                                            </a>
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning text-center">
+                            <p>No hay portales disponibles.</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="text-center mt-4">
+                <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left me-2"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

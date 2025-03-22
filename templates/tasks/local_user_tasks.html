@@ -104,9 +104,14 @@
             <span class="badge bg-primary">{{ local_user.name }} - {{ location.name }}</span>
         </h1>
         <div class="btn-toolbar mb-2 mb-md-0">
-            <a href="{{ url_for('tasks.local_logout') }}" class="btn btn-outline-secondary">
-                <i class="bi bi-box-arrow-right"></i> Cerrar Sesión
-            </a>
+            <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.local_logout') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-box-arrow-left"></i> Volver a Usuarios
+                </a>
+                <a href="{{ url_for('tasks.portal_logout') }}" class="btn btn-outline-danger">
+                    <i class="bi bi-box-arrow-right"></i> Cerrar Portal
+                </a>
+            </div>
         </div>
     </div>
 
