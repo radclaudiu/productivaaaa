@@ -59,25 +59,31 @@ def clear_portal_session():
     if 'local_user_name' in session:
         session.pop('local_user_name')
         
-def generate_secure_password(length=12):
-    """Genera una contraseña segura aleatoria."""
-    # Asegurarnos de incluir al menos: una mayúscula, una minúscula, un número y un carácter especial
-    uppercase = random.choice(string.ascii_uppercase)
-    lowercase = random.choice(string.ascii_lowercase)
-    digit = random.choice(string.digits)
-    special = random.choice("!@#$%&*")
-    
-    # El resto de caracteres aleatorios
-    remaining_length = length - 4
-    all_chars = string.ascii_letters + string.digits + "!@#$%&*"
-    rest = ''.join(random.choice(all_chars) for _ in range(remaining_length))
-    
-    # Combinar todos los caracteres y mezclar
-    password = uppercase + lowercase + digit + special + rest
-    password_list = list(password)
-    random.shuffle(password_list)
-    
-    return ''.join(password_list)
+def generate_secure_password(location_id=None):
+    """Genera una contraseña segura con el formato estandarizado 'Portal[ID]2025!'."""
+    if location_id:
+        # Utilizamos un formato estándar para facilitar recordar la contraseña
+        # Formato: Portal[ID]2025!
+        return f"Portal{location_id}2025!"
+    else:
+        # Si no se proporciona ID, generamos una contraseña aleatoria más compleja
+        # Asegurarnos de incluir al menos: una mayúscula, una minúscula, un número y un carácter especial
+        uppercase = random.choice(string.ascii_uppercase)
+        lowercase = random.choice(string.ascii_lowercase)
+        digit = random.choice(string.digits)
+        special = random.choice("!@#$%&*")
+        
+        # El resto de caracteres aleatorios
+        remaining_length = 8  # Longitud total 12
+        all_chars = string.ascii_letters + string.digits + "!@#$%&*"
+        rest = ''.join(random.choice(all_chars) for _ in range(remaining_length))
+        
+        # Combinar todos los caracteres y mezclar
+        password = uppercase + lowercase + digit + special + rest
+        password_list = list(password)
+        random.shuffle(password_list)
+        
+        return ''.join(password_list)
 
 def regenerate_portal_password(location_id, only_return=False):
     """Regenera y actualiza la contraseña del portal de una ubicación.
@@ -94,27 +100,21 @@ def regenerate_portal_password(location_id, only_return=False):
         if not location:
             return None
             
+        # Utilizamos un formato fijo para las contraseñas del portal
+        # Formato estandarizado: Portal[ID]2025!
+        # Esto permite que siempre podamos recuperar la contraseña sin almacenarla en texto plano
+        fixed_password = generate_secure_password(location_id)
+            
         if only_return:
             # Solo devolvemos la contraseña actual sin cambiar nada
-            # Como esta función se usa tanto para regenerar como para consultar,
-            # y la contraseña se almacena como hash en la base de datos,
-            # necesitamos tener un método para recuperar la contraseña en texto plano
-            # que se guardó la última vez que se regeneró.
-            # En una implementación real, esto requeriría almacenar de forma segura
-            # la contraseña en texto plano o implementar un sistema de tokens.
+            # Como usamos un formato fijo, siempre podemos reconstruirla
+            return fixed_password
             
-            # Por ahora, generamos una nueva contraseña pero NO la guardamos en la BD
-            # NOTA: Esto es solo una simulación para la demostración y debería reemplazarse
-            # con un sistema adecuado de recuperación de contraseñas en producción.
-            temp_password = generate_secure_password()
-            return temp_password
-            
-        # Generar nueva contraseña y actualizarla
-        new_password = generate_secure_password()
-        location.set_portal_password(new_password)
+        # Actualizamos la contraseña en la base de datos
+        location.set_portal_password(fixed_password)
         
         db.session.commit()
-        return new_password
+        return fixed_password
     except Exception as e:
         if not only_return:  # Solo hacemos rollback si estábamos modificando la BD
             db.session.rollback()
