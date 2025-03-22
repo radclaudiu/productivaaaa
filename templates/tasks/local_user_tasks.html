@@ -97,7 +97,7 @@
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid py-4">
+<div class="container-fluid px-3 py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
         <h1 class="h2">
             <i class="bi bi-list-check"></i> Tareas del Día
@@ -106,10 +106,10 @@
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
                 <a href="{{ url_for('tasks.local_logout') }}" class="btn btn-outline-secondary">
-                    <i class="bi bi-box-arrow-left"></i> Volver a Usuarios
+                    <i class="bi bi-box-arrow-left"></i> <span class="d-none d-md-inline">Volver</span>
                 </a>
                 <a href="{{ url_for('tasks.portal_logout') }}" class="btn btn-outline-danger">
-                    <i class="bi bi-box-arrow-right"></i> Cerrar Portal
+                    <i class="bi bi-box-arrow-right"></i> <span class="d-none d-md-inline">Cerrar</span>
                 </a>
             </div>
         </div>
@@ -119,10 +119,10 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-body">
-                    <div class="d-flex justify-content-between align-items-center">
+                <div class="card-body p-2 p-md-3">
+                    <div class="d-flex align-items-center overflow-auto pb-2" style="scrollbar-width: thin;">
                         {% for date_item in date_carousel %}
-                            <a href="{{ date_item.url }}" class="text-decoration-none">
+                            <a href="{{ date_item.url }}" class="text-decoration-none flex-shrink-0 mx-1">
                                 <div class="text-center day-selector {% if date_item.active %}active{% endif %} {% if date_item.date == today %}today{% endif %}">
                                     <div class="day-name {% if date_item.active %}fw-bold{% endif %}">{{ date_item.day_name }}</div>
                                     <div class="day-number">{{ date_item.day }}</div>
@@ -140,9 +140,9 @@
 
     <!-- Layout de 2 columnas: Grupos (izquierda) y Tareas (derecha) -->
     <div class="row">
-        <!-- Columna de Grupos - 30% -->
-        <div class="col-md-4 col-lg-3 mb-4">
-            <div class="card shadow h-100">
+        <!-- Columna de Grupos -->
+        <div class="col-12 col-md-4 col-lg-3 mb-4">
+            <div class="card shadow">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold">Grupos de Tareas</h5>
                     <span class="badge bg-info">{{ active_tasks|length }} Tareas</span>
@@ -174,9 +174,9 @@
             </div>
         </div>
         
-        <!-- Columna de Tareas - 70% -->
-        <div class="col-md-8 col-lg-9 mb-4">
-            <div class="card shadow h-100">
+        <!-- Columna de Tareas -->
+        <div class="col-12 col-md-8 col-lg-9 mb-4">
+            <div class="card shadow">
                 <div class="card-header py-3 d-flex justify-content-between align-items-center">
                     <h5 class="m-0 fw-bold" id="currentTaskGroupTitle">
                         {% if selected_date == today %}
