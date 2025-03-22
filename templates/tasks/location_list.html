@@ -53,6 +53,14 @@
                         <p class="mb-0"><i class="bi bi-building-gear me-2"></i>{{ location.company.name }}</p>
                     </div>
                     
+                    {% if location.portal_username %}
+                    <div class="alert alert-info mt-2 mb-0 small">
+                        <p class="mb-1"><strong>Credenciales del Portal:</strong></p>
+                        <p class="mb-1"><i class="bi bi-person-fill me-1"></i> Usuario: <code>{{ location.portal_username }}</code></p>
+                        <p class="mb-0"><i class="bi bi-key-fill me-1"></i> Contraseña: <code>*****</code></p>
+                    </div>
+                    {% endif %}
+                    
                     <div class="row text-center my-4">
                         <div class="col-4">
                             <h3 class="mb-1">{{ location.local_users|length }}</h3>
@@ -78,7 +86,7 @@
                                 <i class="bi bi-pencil"></i>
                             </a>
                             <a href="{{ url_for('tasks.local_portal', location_id=location.id) }}" class="btn btn-outline-info">
-                                <i class="bi bi-people"></i>
+                                <i class="bi bi-people"></i> Portal
                             </a>
                         </div>
                     </div>

@@ -87,11 +87,32 @@
                             <i class="bi bi-clipboard"></i> Copiar
                         </button>
                     </div>
-                    <div class="d-grid gap-2">
+                    <div class="d-grid gap-2 mb-3">
                         <a href="{{ portal_url }}" target="_blank" class="btn btn-primary">
                             <i class="bi bi-box-arrow-up-right"></i> Abrir Portal
                         </a>
                     </div>
+                    
+                    {% if location.portal_username %}
+                    <div class="alert alert-info mb-3">
+                        <h6 class="fw-bold"><i class="bi bi-key"></i> Credenciales del Portal</h6>
+                        <div class="row g-2">
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Usuario</span>
+                                    <input type="text" class="form-control" value="{{ location.portal_username }}" readonly>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Contraseña</span>
+                                    <input type="text" class="form-control" value="******" readonly>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    {% endif %}
+                    
                     <div class="mt-3">
                         <p class="mb-1 small text-muted">
                             <i class="bi bi-info-circle"></i> Comparte este enlace con los empleados del local para que puedan acceder de forma sencilla desde cualquier dispositivo.
