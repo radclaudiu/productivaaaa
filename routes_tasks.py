@@ -1749,7 +1749,7 @@ def task_stats():
 @tasks_bp.route('/local-user/labels')
 @local_user_required
 def local_user_labels():
-    """Panel de etiquetas para usuario local"""
+    """Panel de grupos de trabajo para usuario local (sin mostrar tareas)"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
     location = user.location
@@ -1757,30 +1757,15 @@ def local_user_labels():
     # Obtener los grupos de tareas (que usaremos como etiquetas)
     task_groups = TaskGroup.query.filter_by(location_id=location.id).all()
     
-    # Contar tareas por grupo
+    # Preparar grupos para mostrar en la vista
     groups_with_counts = []
     for group in task_groups:
-        task_count = Task.query.filter_by(
-            location_id=location.id,
-            group_id=group.id,
-            status=TaskStatus.PENDIENTE
-        ).count()
-        
         groups_with_counts.append({
-            'group': group,
-            'task_count': task_count
+            'group': group
         })
     
-    # Obtener tareas sin grupo
-    ungrouped_tasks_count = Task.query.filter_by(
-        location_id=location.id,
-        group_id=None,
-        status=TaskStatus.PENDIENTE
-    ).count()
-    
     return render_template('tasks/local_user_labels.html',
-                          title=f'Etiquetas de {user.name}',
+                          title=f'Grupos de Trabajo',
                           user=user,
                           location=location,
-                          groups_with_counts=groups_with_counts,
-                          ungrouped_tasks_count=ungrouped_tasks_count)
+                          groups_with_counts=groups_with_counts)
