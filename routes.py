@@ -500,9 +500,13 @@ def create_employee():
         companies = Company.query.all()
         form.company_id.choices = [(c.id, c.name) for c in companies]
     else:
-        # For gerentes, only show their company
-        form.company_id.choices = [(current_user.company_id, current_user.company.name)]
-        form.company_id.data = current_user.company_id
+        # Para gerentes, mostrar todas las empresas a las que tienen acceso
+        companies = current_user.companies
+        if companies:
+            form.company_id.choices = [(c.id, c.name) for c in companies]
+            # Si no hay datos seleccionados, use la primera empresa por defecto
+            if not form.company_id.data and companies:
+                form.company_id.data = companies[0].id
     
     if form.validate_on_submit():
         employee = Employee(
@@ -545,9 +549,10 @@ def edit_employee(id):
         companies = Company.query.all()
         form.company_id.choices = [(c.id, c.name) for c in companies]
     else:
-        # For gerentes, only show their company
-        form.company_id.choices = [(current_user.company_id, current_user.company.name)]
-        form.company_id.data = current_user.company_id
+        # Para gerentes, mostrar todas las empresas a las que tienen acceso
+        companies = current_user.companies
+        if companies:
+            form.company_id.choices = [(c.id, c.name) for c in companies]
     
     if form.validate_on_submit():
         # Track changes for employee history

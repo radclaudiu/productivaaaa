@@ -79,7 +79,8 @@ class User(UserMixin, db.Model):
             'role': self.role.value,
             'full_name': f"{self.first_name} {self.last_name}",
             'created_at': self.created_at.isoformat() if self.created_at else None,
-            'company_id': self.company_id
+            'company_id': self.company_id,  # Para compatibilidad
+            'companies': [{'id': c.id, 'name': c.name} for c in self.companies] if self.companies else []
         }
         
 @login_manager.user_loader
