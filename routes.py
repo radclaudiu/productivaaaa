@@ -835,9 +835,13 @@ def edit_user(id):
     user = User.query.get_or_404(id)
     form = UserUpdateForm(user.username, user.email, obj=user)
     
-    # Get list of companies for the dropdown
+    # Get list of companies for the checkbox field
     companies = Company.query.all()
-    form.company_id.choices = [(0, 'Ninguna')] + [(c.id, c.name) for c in companies]
+    form.companies.choices = [(c.id, c.name) for c in companies]
+    
+    # Si es una solicitud GET, establecer los valores iniciales de las empresas
+    if request.method == 'GET':
+        form.companies.data = [company.id for company in user.companies]
     
     if form.validate_on_submit():
         user.username = form.username.data
@@ -845,8 +849,14 @@ def edit_user(id):
         user.first_name = form.first_name.data
         user.last_name = form.last_name.data
         user.role = UserRole(form.role.data)
-        user.company_id = form.company_id.data if form.company_id.data != 0 else None
         user.is_active = form.is_active.data
+        
+        # Actualizar las empresas del usuario
+        if form.companies.data:
+            selected_companies = Company.query.filter(Company.id.in_(form.companies.data)).all()
+            user.companies = selected_companies
+        else:
+            user.companies = []
         
         db.session.commit()
         
