@@ -108,10 +108,7 @@ class Location(db.Model):
     @property
     def portal_fixed_username(self):
         """Retorna el nombre de usuario para este local"""
-        # Si hay un usuario personalizado, lo usamos
-        if self.portal_username:
-            return self.portal_username
-        # Si no, usamos el formato predeterminado
+        # Siempre usamos el formato predeterminado
         return f"portal_{self.id}"
         
     @property

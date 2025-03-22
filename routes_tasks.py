@@ -1573,7 +1573,7 @@ def regenerate_password(location_id):
 @login_required
 @manager_required
 def update_portal_credentials(location_id):
-    """Actualiza las credenciales personalizadas del portal para un local"""
+    """Actualiza la contraseña personalizada del portal para un local"""
     location = Location.query.get_or_404(location_id)
     
     # Verificar permisos (admin o gerente de la empresa)
@@ -1582,23 +1582,20 @@ def update_portal_credentials(location_id):
         return redirect(url_for('tasks.list_locations'))
     
     # Obtener datos del formulario
-    custom_username = request.form.get('custom_username', '').strip()
     custom_password = request.form.get('custom_password', '').strip()
     
     try:
-        # Actualizar nombre de usuario personalizado
-        location.portal_username = custom_username if custom_username else None
-        
         # Actualizar contraseña personalizada solo si se ha proporcionado una nueva
         if custom_password:
             location.set_portal_password(custom_password)
-        
-        db.session.commit()
-        
-        # Registrar cambio en los logs
-        log_activity(f'Actualización de credenciales del portal para local: {location.name}', user_id=current_user.id)
-        
-        flash('Credenciales del portal actualizadas correctamente', 'success')
+            db.session.commit()
+            
+            # Registrar cambio en los logs
+            log_activity(f'Actualización de contraseña del portal para local: {location.name}', user_id=current_user.id)
+            
+            flash('Contraseña del portal actualizada correctamente', 'success')
+        else:
+            flash('No se ha proporcionado una nueva contraseña', 'warning')
     except Exception as e:
         db.session.rollback()
         flash(f'Error al actualizar las credenciales: {str(e)}', 'danger')
