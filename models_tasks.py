@@ -110,7 +110,7 @@ class Location(db.Model):
     @property
     def portal_fixed_password(self):
         """Retorna una contraseña fija para este local"""
-        return "local1234"
+        return f"Portal{self.id}2025!"
     
     def to_dict(self):
         return {

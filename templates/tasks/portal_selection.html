@@ -1,4 +1,4 @@
-{% extends "layout.html" %}
+{% extends "tasks/portal_layout.html" %}
 
 {% block content %}
 <div class="container py-4">
@@ -24,11 +24,7 @@
                                                     {% if location.address and location.city %}, {% endif %}
                                                     {% if location.city %}{{ location.city }}{% endif %}
                                                 </p>
-                                                <div class="alert alert-info mt-2 small">
-                                                    <p class="mb-1"><strong>Credenciales:</strong></p>
-                                                    <p class="mb-0"><i class="fas fa-user me-1"></i> <code>{{ location.portal_fixed_username }}</code></p>
-                                                    <p class="mb-0"><i class="fas fa-key me-1"></i> <code>{{ location.portal_fixed_password }}</code></p>
-                                                </div>
+
                                             {% endif %}
                                         </div>
                                         <div class="card-footer bg-transparent border-top-0 text-center">
