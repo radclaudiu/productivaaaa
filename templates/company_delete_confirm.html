@@ -1,118 +1,106 @@
-{% extends "layout.html" %}
+{% extends 'layout.html' %}
+
+{% block title %}Eliminar Empresa - Confirmar{% endblock %}
 
 {% block content %}
-<div class="container">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow border-danger">
-                <div class="card-header bg-danger text-white">
-                    <h5 class="mb-0">
-                        <i class="bi bi-exclamation-triangle-fill me-2"></i> 
-                        {% if step == 'first' %}
-                        Confirmar eliminación de empresa
-                        {% else %}
-                        ¡CONFIRMACIÓN FINAL!
-                        {% endif %}
-                    </h5>
+<div class="container-fluid">
+    <div class="d-sm-flex align-items-center justify-content-between mb-4">
+        <h1 class="h3 mb-0">Eliminar Empresa</h1>
+        <a href="{{ url_for('company.view_company', id=company.id) }}" class="btn btn-sm btn-secondary">
+            <i class="bi bi-arrow-left"></i> Volver a la Empresa
+        </a>
+    </div>
+
+    <div class="row">
+        <div class="col-lg-12">
+            <div class="card shadow mb-4 border-left-danger">
+                <div class="card-header py-3">
+                    <h6 class="m-0 font-weight-bold text-danger">Confirmación de Eliminación</h6>
                 </div>
                 <div class="card-body">
-                    {% if step == 'first' %}
-                    <div class="alert alert-warning">
-                        <p class="mb-0">Estás a punto de eliminar la empresa <strong>{{ company.name }}</strong>.</p>
-                    </div>
-                    
-                    <p>Esta acción eliminará <strong>PERMANENTEMENTE</strong> los siguientes datos relacionados:</p>
-                    
-                    <ul class="list-group mb-4">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Empleados
-                            <span class="badge bg-danger rounded-pill">{{ employee_count }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Locales
-                            <span class="badge bg-danger rounded-pill">{{ location_count }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Usuarios del sistema
-                            <span class="badge bg-danger rounded-pill">{{ user_count }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Todos los documentos y registros asociados
-                            <i class="bi bi-files text-danger"></i>
-                        </li>
-                    </ul>
-                    
                     <div class="alert alert-danger">
-                        <h5><i class="bi bi-shield-exclamation"></i> Advertencia:</h5>
-                        <p><strong>Esta acción no puede deshacerse.</strong> Toda la información será eliminada permanentemente de la base de datos.</p>
-                    </div>
-                    
-                    <form action="{{ url_for('company.delete_company', id=company.id) }}" method="post" class="mt-4">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        <input type="hidden" name="first_confirm" value="true" />
+                        <h4 class="alert-heading">¡Atención! Esta acción no se puede deshacer</h4>
+                        <p>Estás a punto de eliminar la empresa <strong>{{ company.name }}</strong> con CIF/NIF <strong>{{ company.tax_id }}</strong>.</p>
                         
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('company.view_company', id=company.id) }}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
+                        {% if company.employees %}
+                        <hr>
+                        <p class="mb-0">Esta empresa tiene <strong>{{ company.employees|length }} empleados</strong> que también serán eliminados.</p>
+                        {% endif %}
+                        
+                        {% if company.locations %}
+                        <hr>
+                        <p class="mb-0">Esta empresa tiene <strong>{{ company.locations|length }} locales</strong> que también serán eliminados junto con todas sus tareas y usuarios asociados.</p>
+                        {% endif %}
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold">Detalles de la Empresa</h6>
+                                </div>
+                                <div class="card-body">
+                                    <dl class="row">
+                                        <dt class="col-sm-4">Nombre:</dt>
+                                        <dd class="col-sm-8">{{ company.name }}</dd>
+                                        
+                                        <dt class="col-sm-4">CIF/NIF:</dt>
+                                        <dd class="col-sm-8">{{ company.tax_id }}</dd>
+                                        
+                                        <dt class="col-sm-4">Dirección:</dt>
+                                        <dd class="col-sm-8">{{ company.address }}</dd>
+                                        
+                                        <dt class="col-sm-4">Ciudad:</dt>
+                                        <dd class="col-sm-8">{{ company.city }}</dd>
+                                        
+                                        <dt class="col-sm-4">Teléfono:</dt>
+                                        <dd class="col-sm-8">{{ company.phone }}</dd>
+                                    </dl>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card mb-3">
+                                <div class="card-header">
+                                    <h6 class="m-0 font-weight-bold">¿Qué sucederá al eliminar esta empresa?</h6>
+                                </div>
+                                <div class="card-body">
+                                    <ul class="list-group list-group-flush">
+                                        <li class="list-group-item">Se eliminará toda la información de la empresa</li>
+                                        <li class="list-group-item">Se eliminarán todos los empleados asociados</li>
+                                        <li class="list-group-item">Se eliminarán todos los documentos de los empleados</li>
+                                        <li class="list-group-item">Se eliminarán todos los locales y tareas asociadas</li>
+                                        <li class="list-group-item">Se eliminarán todos los usuarios locales</li>
+                                    </ul>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="row mt-4">
+                        <div class="col-md-6">
+                            <a href="{{ url_for('company.export_company_data', id=company.id) }}" class="btn btn-primary btn-block mb-3">
+                                <i class="bi bi-download"></i> Exportar Datos de la Empresa
                             </a>
-                            <button type="submit" class="btn btn-danger">
-                                <i class="bi bi-exclamation-triangle"></i> Confirmar y continuar
-                            </button>
                         </div>
-                    </form>
-                    
-                    {% else %}
-                    <div class="alert alert-danger">
-                        <h5 class="text-center"><i class="bi bi-shield-exclamation"></i> CONFIRMACIÓN FINAL</h5>
-                        <p class="text-center">Estás a punto de eliminar definitivamente la empresa <strong>{{ company.name }}</strong> y TODOS sus datos relacionados.</p>
+                        <div class="col-md-6">
+                            <div class="d-flex justify-content-between">
+                                <a href="{{ url_for('company.view_company', id=company.id) }}" class="btn btn-secondary flex-grow-1 mr-2">
+                                    <i class="bi bi-x-circle"></i> Cancelar
+                                </a>
+                                <form action="{{ url_for('company.delete_company', id=company.id) }}" method="post" class="flex-grow-1">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <input type="hidden" name="confirm" value="true" />
+                                    <button type="submit" class="btn btn-danger btn-block">
+                                        <i class="bi bi-trash"></i> Eliminar Definitivamente
+                                    </button>
+                                </form>
+                            </div>
+                        </div>
                     </div>
-                    
-                    <div class="text-center mb-4">
-                        <i class="bi bi-trash3-fill" style="font-size: 4rem; color: var(--bs-danger);"></i>
-                    </div>
-                    
-                    <p class="text-center text-danger fw-bold">Esta acción es IRREVERSIBLE y eliminará PERMANENTEMENTE todos los datos.</p>
-                    
-                    <form action="{{ url_for('company.delete_company', id=company.id) }}" method="post" class="mt-4">
-                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                        <input type="hidden" name="first_confirm" value="true" />
-                        <input type="hidden" name="final_confirm" value="true" />
-                        
-                        <div class="form-check mb-4">
-                            <input class="form-check-input" type="checkbox" id="finalCheck" required>
-                            <label class="form-check-label" for="finalCheck">
-                                Entiendo que esta acción eliminará permanentemente la empresa y todos sus datos relacionados.
-                            </label>
-                        </div>
-                        
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('company.view_company', id=company.id) }}" class="btn btn-secondary">
-                                <i class="bi bi-arrow-left"></i> Cancelar
-                            </a>
-                            <button type="submit" class="btn btn-danger" id="finalDeleteBtn" disabled>
-                                <i class="bi bi-trash3"></i> Eliminar definitivamente
-                            </button>
-                        </div>
-                    </form>
-                    {% endif %}
                 </div>
             </div>
         </div>
     </div>
 </div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    document.addEventListener('DOMContentLoaded', function() {
-        const finalCheck = document.getElementById('finalCheck');
-        const finalDeleteBtn = document.getElementById('finalDeleteBtn');
-        
-        if (finalCheck && finalDeleteBtn) {
-            finalCheck.addEventListener('change', function() {
-                finalDeleteBtn.disabled = !this.checked;
-            });
-        }
-    });
-</script>
 {% endblock %}

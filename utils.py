@@ -1,14 +1,18 @@
 import os
 import uuid
 import io
+import tempfile
+import zipfile
+import json
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import current_app, flash, request, send_file
 from flask_login import current_user
 from fpdf import FPDF
+import shutil
 
 from app import db
-from models import User, Employee, EmployeeHistory, UserRole, ActivityLog
+from models import User, Employee, EmployeeHistory, UserRole, ActivityLog, EmployeeDocument
 
 def create_admin_user():
     """Create admin user if not exists."""
@@ -253,6 +257,221 @@ def generate_checkins_pdf(employee, start_date=None, end_date=None):
     
     except Exception as e:
         print(f"Error generating PDF: {e}")
+        return None
+
+
+def export_company_employees_zip(company_id):
+    """Export all employees and their documents in a ZIP file."""
+    try:
+        from models import Company, Employee, EmployeeDocument
+        import json
+        
+        company = Company.query.get(company_id)
+        if not company:
+            return None
+        
+        # Create a temporary directory
+        temp_dir = tempfile.mkdtemp()
+        zip_filename = f"empleados_{company.name.replace(' ', '_')}_{datetime.now().strftime('%Y%m%d%H%M%S')}.zip"
+        zip_path = os.path.join(temp_dir, zip_filename)
+        
+        # Create ZIP file
+        with zipfile.ZipFile(zip_path, 'w') as zipf:
+            # Create company info JSON
+            company_info = {
+                'id': company.id,
+                'name': company.name,
+                'tax_id': company.tax_id,
+                'address': company.address,
+                'city': company.city,
+                'postal_code': company.postal_code,
+                'country': company.country,
+                'sector': company.sector,
+                'email': company.email,
+                'phone': company.phone,
+                'website': company.website,
+                'created_at': company.created_at.strftime('%Y-%m-%d %H:%M:%S') if company.created_at else None,
+                'export_date': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+            }
+            
+            # Add company info to ZIP
+            zipf.writestr('empresa.json', json.dumps(company_info, indent=2, ensure_ascii=False))
+            
+            # Create employees directory in ZIP
+            employees_data = []
+            
+            # Process each employee
+            for employee in company.employees:
+                # Create employee data dictionary
+                employee_data = {
+                    'id': employee.id,
+                    'first_name': employee.first_name,
+                    'last_name': employee.last_name,
+                    'dni': employee.dni,
+                    'position': employee.position,
+                    'contract_type': employee.contract_type.value if employee.contract_type else None,
+                    'bank_account': employee.bank_account,
+                    'start_date': employee.start_date.strftime('%Y-%m-%d') if employee.start_date else None,
+                    'end_date': employee.end_date.strftime('%Y-%m-%d') if employee.end_date else None,
+                    'is_active': employee.is_active,
+                    'status': employee.status.value if employee.status else None,
+                    'status_start_date': employee.status_start_date.strftime('%Y-%m-%d') if employee.status_start_date else None,
+                    'status_end_date': employee.status_end_date.strftime('%Y-%m-%d') if employee.status_end_date else None,
+                    'status_notes': employee.status_notes,
+                    'documents': []
+                }
+                
+                # Create employee directory in ZIP
+                employee_dir = f"empleados/{employee.id}_{employee.last_name}_{employee.first_name}"
+                
+                # Get employee documents
+                documents = EmployeeDocument.query.filter_by(employee_id=employee.id).all()
+                
+                # Add documents to employee data
+                for doc in documents:
+                    document_info = {
+                        'id': doc.id,
+                        'filename': doc.filename,
+                        'original_filename': doc.original_filename,
+                        'file_type': doc.file_type,
+                        'file_size': doc.file_size,
+                        'description': doc.description,
+                        'uploaded_at': doc.uploaded_at.strftime('%Y-%m-%d %H:%M:%S') if doc.uploaded_at else None
+                    }
+                    
+                    employee_data['documents'].append(document_info)
+                    
+                    # Copy file to ZIP if exists
+                    if os.path.exists(doc.file_path):
+                        doc_zip_path = f"{employee_dir}/documentos/{doc.original_filename}"
+                        zipf.write(doc.file_path, doc_zip_path)
+                
+                # Add employee JSON data to ZIP
+                employee_json_path = f"{employee_dir}/datos.json"
+                zipf.writestr(employee_json_path, json.dumps(employee_data, indent=2, ensure_ascii=False))
+                
+                # Create employee PDF summary
+                pdf_file = create_employee_summary_pdf(employee)
+                if pdf_file:
+                    pdf_path = f"{employee_dir}/resumen.pdf"
+                    zipf.writestr(pdf_path, pdf_file.getvalue())
+                
+                # Add employee to the list
+                employees_data.append({
+                    'id': employee.id,
+                    'name': f"{employee.first_name} {employee.last_name}",
+                    'dni': employee.dni,
+                    'document_count': len(documents)
+                })
+            
+            # Add employees index
+            zipf.writestr('empleados_indice.json', json.dumps(employees_data, indent=2, ensure_ascii=False))
+            
+        # Create a BytesIO object for the ZIP file
+        zip_buffer = io.BytesIO()
+        with open(zip_path, 'rb') as f:
+            zip_buffer.write(f.read())
+        
+        # Clean up temporary files
+        shutil.rmtree(temp_dir)
+        
+        # Reset buffer position
+        zip_buffer.seek(0)
+        
+        return {
+            'buffer': zip_buffer,
+            'filename': zip_filename
+        }
+        
+    except Exception as e:
+        print(f"Error exporting company employees: {str(e)}")
+        # Clean up if needed
+        if 'temp_dir' in locals():
+            shutil.rmtree(temp_dir)
+        return None
+
+
+def create_employee_summary_pdf(employee):
+    """Create a PDF summary of an employee."""
+    try:
+        pdf_buffer = io.BytesIO()
+        pdf = FPDF()
+        pdf.add_page()
+        
+        # Header
+        pdf.set_font('Arial', 'B', 16)
+        pdf.cell(0, 10, 'Ficha de Empleado', 0, 1, 'C')
+        
+        # Company info
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 10, f'Empresa: {employee.company.name}', 0, 1)
+        
+        # Employee info
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 8, 'Datos Personales', 0, 1)
+        
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(40, 6, 'Nombre:', 0, 0)
+        pdf.cell(0, 6, f'{employee.first_name} {employee.last_name}', 0, 1)
+        
+        pdf.cell(40, 6, 'DNI/NIE:', 0, 0)
+        pdf.cell(0, 6, f'{employee.dni}', 0, 1)
+        
+        pdf.cell(40, 6, 'Puesto:', 0, 0)
+        pdf.cell(0, 6, f'{employee.position or ""}', 0, 1)
+        
+        pdf.cell(40, 6, 'Tipo de Contrato:', 0, 0)
+        pdf.cell(0, 6, f'{employee.contract_type.name if employee.contract_type else ""}', 0, 1)
+        
+        pdf.cell(40, 6, 'Cuenta Bancaria:', 0, 0)
+        pdf.cell(0, 6, f'{employee.bank_account or ""}', 0, 1)
+        
+        pdf.cell(40, 6, 'Fecha de Inicio:', 0, 0)
+        pdf.cell(0, 6, f'{employee.start_date.strftime("%d/%m/%Y") if employee.start_date else ""}', 0, 1)
+        
+        pdf.cell(40, 6, 'Fecha de Fin:', 0, 0)
+        pdf.cell(0, 6, f'{employee.end_date.strftime("%d/%m/%Y") if employee.end_date else ""}', 0, 1)
+        
+        pdf.cell(40, 6, 'Estado:', 0, 0)
+        pdf.cell(0, 6, f'{employee.status.name if employee.status else ""}', 0, 1)
+        
+        # Documents section
+        pdf.ln(5)
+        pdf.set_font('Arial', 'B', 12)
+        pdf.cell(0, 8, 'Documentos Adjuntos', 0, 1)
+        
+        # Table header for documents
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(80, 6, 'Nombre de Archivo', 1, 0)
+        pdf.cell(50, 6, 'Tipo', 1, 0)
+        pdf.cell(30, 6, 'Tamaño (KB)', 1, 0)
+        pdf.cell(30, 6, 'Fecha', 1, 1)
+        
+        # Document list
+        pdf.set_font('Arial', '', 8)
+        for doc in employee.documents:
+            # Truncate filename if too long
+            filename = doc.original_filename[:50] + '...' if len(doc.original_filename) > 50 else doc.original_filename
+            
+            pdf.cell(80, 6, filename, 1, 0)
+            pdf.cell(50, 6, doc.file_type or '', 1, 0)
+            pdf.cell(30, 6, f'{doc.file_size / 1024:.1f} KB' if doc.file_size else '', 1, 0)
+            pdf.cell(30, 6, doc.uploaded_at.strftime('%d/%m/%Y') if doc.uploaded_at else '', 1, 1)
+        
+        # Footer
+        pdf.ln(10)
+        pdf.set_font('Arial', 'I', 8)
+        pdf.cell(0, 5, f'Generado el {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 0, 'R')
+        
+        # Output to buffer
+        pdf_output = pdf.output(dest='S').encode('latin1')
+        pdf_buffer.write(pdf_output)
+        pdf_buffer.seek(0)
+        
+        return pdf_buffer
+    
+    except Exception as e:
+        print(f"Error creating employee PDF: {str(e)}")
         return None
 
 

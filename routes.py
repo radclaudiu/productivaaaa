@@ -16,7 +16,8 @@ from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeFo
                   EmployeeStatusForm, EmployeeScheduleForm, EmployeeWeeklyScheduleForm, EmployeeCheckInForm, 
                   EmployeeVacationForm, GenerateCheckInsForm, ExportCheckInsForm)
 from utils import (save_file, log_employee_change, log_activity, can_manage_company, 
-                  can_manage_employee, can_view_employee, get_dashboard_stats, generate_checkins_pdf)
+                  can_manage_employee, can_view_employee, get_dashboard_stats, generate_checkins_pdf,
+                  export_company_employees_zip)
 
 # Create blueprints
 auth_bp = Blueprint('auth', __name__)
@@ -276,124 +277,124 @@ def edit_company(id):
     
     return render_template('company_form.html', title=f'Editar {company.name}', form=form, company=company)
 
+@company_bp.route('/<int:id>/export', methods=['GET'])
+@admin_required
+def export_company_data(id):
+    company = Company.query.get_or_404(id)
+    
+    # Export company data as ZIP
+    export_data = export_company_employees_zip(company.id)
+    if not export_data:
+        flash('Error al exportar los datos de la empresa.', 'danger')
+        return redirect(url_for('company.view_company', id=company.id))
+    
+    log_activity(f'Datos de empresa exportados: {company.name}')
+    return send_file(
+        export_data['buffer'],
+        as_attachment=True,
+        download_name=export_data['filename'],
+        mimetype='application/zip'
+    )
+
 @company_bp.route('/<int:id>/delete', methods=['GET', 'POST'])
 @admin_required
 def delete_company(id):
     company = Company.query.get_or_404(id)
     
-    # Check for confirmations
-    first_confirm = request.form.get('first_confirm')
-    final_confirm = request.form.get('final_confirm')
+    # GET request shows confirmation page
+    if request.method == 'GET':
+        return render_template('company_delete_confirm.html', company=company)
     
-    # First confirmation step
-    if request.method == 'GET' or (not first_confirm and not final_confirm):
-        # Count related entities for warning message
-        employee_count = len(company.employees)
-        location_count = len(company.locations) if hasattr(company, 'locations') else 0
-        user_count = len(company.users) if hasattr(company, 'users') else 0
+    # POST request processes the deletion if confirmed
+    confirm = request.form.get('confirm')
+    
+    if not confirm:
+        flash('Se requiere confirmación para eliminar la empresa.', 'warning')
+        return redirect(url_for('company.view_company', id=company.id))
+    
+    # Proceed with deletion
+    company_name = company.name
+    
+    # Delete all related entities
+    try:
+        # Step 1: Delete all task completions for tasks related to this company's locations
+        from models_tasks import TaskCompletion, Task, Location, LocalUser, TaskSchedule, TaskWeekday, TaskGroup
         
-        # Return first confirmation page
-        return render_template('company_delete_confirm.html', 
-                             company=company,
-                             employee_count=employee_count,
-                             location_count=location_count,
-                             user_count=user_count,
-                             step='first')
-    
-    # Second confirmation step
-    if first_confirm and not final_confirm:
-        return render_template('company_delete_confirm.html', 
-                             company=company,
-                             step='final')
-    
-    # Final confirmation - proceed with deletion
-    if final_confirm:
-        company_name = company.name
+        # Get all locations for this company
+        locations = Location.query.filter_by(company_id=company.id).all()
+        location_ids = [loc.id for loc in locations]
         
-        # Delete all related entities
-        try:
-            # Step 1: Delete all task completions for tasks related to this company's locations
-            from models_tasks import TaskCompletion, Task, Location, LocalUser, TaskSchedule, TaskWeekday, TaskGroup
+        # Delete task completions for tasks in these locations
+        if location_ids:
+            # Get all tasks for these locations
+            tasks = Task.query.filter(Task.location_id.in_(location_ids)).all()
+            task_ids = [task.id for task in tasks]
             
-            # Get all locations for this company
-            locations = Location.query.filter_by(company_id=company.id).all()
-            location_ids = [loc.id for loc in locations]
+            if task_ids:
+                # Delete all task completions
+                TaskCompletion.query.filter(TaskCompletion.task_id.in_(task_ids)).delete(synchronize_session=False)
             
-            # Delete task completions for tasks in these locations
-            if location_ids:
-                # Get all tasks for these locations
-                tasks = Task.query.filter(Task.location_id.in_(location_ids)).all()
-                task_ids = [task.id for task in tasks]
-                
-                if task_ids:
-                    # Delete all task completions
-                    TaskCompletion.query.filter(TaskCompletion.task_id.in_(task_ids)).delete(synchronize_session=False)
-                
-                # Delete all task related records (schedules and weekdays)
-                TaskSchedule.query.filter(TaskSchedule.task_id.in_(task_ids)).delete(synchronize_session=False)
-                TaskWeekday.query.filter(TaskWeekday.task_id.in_(task_ids)).delete(synchronize_session=False)
-                
-                # Delete all tasks for these locations
-                Task.query.filter(Task.location_id.in_(location_ids)).delete(synchronize_session=False)
-                
-                # Delete task groups
-                TaskGroup.query.filter(TaskGroup.location_id.in_(location_ids)).delete(synchronize_session=False)
-                
-                # Delete all local users for these locations
-                LocalUser.query.filter(LocalUser.location_id.in_(location_ids)).delete(synchronize_session=False)
-                
-                # Delete all locations
-                Location.query.filter(Location.company_id == company.id).delete(synchronize_session=False)
+            # Delete all task related records (schedules and weekdays)
+            TaskSchedule.query.filter(TaskSchedule.task_id.in_(task_ids)).delete(synchronize_session=False)
+            TaskWeekday.query.filter(TaskWeekday.task_id.in_(task_ids)).delete(synchronize_session=False)
             
-            # Step 2: Delete all employee related records (documents, notes, history, schedules, etc.)
-            from models import EmployeeDocument, EmployeeNote, EmployeeHistory, EmployeeSchedule, EmployeeCheckIn, EmployeeVacation
+            # Delete all tasks for these locations
+            Task.query.filter(Task.location_id.in_(location_ids)).delete(synchronize_session=False)
             
-            employee_ids = [emp.id for emp in company.employees]
+            # Delete task groups
+            TaskGroup.query.filter(TaskGroup.location_id.in_(location_ids)).delete(synchronize_session=False)
             
-            if employee_ids:
-                # Delete documents
-                EmployeeDocument.query.filter(EmployeeDocument.employee_id.in_(employee_ids)).delete(synchronize_session=False)
-                
-                # Delete notes
-                EmployeeNote.query.filter(EmployeeNote.employee_id.in_(employee_ids)).delete(synchronize_session=False)
-                
-                # Delete history
-                EmployeeHistory.query.filter(EmployeeHistory.employee_id.in_(employee_ids)).delete(synchronize_session=False)
-                
-                # Delete schedules
-                EmployeeSchedule.query.filter(EmployeeSchedule.employee_id.in_(employee_ids)).delete(synchronize_session=False)
-                
-                # Delete check-ins
-                EmployeeCheckIn.query.filter(EmployeeCheckIn.employee_id.in_(employee_ids)).delete(synchronize_session=False)
-                
-                # Delete vacations
-                EmployeeVacation.query.filter(EmployeeVacation.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+            # Delete all local users for these locations
+            LocalUser.query.filter(LocalUser.location_id.in_(location_ids)).delete(synchronize_session=False)
             
-            # Delete all employees
-            for employee in company.employees:
-                db.session.delete(employee)
-            
-            # Delete all users related to this company
-            for user in company.users:
-                db.session.delete(user)
-            
-            # Finally delete the company
-            db.session.delete(company)
-            db.session.commit()
-            
-            log_activity(f'Empresa eliminada: {company_name}')
-            flash(f'Empresa "{company_name}" y todos sus datos relacionados han sido eliminados correctamente.', 'success')
-            
-        except Exception as e:
-            db.session.rollback()
-            log_activity(f'Error al eliminar empresa {company_name}: {str(e)}')
-            flash(f'Error al eliminar la empresa: {str(e)}', 'danger')
+            # Delete all locations
+            Location.query.filter(Location.company_id == company.id).delete(synchronize_session=False)
         
-        return redirect(url_for('company.list_companies'))
+        # Step 2: Delete all employee related records (documents, notes, history, schedules, etc.)
+        from models import EmployeeDocument, EmployeeNote, EmployeeHistory, EmployeeSchedule, EmployeeCheckIn, EmployeeVacation
+        
+        employee_ids = [emp.id for emp in company.employees]
+        
+        if employee_ids:
+            # Delete documents
+            EmployeeDocument.query.filter(EmployeeDocument.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+            
+            # Delete notes
+            EmployeeNote.query.filter(EmployeeNote.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+            
+            # Delete history
+            EmployeeHistory.query.filter(EmployeeHistory.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+            
+            # Delete schedules
+            EmployeeSchedule.query.filter(EmployeeSchedule.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+            
+            # Delete check-ins
+            EmployeeCheckIn.query.filter(EmployeeCheckIn.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+            
+            # Delete vacations
+            EmployeeVacation.query.filter(EmployeeVacation.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+        
+        # Delete all employees
+        for employee in company.employees:
+            db.session.delete(employee)
+        
+        # Delete all users related to this company
+        for user in company.users:
+            db.session.delete(user)
+        
+        # Finally delete the company
+        db.session.delete(company)
+        db.session.commit()
+        
+        log_activity(f'Empresa eliminada: {company_name}')
+        flash(f'Empresa "{company_name}" y todos sus datos relacionados han sido eliminados correctamente.', 'success')
+        
+    except Exception as e:
+        db.session.rollback()
+        log_activity(f'Error al eliminar empresa {company_name}: {str(e)}')
+        flash(f'Error al eliminar la empresa: {str(e)}', 'danger')
     
-    # If we get here, something went wrong
-    flash('Ocurrió un error en el proceso de confirmación.', 'danger')
-    return redirect(url_for('company.view_company', id=company.id))
+    return redirect(url_for('company.list_companies'))
 
 # Employee routes
 @employee_bp.route('/')
