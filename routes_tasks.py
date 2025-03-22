@@ -1210,22 +1210,16 @@ def portal_login(location_id):
     """Página de login para acceder al portal de un local"""
     location = Location.query.get_or_404(location_id)
     
-    # Verificar si el portal tiene credenciales configuradas
-    if not location.portal_username or not location.portal_password_hash:
-        # Si no tiene credenciales, asignar unas por defecto
-        if not location.portal_username:
-            location.portal_username = f"portal_{location.id}"
-        if not location.portal_password_hash:
-            location.set_portal_password("1234")
-        db.session.commit()
-        flash("Se han configurado credenciales por defecto para este portal. Usuario: " + 
-             f"{location.portal_username}, Contraseña: 1234", "info")
-    
     form = PortalLoginForm()
     
+    # Mostrar información de las credenciales fijas al cargar la página
+    if not request.method == 'POST':
+        flash(f"Credenciales fijas para este portal: Usuario: {location.portal_fixed_username}, Contraseña: {location.portal_fixed_password}", 
+              "info")
+    
     if form.validate_on_submit():
-        # Verificar las credenciales
-        if form.username.data == location.portal_username and location.check_portal_password(form.password.data):
+        # Verificar las credenciales fijas
+        if form.username.data == location.portal_fixed_username and form.password.data == location.portal_fixed_password:
             # Guardar en sesión que estamos autenticados en este portal
             session['portal_authenticated'] = True
             session['portal_location_id'] = location.id

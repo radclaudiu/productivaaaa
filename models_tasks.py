@@ -99,9 +99,18 @@ class Location(db.Model):
         
     def check_portal_password(self, password):
         """Verifica si la contraseña proporcionada coincide con la almacenada"""
-        if not self.portal_password_hash:
-            return False
-        return check_password_hash(self.portal_password_hash, password)
+        # Ahora usamos contraseña fija
+        return password == self.portal_fixed_password
+    
+    @property
+    def portal_fixed_username(self):
+        """Retorna un nombre de usuario fijo para este local"""
+        return f"portal_{self.id}"
+        
+    @property
+    def portal_fixed_password(self):
+        """Retorna una contraseña fija para este local"""
+        return "local1234"
     
     def to_dict(self):
         return {
@@ -114,7 +123,7 @@ class Location(db.Model):
             'company_id': self.company_id,
             'company_name': self.company.name if self.company else None,
             'is_active': self.is_active,
-            'has_portal_credentials': bool(self.portal_username and self.portal_password_hash)
+            'has_portal_credentials': True  # Siempre tiene credenciales fijas
         }
 
 class LocalUser(db.Model):
