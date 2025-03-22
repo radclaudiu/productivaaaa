@@ -87,9 +87,9 @@ def logout():
 def register():
     form = RegistrationForm()
     
-    # Get list of companies for the dropdown
+    # Get list of companies for the checkbox field
     companies = Company.query.all()
-    form.company_id.choices = [(0, 'Ninguna')] + [(c.id, c.name) for c in companies]
+    form.companies.choices = [(c.id, c.name) for c in companies]
     
     if form.validate_on_submit():
         user = User(
@@ -97,10 +97,15 @@ def register():
             email=form.email.data,
             first_name=form.first_name.data,
             last_name=form.last_name.data,
-            role=UserRole(form.role.data),
-            company_id=form.company_id.data if form.company_id.data != 0 else None
+            role=UserRole(form.role.data)
         )
         user.set_password(form.password.data)
+        
+        # Añadir las empresas seleccionadas al usuario
+        if form.companies.data:
+            selected_companies = Company.query.filter(Company.id.in_(form.companies.data)).all()
+            user.companies = selected_companies
+            
         db.session.add(user)
         db.session.commit()
         

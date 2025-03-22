@@ -1,11 +1,17 @@
 from flask_wtf import FlaskForm
 from flask_wtf.file import FileField, FileAllowed, FileRequired
-from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField
+from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField, widgets
 from wtforms import BooleanField, DateField, HiddenField, EmailField, TelField, URLField, TimeField
+from wtforms import SelectMultipleField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional
 from datetime import date, datetime
 
 from models import User, ContractType, UserRole, EmployeeStatus, WeekDay, VacationStatus
+
+class MultiCheckboxField(SelectMultipleField):
+    """Campo personalizado para mostrar múltiples opciones como checkboxes."""
+    widget = widgets.ListWidget(prefix_label=False)
+    option_widget = widgets.CheckboxInput()
 
 class LoginForm(FlaskForm):
     username = StringField('Usuario', validators=[DataRequired(), Length(min=3, max=64)])
@@ -21,7 +27,9 @@ class RegistrationForm(FlaskForm):
     first_name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
     last_name = StringField('Apellidos', validators=[DataRequired(), Length(max=64)])
     role = SelectField('Rol', choices=[(role.value, role.name.capitalize()) for role in UserRole])
-    company_id = SelectField('Empresa', coerce=int)
+    # Nuevo campo para selección múltiple de empresas
+    companies = MultiCheckboxField('Empresas', coerce=int, 
+                                 description='Selecciona una o más empresas para este usuario')
     submit = SubmitField('Registrar')
     
     def validate_username(self, username):
@@ -40,7 +48,9 @@ class UserUpdateForm(FlaskForm):
     first_name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
     last_name = StringField('Apellidos', validators=[DataRequired(), Length(max=64)])
     role = SelectField('Rol', choices=[(role.value, role.name.capitalize()) for role in UserRole])
-    company_id = SelectField('Empresa', coerce=int)
+    # Actualizado para usar selección múltiple de empresas
+    companies = MultiCheckboxField('Empresas', coerce=int, 
+                                 description='Selecciona una o más empresas para este usuario')
     is_active = BooleanField('Usuario Activo')
     submit = SubmitField('Actualizar Usuario')
     
