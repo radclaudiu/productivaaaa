@@ -1159,11 +1159,19 @@ def view_task(task_id):
 @tasks_bp.route('/portal')
 def portal_selection():
     """Página de selección de portal"""
-    # Obtener todos los locations disponibles
-    locations = Location.query.filter_by(is_active=True).all()
-    return render_template('tasks/portal_selection.html',
-                          title='Selección de Portal',
-                          locations=locations)
+    # Añadir logging para diagnóstico
+    print("[DEBUG] Accediendo a la selección de portal")
+    try:
+        # Obtener todos los locations disponibles
+        locations = Location.query.filter_by(is_active=True).all()
+        print(f"[DEBUG] Locales encontrados: {len(locations)}")
+        return render_template('tasks/portal_selection.html',
+                            title='Selección de Portal',
+                            locations=locations)
+    except Exception as e:
+        print(f"[ERROR] Error en portal_selection: {str(e)}")
+        # Devolver una respuesta mínima para evitar 500
+        return f"Error: {str(e)}", 500
 
 @tasks_bp.route('/portal/<int:location_id>', methods=['GET', 'POST'])
 def portal_login(location_id):
