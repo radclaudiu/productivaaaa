@@ -1129,16 +1129,20 @@ def portal_login(location_id):
               "info")
     
     if form.validate_on_submit():
-        # Verificar las credenciales fijas
-        if form.username.data == location.portal_fixed_username and form.password.data == location.portal_fixed_password:
-            # Guardar en sesión que estamos autenticados en este portal
-            session['portal_authenticated'] = True
-            session['portal_location_id'] = location.id
-            
-            # Redireccionar al portal real
-            return redirect(url_for('tasks.local_portal', location_id=location.id))
+        # Verificar el nombre de usuario
+        if form.username.data == location.portal_fixed_username:
+            # Verificar la contraseña usando el método de verificación específico
+            if location.check_portal_password(form.password.data):
+                # Guardar en sesión que estamos autenticados en este portal
+                session['portal_authenticated'] = True
+                session['portal_location_id'] = location.id
+                
+                # Redireccionar al portal real
+                return redirect(url_for('tasks.local_portal', location_id=location.id))
+            else:
+                flash('Contraseña incorrecta.', 'danger')
         else:
-            flash('Usuario o contraseña incorrectos.', 'danger')
+            flash('Nombre de usuario incorrecto.', 'danger')
     
     return render_template('tasks/portal_login.html',
                           title=f'Acceso al Portal {location.name}',
