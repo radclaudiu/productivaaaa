@@ -108,7 +108,7 @@ class Company(db.Model):
     # Relationships
     employees = db.relationship('Employee', back_populates='company', cascade='all, delete-orphan')
     # Relación muchos a muchos con usuarios
-    users_relation = db.relationship('User', secondary=user_companies)
+    users_relation = db.relationship('User', secondary=user_companies, overlaps="companies")
     
     def __repr__(self):
         return f'<Company {self.name}>'
