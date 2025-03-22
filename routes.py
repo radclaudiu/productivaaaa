@@ -155,11 +155,21 @@ def search():
     
     # Search for companies (admin and gerentes only)
     companies = []
-    if current_user.is_admin() or current_user.is_gerente():
+    if current_user.is_admin():
         companies = Company.query.filter(
             (Company.name.ilike(f'%{query}%')) |
             (Company.tax_id.ilike(f'%{query}%'))
         ).all()
+    elif current_user.is_gerente():
+        # Buscar solo entre las empresas del usuario
+        company_ids = [company.id for company in current_user.companies]
+        if company_ids:
+            companies = Company.query.filter(
+                Company.id.in_(company_ids)
+            ).filter(
+                (Company.name.ilike(f'%{query}%')) |
+                (Company.tax_id.ilike(f'%{query}%'))
+            ).all()
     
     # Search for employees based on user role
     employees = []
@@ -169,14 +179,17 @@ def search():
             (Employee.last_name.ilike(f'%{query}%')) |
             (Employee.dni.ilike(f'%{query}%'))
         ).all()
-    elif current_user.is_gerente() and current_user.company_id:
-        employees = Employee.query.filter(
-            Employee.company_id == current_user.company_id
-        ).filter(
-            (Employee.first_name.ilike(f'%{query}%')) |
-            (Employee.last_name.ilike(f'%{query}%')) |
-            (Employee.dni.ilike(f'%{query}%'))
-        ).all()
+    elif current_user.is_gerente():
+        # Buscar empleados de todas las empresas asignadas al gerente
+        company_ids = [company.id for company in current_user.companies]
+        if company_ids:
+            employees = Employee.query.filter(
+                Employee.company_id.in_(company_ids)
+            ).filter(
+                (Employee.first_name.ilike(f'%{query}%')) |
+                (Employee.last_name.ilike(f'%{query}%')) |
+                (Employee.dni.ilike(f'%{query}%'))
+            ).all()
     elif current_user.is_empleado() and current_user.employee:
         # Empleados can only see themselves in search results
         if (query.lower() in current_user.employee.first_name.lower() or
@@ -194,15 +207,15 @@ def search():
 @company_bp.route('/')
 @login_required
 def list_companies():
-    # Admin can see all companies
+    # Admin puede ver todas las empresas
     if current_user.is_admin():
         companies = Company.query.all()
-    # Gerente can only see their company
-    elif current_user.is_gerente() and current_user.company_id:
-        companies = [Company.query.get_or_404(current_user.company_id)]
-    # Empleado can only see their company
-    elif current_user.is_empleado() and current_user.company_id:
-        companies = [Company.query.get_or_404(current_user.company_id)]
+    # Gerente solo puede ver sus empresas asignadas
+    elif current_user.is_gerente():
+        companies = current_user.companies
+    # Empleado solo puede ver sus empresas asignadas
+    elif current_user.is_empleado():
+        companies = current_user.companies
     else:
         companies = []
     
@@ -214,7 +227,7 @@ def view_company(id):
     company = Company.query.get_or_404(id)
     
     # Check if user has permission to view this company
-    if not current_user.is_admin() and current_user.company_id != company.id:
+    if not current_user.is_admin() and company not in current_user.companies:
         flash('No tienes permiso para ver esta empresa.', 'danger')
         return redirect(url_for('company.list_companies'))
     
@@ -414,10 +427,19 @@ def list_employees():
         # Para administradores, usar paginación para evitar cargar todos los empleados a la vez
         query = Employee.query.order_by(Employee.last_name, Employee.first_name)
     
-    # Gerente puede ver solo empleados de su empresa
-    elif current_user.is_gerente() and current_user.company_id:
-        query = Employee.query.filter_by(company_id=current_user.company_id).order_by(
-            Employee.last_name, Employee.first_name)
+    # Gerente puede ver solo empleados de sus empresas
+    elif current_user.is_gerente():
+        # Obtener IDs de todas las empresas asignadas al gerente
+        company_ids = [company.id for company in current_user.companies]
+        if company_ids:
+            query = Employee.query.filter(
+                Employee.company_id.in_(company_ids)
+            ).order_by(Employee.last_name, Employee.first_name)
+        else:
+            employees = []
+            employees_by_company = {}
+            return render_template('employee_list.html', title='Empleados', 
+                                  employees=employees, employees_by_company=employees_by_company, pagination=None)
     
     # Empleado solo puede verse a sí mismo
     elif current_user.is_empleado() and current_user.employee:

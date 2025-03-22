@@ -91,8 +91,11 @@ def can_manage_company(company_id):
     if current_user.is_admin():
         return True
         
-    if current_user.is_gerente() and current_user.company_id == company_id:
-        return True
+    if current_user.is_gerente():
+        # Verificar si el usuario tiene esta empresa asignada
+        for company in current_user.companies:
+            if company.id == company_id:
+                return True
         
     return False
 
@@ -104,8 +107,11 @@ def can_manage_employee(employee):
     if current_user.is_admin():
         return True
         
-    if current_user.is_gerente() and current_user.company_id == employee.company_id:
-        return True
+    if current_user.is_gerente():
+        # Verificar si el usuario tiene la empresa del empleado asignada
+        for company in current_user.companies:
+            if company.id == employee.company_id:
+                return True
         
     if current_user.is_empleado() and current_user.id == employee.user_id:
         return True
@@ -120,8 +126,11 @@ def can_view_employee(employee):
     if current_user.is_admin():
         return True
         
-    if current_user.is_gerente() and current_user.company_id == employee.company_id:
-        return True
+    if current_user.is_gerente():
+        # Verificar si el usuario tiene la empresa del empleado asignada
+        for company in current_user.companies:
+            if company.id == employee.company_id:
+                return True
         
     if current_user.is_empleado() and current_user.id == employee.user_id:
         return True
