@@ -527,6 +527,44 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Cargar credenciales del portal mediante AJAX
+document.addEventListener('DOMContentLoaded', function() {
+    const btnShowCredentials = document.getElementById('btnShowCredentials');
+    const credentialsContainer = document.getElementById('credentialsContainer');
+    const portalUsername = document.getElementById('portalUsername');
+    const portalPassword = document.getElementById('portalPassword');
+    
+    if (btnShowCredentials) {
+        btnShowCredentials.addEventListener('click', function() {
+            // Mostrar el contenedor de credenciales
+            credentialsContainer.style.display = 'block';
+            
+            // Solicitar credenciales mediante AJAX
+            fetch("{{ url_for('tasks.get_portal_credentials', location_id=location.id) }}", {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': '{{ csrf_token() }}'
+                },
+                credentials: 'same-origin'
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    portalUsername.value = data.username;
+                    portalPassword.value = data.password;
+                } else {
+                    alert('Error al cargar las credenciales: ' + data.error);
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al cargar las credenciales. Por favor, inténtelo de nuevo.');
+            });
+        });
+    }
+});
+
 // Función para mostrar/ocultar la contraseña
 function togglePasswordVisibility(inputId) {
     const input = document.getElementById(inputId);
@@ -544,27 +582,16 @@ function togglePasswordVisibility(inputId) {
     }
 }
 
-// Función para copiar la contraseña al portapapeles
-function copyPortalPassword() {
-    const passwordField = document.getElementById('portalPassword');
-    
-    // Si la contraseña está oculta, mostrarla temporalmente
-    const wasHidden = passwordField.type === 'password';
-    if (wasHidden) {
-        passwordField.type = 'text';
-    }
+// Función para copiar al portapapeles
+function copyToClipboard(elementId) {
+    const element = document.getElementById(elementId);
     
     // Seleccionar y copiar
-    passwordField.select();
+    element.select();
     document.execCommand('copy');
     
     // Deseleccionar el texto
-    passwordField.setSelectionRange(0, 0);
-    
-    // Si estaba oculta, volverla a ocultar
-    if (wasHidden) {
-        passwordField.type = 'password';
-    }
+    element.setSelectionRange(0, 0);
     
     // Mostrar notificación de copiado
     const toast = `<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">

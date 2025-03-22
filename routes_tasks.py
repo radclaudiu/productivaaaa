@@ -1657,16 +1657,19 @@ def regenerate_password(location_id):
     return jsonify({'success': True, 'password': fixed_password})
 
 # API para obtener credenciales del portal
-@tasks_bp.route('/api/get-portal-credentials/<int:location_id>', methods=['GET'])
+@tasks_bp.route('/locations/<int:location_id>/get-credentials', methods=['POST'])
 @login_required
 @manager_required
 def get_portal_credentials(location_id):
-    """Obtiene las credenciales fijas del portal"""
+    """Obtiene las credenciales fijas del portal mediante AJAX de forma segura"""
     location = Location.query.get_or_404(location_id)
     
     # Verificar permisos (admin o gerente de la empresa)
     if not current_user.is_admin() and (not current_user.is_gerente() or current_user.company_id != location.company_id):
-        return jsonify({'error': 'No tienes permiso para obtener las credenciales de este local'}), 403
+        return jsonify({'success': False, 'error': 'No tienes permiso para obtener las credenciales de este local'}), 403
+    
+    # Registrar acceso a las credenciales en los logs
+    log_activity(f'Acceso a credenciales de portal para local: {location.name}', user_id=current_user.id)
     
     return jsonify({
         'success': True,
