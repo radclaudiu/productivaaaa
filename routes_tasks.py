@@ -1711,3 +1711,43 @@ def task_stats():
         'tasks_by_priority': tasks_by_priority,
         'tasks_by_location': tasks_by_location
     })
+
+# Página de etiquetas para usuario local
+@tasks_bp.route('/local-user/labels')
+@local_user_required
+def local_user_labels():
+    """Panel de etiquetas para usuario local"""
+    user_id = session['local_user_id']
+    user = LocalUser.query.get_or_404(user_id)
+    location = user.location
+    
+    # Obtener los grupos de tareas (que usaremos como etiquetas)
+    task_groups = TaskGroup.query.filter_by(location_id=location.id).all()
+    
+    # Contar tareas por grupo
+    groups_with_counts = []
+    for group in task_groups:
+        task_count = Task.query.filter_by(
+            location_id=location.id,
+            group_id=group.id,
+            status=TaskStatus.PENDIENTE
+        ).count()
+        
+        groups_with_counts.append({
+            'group': group,
+            'task_count': task_count
+        })
+    
+    # Obtener tareas sin grupo
+    ungrouped_tasks_count = Task.query.filter_by(
+        location_id=location.id,
+        group_id=None,
+        status=TaskStatus.PENDIENTE
+    ).count()
+    
+    return render_template('tasks/local_user_labels.html',
+                          title=f'Etiquetas de {user.name}',
+                          user=user,
+                          location=location,
+                          groups_with_counts=groups_with_counts,
+                          ungrouped_tasks_count=ungrouped_tasks_count)

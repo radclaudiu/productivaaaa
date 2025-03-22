@@ -1,0 +1,73 @@
+{% extends "tasks/portal_layout.html" %}
+
+{% block content %}
+<div class="container mt-3">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>{{ title }}</h1>
+    </div>
+    
+    <!-- Si no hay grupos, mostrar mensaje -->
+    {% if not groups_with_counts and ungrouped_tasks_count == 0 %}
+        <div class="alert alert-info" role="alert">
+            <i class="bi bi-info-circle-fill me-2"></i> No hay grupos de tareas definidos para este local.
+        </div>
+    {% else %}
+        <!-- Contenedor principal de etiquetas -->
+        <div class="row">
+            <!-- Mostrar etiquetas (grupos) -->
+            {% for group_data in groups_with_counts %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header" style="background-color: {{ group_data.group.color }};">
+                            <h4 class="mb-0 text-white">{{ group_data.group.name }}</h4>
+                        </div>
+                        <div class="card-body">
+                            {% if group_data.group.description %}
+                                <p class="card-text small text-muted mb-3">{{ group_data.group.description }}</p>
+                            {% endif %}
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge rounded-pill bg-primary text-white p-2">
+                                    <i class="bi bi-list-check me-1"></i> {{ group_data.task_count }} tareas pendientes
+                                </span>
+                                <a href="{{ url_for('tasks.local_user_tasks', group_id=group_data.group.id) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver tareas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+
+            <!-- Mostrar tareas sin grupo (si existen) -->
+            {% if ungrouped_tasks_count > 0 %}
+                <div class="col-md-6 col-lg-4 mb-4">
+                    <div class="card border-0 shadow-sm h-100">
+                        <div class="card-header bg-secondary">
+                            <h4 class="mb-0 text-white">Sin clasificar</h4>
+                        </div>
+                        <div class="card-body">
+                            <p class="card-text small text-muted mb-3">Tareas que no pertenecen a ningún grupo</p>
+                            <div class="d-flex justify-content-between align-items-center">
+                                <span class="badge rounded-pill bg-primary text-white p-2">
+                                    <i class="bi bi-list-check me-1"></i> {{ ungrouped_tasks_count }} tareas pendientes
+                                </span>
+                                <a href="{{ url_for('tasks.local_user_tasks', group_id=0) }}" 
+                                   class="btn btn-sm btn-outline-primary">
+                                    <i class="bi bi-eye"></i> Ver tareas
+                                </a>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </div>
+
+        <div class="mt-4">
+            <a href="{{ url_for('tasks.local_user_tasks') }}" class="btn btn-primary btn-lg">
+                <i class="bi bi-list-check me-2"></i> Ver todas las tareas
+            </a>
+        </div>
+    {% endif %}
+</div>
+{% endblock %}
