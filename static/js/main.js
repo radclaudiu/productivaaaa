@@ -157,18 +157,55 @@ function togglePasswordVisibility(inputId, toggleId) {
     });
 }
 
+// Función para copiar texto al portapapeles
+function copyToClipboard(text) {
+    // Si recibimos un ID en lugar de texto, obtenemos el valor del campo
+    if (typeof text === 'string' && document.getElementById(text)) {
+        const element = document.getElementById(text);
+        text = element.value || element.textContent;
+    }
+    
+    // Crear un elemento temporal
+    const tempElement = document.createElement('textarea');
+    tempElement.value = text;
+    document.body.appendChild(tempElement);
+    
+    // Seleccionar y copiar
+    tempElement.select();
+    document.execCommand('copy');
+    
+    // Eliminar el elemento temporal
+    document.body.removeChild(tempElement);
+    
+    // Mostrar notificación
+    const toast = `<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+        <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+            <div class="d-flex">
+                <div class="toast-body">
+                    <i class="bi bi-check-circle me-2"></i> Texto copiado al portapapeles
+                </div>
+                <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+            </div>
+        </div>
+    </div>`;
+    
+    document.body.insertAdjacentHTML('beforeend', toast);
+    const toastElement = document.querySelector('.toast:last-child');
+    const bsToast = new bootstrap.Toast(toastElement);
+    bsToast.show();
+}
+
 // Función para cargar credenciales del portal
 function loadPortalCredentials(locationId) {
     // Verificar que los elementos existen
     const usernameElement = document.getElementById('portal-username');
-    const passwordElement = document.getElementById('portal-password');
     const passwordContainer = document.getElementById('password-container');
     
     // Chequear si estamos en la página de detalles del local (tiene otro formato)
     const portalPasswordField = document.getElementById('portalPassword');
     if (portalPasswordField) {
         // Estamos en la página de detalles del local
-        return loadLocationDetailPassword(locationId);
+        return loadLocationDetailCredentials(locationId);
     }
     
     if (!usernameElement || !passwordContainer) {
@@ -198,13 +235,13 @@ function loadPortalCredentials(locationId) {
                 usernameElement.textContent = data.username || 'No configurado';
             }
             
-            // Crear botón para mostrar contraseña solo si tenemos username
+            // Mostrar la contraseña
             if (data.username) {
                 passwordContainer.innerHTML = `
                     <div class="input-group">
-                        <input type="password" class="form-control" id="portal-password-field" value="Haga clic para mostrar" readonly>
-                        <button class="btn btn-outline-secondary" type="button" onclick="showPortalPassword(${locationId})">
-                            <i class="bi bi-eye"></i>
+                        <input type="text" class="form-control" id="portal-password-field" value="${data.password}" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="copyToClipboard('portal-password-field')">
+                            <i class="bi bi-clipboard"></i>
                         </button>
                     </div>`;
             } else {
@@ -220,10 +257,12 @@ function loadPortalCredentials(locationId) {
     });
 }
 
-// Función específica para cargar la contraseña en la página de detalles del local
-function loadLocationDetailPassword(locationId) {
+// Función específica para cargar las credenciales en la página de detalles del local
+function loadLocationDetailCredentials(locationId) {
     // Verificar que el elemento existe
     const portalPasswordField = document.getElementById('portalPassword');
+    const portalUsernameField = document.getElementById('portalUsername');
+    
     if (!portalPasswordField) {
         console.error('Campo de contraseña no encontrado');
         return;
@@ -232,15 +271,13 @@ function loadLocationDetailPassword(locationId) {
     // Obtener el token CSRF
     const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
     
-    // Botón de regeneración
-    const regenerateBtn = document.getElementById('regeneratePasswordBtn');
-    if (regenerateBtn) {
-        regenerateBtn.disabled = true;
-        regenerateBtn.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+    // Mostrar indicador de carga
+    if (portalPasswordField) {
+        portalPasswordField.value = 'Cargando...';
     }
     
     // Realizar la solicitud AJAX
-    fetch(`/tasks/api/regenerate-password/${locationId}?show_only=true`, {
+    fetch(`/tasks/api/get-portal-credentials/${locationId}`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': csrfToken,
@@ -250,174 +287,48 @@ function loadLocationDetailPassword(locationId) {
     .then(response => response.json())
     .then(data => {
         if (data.success) {
-            // Actualizar el campo de contraseña
-            portalPasswordField.value = data.password;
+            // Actualizar los campos
+            if (portalUsernameField) {
+                portalUsernameField.value = data.username;
+            }
+            
+            if (portalPasswordField) {
+                portalPasswordField.value = data.password;
+            }
         } else {
-            portalPasswordField.value = 'Error al cargar la contraseña';
-            console.error('Error:', data.error || 'No se pudo cargar la contraseña');
-        }
-        
-        // Restaurar el botón
-        if (regenerateBtn) {
-            regenerateBtn.disabled = false;
-            regenerateBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            if (portalPasswordField) {
+                portalPasswordField.value = 'Error al cargar las credenciales';
+            }
+            console.error('Error:', data.error || 'No se pudo cargar las credenciales');
         }
     })
     .catch(error => {
         console.error('Error:', error);
-        portalPasswordField.value = 'Error de conexión';
-        
-        // Restaurar el botón
-        if (regenerateBtn) {
-            regenerateBtn.disabled = false;
-            regenerateBtn.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+        if (portalPasswordField) {
+            portalPasswordField.value = 'Error de conexión';
         }
     });
 }
 
-// Función para mostrar la contraseña del portal
+// Función para mostrar/ocultar la contraseña del portal
 function showPortalPassword(locationId) {
     const passwordField = document.getElementById('portal-password-field');
     const passwordButton = passwordField.nextElementSibling;
     
     if (!passwordField || !passwordButton) return;
     
-    // Obtener el token CSRF
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    // Si ya está mostrando la contraseña, ocultarla
+    // Alternar entre mostrar y ocultar la contraseña
     if (passwordField.type === 'text') {
         passwordField.type = 'password';
-        passwordField.value = 'Haga clic para mostrar';
         passwordButton.innerHTML = '<i class="bi bi-eye"></i>';
-        return;
+    } else {
+        passwordField.type = 'text';
+        passwordButton.innerHTML = '<i class="bi bi-eye-slash"></i>';
     }
-    
-    // Mostrar indicador de carga
-    passwordButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-    passwordField.value = 'Cargando...';
-    
-    // Realizar la solicitud AJAX para obtener la contraseña
-    fetch(`/tasks/api/regenerate-password/${locationId}?show_only=true`, {
-        method: 'GET',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            passwordField.type = 'text';
-            passwordField.value = data.password;
-            passwordButton.innerHTML = '<i class="bi bi-eye-slash"></i>';
-        } else {
-            passwordField.value = 'Error al cargar';
-            passwordButton.innerHTML = '<i class="bi bi-eye"></i>';
-            alert('Error: ' + (data.error || 'No se pudo cargar la contraseña'));
-        }
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        passwordField.value = 'Error de conexión';
-        passwordButton.innerHTML = '<i class="bi bi-eye"></i>';
-    });
 }
 
-// Función para regenerar la contraseña del portal
+// Esta función ya no se usa ya que las credenciales son fijas
+// Se mantiene por compatibilidad con versiones anteriores
 function regeneratePortalPassword(locationId) {
-    if (!confirm('¿Está seguro de que desea regenerar la contraseña del portal? La contraseña actual dejará de funcionar.')) {
-        return;
-    }
-    
-    // Obtener el token CSRF
-    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
-    
-    // Mostrar indicador de carga en el botón de regeneración
-    const regenerateButton = document.querySelector('.regenerate-password') || document.getElementById('regeneratePasswordBtn');
-    if (!regenerateButton) {
-        console.error('Botón de regeneración no encontrado');
-        return;
-    }
-    
-    const originalContent = regenerateButton.innerHTML;
-    regenerateButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Regenerando...';
-    regenerateButton.disabled = true;
-    
-    // Realizar la solicitud AJAX
-    fetch(`/tasks/api/regenerate-password/${locationId}`, {
-        method: 'POST',
-        headers: {
-            'X-CSRFToken': csrfToken,
-            'Content-Type': 'application/json'
-        }
-    })
-    .then(response => response.json())
-    .then(data => {
-        if (data.success) {
-            // Actualizar el campo de contraseña según la página en la que estemos
-            const portalPasswordField = document.getElementById('portalPassword');
-            const regularPasswordField = document.getElementById('portal-password-field');
-            
-            // Actualizar campo en la página de detalles del local
-            if (portalPasswordField) {
-                portalPasswordField.value = data.password;
-                portalPasswordField.type = 'text'; // Mostrar la contraseña tras regenerarla
-                
-                // Actualizar el botón de mostrar/ocultar si existe
-                const toggleButton = document.querySelector('button[onclick*="togglePasswordVisibility"]');
-                if (toggleButton) {
-                    toggleButton.querySelector('i').classList.remove('bi-eye');
-                    toggleButton.querySelector('i').classList.add('bi-eye-slash');
-                }
-                
-                // Mostrar notificación Toast
-                const toast = `<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
-                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
-                        <div class="d-flex">
-                            <div class="toast-body">
-                                <i class="bi bi-check-circle me-2"></i> Contraseña regenerada correctamente
-                            </div>
-                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
-                        </div>
-                    </div>
-                </div>`;
-                
-                document.body.insertAdjacentHTML('beforeend', toast);
-                const toastEl = document.querySelector('.toast');
-                const bsToast = new bootstrap.Toast(toastEl);
-                bsToast.show();
-            } 
-            // Actualizar campo en la página de lista de locales o panel
-            else if (regularPasswordField) {
-                regularPasswordField.type = 'text';
-                regularPasswordField.value = data.password;
-                
-                if (regularPasswordField.nextElementSibling) {
-                    regularPasswordField.nextElementSibling.innerHTML = '<i class="bi bi-eye-slash"></i>';
-                }
-                
-                // Mostrar alerta
-                alert(`Contraseña regenerada con éxito: ${data.password}\n\nGuarde esta contraseña en un lugar seguro.`);
-            } 
-            // No se encontró ningún campo, mostrar solo la alerta
-            else {
-                alert(`Contraseña regenerada con éxito: ${data.password}\n\nGuarde esta contraseña en un lugar seguro.`);
-            }
-        } else {
-            alert('Error: ' + (data.error || 'No se pudo regenerar la contraseña'));
-        }
-        
-        // Restaurar el botón
-        regenerateButton.innerHTML = originalContent;
-        regenerateButton.disabled = false;
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Error de conexión al intentar regenerar la contraseña');
-        
-        // Restaurar el botón
-        regenerateButton.innerHTML = originalContent;
-        regenerateButton.disabled = false;
-    });
+    alert('Las credenciales del portal son fijas y no pueden ser regeneradas. Use las credenciales proporcionadas.');
 }
