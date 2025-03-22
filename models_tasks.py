@@ -99,9 +99,12 @@ class Location(db.Model):
         
     def check_portal_password(self, password):
         """Verifica si la contraseña proporcionada coincide con la almacenada"""
-        if not self.portal_password_hash:
+        if not self.portal_password_hash or not password:
             return False
-        return check_password_hash(self.portal_password_hash, password)
+        try:
+            return check_password_hash(self.portal_password_hash, password)
+        except Exception:
+            return False
     
     def to_dict(self):
         return {

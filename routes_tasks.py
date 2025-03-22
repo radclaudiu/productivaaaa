@@ -1240,6 +1240,20 @@ def portal_login(location_id):
                           location=location,
                           form=form)
 
+@tasks_bp.route('/portal/login', methods=['GET', 'POST'])
+def portal_login():
+    form = PortalLoginForm()
+    if form.validate_on_submit():
+        location = Location.query.filter_by(portal_username=form.username.data).first()
+        
+        if location and location.check_portal_password(form.password.data):
+            session['portal_location_id'] = location.id
+            flash('Has iniciado sesión correctamente.', 'success')
+            return redirect(url_for('tasks.portal_dashboard'))
+            
+        flash('Usuario o contraseña incorrectos.', 'danger')
+    return render_template('tasks/portal_login.html', title='Portal Login', form=form)
+
 @tasks_bp.route('/local-login', methods=['GET', 'POST'])
 def local_login():
     """Redirigir a la página de login para usuarios locales (obsoleta)"""
