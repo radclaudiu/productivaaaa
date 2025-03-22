@@ -156,3 +156,160 @@ function togglePasswordVisibility(inputId, toggleId) {
         }
     });
 }
+
+// Función para cargar credenciales del portal
+function loadPortalCredentials(locationId) {
+    // Verificar que los elementos existen
+    const usernameElement = document.getElementById('portal-username');
+    const passwordElement = document.getElementById('portal-password');
+    const passwordContainer = document.getElementById('password-container');
+    
+    if (!usernameElement || !passwordContainer) {
+        console.error('Elementos necesarios no encontrados');
+        return;
+    }
+    
+    // Obtener el token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    // Mostrar indicador de carga
+    passwordContainer.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>';
+    
+    // Realizar la solicitud AJAX
+    fetch(`/tasks/get_portal_credentials/${locationId}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Actualizar el username
+            if (usernameElement) {
+                usernameElement.textContent = data.username || 'No configurado';
+            }
+            
+            // Crear botón para mostrar contraseña solo si tenemos username
+            if (data.username) {
+                passwordContainer.innerHTML = `
+                    <div class="input-group">
+                        <input type="password" class="form-control" id="portal-password-field" value="Haga clic para mostrar" readonly>
+                        <button class="btn btn-outline-secondary" type="button" onclick="showPortalPassword(${locationId})">
+                            <i class="bi bi-eye"></i>
+                        </button>
+                    </div>`;
+            } else {
+                passwordContainer.innerHTML = '<em>No configurado</em>';
+            }
+        } else {
+            passwordContainer.innerHTML = `<span class="text-danger">Error: ${data.error || 'No se pudo cargar'}</span>`;
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        passwordContainer.innerHTML = '<span class="text-danger">Error de conexión</span>';
+    });
+}
+
+// Función para mostrar la contraseña del portal
+function showPortalPassword(locationId) {
+    const passwordField = document.getElementById('portal-password-field');
+    const passwordButton = passwordField.nextElementSibling;
+    
+    if (!passwordField || !passwordButton) return;
+    
+    // Obtener el token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    // Si ya está mostrando la contraseña, ocultarla
+    if (passwordField.type === 'text') {
+        passwordField.type = 'password';
+        passwordField.value = 'Haga clic para mostrar';
+        passwordButton.innerHTML = '<i class="bi bi-eye"></i>';
+        return;
+    }
+    
+    // Mostrar indicador de carga
+    passwordButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+    passwordField.value = 'Cargando...';
+    
+    // Realizar la solicitud AJAX para obtener la contraseña
+    fetch(`/tasks/regenerate_password/${locationId}?show_only=true`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            passwordField.type = 'text';
+            passwordField.value = data.password;
+            passwordButton.innerHTML = '<i class="bi bi-eye-slash"></i>';
+        } else {
+            passwordField.value = 'Error al cargar';
+            passwordButton.innerHTML = '<i class="bi bi-eye"></i>';
+            alert('Error: ' + (data.error || 'No se pudo cargar la contraseña'));
+        }
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        passwordField.value = 'Error de conexión';
+        passwordButton.innerHTML = '<i class="bi bi-eye"></i>';
+    });
+}
+
+// Función para regenerar la contraseña del portal
+function regeneratePortalPassword(locationId) {
+    if (!confirm('¿Está seguro de que desea regenerar la contraseña del portal? La contraseña actual dejará de funcionar.')) {
+        return;
+    }
+    
+    // Obtener el token CSRF
+    const csrfToken = document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+    
+    // Mostrar indicador de carga
+    const regenerateButton = document.querySelector('.regenerate-password');
+    const originalContent = regenerateButton.innerHTML;
+    regenerateButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Regenerando...';
+    regenerateButton.disabled = true;
+    
+    // Realizar la solicitud AJAX
+    fetch(`/tasks/regenerate_password/${locationId}`, {
+        method: 'GET',
+        headers: {
+            'X-CSRFToken': csrfToken,
+            'Content-Type': 'application/json'
+        }
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.success) {
+            // Mostrar la nueva contraseña
+            alert(`Contraseña regenerada con éxito: ${data.password}\n\nGuarde esta contraseña en un lugar seguro.`);
+            
+            // Actualizar el campo de contraseña si está visible
+            const passwordField = document.getElementById('portal-password-field');
+            if (passwordField && passwordField.type === 'text') {
+                passwordField.value = data.password;
+            }
+        } else {
+            alert('Error: ' + (data.error || 'No se pudo regenerar la contraseña'));
+        }
+        
+        // Restaurar el botón
+        regenerateButton.innerHTML = originalContent;
+        regenerateButton.disabled = false;
+    })
+    .catch(error => {
+        console.error('Error:', error);
+        alert('Error de conexión al intentar regenerar la contraseña');
+        
+        // Restaurar el botón
+        regenerateButton.innerHTML = originalContent;
+        regenerateButton.disabled = false;
+    });
+}

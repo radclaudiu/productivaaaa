@@ -37,28 +37,28 @@
                 {% if current_user.is_authenticated %}
                 <ul class="navbar-nav">
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" 
+                        <a class="nav-link {% if request.endpoint and request.endpoint == 'main.dashboard' %}active{% endif %}" 
                            href="{{ url_for('main.dashboard') }}">
                             <i class="bi bi-speedometer"></i> Dashboard
                         </a>
                     </li>
                     
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint.startswith('company.') %}active{% endif %}" 
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('company.') %}active{% endif %}" 
                            href="{{ url_for('company.list_companies') }}">
                             <i class="bi bi-building"></i> Empresas
                         </a>
                     </li>
                     
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint.startswith('employee.') %}active{% endif %}" 
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('employee.') %}active{% endif %}" 
                            href="{{ url_for('employee.list_employees') }}">
                             <i class="bi bi-people"></i> Empleados
                         </a>
                     </li>
                     
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') %}active{% endif %}" 
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') %}active{% endif %}" 
                            href="{{ url_for('tasks.index') }}">
                             <i class="bi bi-list-check"></i> Tareas
                         </a>
@@ -68,7 +68,7 @@
                     
                     {% if current_user.is_admin() %}
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint.startswith('user.') %}active{% endif %}" 
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('user.') %}active{% endif %}" 
                            href="{{ url_for('user.list_users') }}">
                             <i class="bi bi-person-gear"></i> Usuarios
                         </a>
@@ -124,28 +124,28 @@
                 <div class="position-sticky sidebar-sticky pt-md-5">
                     <ul class="nav flex-column">
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint == 'main.dashboard' %}active{% endif %}" 
+                            <a class="nav-link {% if request.endpoint and request.endpoint == 'main.dashboard' %}active{% endif %}" 
                                href="{{ url_for('main.dashboard') }}">
                                 <i class="bi bi-speedometer"></i> Dashboard
                             </a>
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint.startswith('company.') %}active{% endif %}" 
+                            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('company.') %}active{% endif %}" 
                                href="{{ url_for('company.list_companies') }}">
                                 <i class="bi bi-building"></i> Empresas
                             </a>
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint.startswith('employee.') %}active{% endif %}" 
+                            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('employee.') %}active{% endif %}" 
                                href="{{ url_for('employee.list_employees') }}">
                                 <i class="bi bi-people"></i> Empleados
                             </a>
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') %}active{% endif %}" 
+                            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') %}active{% endif %}" 
                                href="{{ url_for('tasks.index') }}">
                                 <i class="bi bi-list-check"></i> Tareas
                             </a>
@@ -155,7 +155,7 @@
                         
                         {% if current_user.is_admin() %}
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint.startswith('user.') %}active{% endif %}" 
+                            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('user.') %}active{% endif %}" 
                                href="{{ url_for('user.list_users') }}">
                                 <i class="bi bi-person-gear"></i> Gestión de Usuarios
                             </a>
