@@ -11,7 +11,7 @@ from models import User, Company
 from models_tasks import Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, TaskFrequency, TaskStatus, WeekDay, TaskGroup, TaskWeekday
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
-                        LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm)
+                        LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm, PortalLoginForm)
 from utils import log_activity, can_manage_company, save_file
 from utils_tasks import create_default_local_user
 
@@ -1156,15 +1156,64 @@ def view_task(task_id):
                           completions=completions)
 
 # Portal de acceso para usuarios locales
+@tasks_bp.route('/portal')
+def portal_selection():
+    """Página de selección de portal"""
+    # Obtener todos los locations disponibles
+    locations = Location.query.filter_by(is_active=True).all()
+    return render_template('tasks/portal_selection.html',
+                          title='Selección de Portal',
+                          locations=locations)
+
+@tasks_bp.route('/portal/<int:location_id>', methods=['GET', 'POST'])
+def portal_login(location_id):
+    """Página de login para acceder al portal de un local"""
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar si el portal tiene credenciales configuradas
+    if not location.portal_username or not location.portal_password_hash:
+        # Si no tiene credenciales, asignar unas por defecto
+        if not location.portal_username:
+            location.portal_username = f"portal_{location.id}"
+        if not location.portal_password_hash:
+            location.set_portal_password("1234")
+        db.session.commit()
+        flash("Se han configurado credenciales por defecto para este portal. Usuario: " + 
+             f"{location.portal_username}, Contraseña: 1234", "info")
+    
+    form = PortalLoginForm()
+    
+    if form.validate_on_submit():
+        # Verificar las credenciales
+        if form.username.data == location.portal_username and location.check_portal_password(form.password.data):
+            # Guardar en sesión que estamos autenticados en este portal
+            session['portal_authenticated'] = True
+            session['portal_location_id'] = location.id
+            
+            # Redireccionar al portal real
+            return redirect(url_for('tasks.local_portal', location_id=location.id))
+        else:
+            flash('Usuario o contraseña incorrectos.', 'danger')
+    
+    return render_template('tasks/portal_login.html',
+                          title=f'Acceso al Portal {location.name}',
+                          location=location,
+                          form=form)
+
 @tasks_bp.route('/local-login', methods=['GET', 'POST'])
 def local_login():
     """Redirigir a la página de login para usuarios locales (obsoleta)"""
-    return redirect(url_for('tasks.index'))
+    return redirect(url_for('tasks.portal_selection'))
 
 @tasks_bp.route('/local-portal/<int:location_id>')
 def local_portal(location_id):
     """Portal de acceso para un local"""
     location = Location.query.get_or_404(location_id)
+    
+    # Verificar si el usuario está autenticado en el portal
+    if not session.get('portal_authenticated') or session.get('portal_location_id') != location.id:
+        # Si no está autenticado, redireccionar al login del portal
+        return redirect(url_for('tasks.portal_login', location_id=location.id))
     
     # Guardar ID del local en la sesión
     session['location_id'] = location_id
@@ -1250,9 +1299,13 @@ def local_logout():
 @tasks_bp.route('/portal-logout')
 def portal_logout():
     """Cerrar sesión de portal local"""
+    # Limpiar todas las variables de sesión relacionadas con el portal
     session.pop('location_id', None)
     session.pop('local_user_username', None)
     session.pop('local_user_id', None)
+    session.pop('portal_authenticated', None)
+    session.pop('portal_location_id', None)
+    
     flash('Has cerrado sesión del portal correctamente.', 'success')
     return redirect(url_for('tasks.index'))
 
