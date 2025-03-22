@@ -12,6 +12,12 @@ class UserRole(enum.Enum):
     GERENTE = "gerente"
     EMPLEADO = "empleado"
 
+# Tabla de asociación para la relación muchos a muchos entre usuarios y empresas
+user_companies = db.Table('user_companies',
+    db.Column('user_id', db.Integer, db.ForeignKey('users.id'), primary_key=True),
+    db.Column('company_id', db.Integer, db.ForeignKey('companies.id'), primary_key=True)
+)
+
 class User(UserMixin, db.Model):
     __tablename__ = 'users'
     
@@ -26,9 +32,24 @@ class User(UserMixin, db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
-    # Relationships
-    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'))
-    company = db.relationship('Company', back_populates='users')
+    # Relación muchos a muchos con empresas
+    companies = db.relationship('Company', secondary=user_companies)
+    
+    # Mantener compatibilidad con el código existente
+    # Esta propiedad emula el comportamiento anterior de company_id y company
+    @property
+    def company_id(self):
+        if self.companies and len(self.companies) > 0:
+            return self.companies[0].id
+        return None
+        
+    @property
+    def company(self):
+        if self.companies and len(self.companies) > 0:
+            return self.companies[0]
+        return None
+    
+    # Otras relaciones
     employee = db.relationship('Employee', back_populates='user', uselist=False)
     activity_logs = db.relationship('ActivityLog', back_populates='user', cascade='all, delete-orphan')
     
@@ -85,7 +106,8 @@ class Company(db.Model):
     
     # Relationships
     employees = db.relationship('Employee', back_populates='company', cascade='all, delete-orphan')
-    users = db.relationship('User', back_populates='company')
+    # Relación muchos a muchos con usuarios
+    users_relation = db.relationship('User', secondary=user_companies)
     
     def __repr__(self):
         return f'<Company {self.name}>'
