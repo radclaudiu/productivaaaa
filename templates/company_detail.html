@@ -14,6 +14,9 @@
             {% endif %}
             
             {% if current_user.is_admin() %}
+            <a href="{{ url_for('company.export_company_data', id=company.id) }}" class="btn btn-secondary">
+                <i class="bi bi-file-earmark-zip"></i> Exportar Datos
+            </a>
             <a href="{{ url_for('company.delete_company', id=company.id) }}" class="btn btn-danger">
                 <i class="bi bi-trash"></i> Eliminar Empresa
             </a>
