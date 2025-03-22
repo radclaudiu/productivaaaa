@@ -110,8 +110,7 @@ def create_location():
             postal_code=form.postal_code.data,
             description=form.description.data,
             company_id=form.company_id.data,
-            is_active=form.is_active.data,
-            portal_username=form.portal_username.data
+            is_active=form.is_active.data
         )
         
         # Si se proporcionó contraseña, establecerla de forma segura
@@ -167,7 +166,7 @@ def edit_location(id):
         location.description = form.description.data
         location.company_id = form.company_id.data
         location.is_active = form.is_active.data
-        location.portal_username = form.portal_username.data
+        # Ya no se permite personalizar el nombre de usuario
         
         # Si se proporcionó una nueva contraseña, actualizarla
         if form.portal_password.data:
