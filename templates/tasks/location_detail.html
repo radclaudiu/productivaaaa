@@ -106,7 +106,10 @@
                             <div class="col-md-6">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">Contraseña</span>
-                                    <input type="text" class="form-control" value="******" readonly>
+                                    <input type="password" class="form-control" id="portalPassword" value="1234" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('portalPassword')">
+                                        <i class="bi bi-eye"></i>
+                                    </button>
                                 </div>
                             </div>
                         </div>
@@ -507,6 +510,23 @@
 {% block scripts %}
 <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 <script>
+// Función para mostrar/ocultar la contraseña
+function togglePasswordVisibility(inputId) {
+    const input = document.getElementById(inputId);
+    const button = input.nextElementSibling;
+    const icon = button.querySelector('i');
+    
+    if (input.type === 'password') {
+        input.type = 'text';
+        icon.classList.remove('bi-eye');
+        icon.classList.add('bi-eye-slash');
+    } else {
+        input.type = 'password';
+        icon.classList.remove('bi-eye-slash');
+        icon.classList.add('bi-eye');
+    }
+}
+
 document.addEventListener('DOMContentLoaded', function() {
     // Estadísticas mensuales
     const ctxMonthly = document.getElementById('monthlyCompletionsChart').getContext('2d');
