@@ -1173,6 +1173,38 @@ def portal_selection():
         # Devolver una respuesta mínima para evitar 500
         return f"Error: {str(e)}", 500
 
+@tasks_bp.route('/portal-test')
+def portal_test():
+    """Ruta de prueba para diagnóstico"""
+    try:
+        # Intentamos primero una consulta simple sin usar los campos nuevos
+        locations = db.session.query(Location.id, Location.name).filter_by(is_active=True).all()
+        location_count = len(locations)
+        location_names = [loc[1] for loc in locations]
+        
+        # Ahora verificamos los campos nuevos
+        has_new_columns = True
+        try:
+            test_query = db.session.query(Location.id, Location.portal_username).first()
+        except Exception as e:
+            has_new_columns = False
+            column_error = str(e)
+        
+        # Generar respuesta informativa
+        result = {
+            "status": "ok",
+            "locations_count": location_count,
+            "locations": location_names,
+            "has_new_columns": has_new_columns
+        }
+        
+        if not has_new_columns:
+            result["column_error"] = column_error
+            
+        return jsonify(result)
+    except Exception as e:
+        return jsonify({"status": "error", "message": str(e)})
+
 @tasks_bp.route('/portal/<int:location_id>', methods=['GET', 'POST'])
 def portal_login(location_id):
     """Página de login para acceder al portal de un local"""
