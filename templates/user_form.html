@@ -67,11 +67,19 @@
                             </div>
                             
                             <div class="col-md-6 mb-3">
-                                {{ form.company_id.label(class="form-label") }}
-                                {{ form.company_id(class="form-select") }}
-                                {% for error in form.company_id.errors %}
+                                {{ form.companies.label(class="form-label") }}
+                                <div class="mb-3">
+                                    {% for subfield in form.companies %}
+                                    <div class="form-check">
+                                        {{ subfield(class="form-check-input") }}
+                                        {{ subfield.label(class="form-check-label") }}
+                                    </div>
+                                    {% endfor %}
+                                </div>
+                                {% for error in form.companies.errors %}
                                     <div class="text-danger">{{ error }}</div>
                                 {% endfor %}
+                                <div class="form-text">{{ form.companies.description }}</div>
                             </div>
                         </div>
                         
