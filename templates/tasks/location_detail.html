@@ -608,26 +608,34 @@ document.addEventListener('DOMContentLoaded', function() {
         }
 
         // Realizar solicitud AJAX para obtener las credenciales
-        fetch(`/tasks/api/get-portal-credentials/${locationId}`)
-            .then(response => {
-                if (!response.ok) throw new Error('Error al obtener credenciales');
-                return response.json();
-            })
-            .then(data => {
-                // El servidor solo devuelve el nombre de usuario por seguridad
-                // No mostramos la contraseña aquí por seguridad
-                if (btnRegenerate) {
-                    btnRegenerate.disabled = false;
-                    btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                }
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                if (btnRegenerate) {
-                    btnRegenerate.disabled = false;
-                    btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                }
-            });
+        fetch(`/tasks/api/regenerate-password/${locationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Error al obtener credenciales');
+            return response.json();
+        })
+        .then(data => {
+            if (data.success && data.password) {
+                document.getElementById('portalPassword').value = data.password;
+            }
+            
+            if (btnRegenerate) {
+                btnRegenerate.disabled = false;
+                btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            if (btnRegenerate) {
+                btnRegenerate.disabled = false;
+                btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            }
+        });
     }
 
     // Función para regenerar la contraseña

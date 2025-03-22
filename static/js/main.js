@@ -120,9 +120,29 @@ function confirmFormSubmit(formId, message) {
 // Function to toggle password visibility
 function togglePasswordVisibility(inputId, toggleId) {
     const input = document.getElementById(inputId);
-    const toggle = document.getElementById(toggleId);
     
-    if (!input || !toggle) return;
+    if (!input) return;
+    
+    // Si no se proporciona toggleId, asumimos que se está llamando directamente (onclick)
+    if (!toggleId) {
+        const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
+        input.setAttribute('type', type);
+        
+        // Buscamos el botón adjunto
+        const button = document.querySelector(`button[onclick*="togglePasswordVisibility('${inputId}')"]`);
+        if (button) {
+            if (type === 'password') {
+                button.innerHTML = '<i class="bi bi-eye"></i>';
+            } else {
+                button.innerHTML = '<i class="bi bi-eye-slash"></i>';
+            }
+        }
+        return;
+    }
+    
+    // Comportamiento para escuchador de eventos
+    const toggle = document.getElementById(toggleId);
+    if (!toggle) return;
     
     toggle.addEventListener('click', function() {
         const type = input.getAttribute('type') === 'password' ? 'text' : 'password';
