@@ -13,14 +13,10 @@
             </a>
             {% endif %}
             
-            {% if current_user.is_admin() and company.employees|length == 0 %}
-            <form action="{{ url_for('company.delete_company', id=company.id) }}" method="post" class="d-inline">
-                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                <button type="submit" class="btn btn-danger confirm-action" 
-                        data-confirm-message="¿Estás seguro de querer eliminar esta empresa? Esta acción no se puede deshacer.">
-                    <i class="bi bi-trash"></i> Eliminar Empresa
-                </button>
-            </form>
+            {% if current_user.is_admin() %}
+            <a href="{{ url_for('company.delete_company', id=company.id) }}" class="btn btn-danger">
+                <i class="bi bi-trash"></i> Eliminar Empresa
+            </a>
             {% endif %}
         </div>
     </div>
