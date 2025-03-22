@@ -19,7 +19,21 @@ class LocationForm(FlaskForm):
     description = TextAreaField('Descripción', validators=[Optional(), Length(max=500)])
     company_id = SelectField('Empresa', coerce=int, validators=[DataRequired()])
     is_active = BooleanField('Local Activo', default=True)
+    
+    # Credenciales de portal
+    portal_username = StringField('Usuario del Portal', validators=[Optional(), Length(min=3, max=64)],
+                                 description='Nombre de usuario para acceder al portal de tareas (opcional)')
+    portal_password = PasswordField('Contraseña del Portal', validators=[Optional(), Length(min=4)],
+                                   description='Contraseña para acceder al portal de tareas (opcional)')
+    confirm_portal_password = PasswordField('Confirmar Contraseña', 
+                                          validators=[Optional(), EqualTo('portal_password', 
+                                                                        message='Las contraseñas deben coincidir')])
+    
     submit = SubmitField('Guardar')
+    
+    def validate_portal_username(self, field):
+        if field.data and not self.portal_password.data:
+            raise ValidationError('Si especifica un nombre de usuario, debe proporcionar también una contraseña')
 
 class LocalUserForm(FlaskForm):
     name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
@@ -164,3 +178,8 @@ class CustomWeekdaysForm(FlaskForm):
 class SearchForm(FlaskForm):
     query = StringField('Buscar', validators=[DataRequired()])
     submit = SubmitField('Buscar')
+    
+class PortalLoginForm(FlaskForm):
+    username = StringField('Nombre de usuario', validators=[DataRequired(), Length(min=3, max=64)])
+    password = PasswordField('Contraseña', validators=[DataRequired(), Length(min=4)])
+    submit = SubmitField('Acceder al Portal')

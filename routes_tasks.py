@@ -198,8 +198,13 @@ def create_location():
             postal_code=form.postal_code.data,
             description=form.description.data,
             company_id=form.company_id.data,
-            is_active=form.is_active.data
+            is_active=form.is_active.data,
+            portal_username=form.portal_username.data
         )
+        
+        # Si se proporcionó contraseña, establecerla de forma segura
+        if form.portal_password.data:
+            location.set_portal_password(form.portal_password.data)
         
         db.session.add(location)
         db.session.commit()
@@ -226,6 +231,10 @@ def edit_location(id):
     
     form = LocationForm(obj=location)
     
+    # No cargar contraseña del portal, ya que la tenemos como hash
+    form.portal_password.data = None
+    form.confirm_portal_password.data = None
+    
     # Cargar empresas disponibles según el rol
     if current_user.is_admin():
         form.company_id.choices = [(c.id, c.name) for c in Company.query.all()]
@@ -246,6 +255,11 @@ def edit_location(id):
         location.description = form.description.data
         location.company_id = form.company_id.data
         location.is_active = form.is_active.data
+        location.portal_username = form.portal_username.data
+        
+        # Si se proporcionó una nueva contraseña, actualizarla
+        if form.portal_password.data:
+            location.set_portal_password(form.portal_password.data)
         
         db.session.commit()
         

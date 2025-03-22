@@ -76,6 +76,10 @@ class Location(db.Model):
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
     
+    # Credenciales de acceso al portal
+    portal_username = db.Column(db.String(64), unique=True)
+    portal_password_hash = db.Column(db.String(256))
+    
     # Relaciones
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     company = db.relationship('Company', backref=db.backref('locations', lazy=True))
@@ -89,6 +93,16 @@ class Location(db.Model):
     def __repr__(self):
         return f'<Location {self.name}>'
     
+    def set_portal_password(self, password):
+        """Establece una contraseña encriptada para el portal"""
+        self.portal_password_hash = generate_password_hash(password)
+        
+    def check_portal_password(self, password):
+        """Verifica si la contraseña proporcionada coincide con la almacenada"""
+        if not self.portal_password_hash:
+            return False
+        return check_password_hash(self.portal_password_hash, password)
+    
     def to_dict(self):
         return {
             'id': self.id,
@@ -99,7 +113,8 @@ class Location(db.Model):
             'description': self.description,
             'company_id': self.company_id,
             'company_name': self.company.name if self.company else None,
-            'is_active': self.is_active
+            'is_active': self.is_active,
+            'has_portal_credentials': bool(self.portal_username and self.portal_password_hash)
         }
 
 class LocalUser(db.Model):
