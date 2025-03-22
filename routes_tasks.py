@@ -1260,8 +1260,10 @@ def portal_logout():
 
 @tasks_bp.route('/local-user/tasks')
 @tasks_bp.route('/local-user/tasks/<string:date_str>')
+@tasks_bp.route('/local-user/tasks/group/<int:group_id>')
+@tasks_bp.route('/local-user/tasks/<string:date_str>/group/<int:group_id>')
 @local_user_required
-def local_user_tasks(date_str=None):
+def local_user_tasks(date_str=None, group_id=None):
     """Panel de tareas para usuario local"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
@@ -1292,27 +1294,31 @@ def local_user_tasks(date_str=None):
         6: 'DOM'
     }
     
-    # Configurar el carrusel de fechas
+    # Configurar el carrusel de fechas, preservando el filtro de grupo si existe
+    base_url_params = {}
+    if group_id is not None:
+        base_url_params['group_id'] = group_id
+        
     date_carousel = [
         {
             'date': prev_date,
             'day_name': days_map[prev_date.weekday()],
             'day': prev_date.day,
-            'url': url_for('tasks.local_user_tasks', date_str=prev_date.strftime('%Y-%m-%d')),
+            'url': url_for('tasks.local_user_tasks', date_str=prev_date.strftime('%Y-%m-%d'), **base_url_params),
             'active': False
         },
         {
             'date': selected_date,
             'day_name': days_map[selected_date.weekday()],
             'day': selected_date.day,
-            'url': url_for('tasks.local_user_tasks', date_str=selected_date.strftime('%Y-%m-%d')),
+            'url': url_for('tasks.local_user_tasks', date_str=selected_date.strftime('%Y-%m-%d'), **base_url_params),
             'active': True
         },
         {
             'date': next_date, 
             'day_name': days_map[next_date.weekday()],
             'day': next_date.day,
-            'url': url_for('tasks.local_user_tasks', date_str=next_date.strftime('%Y-%m-%d')),
+            'url': url_for('tasks.local_user_tasks', date_str=next_date.strftime('%Y-%m-%d'), **base_url_params),
             'active': False
         }
     ]
@@ -1321,11 +1327,28 @@ def local_user_tasks(date_str=None):
     active_tasks = []
     grouped_tasks = {}  # Diccionario para agrupar tareas por grupo
     ungrouped_tasks = [] # Lista para tareas sin grupo
-    pending_tasks = Task.query.filter_by(location_id=location.id, status=TaskStatus.PENDIENTE).all()
+    
+    # Aplicar filtro de grupo si es necesario
+    tasks_query = Task.query.filter_by(location_id=location.id, status=TaskStatus.PENDIENTE)
+    
+    # Si hay un grupo_id especificado, filtrar por ese grupo
+    if group_id is not None:
+        if group_id == 0:  # Tareas sin grupo
+            tasks_query = tasks_query.filter(Task.group_id == None)
+        else:  # Tareas del grupo específico
+            tasks_query = tasks_query.filter(Task.group_id == group_id)
+    
+    # Obtener todas las tareas pendientes (aplicando los filtros)
+    pending_tasks = tasks_query.all()
     
     # Obtener grupos de tareas para esta ubicación
     task_groups = TaskGroup.query.filter_by(location_id=location.id).all()
     group_dict = {group.id: group for group in task_groups}
+    
+    # Obtener el grupo actual si se especificó
+    current_group = None
+    if group_id and group_id > 0:
+        current_group = TaskGroup.query.get(group_id)
     
     # Obtener todas las completadas de la fecha seleccionada
     all_completions = db.session.query(
@@ -1429,18 +1452,26 @@ def local_user_tasks(date_str=None):
             
             # Agrupar por grupo si tiene uno
             if task.group_id and task.group_id in group_dict:
-                group_id = task.group_id
-                if group_id not in grouped_tasks:
-                    grouped_tasks[group_id] = {
-                        'group': group_dict[group_id],
+                task_group_id = task.group_id
+                if task_group_id not in grouped_tasks:
+                    grouped_tasks[task_group_id] = {
+                        'group': group_dict[task_group_id],
                         'tasks': []
                     }
-                grouped_tasks[group_id]['tasks'].append(task)
+                grouped_tasks[task_group_id]['tasks'].append(task)
             else:
                 ungrouped_tasks.append(task)
     
+    # Personalizar título en base al filtro
+    if current_group:
+        title = f'Tareas de {current_group.name} - {user.name}'
+    elif group_id == 0:
+        title = f'Tareas sin clasificar - {user.name}'
+    else:
+        title = f'Tareas de {user.name}'
+        
     return render_template('tasks/local_user_tasks.html',
-                          title=f'Tareas de {user.name}',
+                          title=title,
                           user=user,
                           local_user=user,
                           location=location,
@@ -1451,7 +1482,9 @@ def local_user_tasks(date_str=None):
                           completed_tasks=user_completions,
                           selected_date=selected_date,
                           today=today, 
-                          date_carousel=date_carousel)
+                          date_carousel=date_carousel,
+                          current_group=current_group,
+                          group_id=group_id)
 
 @tasks_bp.route('/local-user/tasks/<int:task_id>/complete', methods=['GET', 'POST'])
 @local_user_required
