@@ -93,28 +93,24 @@
                         </a>
                     </div>
                     
-                    {% if location.portal_username %}
                     <div class="alert alert-info mb-3">
-                        <h6 class="fw-bold"><i class="bi bi-key"></i> Credenciales del Portal</h6>
+                        <h6 class="fw-bold"><i class="bi bi-key"></i> Credenciales Fijas del Portal</h6>
                         <div class="row g-2">
                             <div class="col-md-6">
                                 <div class="input-group input-group-sm">
                                     <span class="input-group-text">Usuario</span>
-                                    <input type="text" class="form-control" value="{{ location.portal_username }}" readonly>
-                                </div>
-                            </div>
-                            <div class="col-md-8">
-                                <div class="input-group input-group-sm">
-                                    <span class="input-group-text">Contraseña</span>
-                                    <input type="password" class="form-control" id="portalPassword" value="" data-location-id="{{ location.id }}" style="min-width: 200px; flex-grow: 1;" readonly>
-                                    <button class="btn btn-outline-secondary" type="button" onclick="togglePasswordVisibility('portalPassword')">
-                                        <i class="bi bi-eye"></i>
-                                    </button>
-                                    <button class="btn btn-outline-secondary" type="button" title="Copiar contraseña" onclick="copyPortalPassword()">
+                                    <input type="text" class="form-control" value="{{ location.portal_fixed_username }}" id="portalUsername" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" title="Copiar usuario" onclick="copyToClipboard('portalUsername')">
                                         <i class="bi bi-clipboard"></i>
                                     </button>
-                                    <button id="regeneratePasswordBtn" class="btn btn-outline-primary regenerate-password" type="button" title="Regenerar contraseña" onclick="regeneratePortalPassword({{ location.id }})">
-                                        <i class="bi bi-arrow-clockwise"></i>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="input-group input-group-sm">
+                                    <span class="input-group-text">Contraseña</span>
+                                    <input type="text" class="form-control" id="portalPassword" value="{{ location.portal_fixed_password }}" readonly>
+                                    <button class="btn btn-outline-secondary" type="button" title="Copiar contraseña" onclick="copyToClipboard('portalPassword')">
+                                        <i class="bi bi-clipboard"></i>
                                     </button>
                                 </div>
                             </div>
@@ -574,10 +570,28 @@ function copyPortalPassword() {
 }
 
 document.addEventListener('DOMContentLoaded', function() {
-    // Cargar credenciales del portal
-    const locationId = {{ location.id }};
-    if (document.getElementById('portalPassword')) {
-        loadPortalCredentials(locationId);
+    // Función para copiar al portapapeles
+    window.copyToClipboard = function(elementId) {
+        const element = document.getElementById(elementId);
+        element.select();
+        document.execCommand('copy');
+        
+        // Mostrar notificación
+        const toast = `<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+            <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                <div class="d-flex">
+                    <div class="toast-body">
+                        <i class="bi bi-check-circle me-2"></i> Texto copiado al portapapeles
+                    </div>
+                    <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                </div>
+            </div>
+        </div>`;
+        
+        document.body.insertAdjacentHTML('beforeend', toast);
+        const toastEl = document.querySelector('.toast');
+        const bsToast = new bootstrap.Toast(toastEl);
+        bsToast.show();
     }
     
     // Estadísticas mensuales
