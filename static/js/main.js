@@ -176,7 +176,7 @@ function loadPortalCredentials(locationId) {
     passwordContainer.innerHTML = '<div class="spinner-border spinner-border-sm text-primary" role="status"><span class="visually-hidden">Cargando...</span></div>';
     
     // Realizar la solicitud AJAX
-    fetch(`/tasks/get_portal_credentials/${locationId}`, {
+    fetch(`/tasks/api/get-portal-credentials/${locationId}`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': csrfToken,
@@ -236,7 +236,7 @@ function showPortalPassword(locationId) {
     passwordField.value = 'Cargando...';
     
     // Realizar la solicitud AJAX para obtener la contraseña
-    fetch(`/tasks/regenerate_password/${locationId}?show_only=true`, {
+    fetch(`/tasks/api/regenerate-password/${locationId}?show_only=true`, {
         method: 'GET',
         headers: {
             'X-CSRFToken': csrfToken,
@@ -278,8 +278,8 @@ function regeneratePortalPassword(locationId) {
     regenerateButton.disabled = true;
     
     // Realizar la solicitud AJAX
-    fetch(`/tasks/regenerate_password/${locationId}`, {
-        method: 'GET',
+    fetch(`/tasks/api/regenerate-password/${locationId}`, {
+        method: 'POST',
         headers: {
             'X-CSRFToken': csrfToken,
             'Content-Type': 'application/json'

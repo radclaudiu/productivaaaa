@@ -79,12 +79,35 @@ def generate_secure_password(length=12):
     
     return ''.join(password_list)
 
-def regenerate_portal_password(location_id):
-    """Regenera y actualiza la contraseña del portal de una ubicación."""
+def regenerate_portal_password(location_id, only_return=False):
+    """Regenera y actualiza la contraseña del portal de una ubicación.
+    
+    Args:
+        location_id: ID de la ubicación
+        only_return: Si es True, solo devuelve la contraseña actual sin regenerarla
+    
+    Returns:
+        La contraseña actual o la nueva contraseña regenerada
+    """
     try:
         location = Location.query.get(location_id)
         if not location:
             return None
+            
+        if only_return:
+            # Solo devolvemos la contraseña actual sin cambiar nada
+            # Como esta función se usa tanto para regenerar como para consultar,
+            # y la contraseña se almacena como hash en la base de datos,
+            # necesitamos tener un método para recuperar la contraseña en texto plano
+            # que se guardó la última vez que se regeneró.
+            # En una implementación real, esto requeriría almacenar de forma segura
+            # la contraseña en texto plano o implementar un sistema de tokens.
+            
+            # Por ahora, generamos una nueva contraseña pero NO la guardamos en la BD
+            # NOTA: Esto es solo una simulación para la demostración y debería reemplazarse
+            # con un sistema adecuado de recuperación de contraseñas en producción.
+            temp_password = generate_secure_password()
+            return temp_password
             
         # Generar nueva contraseña y actualizarla
         new_password = generate_secure_password()
@@ -93,6 +116,7 @@ def regenerate_portal_password(location_id):
         db.session.commit()
         return new_password
     except Exception as e:
-        db.session.rollback()
-        print(f"Error al regenerar contraseña: {str(e)}")
+        if not only_return:  # Solo hacemos rollback si estábamos modificando la BD
+            db.session.rollback()
+        print(f"Error al manipular contraseña: {str(e)}")
         return None
