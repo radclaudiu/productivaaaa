@@ -98,29 +98,19 @@
                             <h6 class="mb-0"><i class="bi bi-key"></i> Credenciales del Portal</h6>
                         </div>
                         <div class="card-body" style="background-color: #f8f5e9;">
-                            <p class="mb-2 text-muted">Las credenciales de acceso al portal siguen un formato estándar para facilitar su uso:</p>
-                            <div class="p-3 mb-3 rounded-3" style="background-color: rgba(0,0,0,0.03);">
-                                <div class="row g-2">
-                                    <div class="col-md-6">
-                                        <div class="mb-1 small fw-bold text-dark">Formato de Usuario:</div>
-                                        <div class="small text-secondary">portal_[ID]</div>
-                                    </div>
-                                    <div class="col-md-6">
-                                        <div class="mb-1 small fw-bold text-dark">Formato de Contraseña:</div>
-                                        <div class="small text-secondary">Portal[ID]2025!</div>
-                                    </div>
-                                </div>
-                            </div>
-                            <div class="row g-2">
+                            <p class="mb-2 text-muted">Las credenciales de acceso al portal pueden personalizarse según tus preferencias:</p>
+                            
+                            <div class="row g-2 mb-3">
                                 <div class="col-12">
                                     <div class="d-grid">
                                         <button type="button" class="btn btn-secondary" id="btnShowCredentials">
-                                            <i class="bi bi-shield-lock"></i> Mostrar Credenciales
+                                            <i class="bi bi-shield-lock"></i> Mostrar Credenciales Actuales
                                         </button>
                                     </div>
                                 </div>
                             </div>
-                            <div id="credentialsContainer" class="mt-3 p-3 rounded-3" style="display: none; background-color: #f0ece0;">
+                            
+                            <div id="credentialsContainer" class="mb-3 p-3 rounded-3" style="display: none; background-color: #f0ece0;">
                                 <div class="row g-2">
                                     <div class="col-md-6">
                                         <div class="input-group">
@@ -141,6 +131,36 @@
                                         </div>
                                     </div>
                                 </div>
+                            </div>
+                            
+                            <!-- Formulario para personalizar credenciales -->
+                            <div class="p-3 rounded-3" style="background-color: rgba(0,0,0,0.03);">
+                                <h6 class="mb-3"><i class="bi bi-pencil-square"></i> Personalizar Credenciales</h6>
+                                <form id="formCustomCredentials" method="post" action="{{ url_for('tasks.update_portal_credentials', location_id=location.id) }}">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                    <div class="row g-3">
+                                        <div class="col-md-6">
+                                            <label for="custom_username" class="form-label">Usuario Personalizado</label>
+                                            <input type="text" class="form-control" id="custom_username" name="custom_username" 
+                                                   value="{{ location.portal_username or '' }}" 
+                                                   placeholder="Dejar vacío para usar el predeterminado">
+                                            <div class="form-text">Si se deja vacío, se usará: portal_{{ location.id }}</div>
+                                        </div>
+                                        <div class="col-md-6">
+                                            <label for="custom_password" class="form-label">Nueva Contraseña</label>
+                                            <input type="password" class="form-control" id="custom_password" name="custom_password" 
+                                                   placeholder="Dejar vacío para mantener la actual">
+                                            <div class="form-text">Si se deja vacío, se mantendrá la contraseña actual</div>
+                                        </div>
+                                        <div class="col-12 mt-3">
+                                            <div class="d-grid">
+                                                <button type="submit" class="btn btn-primary">
+                                                    <i class="bi bi-save"></i> Guardar Credenciales
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </form>
                             </div>
                         </div>
                     </div>

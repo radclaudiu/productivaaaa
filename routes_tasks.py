@@ -1568,6 +1568,43 @@ def regenerate_password(location_id):
     
     return jsonify({'success': True, 'password': fixed_password})
 
+# Actualizar credenciales personalizadas del portal
+@tasks_bp.route('/locations/<int:location_id>/update-credentials', methods=['POST'])
+@login_required
+@manager_required
+def update_portal_credentials(location_id):
+    """Actualiza las credenciales personalizadas del portal para un local"""
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar permisos (admin o gerente de la empresa)
+    if not current_user.is_admin() and (not current_user.is_gerente() or current_user.company_id != location.company_id):
+        flash('No tienes permiso para modificar las credenciales de este local', 'danger')
+        return redirect(url_for('tasks.list_locations'))
+    
+    # Obtener datos del formulario
+    custom_username = request.form.get('custom_username', '').strip()
+    custom_password = request.form.get('custom_password', '').strip()
+    
+    try:
+        # Actualizar nombre de usuario personalizado
+        location.portal_username = custom_username if custom_username else None
+        
+        # Actualizar contraseña personalizada solo si se ha proporcionado una nueva
+        if custom_password:
+            location.set_portal_password(custom_password)
+        
+        db.session.commit()
+        
+        # Registrar cambio en los logs
+        log_activity(f'Actualización de credenciales del portal para local: {location.name}', user_id=current_user.id)
+        
+        flash('Credenciales del portal actualizadas correctamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al actualizar las credenciales: {str(e)}', 'danger')
+    
+    return redirect(url_for('tasks.view_location', id=location_id))
+
 # API para obtener credenciales del portal
 @tasks_bp.route('/locations/<int:location_id>/get-credentials', methods=['POST'])
 @login_required
@@ -1583,10 +1620,22 @@ def get_portal_credentials(location_id):
     # Registrar acceso a las credenciales en los logs
     log_activity(f'Acceso a credenciales de portal para local: {location.name}', user_id=current_user.id)
     
+    # Obtener el nombre de usuario
+    username = location.portal_fixed_username
+    
+    # Para la contraseña, tenemos un caso especial
+    password = location.portal_fixed_password
+    
+    # Si la contraseña es None, significa que hay una contraseña personalizada (hash)
+    # y no podemos mostrarla directamente - mostramos un marcador
+    has_custom_password = location.portal_password_hash is not None
+    password_placeholder = "********" if has_custom_password else password
+    
     return jsonify({
         'success': True,
-        'username': location.portal_fixed_username,
-        'password': location.portal_fixed_password
+        'username': username,
+        'password': password_placeholder,
+        'has_custom_password': has_custom_password
     })
 
 # API para estadísticas en tiempo real

@@ -99,17 +99,30 @@ class Location(db.Model):
         
     def check_portal_password(self, password):
         """Verifica si la contraseña proporcionada coincide con la almacenada"""
-        # Ahora usamos contraseña fija
+        # Si hay hash de contraseña, verificamos contra esa
+        if self.portal_password_hash:
+            return check_password_hash(self.portal_password_hash, password)
+        # Si no, comparamos con la contraseña fija
         return password == self.portal_fixed_password
     
     @property
     def portal_fixed_username(self):
-        """Retorna un nombre de usuario fijo para este local"""
+        """Retorna el nombre de usuario para este local"""
+        # Si hay un usuario personalizado, lo usamos
+        if self.portal_username:
+            return self.portal_username
+        # Si no, usamos el formato predeterminado
         return f"portal_{self.id}"
         
     @property
     def portal_fixed_password(self):
-        """Retorna una contraseña fija para este local"""
+        """Retorna la contraseña para este local"""
+        # Si hay contraseña personalizada (hash), significará que el usuario ha establecido una contraseña personalizada
+        if self.portal_password_hash:
+            # No podemos recuperar la contraseña real (solo tenemos el hash)
+            # Usaremos una función específica para validar la contraseña en lugar de mostrarla
+            return None  # No podemos mostrar la contraseña real
+        # Si no hay contraseña personalizada, usamos el formato predeterminado
         return f"Portal{self.id}2025!"
     
     def to_dict(self):
