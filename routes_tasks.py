@@ -1224,6 +1224,9 @@ def portal_login(location_id):
     form = PortalLoginForm()
     
     if form.validate_on_submit():
+        print(f"Login attempt - Username: {form.username.data}, Location username: {location.portal_username}")
+        print(f"Password check result: {location.check_portal_password(form.password.data)}")
+        
         # Verificar las credenciales
         if form.username.data == location.portal_username and location.check_portal_password(form.password.data):
             # Guardar en sesión que estamos autenticados en este portal
