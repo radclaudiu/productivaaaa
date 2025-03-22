@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import datetime
 
-from flask import Flask, request, session
+from flask import Flask, request, session, render_template
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
