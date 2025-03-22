@@ -49,110 +49,22 @@ def index():
     """Dashboard principal del módulo de tareas"""
     # Determinar qué información mostrar según el rol del usuario
     if current_user.is_admin():
-        # Los administradores ven estadísticas globales
+        # Los administradores ven todos los locales
         locations = Location.query.all()
-        total_tasks = Task.query.count()
-        pending_tasks = Task.query.filter_by(status=TaskStatus.PENDIENTE).count()
-        completed_tasks = Task.query.filter_by(status=TaskStatus.COMPLETADA).count()
-        
-        # Obtener tareas completadas recientemente
-        recent_completions = (db.session.query(TaskCompletion, Task, LocalUser)
-                             .join(Task, TaskCompletion.task_id == Task.id)
-                             .join(LocalUser, TaskCompletion.local_user_id == LocalUser.id)
-                             .order_by(TaskCompletion.completion_date.desc())
-                             .limit(10)
-                             .all())
-        
     elif current_user.is_gerente() and current_user.company_id:
-        # Los gerentes ven solo su empresa
+        # Los gerentes ven solo los locales de su empresa
         locations = Location.query.filter_by(company_id=current_user.company_id).all()
-        
-        # Subconsulta para obtener tareas de los locales de su empresa
-        location_ids = [loc.id for loc in locations]
-        
-        # Si no hay locales, los conteos serán 0
-        if location_ids:
-            total_tasks = Task.query.filter(Task.location_id.in_(location_ids)).count()
-            pending_tasks = Task.query.filter(Task.location_id.in_(location_ids), 
-                                             Task.status==TaskStatus.PENDIENTE).count()
-            completed_tasks = Task.query.filter(Task.location_id.in_(location_ids), 
-                                              Task.status==TaskStatus.COMPLETADA).count()
-            
-            # Obtener completados recientes
-            recent_completions = (db.session.query(TaskCompletion, Task, LocalUser)
-                                .join(Task, TaskCompletion.task_id == Task.id)
-                                .join(LocalUser, TaskCompletion.local_user_id == LocalUser.id)
-                                .filter(Task.location_id.in_(location_ids))
-                                .order_by(TaskCompletion.completion_date.desc())
-                                .limit(10)
-                                .all())
-        else:
-            total_tasks = 0
-            pending_tasks = 0
-            completed_tasks = 0
-            recent_completions = []
     else:
         # Otros usuarios no tendrían acceso, pero por si acaso
         locations = []
-        total_tasks = 0
-        pending_tasks = 0
-        completed_tasks = 0
-        recent_completions = []
     
-    # Calcular porcentaje de tareas completadas
-    completion_rate = (completed_tasks / total_tasks * 100) if total_tasks > 0 else 0
-    
-    # Preparar datos para los gráficos
-    location_names = [loc.name for loc in locations]
-    pending_tasks_by_location = []
-    completed_tasks_by_location = []
-    
-    for loc in locations:
-        pending_count = Task.query.filter_by(location_id=loc.id, status=TaskStatus.PENDIENTE).count()
-        completed_count = Task.query.filter_by(location_id=loc.id, status=TaskStatus.COMPLETADA).count()
-        pending_tasks_by_location.append(pending_count)
-        completed_tasks_by_location.append(completed_count)
-    
-    # Contar tareas por estado
-    task_status_counts = [
-        Task.query.filter_by(status=TaskStatus.PENDIENTE).count(),
-        Task.query.filter_by(status=TaskStatus.COMPLETADA).count(),
-        Task.query.filter_by(status=TaskStatus.VENCIDA).count(),
-        Task.query.filter_by(status=TaskStatus.CANCELADA).count()
-    ]
-    
-    # Obtener tareas pendientes para hoy
-    today = date.today()
-    today_tasks = []
-    for loc in locations:
-        tasks = Task.query.filter_by(location_id=loc.id, status=TaskStatus.PENDIENTE).all()
-        for task in tasks:
-            if task.is_due_today():
-                today_tasks.append(task)
-    
-    # Preparar estadísticas
-    stats = {
-        'total_locations': len(locations),
-        'total_local_users': LocalUser.query.filter(LocalUser.location_id.in_([loc.id for loc in locations])).count() if locations else 0,
-        'total_tasks': total_tasks,
-        'tasks_pending': pending_tasks,
-        'tasks_completed': completed_tasks,
-        'tasks_completed_today': TaskCompletion.query.filter(TaskCompletion.completion_date >= datetime.combine(today, datetime.min.time())).count(),
-        'tasks_today': len(today_tasks),
-        'tasks_expired': Task.query.filter_by(status=TaskStatus.VENCIDA).count()
-    }
-    
-    return render_template('tasks/dashboard.html',
-                          title='Dashboard de Tareas',
-                          stats=stats,
-                          locations=locations,
-                          pending_tasks=today_tasks,
-                          completion_rate=completion_rate,
-                          recent_completions=recent_completions,
-                          location_names=location_names,
-                          pending_tasks_by_location=pending_tasks_by_location,
-                          completed_tasks_by_location=completed_tasks_by_location,
-                          task_status_counts=task_status_counts)
+    # Si hay locales, redirigir al primero
+    if locations:
+        first_location = locations[0]
+        return redirect(url_for('tasks.view_location', id=first_location.id))
+        
+    # Si no hay locales, mostrar la página de dashboard con el botón para crear el primer local
+    return render_template('tasks/dashboard.html', locations=[])
 
 # Rutas para gestión de locales
 @tasks_bp.route('/locations')
