@@ -594,6 +594,130 @@ document.addEventListener('DOMContentLoaded', function() {
             button.classList.add('btn-outline-secondary');
         }, 2000);
     });
+
+    // Función para obtener la contraseña al cargar la página
+    function loadPortalCredentials() {
+        const locationId = document.getElementById('portalPassword').dataset.locationId;
+        if (!locationId) return;
+
+        // Actualizar el botón mientras se carga
+        const btnRegenerate = document.getElementById('regeneratePasswordBtn');
+        if (btnRegenerate) {
+            btnRegenerate.disabled = true;
+            btnRegenerate.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+        }
+
+        // Realizar solicitud AJAX para obtener las credenciales
+        fetch(`/tasks/api/get-portal-credentials/${locationId}`)
+            .then(response => {
+                if (!response.ok) throw new Error('Error al obtener credenciales');
+                return response.json();
+            })
+            .then(data => {
+                // El servidor solo devuelve el nombre de usuario por seguridad
+                // No mostramos la contraseña aquí por seguridad
+                if (btnRegenerate) {
+                    btnRegenerate.disabled = false;
+                    btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                if (btnRegenerate) {
+                    btnRegenerate.disabled = false;
+                    btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                }
+            });
+    }
+
+    // Función para regenerar la contraseña
+    function regeneratePassword(locationId) {
+        if (!locationId) return;
+
+        // Actualizar el botón mientras se procesa
+        const btnRegenerate = document.getElementById('regeneratePasswordBtn');
+        if (btnRegenerate) {
+            btnRegenerate.disabled = true;
+            btnRegenerate.innerHTML = '<i class="bi bi-hourglass-split"></i>';
+        }
+
+        // Realizar solicitud AJAX para regenerar
+        fetch(`/tasks/api/regenerate-password/${locationId}`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
+            }
+        })
+        .then(response => {
+            if (!response.ok) throw new Error('Error al regenerar contraseña');
+            return response.json();
+        })
+        .then(data => {
+            // Mostrar la nueva contraseña
+            if (data.success && data.password) {
+                document.getElementById('portalPassword').value = data.password;
+                // Mostrar notificación de éxito
+                const toast = `<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                    <div class="toast align-items-center text-white bg-success border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                        <div class="d-flex">
+                            <div class="toast-body">
+                                <i class="bi bi-check-circle me-2"></i> Contraseña regenerada correctamente
+                            </div>
+                            <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                        </div>
+                    </div>
+                </div>`;
+                
+                // Añadir y mostrar la notificación
+                document.body.insertAdjacentHTML('beforeend', toast);
+                const toastEl = document.querySelector('.toast');
+                const bsToast = new bootstrap.Toast(toastEl);
+                bsToast.show();
+                
+                // Activamos automáticamente la visibilidad para que el usuario vea la nueva contraseña
+                document.getElementById('portalPassword').type = 'text';
+            }
+            
+            // Restaurar el botón
+            if (btnRegenerate) {
+                btnRegenerate.disabled = false;
+                btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            // Restaurar el botón
+            if (btnRegenerate) {
+                btnRegenerate.disabled = false;
+                btnRegenerate.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+            }
+            
+            // Mostrar notificación de error
+            const toast = `<div class="position-fixed bottom-0 end-0 p-3" style="z-index: 11">
+                <div class="toast align-items-center text-white bg-danger border-0" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="d-flex">
+                        <div class="toast-body">
+                            <i class="bi bi-exclamation-triangle me-2"></i> Error al regenerar la contraseña
+                        </div>
+                        <button type="button" class="btn-close btn-close-white me-2 m-auto" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                </div>
+            </div>`;
+            
+            // Añadir y mostrar la notificación de error
+            document.body.insertAdjacentHTML('beforeend', toast);
+            const toastEl = document.querySelector('.toast');
+            const bsToast = new bootstrap.Toast(toastEl);
+            bsToast.show();
+        });
+    }
+
+    // Llamar a la función al cargar la página
+    window.addEventListener('DOMContentLoaded', function() {
+        // Cargar las credenciales
+        loadPortalCredentials();
+    });
 });
 </script>
 {% endblock %}
