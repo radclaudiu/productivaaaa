@@ -140,11 +140,10 @@
                                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                                     <div class="row g-3">
                                         <div class="col-md-6">
-                                            <label for="custom_username" class="form-label">Usuario Personalizado</label>
-                                            <input type="text" class="form-control" id="custom_username" name="custom_username" 
-                                                   value="{{ location.portal_username or '' }}" 
-                                                   placeholder="Dejar vacío para usar el predeterminado">
-                                            <div class="form-text">Si se deja vacío, se usará: portal_{{ location.id }}</div>
+                                            <label for="portal_username" class="form-label">Usuario del Portal</label>
+                                            <input type="text" class="form-control" id="portal_username" 
+                                                   value="portal_{{ location.id }}" readonly>
+                                            <div class="form-text">El nombre de usuario del portal es fijo y no se puede modificar</div>
                                         </div>
                                         <div class="col-md-6">
                                             <label for="custom_password" class="form-label">Nueva Contraseña</label>
