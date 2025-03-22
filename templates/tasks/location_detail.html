@@ -583,8 +583,27 @@ document.addEventListener('DOMContentLoaded', function() {
             .then(response => response.json())
             .then(data => {
                 if (data.success) {
+                    // Eliminar cualquier mensaje previo de información sobre contraseña personalizada
+                    const oldPasswordHelp = document.getElementById('custom-password-help');
+                    if (oldPasswordHelp) {
+                        oldPasswordHelp.remove();
+                    }
+                    
                     portalUsername.value = data.username;
                     portalPassword.value = data.password;
+                    
+                    // Si hay una contraseña personalizada, mostrar información
+                    if (data.has_custom_password) {
+                        // Añadir una nota acerca de la contraseña personalizada
+                        const passwordHelp = document.createElement('div');
+                        passwordHelp.id = 'custom-password-help';
+                        passwordHelp.className = 'form-text text-info mt-1';
+                        passwordHelp.innerHTML = '<i class="bi bi-info-circle"></i> Has establecido una contraseña personalizada. Por seguridad, no se muestra en texto plano.';
+                        
+                        // Añadir el elemento después del input de contraseña
+                        const passwordWrapper = portalPassword.closest('.col-md-6');
+                        passwordWrapper.appendChild(passwordHelp);
+                    }
                 } else {
                     alert('Error al cargar las credenciales: ' + data.error);
                 }
