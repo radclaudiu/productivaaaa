@@ -1,148 +1,59 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Informe Diario - {{ today.strftime('%d/%m/%Y') }}</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        
-        .header {
-            background-color: #343a40;
-            color: white;
-            padding: 15px 0;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .date-display {
-            text-align: center;
-            margin-bottom: 30px;
-        }
-        
-        .date-display h3 {
-            margin-bottom: 5px;
-        }
-        
-        .date-nav {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            margin-bottom: 20px;
-        }
-        
-        .footer {
-            margin-top: 40px;
-            text-align: center;
-            padding-bottom: 40px;
-        }
-        
-        .status-badge {
-            font-size: 0.8rem;
-            padding: 0.3rem 0.5rem;
-        }
-        
-        .summary-card {
-            background-color: #f1f8ff;
-            border-left: 4px solid #0d6efd;
-            padding: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .summary-item {
-            display: flex;
-            justify-content: space-between;
-            margin-bottom: 10px;
-        }
-        
-        .summary-item:last-child {
-            margin-bottom: 0;
-            border-top: 1px solid #dee2e6;
-            padding-top: 10px;
-            font-weight: bold;
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="container">
-            <h2>Informe Diario de Fichajes</h2>
-            <p>{{ checkpoint.name }} - {{ checkpoint.company.name }}</p>
-        </div>
-    </div>
-    
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                    </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <div class="date-display">
-            <h3>{{ today.strftime('%A, %d de %B de %Y')|capitalize }}</h3>
-        </div>
-        
-        <div class="date-nav">
-            <a href="?date={{ (today - day_delta).strftime('%Y-%m-%d') }}" class="btn btn-outline-primary">
-                <i class="fas fa-chevron-left"></i> Día Anterior
-            </a>
-            
-            <button class="btn btn-outline-secondary" id="datePickerBtn">
-                <i class="fas fa-calendar-alt"></i> Cambiar Fecha
-            </button>
-            
-            {% if today < current_day %}
-            <a href="?date={{ (today + day_delta).strftime('%Y-%m-%d') }}" class="btn btn-outline-primary">
-                Día Siguiente <i class="fas fa-chevron-right"></i>
-            </a>
-            {% else %}
-            <button class="btn btn-outline-primary" disabled>
-                Día Siguiente <i class="fas fa-chevron-right"></i>
-            </button>
-            {% endif %}
-        </div>
-        
-        <input type="date" id="datePicker" style="display: none;" 
-               value="{{ today.strftime('%Y-%m-%d') }}" max="{{ current_day.strftime('%Y-%m-%d') }}">
-        
-        {% if records %}
-        <div class="summary-card">
-            <h5>Resumen del día</h5>
-            <div class="summary-item">
-                <span>Total empleados:</span>
-                <span>{{ records|groupby('employee_id')|list|length }}</span>
+{% extends 'checkpoints/portal_layout.html' %}
+
+{% block title %}Informe Diario - Punto de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <div class="d-flex justify-content-between align-items-center">
+                <h4 class="mb-0">Informe Diario de Fichajes</h4>
+                <span id="current-date" class="badge bg-light text-dark">Fecha: {{ today.strftime('%d/%m/%Y') }}</span>
             </div>
-            <div class="summary-item">
-                <span>Total horas trabajadas:</span>
-                <span>
-                    {% set total_hours = 0 %}
-                    {% for record in records if record.check_out_time %}
-                        {% set total_hours = total_hours + record.duration() %}
+        </div>
+        <div class="card-body">
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
                     {% endfor %}
-                    {{ "%.2f"|format(total_hours) }} horas
-                </span>
+                {% endif %}
+            {% endwith %}
+            
+            <div class="row mb-4">
+                <div class="col-md-4">
+                    <div class="card bg-primary text-white text-center h-100">
+                        <div class="card-body">
+                            <h2 class="display-3">{{ stats.total_employees }}</h2>
+                            <p class="lead">Empleados</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-success text-white text-center h-100">
+                        <div class="card-body">
+                            <h2 class="display-3">{{ stats.checked_in }}</h2>
+                            <p class="lead">Fichados Hoy</p>
+                        </div>
+                    </div>
+                </div>
+                <div class="col-md-4">
+                    <div class="card bg-warning text-dark text-center h-100">
+                        <div class="card-body">
+                            <h2 class="display-3">{{ stats.pending_checkout }}</h2>
+                            <p class="lead">Pendientes de Salida</p>
+                        </div>
+                    </div>
+                </div>
             </div>
-            <div class="summary-item">
-                <span>Registros pendientes de salida:</span>
-                <span>{{ records|selectattr('check_out_time', 'none')|list|length }}</span>
-            </div>
-        </div>
-        
-        <div class="card">
-            <div class="card-header bg-primary text-white">
-                <h5 class="mb-0">Registros de Fichaje</h5>
-            </div>
+            
+            <h5 class="mb-3">Registro Completo de Hoy</h5>
+            
             <div class="table-responsive">
-                <table class="table table-striped table-hover mb-0">
+                <table class="table table-hover">
                     <thead>
                         <tr>
                             <th>Empleado</th>
@@ -159,70 +70,82 @@
                             <td>{{ record.check_in_time.strftime('%H:%M') }}</td>
                             <td>
                                 {% if record.check_out_time %}
-                                {{ record.check_out_time.strftime('%H:%M') }}
+                                    {{ record.check_out_time.strftime('%H:%M') }}
                                 {% else %}
-                                <span class="text-warning">Pendiente</span>
+                                    <span class="badge bg-warning">Pendiente</span>
                                 {% endif %}
                             </td>
                             <td>
                                 {% if record.check_out_time %}
                                     {% set duration = record.duration() %}
-                                    {% set hours = duration|int %}
-                                    {% set minutes = ((duration - hours) * 60)|int %}
-                                    {{ hours }}h {{ minutes }}min
+                                    {{ duration|round(2) }} horas
                                 {% else %}
-                                -
+                                    -
                                 {% endif %}
                             </td>
                             <td>
-                                {% if record.check_out_time %}
-                                    {% if record.adjusted %}
-                                    <span class="badge bg-warning status-badge" title="{{ record.adjustment_reason }}">
-                                        Ajustado <i class="fas fa-info-circle"></i>
+                                {% if record.adjusted %}
+                                    <span class="badge bg-warning" data-bs-toggle="tooltip" title="Ajustado manualmente">
+                                        <i class="bi bi-pencil"></i> Ajustado
                                     </span>
-                                    {% else %}
-                                    <span class="badge bg-success status-badge">Completado</span>
-                                    {% endif %}
+                                {% elif record.incidents %}
+                                    <span class="badge bg-danger" data-bs-toggle="tooltip" 
+                                          title="Incidencia: {{ record.incidents[0].incident_type.name }}">
+                                        <i class="bi bi-exclamation-triangle"></i> Incidencia
+                                    </span>
                                 {% else %}
-                                    <span class="badge bg-primary status-badge">En curso</span>
-                                {% endif %}
-                                
-                                {% if record.incidents %}
-                                <span class="badge bg-danger status-badge">
-                                    {{ record.incidents|length }} incidencia(s)
-                                </span>
+                                    <span class="badge bg-success">
+                                        <i class="bi bi-check-circle"></i> OK
+                                    </span>
                                 {% endif %}
                             </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center py-3">No hay registros de fichaje para hoy</td>
                         </tr>
                         {% endfor %}
                     </tbody>
                 </table>
             </div>
         </div>
-        {% else %}
-        <div class="alert alert-info">
-            No hay registros de fichaje para el día {{ today.strftime('%d/%m/%Y') }}.
-        </div>
-        {% endif %}
-        
-        <div class="footer">
-            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-primary">
-                <i class="fas fa-home"></i> Volver al Inicio
-            </a>
-        </div>
     </div>
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Cambiar fecha mediante selector
-        document.getElementById('datePickerBtn').addEventListener('click', function() {
-            const datePicker = document.getElementById('datePicker');
-            datePicker.style.display = datePicker.style.display === 'none' ? 'block' : 'none';
+    {% if missing_employees %}
+    <div class="card">
+        <div class="card-header bg-warning text-dark">
+            <h4 class="mb-0">Empleados sin Fichar Hoy</h4>
+        </div>
+        <div class="card-body">
+            <div class="row">
+                {% for employee in missing_employees %}
+                <div class="col-md-4 mb-3">
+                    <div class="d-flex align-items-center">
+                        <div class="flex-shrink-0">
+                            <img src="{{ url_for('static', filename='img/user-avatar.png') }}" class="rounded-circle" width="40" height="40" alt="Avatar">
+                        </div>
+                        <div class="flex-grow-1 ms-3">
+                            <h6 class="mb-0">{{ employee.first_name }} {{ employee.last_name }}</h6>
+                            <small class="text-muted">{{ employee.position or 'Empleado' }}</small>
+                        </div>
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Activar tooltips de Bootstrap
+    document.addEventListener('DOMContentLoaded', function() {
+        const tooltipTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="tooltip"]'));
+        tooltipTriggerList.map(function(tooltipTriggerEl) {
+            return new bootstrap.Tooltip(tooltipTriggerEl);
         });
-        
-        document.getElementById('datePicker').addEventListener('change', function() {
-            window.location.href = `?date=${this.value}`;
-        });
-    </script>
-</body>
-</html>
+    });
+</script>
+{% endblock %}

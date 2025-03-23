@@ -1,0 +1,198 @@
+{% extends 'checkpoints/portal_layout.html' %}
+
+{% block title %}Dashboard - Punto de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col">
+            <div class="card bg-dark">
+                <div class="card-body text-center py-4">
+                    <h1 class="display-4 mb-0" id="big-clock">00:00:00</h1>
+                    <p class="lead mt-2 mb-0" id="big-date">Cargando fecha...</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="row mb-4">
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Empresa</h4>
+                </div>
+                <div class="card-body">
+                    <h3>{{ checkpoint.company.name }}</h3>
+                    <p class="mb-0">
+                        <i class="bi bi-geo-alt"></i> 
+                        {% if checkpoint.company.address %}
+                            {{ checkpoint.company.address }}, 
+                            {% if checkpoint.company.city %}{{ checkpoint.company.city }}{% endif %}
+                            {% if checkpoint.company.postal_code %}({{ checkpoint.company.postal_code }}){% endif %}
+                        {% else %}
+                            No disponible
+                        {% endif %}
+                    </p>
+                    {% if checkpoint.company.phone or checkpoint.company.email %}
+                    <p class="mb-0 mt-2">
+                        {% if checkpoint.company.phone %}
+                            <i class="bi bi-telephone"></i> {{ checkpoint.company.phone }}
+                        {% endif %}
+                        {% if checkpoint.company.email %}
+                            {% if checkpoint.company.phone %} | {% endif %}
+                            <i class="bi bi-envelope"></i> {{ checkpoint.company.email }}
+                        {% endif %}
+                    </p>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+        <div class="col-md-6">
+            <div class="card h-100">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">Punto de Fichaje</h4>
+                </div>
+                <div class="card-body">
+                    <h3>{{ checkpoint.name }}</h3>
+                    {% if checkpoint.description %}
+                        <p>{{ checkpoint.description }}</p>
+                    {% endif %}
+                    <p>
+                        <strong><i class="bi bi-geo-alt"></i> Ubicación:</strong> 
+                        {{ checkpoint.location or 'No especificada' }}
+                    </p>
+                    <p class="mb-0">
+                        <strong><i class="bi bi-info-circle"></i> Estado:</strong>
+                        {% if checkpoint.status.value == 'active' %}
+                            <span class="badge bg-success">Activo</span>
+                        {% elif checkpoint.status.value == 'maintenance' %}
+                            <span class="badge bg-warning">Mantenimiento</span>
+                        {% else %}
+                            <span class="badge bg-danger">Desactivado</span>
+                        {% endif %}
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="card mb-4">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Seleccione un empleado</h4>
+        </div>
+        <div class="card-body">
+            <div class="row justify-content-center">
+                {% for employee in employees %}
+                <div class="col-lg-3 col-md-4 col-sm-6">
+                    <div class="employee-bubble card bg-dark text-white">
+                        <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none text-white">
+                            <img src="{{ url_for('static', filename='img/user-avatar.png') }}" alt="{{ employee.first_name }}" class="employee-img">
+                            <div class="card-body">
+                                <h5 class="name">{{ employee.first_name }} {{ employee.last_name }}</h5>
+                                <p class="position mb-0">{{ employee.position or 'Empleado' }}</p>
+                            </div>
+                        </a>
+                    </div>
+                </div>
+                {% else %}
+                <div class="col-12">
+                    <div class="alert alert-warning mb-0">
+                        <i class="bi bi-exclamation-triangle"></i> No hay empleados asociados a esta empresa.
+                    </div>
+                </div>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0">Últimos Fichajes</h4>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover mb-0">
+                <thead>
+                    <tr>
+                        <th>Empleado</th>
+                        <th>Entrada</th>
+                        <th>Salida</th>
+                        <th>Duración</th>
+                        <th>Estado</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for record in recent_records %}
+                    <tr>
+                        <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
+                        <td>{{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}</td>
+                        <td>
+                            {% if record.check_out_time %}
+                                {{ record.check_out_time.strftime('%d/%m/%Y %H:%M') }}
+                            {% else %}
+                                <span class="badge bg-warning">Pendiente</span>
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.check_out_time %}
+                                {% set duration = record.duration() %}
+                                {{ duration|round(2) }} horas
+                            {% else %}
+                                -
+                            {% endif %}
+                        </td>
+                        <td>
+                            {% if record.adjusted %}
+                                <span class="badge bg-warning">Ajustado</span>
+                            {% elif record.incidents %}
+                                <span class="badge bg-danger">Incidencia</span>
+                            {% else %}
+                                <span class="badge bg-success">OK</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="text-center">No hay fichajes recientes</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Actualizar reloj y fecha
+    function updateBigClock() {
+        const now = new Date();
+        
+        // Formatear hora
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        
+        document.getElementById('big-clock').textContent = `${hours}:${minutes}:${seconds}`;
+        
+        // Formatear fecha
+        const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+        document.getElementById('big-date').textContent = now.toLocaleDateString('es-ES', options);
+    }
+    
+    // Actualizar cada segundo
+    updateBigClock();
+    setInterval(updateBigClock, 1000);
+</script>
+{% endblock %}

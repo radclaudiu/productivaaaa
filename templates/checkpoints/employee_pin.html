@@ -1,253 +1,196 @@
 {% extends 'checkpoints/portal_layout.html' %}
 
-{% block title %}Introduzca PIN - {{ employee.first_name }} {{ employee.last_name }}{% endblock %}
-
-{% block head %}
-{{ super() }}
-<style>
-    .pin-container {
-        max-width: 400px;
-        margin: 0 auto;
-    }
-    
-    .pin-form {
-        margin-top: 2rem;
-    }
-    
-    .pin-display {
-        width: 100%;
-        height: 60px;
-        background-color: var(--bs-dark);
-        border: 1px solid var(--bs-gray-600);
-        border-radius: 0.5rem;
-        margin-bottom: 1.5rem;
-        font-size: 2rem;
-        text-align: center;
-        letter-spacing: 0.5rem;
-    }
-    
-    .pin-keypad {
-        display: grid;
-        grid-template-columns: repeat(3, 1fr);
-        gap: 0.75rem;
-    }
-    
-    .pin-key {
-        aspect-ratio: 1/1;
-        font-size: 1.5rem;
-        font-weight: 600;
-        border-radius: 0.5rem;
-        background-color: var(--bs-gray-800);
-        border: 1px solid var(--bs-gray-700);
-        transition: all 0.2s;
-    }
-    
-    .pin-key:active {
-        transform: scale(0.95);
-        background-color: var(--bs-primary);
-    }
-    
-    .pin-controls {
-        display: grid;
-        grid-template-columns: 1fr 1fr;
-        gap: 0.75rem;
-        margin-top: 0.75rem;
-    }
-    
-    .pin-controls button {
-        padding: 1rem;
-        font-size: 1.2rem;
-        font-weight: 500;
-    }
-    
-    .employee-info {
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .employee-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        margin: 0 auto 1rem;
-        background-color: var(--bs-gray-800);
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        overflow: hidden;
-    }
-    
-    .employee-avatar .avatar-text {
-        font-size: 3rem;
-        font-weight: 500;
-        color: var(--bs-primary);
-    }
-    
-    .employee-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-    }
-</style>
-{% endblock %}
+{% block title %}Introducir PIN - Punto de Fichaje{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-6">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0 text-center">Introduzca su PIN</h4>
                 </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    
-    <div class="row">
-        <div class="col-12">
-            <div class="employee-info">
-                <div class="employee-avatar">
-                    {% if employee.photo_path %}
-                    <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="{{ employee.first_name }}">
-                    {% else %}
-                    <div class="avatar-text">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</div>
-                    {% endif %}
-                </div>
-                <h2>{{ employee.first_name }} {{ employee.last_name }}</h2>
-                <p class="text-muted">{{ employee.position or 'Sin cargo' }}</p>
-            </div>
-            
-            <div class="pin-container">
-                <h3 class="text-center mb-4">Introduzca su PIN</h3>
-                
-                <form method="POST" class="pin-form" id="pinForm">
-                    {{ form.csrf_token }}
-                    {{ form.employee_id(value=employee.id) }}
-                    {{ form.pin(type="hidden", id="pinInput") }}
-                    
-                    <div class="pin-display" id="pinDisplay">****</div>
-                    
-                    <div class="pin-keypad">
-                        <button type="button" class="btn pin-key" data-key="1">1</button>
-                        <button type="button" class="btn pin-key" data-key="2">2</button>
-                        <button type="button" class="btn pin-key" data-key="3">3</button>
-                        <button type="button" class="btn pin-key" data-key="4">4</button>
-                        <button type="button" class="btn pin-key" data-key="5">5</button>
-                        <button type="button" class="btn pin-key" data-key="6">6</button>
-                        <button type="button" class="btn pin-key" data-key="7">7</button>
-                        <button type="button" class="btn pin-key" data-key="8">8</button>
-                        <button type="button" class="btn pin-key" data-key="9">9</button>
-                        <button type="button" class="btn pin-key" data-key="C">C</button>
-                        <button type="button" class="btn pin-key" data-key="0">0</button>
-                        <button type="button" class="btn pin-key" data-key="⌫">⌫</button>
+                <div class="card-body">
+                    <div class="text-center mb-4">
+                        <img src="{{ url_for('static', filename='img/user-avatar.png') }}" class="rounded-circle mb-3" alt="Avatar" width="80">
+                        <h3>{{ employee.first_name }} {{ employee.last_name }}</h3>
+                        <p class="text-muted">{{ employee.position or 'Empleado' }}</p>
                     </div>
                     
-                    <div class="pin-controls">
-                        <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-secondary">
-                            <i class="fas fa-arrow-left"></i> Cancelar
-                        </a>
-                        <button type="submit" class="btn btn-primary" id="submitBtn" disabled>
-                            <i class="fas fa-check"></i> Confirmar
-                        </button>
-                    </div>
-                </form>
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.csrf_token }}
+                        {{ form.employee_id }}
+                        
+                        <div class="form-group mb-4">
+                            <div class="pin-container">
+                                <div class="mb-3 text-center">
+                                    <div id="pin-display" class="pin-display">****</div>
+                                </div>
+                                
+                                {{ form.pin(class="form-control visually-hidden", id="pin-input", maxlength="4", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
+                                
+                                <div class="pin-pad">
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="1">1</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="2">2</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="3">3</button>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="4">4</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="5">5</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="6">6</button>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2 mb-2">
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="7">7</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="8">8</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="9">9</button>
+                                        </div>
+                                    </div>
+                                    <div class="row g-2">
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-danger w-100" id="clear-pin">C</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="0">0</button>
+                                        </div>
+                                        <div class="col-4">
+                                            <button type="button" class="btn btn-outline-primary w-100" id="delete-pin"><i class="bi bi-backspace"></i></button>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 mt-4">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary">
+                                Cancelar
+                            </a>
+                        </div>
+                    </form>
+                </div>
             </div>
         </div>
     </div>
 </div>
 {% endblock %}
 
+{% block styles %}
+<style>
+    .pin-display {
+        font-size: 2rem;
+        letter-spacing: 10px;
+        font-weight: bold;
+        padding: 0.5rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .pin-pad {
+        max-width: 300px;
+        margin: 0 auto;
+    }
+    
+    .pin-button, #clear-pin, #delete-pin {
+        font-size: 1.5rem;
+        padding: 15px;
+        border-radius: 10px;
+    }
+</style>
+{% endblock %}
+
 {% block scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const pinDisplay = document.getElementById('pinDisplay');
-        const pinInput = document.getElementById('pinInput');
-        const submitBtn = document.getElementById('submitBtn');
-        const pinKeys = document.querySelectorAll('.pin-key');
-        
-        let pin = '';
-        const maxPinLength = 4;
+        const pinInput = document.getElementById('pin-input');
+        const pinDisplay = document.getElementById('pin-display');
+        const clearPin = document.getElementById('clear-pin');
+        const deletePin = document.getElementById('delete-pin');
+        const pinButtons = document.querySelectorAll('.pin-button');
+        const form = document.querySelector('form');
         
         // Actualizar visualización del PIN
         function updatePinDisplay() {
-            // Mostrar asteriscos para seguridad
-            pinDisplay.textContent = '*'.repeat(pin.length);
+            const pinValue = pinInput.value;
+            let displayValue = '';
             
-            // Actualizar valor oculto del formulario
-            pinInput.value = pin;
+            for (let i = 0; i < 4; i++) {
+                if (i < pinValue.length) {
+                    displayValue += '•';
+                } else {
+                    displayValue += '*';
+                }
+            }
             
-            // Habilitar botón cuando el PIN tenga 4 dígitos
-            submitBtn.disabled = (pin.length !== maxPinLength);
+            pinDisplay.textContent = displayValue;
+            
+            // Enviar automáticamente cuando se completan los 4 dígitos
+            if (pinValue.length === 4) {
+                setTimeout(() => form.submit(), 300);
+            }
         }
         
-        // Manejar clics en el teclado
-        pinKeys.forEach(key => {
-            key.addEventListener('click', function() {
-                const keyValue = this.getAttribute('data-key');
-                
-                switch(keyValue) {
-                    case 'C':
-                        // Borrar todo
-                        pin = '';
-                        break;
-                    case '⌫':
-                        // Borrar último dígito
-                        pin = pin.slice(0, -1);
-                        break;
-                    default:
-                        // Añadir dígito si no se ha llegado al máximo
-                        if (pin.length < maxPinLength) {
-                            pin += keyValue;
-                        }
-                        
-                        // Auto-enviar cuando se completen 4 dígitos
-                        if (pin.length === maxPinLength) {
-                            setTimeout(() => {
-                                document.getElementById('pinForm').submit();
-                            }, 500);
-                        }
-                        break;
+        // Añadir dígito
+        pinButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                const digit = this.getAttribute('data-value');
+                if (pinInput.value.length < 4) {
+                    pinInput.value += digit;
+                    updatePinDisplay();
                 }
-                
-                updatePinDisplay();
             });
         });
         
-        // También permitir entrada con teclado físico
-        document.addEventListener('keydown', function(e) {
-            const key = e.key;
-            
-            if (key >= '0' && key <= '9' && pin.length < maxPinLength) {
-                // Añadir dígito
-                pin += key;
-            } else if (key === 'Backspace') {
-                // Borrar último dígito
-                pin = pin.slice(0, -1);
-            } else if (key === 'Delete' || key === 'Escape') {
-                // Borrar todo
-                pin = '';
-            } else if (key === 'Enter' && pin.length === maxPinLength) {
-                // Enviar formulario
-                document.getElementById('pinForm').submit();
-                return;
-            } else {
-                // Ignorar otras teclas
-                return;
+        // Borrar último dígito
+        deletePin.addEventListener('click', function() {
+            if (pinInput.value.length > 0) {
+                pinInput.value = pinInput.value.slice(0, -1);
+                updatePinDisplay();
             }
-            
+        });
+        
+        // Borrar todo
+        clearPin.addEventListener('click', function() {
+            pinInput.value = '';
             updatePinDisplay();
-            
-            // Auto-enviar cuando se completen 4 dígitos
-            if (pin.length === maxPinLength) {
-                setTimeout(() => {
-                    document.getElementById('pinForm').submit();
-                }, 500);
-            }
         });
         
         // Inicializar
         updatePinDisplay();
+        
+        // También permitir entrada por teclado
+        pinInput.addEventListener('input', updatePinDisplay);
+        
+        // Enfocar automáticamente el campo de PIN
+        pinInput.focus();
     });
 </script>
 {% endblock %}

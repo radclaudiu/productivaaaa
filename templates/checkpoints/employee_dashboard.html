@@ -1,0 +1,162 @@
+{% extends 'checkpoints/portal_layout.html' %}
+
+{% block title %}Panel del Empleado - Punto de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-lg-8">
+            <div class="card shadow-sm mb-4">
+                <div class="card-header bg-primary text-white">
+                    <div class="d-flex justify-content-between align-items-center">
+                        <h4 class="mb-0">Panel de Fichaje</h4>
+                        <span id="current-time" class="badge bg-light text-dark fs-6">00:00:00</span>
+                    </div>
+                </div>
+                <div class="card-body text-center">
+                    <img src="{{ url_for('static', filename='img/user-avatar.png') }}" class="rounded-circle mb-3" width="100" height="100" alt="Avatar">
+                    <h3>{{ employee.first_name }} {{ employee.last_name }}</h3>
+                    <p class="text-muted">{{ employee.position or 'Empleado' }}</p>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    {% if active_record %}
+                        <div class="alert alert-info mb-4">
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <i class="bi bi-info-circle fs-1 me-3"></i>
+                                </div>
+                                <div class="text-start">
+                                    <h5 class="alert-heading">Ya tiene un fichaje activo</h5>
+                                    <p class="mb-0">
+                                        Entrada registrada a las <strong>{{ active_record.check_in_time.strftime('%H:%M') }}</strong>
+                                        del <strong>{{ active_record.check_in_time.strftime('%d/%m/%Y') }}</strong>
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            <a href="{{ url_for('checkpoints.record_details', id=active_record.id) }}" class="btn btn-info btn-lg mb-2">
+                                <i class="bi bi-clock-history"></i> Ver Detalles del Fichaje
+                            </a>
+                            
+                            <form method="POST" action="{{ url_for('checkpoints.record_checkout', id=active_record.id) }}">
+                                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                <button type="submit" class="btn btn-primary btn-lg w-100">
+                                    <i class="bi bi-box-arrow-right"></i> Registrar Salida
+                                </button>
+                            </form>
+                        </div>
+                    {% else %}
+                        <div class="alert alert-warning mb-4">
+                            <div class="d-flex align-items-center">
+                                <div>
+                                    <i class="bi bi-exclamation-circle fs-1 me-3"></i>
+                                </div>
+                                <div class="text-start">
+                                    <h5 class="alert-heading">No tiene fichajes activos</h5>
+                                    <p class="mb-0">Registre su entrada utilizando el botón inferior.</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <form method="POST" action="{{ url_for('checkpoints.record_checkin', employee_id=employee.id) }}">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            <div class="d-grid">
+                                <button type="submit" class="btn btn-success btn-lg">
+                                    <i class="bi bi-box-arrow-in-right"></i> Registrar Entrada
+                                </button>
+                            </div>
+                        </form>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% if recent_records %}
+            <div class="card">
+                <div class="card-header bg-info text-white">
+                    <h5 class="mb-0">Últimos Fichajes</h5>
+                </div>
+                <div class="card-body p-0">
+                    <div class="table-responsive">
+                        <table class="table table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Fecha</th>
+                                    <th>Entrada</th>
+                                    <th>Salida</th>
+                                    <th>Duración</th>
+                                    <th></th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in recent_records %}
+                                <tr>
+                                    <td>{{ record.check_in_time.strftime('%d/%m/%Y') }}</td>
+                                    <td>{{ record.check_in_time.strftime('%H:%M') }}</td>
+                                    <td>
+                                        {% if record.check_out_time %}
+                                            {{ record.check_out_time.strftime('%H:%M') }}
+                                        {% else %}
+                                            <span class="badge bg-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if record.check_out_time %}
+                                            {% set duration = record.duration() %}
+                                            {{ duration|round(2) }} h
+                                        {% else %}
+                                            -
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        <a href="{{ url_for('checkpoints.record_details', id=record.id) }}" class="btn btn-sm btn-outline-primary">
+                                            <i class="bi bi-info-circle"></i>
+                                        </a>
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+            {% endif %}
+            
+            <div class="d-grid gap-2 mt-4">
+                <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary">
+                    <i class="bi bi-arrow-left"></i> Volver al Inicio
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Actualizar reloj
+    function updateClock() {
+        const now = new Date();
+        const hours = now.getHours().toString().padStart(2, '0');
+        const minutes = now.getMinutes().toString().padStart(2, '0');
+        const seconds = now.getSeconds().toString().padStart(2, '0');
+        
+        document.getElementById('current-time').textContent = `${hours}:${minutes}:${seconds}`;
+    }
+    
+    // Actualizar cada segundo
+    updateClock();
+    setInterval(updateClock, 1000);
+</script>
+{% endblock %}

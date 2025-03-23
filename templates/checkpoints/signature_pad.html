@@ -1,116 +1,84 @@
-{% extends 'layout.html' %}
+{% extends 'checkpoints/portal_layout.html' %}
 
-{% block title %}Firma Digital{% endblock %}
-
-{% block head %}
-{{ super() }}
-<!-- Librería para firmas digitales -->
-<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
-<style>
-    #signature-pad {
-        width: 100%;
-        height: 200px;
-        background-color: #f8f9fa;
-        border: 1px solid #ced4da;
-        border-radius: 0.25rem;
-    }
-    #signature-message {
-        display: none;
-        margin-top: 10px;
-    }
-</style>
-{% endblock %}
+{% block title %}Firma Digital - Punto de Fichaje{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>Firma Digital</h1>
-            </div>
-            
-            <div class="card mb-4">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Detalles del Registro</h5>
-                </div>
-                <div class="card-body">
-                    <div class="row">
-                        <div class="col-md-6">
-                            <p><strong>Empleado:</strong> {{ record.employee.first_name }} {{ record.employee.last_name }}</p>
-                            <p><strong>Punto de fichaje:</strong> {{ record.checkpoint.name }}</p>
-                            <p><strong>Fecha:</strong> {{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
-                        </div>
-                        <div class="col-md-6">
-                            <p><strong>Entrada:</strong> {{ record.check_in_time.strftime('%H:%M') }}</p>
-                            <p><strong>Salida:</strong> 
-                                {% if record.check_out_time %}
-                                {{ record.check_out_time.strftime('%H:%M') }}
-                                {% else %}
-                                <span class="text-warning">Pendiente</span>
-                                {% endif %}
-                            </p>
-                            <p>
-                                <strong>Duración:</strong> 
-                                {% if record.check_out_time %}
-                                {{ "%.2f"|format(record.duration()) }} horas
-                                {% else %}
-                                <span class="text-warning">En curso</span>
-                                {% endif %}
-                            </p>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
             <div class="card">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Firma</h5>
+                    <h4 class="mb-0 text-center">Firma Digital</h4>
                 </div>
                 <div class="card-body">
-                    <p class="mb-3">Por favor, firme a continuación para confirmar este registro de fichaje:</p>
-                    
-                    <div id="signature-container" class="mb-3">
-                        <canvas id="signature-pad"></canvas>
-                    </div>
-                    
-                    <div class="alert alert-info" id="signature-message">
-                        <i class="fas fa-info-circle"></i> 
-                        Firma capturada correctamente.
-                    </div>
-                    
-                    <div class="d-flex justify-content-between mb-3">
-                        <button type="button" id="clear-button" class="btn btn-secondary">
-                            <i class="fas fa-eraser"></i> Borrar
-                        </button>
-                    </div>
-                    
-                    <form method="POST" id="signature-form">
-                        {{ form.csrf_token }}
-                        {{ form.record_id(value=record.id) }}
-                        {{ form.signature_data }}
+                    <div class="text-center mb-4">
+                        <h3>{{ record.employee.first_name }} {{ record.employee.last_name }}</h3>
+                        <p class="text-muted">{{ record.employee.position or 'Empleado' }}</p>
                         
-                        <div class="alert alert-warning">
-                            <i class="fas fa-exclamation-triangle"></i> 
-                            Al firmar, confirma la veracidad de los datos de este registro de fichaje.
+                        <div class="row">
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <span class="text-muted">Fecha de entrada:</span>
+                                    <p class="mb-0 fs-5">{{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="text-muted">Hora de entrada:</span>
+                                    <p class="mb-0 fs-5">{{ record.check_in_time.strftime('%H:%M') }}</p>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="mb-3">
+                                    <span class="text-muted">Fecha de salida:</span>
+                                    <p class="mb-0 fs-5">{{ record.check_out_time.strftime('%d/%m/%Y') }}</p>
+                                </div>
+                                <div class="mb-3">
+                                    <span class="text-muted">Hora de salida:</span>
+                                    <p class="mb-0 fs-5">{{ record.check_out_time.strftime('%H:%M') }}</p>
+                                </div>
+                            </div>
                         </div>
                         
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('checkpoints.list_checkpoint_records', id=record.checkpoint_id) }}" 
-                              class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Cancelar
+                        <div class="alert alert-info mt-3">
+                            <p class="mb-0">
+                                <i class="bi bi-clock"></i> 
+                                Total horas: <strong>{{ record.duration()|round(2) }}</strong>
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                    {{ message }}
+                                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                    
+                    <form method="POST" class="needs-validation" novalidate>
+                        {{ form.csrf_token }}
+                        {{ form.record_id }}
+                        
+                        <!-- Campo oculto para almacenar los datos de la firma -->
+                        {{ form.signature_data(id="signature-data") }}
+                        
+                        <div class="mb-4">
+                            <label class="form-label">Por favor, firme a continuación:</label>
+                            <div class="signature-pad-container text-center">
+                                <div class="border rounded p-2 bg-light mb-2">
+                                    <canvas id="signature-pad" class="signature-pad" width="600" height="200"></canvas>
+                                </div>
+                                <button type="button" id="clear-button" class="btn btn-sm btn-outline-secondary">Borrar firma</button>
+                            </div>
+                        </div>
+                        
+                        <div class="d-grid gap-2">
+                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary">
+                                Cancelar
                             </a>
-                            {{ form.submit(class="btn btn-primary", id="submit-button", disabled="disabled") }}
                         </div>
                     </form>
                 </div>
@@ -120,59 +88,71 @@
 </div>
 {% endblock %}
 
+{% block styles %}
+<style>
+    .signature-pad {
+        width: 100%;
+        height: 200px;
+        cursor: url("data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAABQAAAAUCAMAAAC6V+0/AAABCFBMVEX///8AAAD///+AgICAgICAgICAgIAAvs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs4Avs7CyPl5AAAAV3RSTlMAAQIDBAUGBwgJCgsMDQ4PEBESExQVFhcYGRobHB0eHyAhIiMkJSYnKCkqKywtLi8wMTIzNDU2Nzg5Ojs8PT4/QEFCQ0RFRkdISUpLTE1OT1BRUlNUc5ASlgAAAKBJREFUGBlVwQUSgjAABdCH4DJrUEYj7rBdADzgbBcQcGTv/z8icPp7E2KcLFYHgWmS9Wlxs3jchBhPWx1LkbVLy/6H0wUJ1rvIlNLtSXB7RebB4I9Js+QzZ55lyTzrpRSZ1+v5mpc5l07jlPXrqn2+Kq++0nul9Ju/r3bo63q9qGN5yPRmuhiFs8hY7B82YmZYzVw1XX+hzOFv1b9QmQPhB3NkHsB/JqlLAAAAAElFTkSuQmCC"), pointer;
+    }
+    .signature-pad-container canvas {
+        background-color: white;
+    }
+</style>
+{% endblock %}
+
 {% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.1.6/dist/signature_pad.umd.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Configuración de signature pad
-        var canvas = document.getElementById('signature-pad');
-        var signaturePad = new SignaturePad(canvas, {
-            backgroundColor: '#f8f9fa',
-            penColor: 'black',
-            minWidth: 1,
-            maxWidth: 3
-        });
+        // Inicializar Signature Pad
+        const canvas = document.getElementById('signature-pad');
+        const signatureDataField = document.getElementById('signature-data');
+        const clearButton = document.getElementById('clear-button');
+        const form = document.querySelector('form');
+        const signatureLength = 20; // Longitud mínima para considerar válida la firma
         
-        // Ajustar el tamaño del canvas
+        // Ajustar tamaño del canvas
         function resizeCanvas() {
-            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
             canvas.width = canvas.offsetWidth * ratio;
             canvas.height = canvas.offsetHeight * ratio;
             canvas.getContext("2d").scale(ratio, ratio);
-            signaturePad.clear(); // Limpiar el canvas después de cambiar su tamaño
         }
         
-        // Eventos de botones
-        document.getElementById('clear-button').addEventListener('click', function() {
-            signaturePad.clear();
-            document.getElementById('submit-button').disabled = true;
-            document.getElementById('signature-message').style.display = 'none';
-        });
-        
-        // Capturar la firma al enviar el formulario
-        document.getElementById('signature-form').addEventListener('submit', function(e) {
-            if (signaturePad.isEmpty()) {
-                e.preventDefault();
-                alert('Por favor, firme antes de continuar.');
-                return false;
-            }
-            
-            // Guardar la firma como base64
-            var dataURL = signaturePad.toDataURL();
-            document.getElementById('{{ form.signature_data.id }}').value = dataURL;
-            return true;
-        });
-        
-        // Detectar cuando se ha realizado una firma
-        signaturePad.addEventListener('endStroke', function() {
-            if (!signaturePad.isEmpty()) {
-                document.getElementById('submit-button').disabled = false;
-                document.getElementById('signature-message').style.display = 'block';
-            }
-        });
-        
-        // Inicializar
-        window.addEventListener('resize', resizeCanvas);
+        window.addEventListener("resize", resizeCanvas);
         resizeCanvas();
+        
+        // Crear Signature Pad
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgba(255, 255, 255, 0)',
+            penColor: 'rgb(0, 0, 0)',
+            velocityFilterWeight: 0.7
+        });
+        
+        // Limpiar firma
+        clearButton.addEventListener('click', function() {
+            signaturePad.clear();
+            signatureDataField.value = '';
+        });
+        
+        // Guardar firma al submit
+        form.addEventListener('submit', function(event) {
+            if (signaturePad.isEmpty()) {
+                event.preventDefault();
+                alert('Por favor, firme antes de continuar.');
+            } else {
+                const data = signaturePad.toDataURL('image/png');
+                
+                // Verificar que la firma tenga contenido suficiente
+                if (data.length < signatureLength) {
+                    event.preventDefault();
+                    alert('Por favor, realice una firma válida.');
+                } else {
+                    signatureDataField.value = data;
+                }
+            }
+        });
     });
 </script>
 {% endblock %}
