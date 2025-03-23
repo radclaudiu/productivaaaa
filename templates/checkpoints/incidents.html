@@ -1,0 +1,264 @@
+{% extends 'layout.html' %}
+
+{% block title %}Incidencias de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Incidencias de Fichaje</h1>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <!-- Filtros -->
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Filtros</h5>
+                </div>
+                <div class="card-body">
+                    <form method="GET" action="{{ url_for('checkpoints.list_incidents') }}" class="row g-3">
+                        <div class="col-md-4">
+                            <label for="type" class="form-label">Tipo de incidencia</label>
+                            <select id="type" name="type" class="form-select">
+                                <option value="">Todos los tipos</option>
+                                {% for incident_type in incident_types %}
+                                <option value="{{ incident_type.value }}" 
+                                        {% if current_filters.type == incident_type.value %}selected{% endif %}>
+                                    {% if incident_type.value == 'missed_checkout' %}
+                                    Falta de salida
+                                    {% elif incident_type.value == 'late_checkin' %}
+                                    Entrada tarde
+                                    {% elif incident_type.value == 'early_checkout' %}
+                                    Salida temprana
+                                    {% elif incident_type.value == 'overtime' %}
+                                    Horas extra
+                                    {% elif incident_type.value == 'manual_adjustment' %}
+                                    Ajuste manual
+                                    {% elif incident_type.value == 'contract_hours_adjustment' %}
+                                    Ajuste horas contrato
+                                    {% else %}
+                                    {{ incident_type.value }}
+                                    {% endif %}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="employee_id" class="form-label">Empleado</label>
+                            <select id="employee_id" name="employee_id" class="form-select">
+                                <option value="">Todos los empleados</option>
+                                {% for employee in filter_employees %}
+                                <option value="{{ employee.id }}" 
+                                        {% if current_filters.employee_id == employee.id %}selected{% endif %}>
+                                    {{ employee.first_name }} {{ employee.last_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="resolved" class="form-label">Estado</label>
+                            <select id="resolved" name="resolved" class="form-select">
+                                <option value="">Todos</option>
+                                <option value="yes" {% if current_filters.resolved == 'yes' %}selected{% endif %}>
+                                    Resueltas
+                                </option>
+                                <option value="no" {% if current_filters.resolved == 'no' %}selected{% endif %}>
+                                    Pendientes
+                                </option>
+                            </select>
+                        </div>
+                        <div class="col-12 d-flex justify-content-end">
+                            <a href="{{ url_for('checkpoints.list_incidents') }}" class="btn btn-secondary me-2">
+                                <i class="fas fa-undo"></i> Limpiar filtros
+                            </a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-search"></i> Filtrar
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+            
+            <!-- Tabla de incidencias -->
+            {% if incidents.items %}
+            <div class="card">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0">Listado de Incidencias</h5>
+                    <span class="badge bg-light text-dark">
+                        Total: {{ incidents.total }} incidencias
+                    </span>
+                </div>
+                
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover mb-0">
+                        <thead>
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Fecha</th>
+                                <th>Tipo</th>
+                                <th>Descripción</th>
+                                <th>Estado</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for incident in incidents.items %}
+                            <tr>
+                                <td>{{ incident.record.employee.first_name }} {{ incident.record.employee.last_name }}</td>
+                                <td>{{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                <td>
+                                    {% if incident.incident_type.value == 'missed_checkout' %}
+                                    <span class="badge bg-danger">Falta de salida</span>
+                                    {% elif incident.incident_type.value == 'late_checkin' %}
+                                    <span class="badge bg-warning">Entrada tarde</span>
+                                    {% elif incident.incident_type.value == 'early_checkout' %}
+                                    <span class="badge bg-warning">Salida temprana</span>
+                                    {% elif incident.incident_type.value == 'overtime' %}
+                                    <span class="badge bg-info">Horas extra</span>
+                                    {% elif incident.incident_type.value == 'manual_adjustment' %}
+                                    <span class="badge bg-secondary">Ajuste manual</span>
+                                    {% elif incident.incident_type.value == 'contract_hours_adjustment' %}
+                                    <span class="badge bg-primary">Ajuste contrato</span>
+                                    {% else %}
+                                    <span class="badge bg-dark">{{ incident.incident_type.value }}</span>
+                                    {% endif %}
+                                </td>
+                                <td>{{ incident.description }}</td>
+                                <td>
+                                    {% if incident.resolved %}
+                                    <span class="badge bg-success">Resuelta</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Pendiente</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if not incident.resolved %}
+                                    <button type="button" class="btn btn-sm btn-outline-success" 
+                                            data-bs-toggle="modal" data-bs-target="#resolveModal{{ incident.id }}">
+                                        <i class="fas fa-check"></i> Resolver
+                                    </button>
+                                    
+                                    <!-- Modal de resolución -->
+                                    <div class="modal fade" id="resolveModal{{ incident.id }}" tabindex="-1" 
+                                         aria-labelledby="resolveModalLabel{{ incident.id }}" aria-hidden="true">
+                                        <div class="modal-dialog">
+                                            <div class="modal-content">
+                                                <div class="modal-header">
+                                                    <h5 class="modal-title" id="resolveModalLabel{{ incident.id }}">
+                                                        Resolver Incidencia
+                                                    </h5>
+                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                </div>
+                                                <form action="{{ url_for('checkpoints.resolve_incident', id=incident.id) }}" method="POST">
+                                                    <div class="modal-body">
+                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                        
+                                                        <div class="mb-3">
+                                                            <label for="resolutionNotes{{ incident.id }}" class="form-label">
+                                                                Notas de resolución
+                                                            </label>
+                                                            <textarea class="form-control" id="resolutionNotes{{ incident.id }}" 
+                                                                     name="resolution_notes" rows="3" required></textarea>
+                                                        </div>
+                                                        
+                                                        <div class="alert alert-info">
+                                                            <i class="fas fa-info-circle"></i> 
+                                                            Esta acción marcará la incidencia como resuelta. 
+                                                            Por favor, incluya notas sobre cómo se resolvió el problema.
+                                                        </div>
+                                                    </div>
+                                                    <div class="modal-footer">
+                                                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">
+                                                            Cancelar
+                                                        </button>
+                                                        <button type="submit" class="btn btn-success">
+                                                            <i class="fas fa-check"></i> Confirmar Resolución
+                                                        </button>
+                                                    </div>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    {% else %}
+                                    <span class="text-muted">
+                                        <i class="fas fa-check-circle"></i> 
+                                        Resuelta por {{ incident.resolved_by.username if incident.resolved_by else 'Sistema' }}
+                                    </span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                
+                <!-- Paginación -->
+                {% if incidents.pages > 1 %}
+                <div class="card-footer">
+                    <nav aria-label="Paginación de incidencias">
+                        <ul class="pagination justify-content-center mb-0">
+                            <li class="page-item {% if incidents.page == 1 %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('checkpoints.list_incidents', page=incidents.prev_num, 
+                                                                      type=current_filters.type,
+                                                                      employee_id=current_filters.employee_id,
+                                                                      resolved=current_filters.resolved) }}">
+                                    &laquo; Anterior
+                                </a>
+                            </li>
+                            
+                            {% for page_num in range(1, incidents.pages + 1) %}
+                                {% if page_num == incidents.page %}
+                                <li class="page-item active">
+                                    <span class="page-link">{{ page_num }}</span>
+                                </li>
+                                {% elif page_num > incidents.page - 3 and page_num < incidents.page + 3 %}
+                                <li class="page-item">
+                                    <a class="page-link" href="{{ url_for('checkpoints.list_incidents', page=page_num,
+                                                                         type=current_filters.type,
+                                                                         employee_id=current_filters.employee_id,
+                                                                         resolved=current_filters.resolved) }}">
+                                        {{ page_num }}
+                                    </a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+                            
+                            <li class="page-item {% if incidents.page == incidents.pages %}disabled{% endif %}">
+                                <a class="page-link" href="{{ url_for('checkpoints.list_incidents', page=incidents.next_num,
+                                                                     type=current_filters.type,
+                                                                     employee_id=current_filters.employee_id,
+                                                                     resolved=current_filters.resolved) }}">
+                                    Siguiente &raquo;
+                                </a>
+                            </li>
+                        </ul>
+                    </nav>
+                </div>
+                {% endif %}
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <i class="fas fa-info-circle"></i> No se encontraron incidencias con los filtros seleccionados.
+            </div>
+            {% endif %}
+            
+            <div class="mt-4">
+                <a href="{{ url_for('checkpoints.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,77 +1,244 @@
 {% extends 'layout.html' %}
 
-{% block title %}Puntos de Fichaje - Gestión de Empresas{% endblock %}
+{% block title %}Sistema de Fichajes{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-12">
-            <h1 class="mb-4">Sistema de Puntos de Fichaje</h1>
-            
-            <div class="card mb-4">
-                <div class="card-body">
-                    <h5 class="card-title">Descripción del Sistema</h5>
-                    <p class="card-text">
-                        El sistema de puntos de fichaje permite controlar la entrada y salida de los empleados 
-                        mediante dispositivos móviles o tablets asociados a cada empresa.
-                    </p>
-                    <p class="card-text">
-                        Características principales:
-                    </p>
-                    <ul>
-                        <li>Creación de puntos de fichaje para cada empresa</li>
-                        <li>Autenticación de empleados mediante PIN</li>
-                        <li>Registro automático de horas trabajadas</li>
-                        <li>Ajustes automáticos según horas de contrato</li>
-                        <li>Registro de incidencias</li>
-                        <li>Exportación de informes con firma digital</li>
-                    </ul>
-                </div>
+            <div class="d-flex justify-content-between align-items-center">
+                <h1>Sistema de Fichajes</h1>
             </div>
-            
-            <div class="row mb-4">
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Gestión de Puntos de Fichaje</h5>
-                            <p class="card-text">Administre los puntos de fichaje de sus empresas.</p>
-                            <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-primary">
-                                Ver Puntos de Fichaje
-                            </a>
-                        </div>
-                    </div>
+        </div>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                
-                <div class="col-md-6">
-                    <div class="card h-100">
-                        <div class="card-body">
-                            <h5 class="card-title">Exportar Registros</h5>
-                            <p class="card-text">Genere informes PDF de los registros de fichaje.</p>
-                            <a href="{{ url_for('checkpoints.export_records') }}" class="btn btn-success">
-                                Exportar Registros
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            </div>
-            
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="row">
+        <div class="col-md-4 mb-4">
             <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Gestión de Puntos de Fichaje</h5>
+                </div>
                 <div class="card-body">
-                    <h5 class="card-title">Acceso para Empleados</h5>
-                    <p class="card-text">
-                        Para que los empleados accedan al sistema de fichaje, deben usar la URL específica 
-                        del punto de fichaje:
-                    </p>
-                    <div class="alert alert-info">
-                        <code>https://su-dominio.com/fichajes/login</code>
+                    <p>Administre los dispositivos y ubicaciones donde sus empleados pueden registrar entradas y salidas.</p>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Total de puntos activos
+                            <span class="badge bg-primary rounded-pill">{{ stats.active_checkpoints }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Puntos en mantenimiento
+                            <span class="badge bg-warning rounded-pill">{{ stats.maintenance_checkpoints }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Puntos desactivados
+                            <span class="badge bg-danger rounded-pill">{{ stats.disabled_checkpoints }}</span>
+                        </li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-primary">
+                            <i class="fas fa-list"></i> Ver Puntos de Fichaje
+                        </a>
                     </div>
-                    <p class="card-text">
-                        Cada punto de fichaje tiene sus propias credenciales de acceso que deben ser proporcionadas
-                        a los responsables de administrar el dispositivo de fichaje.
-                    </p>
                 </div>
             </div>
         </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Configuración de Horas</h5>
+                </div>
+                <div class="card-body">
+                    <p>Configure las horas de trabajo de sus empleados y personalice los ajustes de fichajes.</p>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Empleados con horario configurado
+                            <span class="badge bg-success rounded-pill">{{ stats.employees_with_hours }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Empleados con horas extra permitidas
+                            <span class="badge bg-info rounded-pill">{{ stats.employees_with_overtime }}</span>
+                        </li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="{{ url_for('list_employees') }}" class="btn btn-primary">
+                            <i class="fas fa-user-clock"></i> Gestionar Horarios
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-4 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Informes y Exportación</h5>
+                </div>
+                <div class="card-body">
+                    <p>Genere informes de fichajes, exporte datos y analice la actividad de sus empleados.</p>
+                    <ul class="list-group mb-3">
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Fichajes registrados hoy
+                            <span class="badge bg-primary rounded-pill">{{ stats.today_records }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Fichajes pendientes de salida
+                            <span class="badge bg-warning rounded-pill">{{ stats.pending_checkout }}</span>
+                        </li>
+                        <li class="list-group-item d-flex justify-content-between align-items-center">
+                            Incidencias activas
+                            <span class="badge bg-danger rounded-pill">{{ stats.active_incidents }}</span>
+                        </li>
+                    </ul>
+                    <div class="d-grid">
+                        <a href="{{ url_for('checkpoints.export_records') }}" class="btn btn-primary">
+                            <i class="fas fa-file-export"></i> Exportar Registros
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Últimos Fichajes</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if latest_records %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Empleado</th>
+                                    <th>Entrada</th>
+                                    <th>Salida</th>
+                                    <th>Punto de fichaje</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for record in latest_records %}
+                                <tr>
+                                    <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
+                                    <td>{{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>
+                                        {% if record.check_out_time %}
+                                        {{ record.check_out_time.strftime('%H:%M') }}
+                                        {% else %}
+                                        <span class="text-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                    <td>{{ record.checkpoint.name }}</td>
+                                    <td>
+                                        {% if record.incidents %}
+                                        <span class="badge bg-danger">Con incidencias</span>
+                                        {% elif record.adjusted %}
+                                        <span class="badge bg-warning">Ajustado</span>
+                                        {% elif not record.check_out_time %}
+                                        <span class="badge bg-primary">En curso</span>
+                                        {% else %}
+                                        <span class="badge bg-success">Completado</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info m-3">
+                        No hay registros de fichaje recientes.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{{ url_for('checkpoints.list_records_all') }}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-6 mb-4">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Incidencias Recientes</h5>
+                </div>
+                <div class="card-body p-0">
+                    {% if latest_incidents %}
+                    <div class="table-responsive">
+                        <table class="table table-striped table-hover mb-0">
+                            <thead>
+                                <tr>
+                                    <th>Empleado</th>
+                                    <th>Fecha</th>
+                                    <th>Tipo</th>
+                                    <th>Estado</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for incident in latest_incidents %}
+                                <tr>
+                                    <td>{{ incident.record.employee.first_name }} {{ incident.record.employee.last_name }}</td>
+                                    <td>{{ incident.created_at.strftime('%d/%m/%Y') }}</td>
+                                    <td>
+                                        {% if incident.incident_type.value == 'missed_checkout' %}
+                                        Falta de salida
+                                        {% elif incident.incident_type.value == 'late_checkin' %}
+                                        Entrada tarde
+                                        {% elif incident.incident_type.value == 'early_checkout' %}
+                                        Salida temprana
+                                        {% elif incident.incident_type.value == 'overtime' %}
+                                        Horas extra
+                                        {% elif incident.incident_type.value == 'manual_adjustment' %}
+                                        Ajuste manual
+                                        {% elif incident.incident_type.value == 'contract_hours_adjustment' %}
+                                        Ajuste horas contrato
+                                        {% else %}
+                                        {{ incident.incident_type.value }}
+                                        {% endif %}
+                                    </td>
+                                    <td>
+                                        {% if incident.resolved %}
+                                        <span class="badge bg-success">Resuelta</span>
+                                        {% else %}
+                                        <span class="badge bg-danger">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% else %}
+                    <div class="alert alert-info m-3">
+                        No hay incidencias recientes.
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="card-footer text-end">
+                    <a href="{{ url_for('checkpoints.list_incidents') }}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="mt-4">
+        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
     </div>
 </div>
 {% endblock %}

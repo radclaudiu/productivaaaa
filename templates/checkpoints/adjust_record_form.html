@@ -1,0 +1,163 @@
+{% extends 'layout.html' %}
+
+{% block title %}Ajustar Registro de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Ajustar Registro</h1>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalles del Registro</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Empleado:</strong> {{ record.employee.first_name }} {{ record.employee.last_name }}</p>
+                            <p><strong>Punto de fichaje:</strong> {{ record.checkpoint.name }}</p>
+                            <p><strong>Fecha:</strong> {{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Hora de entrada actual:</strong> {{ record.check_in_time.strftime('%H:%M') }}</p>
+                            <p><strong>Hora de salida actual:</strong> 
+                                {% if record.check_out_time %}
+                                {{ record.check_out_time.strftime('%H:%M') }}
+                                {% else %}
+                                <span class="text-warning">Pendiente</span>
+                                {% endif %}
+                            </p>
+                            <p>
+                                <strong>Estado:</strong> 
+                                {% if record.adjusted %}
+                                <span class="badge bg-warning">Ajustado manualmente</span>
+                                {% elif record.incidents %}
+                                <span class="badge bg-danger">Con incidencias</span>
+                                {% elif not record.check_out_time %}
+                                <span class="badge bg-primary">En curso</span>
+                                {% else %}
+                                <span class="badge bg-success">Completado</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    {% if record.original_check_in_time %}
+                    <hr>
+                    <div class="alert alert-info">
+                        <strong>Valores originales:</strong>
+                        <div>Entrada: {{ record.original_check_in_time.strftime('%d/%m/%Y %H:%M') }}</div>
+                        {% if record.original_check_out_time %}
+                        <div>Salida: {{ record.original_check_out_time.strftime('%d/%m/%Y %H:%M') }}</div>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if record.adjusted %}
+                    <div class="alert alert-warning">
+                        <strong>Motivo del ajuste anterior:</strong>
+                        <p>{{ record.adjustment_reason }}</p>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Formulario de Ajuste</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.check_in_date.id }}" class="form-label">Fecha</label>
+                                    {{ form.check_in_date(class="form-control", type="date") }}
+                                    {% for error in form.check_in_date.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.check_in_time.id }}" class="form-label">Hora de entrada</label>
+                                    {{ form.check_in_time(class="form-control") }}
+                                    {% for error in form.check_in_time.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-4">
+                                <div class="form-group">
+                                    <label for="{{ form.check_out_time.id }}" class="form-label">Hora de salida</label>
+                                    {{ form.check_out_time(class="form-control") }}
+                                    {% for error in form.check_out_time.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                    <small class="form-text text-muted">
+                                        Dejar en blanco si el empleado aún no ha salido.
+                                    </small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.enforce_contract_hours(class="form-check-input") }}
+                                <label class="form-check-label" for="{{ form.enforce_contract_hours.id }}">
+                                    Aplicar límite de horas de contrato
+                                </label>
+                                {% for error in form.enforce_contract_hours.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                                <small class="form-text text-muted d-block">
+                                    Si está activado, se ajustarán automáticamente las horas según el contrato del empleado.
+                                </small>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            <label for="{{ form.adjustment_reason.id }}" class="form-label">Motivo del ajuste</label>
+                            {{ form.adjustment_reason(class="form-control", rows=3) }}
+                            {% for error in form.adjustment_reason.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">
+                                Explique detalladamente por qué se está ajustando este registro.
+                            </small>
+                        </div>
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Atención: Los ajustes manuales quedan registrados y pueden generar incidencias.
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('checkpoints.list_checkpoint_records', id=record.checkpoint_id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -64,7 +64,36 @@ def checkpoint_required(f):
 @login_required
 def index():
     """Página principal del sistema de fichajes"""
-    return render_template('checkpoints/index.html')
+    # Obtener estadísticas para el dashboard
+    stats = {
+        'active_checkpoints': CheckPoint.query.filter_by(status='active').count(),
+        'maintenance_checkpoints': CheckPoint.query.filter_by(status='maintenance').count(),
+        'disabled_checkpoints': CheckPoint.query.filter_by(status='disabled').count(),
+        'employees_with_hours': EmployeeContractHours.query.count(),
+        'employees_with_overtime': EmployeeContractHours.query.filter_by(allow_overtime=True).count(),
+        'today_records': CheckPointRecord.query.filter(
+            CheckPointRecord.check_in_time >= datetime.combine(date.today(), time.min)
+        ).count(),
+        'pending_checkout': CheckPointRecord.query.filter(
+            CheckPointRecord.check_out_time.is_(None)
+        ).count(),
+        'active_incidents': CheckPointIncident.query.filter_by(resolved=False).count()
+    }
+    
+    # Obtener los últimos registros
+    latest_records = CheckPointRecord.query.order_by(
+        CheckPointRecord.check_in_time.desc()
+    ).limit(10).all()
+    
+    # Obtener las últimas incidencias
+    latest_incidents = CheckPointIncident.query.order_by(
+        CheckPointIncident.created_at.desc()
+    ).limit(10).all()
+    
+    return render_template('checkpoints/index.html', 
+                          stats=stats, 
+                          latest_records=latest_records,
+                          latest_incidents=latest_incidents)
 
 
 @checkpoints_bp.route('/checkpoints')
@@ -374,6 +403,216 @@ def record_signature(id):
     return render_template('checkpoints/signature_pad.html', 
                           form=form, 
                           record=record)
+
+
+@checkpoints_bp.route('/records')
+@login_required
+@manager_required
+def list_records_all():
+    """Muestra todos los registros de fichaje disponibles según permisos"""
+    # Determinar los registros a los que tiene acceso el usuario
+    if current_user.is_admin():
+        base_query = CheckPointRecord.query
+    else:
+        # Si es gerente, solo registros de las empresas que administra
+        company_ids = [company.id for company in current_user.companies]
+        
+        if not company_ids:
+            flash('No tiene empresas asignadas para gestionar registros.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        # Buscar empleados de esas empresas
+        employee_ids = db.session.query(Employee.id).filter(
+            Employee.company_id.in_(company_ids)
+        ).all()
+        employee_ids = [e[0] for e in employee_ids]
+        
+        if not employee_ids:
+            flash('No hay empleados registrados en sus empresas.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        base_query = CheckPointRecord.query.filter(
+            CheckPointRecord.employee_id.in_(employee_ids)
+        )
+    
+    # Filtros adicionales (fecha, empleado, etc.)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    employee_id = request.args.get('employee_id', type=int)
+    status = request.args.get('status')
+    
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            base_query = base_query.filter(
+                func.date(CheckPointRecord.check_in_time) >= start_date
+            )
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            base_query = base_query.filter(
+                func.date(CheckPointRecord.check_in_time) <= end_date
+            )
+        except ValueError:
+            pass
+    
+    if employee_id:
+        base_query = base_query.filter(CheckPointRecord.employee_id == employee_id)
+    
+    if status:
+        if status == 'pending':
+            base_query = base_query.filter(CheckPointRecord.check_out_time.is_(None))
+        elif status == 'completed':
+            base_query = base_query.filter(CheckPointRecord.check_out_time.isnot(None))
+        elif status == 'adjusted':
+            base_query = base_query.filter(CheckPointRecord.adjusted == True)
+        elif status == 'incidents':
+            # Registros con incidencias (requiere una subconsulta)
+            incident_record_ids = db.session.query(CheckPointIncident.record_id).distinct().subquery()
+            base_query = base_query.filter(CheckPointRecord.id.in_(incident_record_ids))
+    
+    # Ordenar y paginar
+    page = request.args.get('page', 1, type=int)
+    records = base_query.order_by(CheckPointRecord.check_in_time.desc()).paginate(
+        page=page, per_page=20
+    )
+    
+    # Datos adicionales para el filtro
+    if current_user.is_admin():
+        filter_employees = Employee.query.filter_by(is_active=True).all()
+    else:
+        company_ids = [company.id for company in current_user.companies]
+        filter_employees = Employee.query.filter(
+            Employee.company_id.in_(company_ids),
+            Employee.is_active == True
+        ).all()
+    
+    return render_template(
+        'checkpoints/all_records.html',
+        records=records,
+        filter_employees=filter_employees,
+        current_filters={
+            'start_date': start_date.strftime('%Y-%m-%d') if isinstance(start_date, date) else None,
+            'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
+            'employee_id': employee_id,
+            'status': status
+        }
+    )
+
+
+@checkpoints_bp.route('/incidents')
+@login_required
+@manager_required
+def list_incidents():
+    """Muestra todas las incidencias de fichaje según permisos"""
+    # Determinar las incidencias a las que tiene acceso el usuario
+    if current_user.is_admin():
+        base_query = CheckPointIncident.query.join(
+            CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id
+        )
+    else:
+        # Si es gerente, solo incidencias de las empresas que administra
+        company_ids = [company.id for company in current_user.companies]
+        
+        if not company_ids:
+            flash('No tiene empresas asignadas para gestionar incidencias.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        # Buscar empleados de esas empresas
+        employee_ids = db.session.query(Employee.id).filter(
+            Employee.company_id.in_(company_ids)
+        ).all()
+        employee_ids = [e[0] for e in employee_ids]
+        
+        if not employee_ids:
+            flash('No hay empleados registrados en sus empresas.', 'warning')
+            return redirect(url_for('dashboard'))
+        
+        base_query = CheckPointIncident.query.join(
+            CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id
+        ).filter(
+            CheckPointRecord.employee_id.in_(employee_ids)
+        )
+    
+    # Filtros adicionales
+    incident_type = request.args.get('type')
+    resolved = request.args.get('resolved')
+    employee_id = request.args.get('employee_id', type=int)
+    
+    if incident_type:
+        base_query = base_query.filter(CheckPointIncident.incident_type == incident_type)
+    
+    if resolved == 'yes':
+        base_query = base_query.filter(CheckPointIncident.resolved == True)
+    elif resolved == 'no':
+        base_query = base_query.filter(CheckPointIncident.resolved == False)
+    
+    if employee_id:
+        base_query = base_query.filter(CheckPointRecord.employee_id == employee_id)
+    
+    # Ordenar y paginar
+    page = request.args.get('page', 1, type=int)
+    incidents = base_query.order_by(CheckPointIncident.created_at.desc()).paginate(
+        page=page, per_page=20
+    )
+    
+    # Datos adicionales para el filtro
+    if current_user.is_admin():
+        filter_employees = Employee.query.filter_by(is_active=True).all()
+    else:
+        company_ids = [company.id for company in current_user.companies]
+        filter_employees = Employee.query.filter(
+            Employee.company_id.in_(company_ids),
+            Employee.is_active == True
+        ).all()
+    
+    return render_template(
+        'checkpoints/incidents.html',
+        incidents=incidents,
+        filter_employees=filter_employees,
+        incident_types=CheckPointIncidentType,
+        current_filters={
+            'type': incident_type,
+            'resolved': resolved,
+            'employee_id': employee_id
+        }
+    )
+
+
+@checkpoints_bp.route('/incidents/<int:id>/resolve', methods=['POST'])
+@login_required
+@manager_required
+def resolve_incident(id):
+    """Marca una incidencia como resuelta"""
+    incident = CheckPointIncident.query.get_or_404(id)
+    
+    # Verificar permisos
+    record = incident.record
+    employee_company_id = record.employee.company_id
+    
+    if not current_user.is_admin() and employee_company_id not in [c.id for c in current_user.companies]:
+        flash('No tiene permiso para resolver esta incidencia.', 'danger')
+        return redirect(url_for('checkpoints.list_incidents'))
+    
+    # Obtener las notas de resolución
+    resolution_notes = request.form.get('resolution_notes', '')
+    
+    # Resolver la incidencia
+    incident.resolve(current_user.id, resolution_notes)
+    
+    try:
+        db.session.commit()
+        flash('Incidencia marcada como resuelta con éxito.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al resolver la incidencia: {str(e)}', 'danger')
+    
+    # Redirigir a la página anterior o a la lista de incidencias
+    next_page = request.args.get('next') or url_for('checkpoints.list_incidents')
+    return redirect(next_page)
 
 
 @checkpoints_bp.route('/records/export', methods=['GET', 'POST'])
