@@ -1,0 +1,163 @@
+{% extends 'layout.html' %}
+
+{% block title %}Configuración de Horas de Contrato - {{ employee.first_name }} {{ employee.last_name }}{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Configuración de Horas de Contrato</h1>
+            <h4 class="text-muted mb-4">{{ employee.first_name }} {{ employee.last_name }} | {{ employee.company.name }}</h4>
+            
+            <div class="card">
+                <div class="card-body">
+                    <form method="POST" novalidate>
+                        {{ form.csrf_token }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.daily_hours.label(class="form-label") }}
+                                    {{ form.daily_hours(class="form-control" + (" is-invalid" if form.daily_hours.errors else ""), step="0.5") }}
+                                    {% if form.daily_hours.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.daily_hours.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Horas que el empleado debe trabajar por día según contrato.</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.weekly_hours.label(class="form-label") }}
+                                    {{ form.weekly_hours(class="form-control" + (" is-invalid" if form.weekly_hours.errors else ""), step="0.5") }}
+                                    {% if form.weekly_hours.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.weekly_hours.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Horas que el empleado debe trabajar por semana según contrato.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        <h5>Configuración de Horas Extra</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-check mb-3">
+                                    {{ form.allow_overtime(class="form-check-input") }}
+                                    {{ form.allow_overtime.label(class="form-check-label") }}
+                                    <div class="form-text">
+                                        Si está activado, el empleado puede registrar horas extra.
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.max_overtime_daily.label(class="form-label") }}
+                                    {{ form.max_overtime_daily(class="form-control" + (" is-invalid" if form.max_overtime_daily.errors else ""), step="0.5") }}
+                                    {% if form.max_overtime_daily.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.max_overtime_daily.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Máximo de horas extra permitidas por día.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        <h5>Horario Normal</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.normal_start_time.label(class="form-label") }}
+                                    {{ form.normal_start_time(class="form-control" + (" is-invalid" if form.normal_start_time.errors else "")) }}
+                                    {% if form.normal_start_time.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.normal_start_time.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora habitual de entrada según contrato.</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.normal_end_time.label(class="form-label") }}
+                                    {{ form.normal_end_time(class="form-control" + (" is-invalid" if form.normal_end_time.errors else "")) }}
+                                    {% if form.normal_end_time.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.normal_end_time.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Hora habitual de salida según contrato.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <hr class="my-4">
+                        <h5>Margen de Flexibilidad</h5>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.checkin_flexibility.label(class="form-label") }}
+                                    {{ form.checkin_flexibility(class="form-control" + (" is-invalid" if form.checkin_flexibility.errors else "")) }}
+                                    {% if form.checkin_flexibility.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.checkin_flexibility.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Minutos de margen permitidos para la entrada.</small>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.checkout_flexibility.label(class="form-label") }}
+                                    {{ form.checkout_flexibility(class="form-control" + (" is-invalid" if form.checkout_flexibility.errors else "")) }}
+                                    {% if form.checkout_flexibility.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.checkout_flexibility.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Minutos de margen permitidos para la salida.</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-4">
+                            <div class="col-12">
+                                <a href="{{ url_for('view_employee', id=employee.id) }}" class="btn btn-secondary me-2">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                {{ form.submit(class="btn btn-primary") }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

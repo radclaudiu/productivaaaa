@@ -1,0 +1,77 @@
+{% extends 'layout.html' %}
+
+{% block title %}Puntos de Fichaje - Gestión de Empresas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <h1 class="mb-4">Sistema de Puntos de Fichaje</h1>
+            
+            <div class="card mb-4">
+                <div class="card-body">
+                    <h5 class="card-title">Descripción del Sistema</h5>
+                    <p class="card-text">
+                        El sistema de puntos de fichaje permite controlar la entrada y salida de los empleados 
+                        mediante dispositivos móviles o tablets asociados a cada empresa.
+                    </p>
+                    <p class="card-text">
+                        Características principales:
+                    </p>
+                    <ul>
+                        <li>Creación de puntos de fichaje para cada empresa</li>
+                        <li>Autenticación de empleados mediante PIN</li>
+                        <li>Registro automático de horas trabajadas</li>
+                        <li>Ajustes automáticos según horas de contrato</li>
+                        <li>Registro de incidencias</li>
+                        <li>Exportación de informes con firma digital</li>
+                    </ul>
+                </div>
+            </div>
+            
+            <div class="row mb-4">
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Gestión de Puntos de Fichaje</h5>
+                            <p class="card-text">Administre los puntos de fichaje de sus empresas.</p>
+                            <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-primary">
+                                Ver Puntos de Fichaje
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="col-md-6">
+                    <div class="card h-100">
+                        <div class="card-body">
+                            <h5 class="card-title">Exportar Registros</h5>
+                            <p class="card-text">Genere informes PDF de los registros de fichaje.</p>
+                            <a href="{{ url_for('checkpoints.export_records') }}" class="btn btn-success">
+                                Exportar Registros
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-body">
+                    <h5 class="card-title">Acceso para Empleados</h5>
+                    <p class="card-text">
+                        Para que los empleados accedan al sistema de fichaje, deben usar la URL específica 
+                        del punto de fichaje:
+                    </p>
+                    <div class="alert alert-info">
+                        <code>https://su-dominio.com/fichajes/login</code>
+                    </div>
+                    <p class="card-text">
+                        Cada punto de fichaje tiene sus propias credenciales de acceso que deben ser proporcionadas
+                        a los responsables de administrar el dispositivo de fichaje.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

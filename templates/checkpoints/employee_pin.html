@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Introducir PIN - {{ employee.first_name }} {{ employee.last_name }}</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            background-color: #343a40;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .pin-container {
+            max-width: 500px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        
+        .employee-info {
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .employee-avatar {
+            width: 120px;
+            height: 120px;
+            background-color: #6c757d;
+            color: white;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 60px;
+            border-radius: 50%;
+            margin: 0 auto 20px;
+        }
+        
+        .pin-display {
+            font-size: 24px;
+            letter-spacing: 15px;
+            text-align: center;
+            background-color: white;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            padding: 10px;
+            margin-bottom: 20px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .pin-dot {
+            display: inline-block;
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background-color: #000;
+            margin: 0 5px;
+        }
+        
+        .keypad {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 10px;
+            margin-bottom: 20px;
+        }
+        
+        .keypad-button {
+            background-color: white;
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            height: 80px;
+            font-size: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+        
+        .keypad-button:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .keypad-button:active {
+            background-color: #e9ecef;
+        }
+        
+        .action-buttons {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+        }
+        
+        .btn-large {
+            padding: 15px;
+            font-size: 18px;
+        }
+        
+        .clock {
+            font-size: 24px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .footer {
+            margin-top: 30px;
+            text-align: center;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h2>Fichaje de Empleado</h2>
+        </div>
+    </div>
+    
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="pin-container">
+            <div class="employee-info">
+                <div class="employee-avatar">
+                    <i class="fas fa-user"></i>
+                </div>
+                <h3>{{ employee.first_name }} {{ employee.last_name }}</h3>
+                <p class="text-muted">{{ employee.position }}</p>
+                <div class="clock" id="clock">00:00:00</div>
+            </div>
+            
+            <form method="POST" id="pinForm">
+                {{ form.csrf_token }}
+                {{ form.employee_id(value=employee.id) }}
+                
+                <div class="pin-display" id="pinDisplay">
+                    <span>Ingrese su PIN</span>
+                </div>
+                
+                {{ form.pin(type="hidden", id="pinInput") }}
+                
+                <div class="keypad">
+                    <div class="keypad-button" onclick="addDigit('1')">1</div>
+                    <div class="keypad-button" onclick="addDigit('2')">2</div>
+                    <div class="keypad-button" onclick="addDigit('3')">3</div>
+                    <div class="keypad-button" onclick="addDigit('4')">4</div>
+                    <div class="keypad-button" onclick="addDigit('5')">5</div>
+                    <div class="keypad-button" onclick="addDigit('6')">6</div>
+                    <div class="keypad-button" onclick="addDigit('7')">7</div>
+                    <div class="keypad-button" onclick="addDigit('8')">8</div>
+                    <div class="keypad-button" onclick="addDigit('9')">9</div>
+                    <div class="keypad-button" onclick="clearPin()"><i class="fas fa-backspace"></i></div>
+                    <div class="keypad-button" onclick="addDigit('0')">0</div>
+                    <div class="keypad-button" onclick="submitPin()"><i class="fas fa-check"></i></div>
+                </div>
+                
+                <div class="action-buttons">
+                    <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-secondary btn-large">
+                        <i class="fas fa-arrow-left"></i> Volver
+                    </a>
+                    {{ form.submit(class="btn btn-primary btn-large", id="submitButton", style="display: none;") }}
+                </div>
+            </form>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        let pin = '';
+        const maxLength = 4;
+        
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+        }
+        
+        // Actualizar cada segundo
+        setInterval(updateClock, 1000);
+        updateClock(); // Inicializar
+        
+        function addDigit(digit) {
+            if (pin.length < maxLength) {
+                pin += digit;
+                updatePinDisplay();
+                
+                // Si ya alcanzamos 4 dígitos, enviar automáticamente
+                if (pin.length === maxLength) {
+                    setTimeout(submitPin, 300);
+                }
+            }
+        }
+        
+        function clearPin() {
+            pin = '';
+            updatePinDisplay();
+        }
+        
+        function updatePinDisplay() {
+            const display = document.getElementById('pinDisplay');
+            const input = document.getElementById('pinInput');
+            
+            if (pin.length === 0) {
+                display.innerHTML = '<span>Ingrese su PIN</span>';
+            } else {
+                display.innerHTML = '';
+                for (let i = 0; i < maxLength; i++) {
+                    if (i < pin.length) {
+                        display.innerHTML += '<span class="pin-dot"></span>';
+                    } else {
+                        display.innerHTML += '<span class="pin-dot" style="opacity: 0.3;"></span>';
+                    }
+                }
+            }
+            
+            // Actualizar el valor del input oculto
+            input.value = pin;
+        }
+        
+        function submitPin() {
+            if (pin.length === maxLength) {
+                document.getElementById('submitButton').click();
+            }
+        }
+        
+        // Para dispositivos táctiles, asegurar que los botones sean fáciles de pulsar
+        document.querySelectorAll('.keypad-button').forEach(button => {
+            button.addEventListener('touchstart', function(e) {
+                e.preventDefault(); // Prevenir comportamiento predeterminado táctil
+                this.click(); // Simular clic en el botón
+            });
+        });
+    </script>
+</body>
+</html>

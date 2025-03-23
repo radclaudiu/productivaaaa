@@ -1,0 +1,108 @@
+{% extends 'layout.html' %}
+
+{% block title %}Puntos de Fichaje - Gestión de Empresas{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Puntos de Fichaje</h1>
+                <a href="{{ url_for('checkpoints.create_checkpoint') }}" class="btn btn-primary">
+                    <i class="fas fa-plus-circle"></i> Nuevo Punto de Fichaje
+                </a>
+            </div>
+            
+            {% if checkpoints %}
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead class="thead-dark">
+                        <tr>
+                            <th>Nombre</th>
+                            <th>Empresa</th>
+                            <th>Ubicación</th>
+                            <th>Usuario</th>
+                            <th>Estado</th>
+                            <th>Acciones</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for checkpoint in checkpoints %}
+                        <tr>
+                            <td>{{ checkpoint.name }}</td>
+                            <td>{{ checkpoint.company.name }}</td>
+                            <td>{{ checkpoint.location or 'No especificada' }}</td>
+                            <td>{{ checkpoint.username }}</td>
+                            <td>
+                                {% if checkpoint.status == 'active' %}
+                                <span class="badge bg-success">Activo</span>
+                                {% elif checkpoint.status == 'disabled' %}
+                                <span class="badge bg-danger">Desactivado</span>
+                                {% else %}
+                                <span class="badge bg-warning">Mantenimiento</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <a href="{{ url_for('checkpoints.edit_checkpoint', id=checkpoint.id) }}" 
+                                       class="btn btn-sm btn-outline-primary" 
+                                       title="Editar">
+                                        <i class="fas fa-edit"></i>
+                                    </a>
+                                    <a href="{{ url_for('checkpoints.list_checkpoint_records', id=checkpoint.id) }}" 
+                                       class="btn btn-sm btn-outline-info" 
+                                       title="Ver Registros">
+                                        <i class="fas fa-list"></i>
+                                    </a>
+                                    <button type="button" 
+                                            class="btn btn-sm btn-outline-danger" 
+                                            data-bs-toggle="modal" 
+                                            data-bs-target="#deleteModal-{{ checkpoint.id }}"
+                                            title="Eliminar">
+                                        <i class="fas fa-trash"></i>
+                                    </button>
+                                </div>
+                                
+                                <!-- Modal de confirmación para eliminar -->
+                                <div class="modal fade" id="deleteModal-{{ checkpoint.id }}" tabindex="-1" role="dialog" aria-labelledby="deleteModalLabel" aria-hidden="true">
+                                    <div class="modal-dialog" role="document">
+                                        <div class="modal-content">
+                                            <div class="modal-header">
+                                                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                                                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                            </div>
+                                            <div class="modal-body">
+                                                ¿Está seguro de que desea eliminar el punto de fichaje <strong>{{ checkpoint.name }}</strong>?
+                                                <p class="text-danger mt-2">Esta acción eliminará todos los registros asociados y no se puede deshacer.</p>
+                                            </div>
+                                            <div class="modal-footer">
+                                                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                <form action="{{ url_for('checkpoints.delete_checkpoint', id=checkpoint.id) }}" method="post">
+                                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                                                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                                                </form>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            {% else %}
+            <div class="alert alert-info">
+                <p>No hay puntos de fichaje configurados. Cree uno nuevo para comenzar.</p>
+            </div>
+            {% endif %}
+            
+            <div class="mt-4">
+                <a href="{{ url_for('checkpoints.index') }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

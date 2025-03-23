@@ -17,4 +17,6 @@ dependencies = [
     "wtforms>=3.2.1",
     "fpdf>=1.7.2",
     "openpyxl>=3.1.5",
+    "twilio>=9.5.1",
+    "pillow>=11.1.0",
 ]
