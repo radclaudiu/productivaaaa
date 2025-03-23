@@ -493,6 +493,92 @@ class ProductConservation(db.Model):
             
         # Retornar el datetime completo con hora exacta
         return from_date + timedelta(hours=self.hours_valid)
+        
+class LabelTemplate(db.Model):
+    """Modelo para almacenar las plantillas de etiquetas personalizadas"""
+    __tablename__ = 'label_templates'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(64), nullable=False)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_default = db.Column(db.Boolean, default=False)
+    
+    # Posiciones para el título
+    titulo_x = db.Column(db.Integer, default=50)
+    titulo_y = db.Column(db.Integer, default=10)
+    titulo_size = db.Column(db.Integer, default=11)
+    titulo_bold = db.Column(db.Boolean, default=True)
+    
+    # Posiciones para el tipo de conservación
+    conservacion_x = db.Column(db.Integer, default=50)
+    conservacion_y = db.Column(db.Integer, default=25)
+    conservacion_size = db.Column(db.Integer, default=9)
+    conservacion_bold = db.Column(db.Boolean, default=True)
+    
+    # Posiciones para el preparador
+    preparador_x = db.Column(db.Integer, default=50)
+    preparador_y = db.Column(db.Integer, default=40)
+    preparador_size = db.Column(db.Integer, default=7)
+    preparador_bold = db.Column(db.Boolean, default=False)
+    
+    # Posiciones para la fecha
+    fecha_x = db.Column(db.Integer, default=50)
+    fecha_y = db.Column(db.Integer, default=50)
+    fecha_size = db.Column(db.Integer, default=7)
+    fecha_bold = db.Column(db.Boolean, default=False)
+    
+    # Posiciones para la caducidad
+    caducidad_x = db.Column(db.Integer, default=50)
+    caducidad_y = db.Column(db.Integer, default=65)
+    caducidad_size = db.Column(db.Integer, default=9)
+    caducidad_bold = db.Column(db.Boolean, default=True)
+    
+    # Posiciones para la caducidad secundaria
+    caducidad2_x = db.Column(db.Integer, default=50)
+    caducidad2_y = db.Column(db.Integer, default=80)
+    caducidad2_size = db.Column(db.Integer, default=8)
+    caducidad2_bold = db.Column(db.Boolean, default=False)
+    
+    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
+    location = db.relationship('Location', backref=db.backref('label_templates', lazy=True))
+    
+    def __repr__(self):
+        return f'<LabelTemplate {self.id} - {self.name}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'is_default': self.is_default,
+            'titulo_x': self.titulo_x,
+            'titulo_y': self.titulo_y,
+            'titulo_size': self.titulo_size,
+            'titulo_bold': self.titulo_bold,
+            'conservacion_x': self.conservacion_x,
+            'conservacion_y': self.conservacion_y,
+            'conservacion_size': self.conservacion_size,
+            'conservacion_bold': self.conservacion_bold,
+            'preparador_x': self.preparador_x,
+            'preparador_y': self.preparador_y,
+            'preparador_size': self.preparador_size,
+            'preparador_bold': self.preparador_bold,
+            'fecha_x': self.fecha_x,
+            'fecha_y': self.fecha_y,
+            'fecha_size': self.fecha_size,
+            'fecha_bold': self.fecha_bold,
+            'caducidad_x': self.caducidad_x,
+            'caducidad_y': self.caducidad_y,
+            'caducidad_size': self.caducidad_size,
+            'caducidad_bold': self.caducidad_bold,
+            'caducidad2_x': self.caducidad2_x,
+            'caducidad2_y': self.caducidad2_y,
+            'caducidad2_size': self.caducidad2_size,
+            'caducidad2_bold': self.caducidad2_bold,
+            'location_id': self.location_id
+        }
 
 class ProductLabel(db.Model):
     """Modelo para registrar las etiquetas generadas"""

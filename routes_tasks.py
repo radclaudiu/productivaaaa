@@ -16,7 +16,7 @@ from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletio
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
                         LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm, PortalLoginForm,
-                        ProductForm, ProductConservationForm, GenerateLabelForm)
+                        ProductForm, ProductConservationForm, GenerateLabelForm, LabelEditorForm)
 from utils import log_activity, can_manage_company, save_file
 from utils_tasks import create_default_local_user, regenerate_portal_password
 
