@@ -191,7 +191,7 @@ class ProductForm(FlaskForm):
 class ProductConservationForm(FlaskForm):
     """Formulario para asignar tiempos de conservación a un producto"""
     conservation_type = SelectField('Tipo de conservación', validators=[DataRequired()])
-    days_valid = IntegerField('Horas válidas', validators=[
+    hours_valid = IntegerField('Horas válidas', validators=[
         DataRequired(),
         NumberRange(min=1, max=2160, message='Las horas deben estar entre 1 y 2160 (90 días)')
     ])
@@ -201,13 +201,6 @@ class ProductConservationForm(FlaskForm):
         super(ProductConservationForm, self).__init__(*args, **kwargs)
         from models_tasks import ConservationType
         self.conservation_type.choices = [(ct.value, ct.name.capitalize()) for ct in ConservationType]
-        
-        # Si se está editando un registro existente, convertir días a horas para mostrar
-        if 'obj' in kwargs and kwargs['obj'] is not None and hasattr(kwargs['obj'], 'days_valid'):
-            # Convertir días a horas (multiplicar por 24) sin redondear, para mantener precisión
-            obj = kwargs['obj']
-            if obj.days_valid is not None:
-                self.days_valid.data = int(obj.days_valid * 24)
 
 class GenerateLabelForm(FlaskForm):
     """Formulario para generar etiquetas de productos"""

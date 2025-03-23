@@ -55,7 +55,7 @@
                                                     {{ conservation.conservation_type.name }}
                                                 {% endif %}
                                             </td>
-                                            <td>{{ (conservation.days_valid * 24)|int }}</td>
+                                            <td>{{ conservation.hours_valid }}</td>
                                             <td>
                                                 {% set expiry_date = conservation.get_expiry_date() %}
                                                 {{ expiry_date.strftime('%d/%m/%Y') }}
@@ -88,9 +88,9 @@
                         </div>
                         
                         <div class="mb-3">
-                            {{ form.days_valid.label(class="form-label") }}
-                            {{ form.days_valid(class="form-control" + (" is-invalid" if form.days_valid.errors else ""), type="number", min="1", max="2160") }}
-                            {% for error in form.days_valid.errors %}
+                            {{ form.hours_valid.label(class="form-label") }}
+                            {{ form.hours_valid(class="form-control" + (" is-invalid" if form.hours_valid.errors else ""), type="number", min="1", max="2160") }}
+                            {% for error in form.hours_valid.errors %}
                                 <div class="invalid-feedback">{{ error }}</div>
                             {% endfor %}
                             <small class="form-text text-muted">Número de horas que el producto es válido en este modo de conservación.</small>

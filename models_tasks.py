@@ -440,7 +440,7 @@ class ProductConservation(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     conservation_type = db.Column(Enum(ConservationType), nullable=False)
-    days_valid = db.Column(db.Float, nullable=False, default=1)  # Días que dura el producto en este tipo de conservación (almacenado como fracción de día)
+    hours_valid = db.Column(db.Integer, nullable=False, default=24)  # Horas que dura el producto en este tipo de conservación
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -457,28 +457,12 @@ class ProductConservation(db.Model):
             'product_id': self.product_id,
             'product_name': self.product.name if self.product else None,
             'conservation_type': self.conservation_type.value,
-            'days_valid': self.days_valid,
-            'hours_valid': int(self.days_valid * 24) if self.days_valid else 0
+            'hours_valid': self.hours_valid
         }
     
     def get_expiry_date(self, from_date=None):
         """Calcula la fecha de caducidad basada en horas"""
-        if from_date is None:
-            from_date = datetime.now()
-        
-        # Usar el valor exacto en días (que internamente representa horas / 24)
-        # NO redondear para mantener la precisión exacta
-        days_valid_exact = self.days_valid
-        
-        # Calcular la fecha de caducidad incluyendo horas exactas
-        if isinstance(from_date, date) and not isinstance(from_date, datetime):
-            # Si se proporciona solo una fecha, convertir a datetime
-            from_date = datetime.combine(from_date, datetime.min.time())
-        
-        # Añadir los días (con la fracción exacta) al datetime
-        expiry_datetime = from_date + timedelta(days=days_valid_exact)
-        
-        # Devolver solo la fecha para compatibilidad con el resto del sistema
+        expiry_datetime = self.get_expiry_datetime(from_date)
         return expiry_datetime.date()
         
     def get_expiry_datetime(self, from_date=None):
@@ -486,15 +470,12 @@ class ProductConservation(db.Model):
         if from_date is None:
             from_date = datetime.now()
             
-        # Usar el valor exacto en días
-        days_valid_exact = self.days_valid
-        
         # Asegurar que trabajamos con un datetime
         if isinstance(from_date, date) and not isinstance(from_date, datetime):
             from_date = datetime.combine(from_date, datetime.min.time())
             
         # Retornar el datetime completo con hora exacta
-        return from_date + timedelta(days=days_valid_exact)
+        return from_date + timedelta(hours=self.hours_valid)
 
 class ProductLabel(db.Model):
     """Modelo para registrar las etiquetas generadas"""

@@ -2394,22 +2394,21 @@ def manage_product_conservations(id):
             conservation_type=conservation_type
         ).first()
         
-        # Convertir horas a días para almacenar en la base de datos (sin redondeo)
-        hours_valid = form.days_valid.data
-        days_valid = float(hours_valid) / 24.0  # Mantener precisión exacta
+        # Obtener horas directamente del formulario
+        hours_valid = form.hours_valid.data
         
         # Debug logging
-        current_app.logger.debug(f"Horas recibidas: {hours_valid}, convertido a días: {days_valid}")
+        current_app.logger.debug(f"Horas recibidas: {hours_valid}")
         
         if conservation:
             # Actualizar existente
-            conservation.days_valid = days_valid
+            conservation.hours_valid = hours_valid
         else:
             # Crear nueva
             conservation = ProductConservation(
                 product_id=product.id,
                 conservation_type=conservation_type,
-                days_valid=days_valid
+                hours_valid=hours_valid
             )
             db.session.add(conservation)
         
@@ -2417,7 +2416,7 @@ def manage_product_conservations(id):
             db.session.commit()
             # Verificar que se guardó correctamente
             db.session.refresh(conservation)
-            current_app.logger.debug(f"Guardado en BD: {conservation.days_valid} días, {conservation.days_valid * 24} horas")
+            current_app.logger.debug(f"Guardado en BD: {conservation.hours_valid} horas")
             
             flash('Configuración de conservación guardada correctamente', 'success')
             return redirect(url_for('tasks.manage_product_conservations', id=product.id))
