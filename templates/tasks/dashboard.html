@@ -188,6 +188,23 @@
                                 </div>
                             </div>
                         </div>
+                        
+                        <!-- Gestor de Etiquetas del Local -->
+                        <div class="col-12">
+                            <div class="card bg-info text-white">
+                                <div class="card-body py-3">
+                                    <h6 class="fw-bold"><i class="bi bi-tags"></i> Etiquetas del Local</h6>
+                                    <div class="d-flex gap-2 mt-3">
+                                        <a href="{{ url_for('tasks.manage_labels', location_id=location.id) }}" class="btn btn-light flex-grow-1">
+                                            <i class="bi bi-tag"></i> Gestionar Etiquetas
+                                        </a>
+                                        <a href="{{ url_for('tasks.create_product', location_id=location.id) }}" class="btn btn-outline-light">
+                                            <i class="bi bi-plus-circle"></i> Nuevo Producto
+                                        </a>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
                     </div>
                 </div>
             </div>
