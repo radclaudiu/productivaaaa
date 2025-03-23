@@ -47,6 +47,15 @@
                             {% endfor %}
                         </div>
                         
+                        <div class="mb-3">
+                            {{ form.shelf_life_days.label(class="form-label") }}
+                            {{ form.shelf_life_days(class="form-control" + (" is-invalid" if form.shelf_life_days.errors else ""), type="number", min="0", max="365", step="1") }}
+                            <small class="form-text text-muted">{{ form.shelf_life_days.description }}</small>
+                            {% for error in form.shelf_life_days.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
                         <div class="mb-4">
                             <div class="form-check form-switch">
                                 {{ form.is_active(class="form-check-input") }}
