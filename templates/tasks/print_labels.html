@@ -24,55 +24,88 @@
             display: inline-block;
             vertical-align: top;
             border: 0.5pt dotted #ccc; /* Borde sutil para ayudar en el corte */
+            position: relative;
         }
         
+        /* Estilos dinámicos según la plantilla */
+        {% set t = template %}
+        
         .producto {
-            font-weight: bold;
-            font-size: 11pt;     /* Incremento de tamaño */
+            font-weight: {{ 'bold' if t.titulo_bold else 'normal' }};
+            font-size: {{ t.titulo_size }}pt;
             margin-bottom: 3mm;
             text-transform: uppercase;
             white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
             max-width: 100%;
+            position: absolute;
+            top: {{ t.titulo_y }}%;
+            left: {{ t.titulo_x }}%;
+            transform: translate(-50%, -50%);
+            width: 95%;
         }
         
         .conservacion {
-            font-weight: bold;
-            margin-bottom: 2mm;
-            font-size: 9pt;      /* Incremento de tamaño */
+            font-weight: {{ 'bold' if t.conservacion_bold else 'normal' }};
+            font-size: {{ t.conservacion_size }}pt;
             padding: 1mm;
             background-color: #f8f9fa;
             border-radius: 2mm;
+            position: absolute;
+            top: {{ t.conservacion_y }}%;
+            left: {{ t.conservacion_x }}%;
+            transform: translate(-50%, -50%);
+            width: 90%;
         }
         
-
         .preparado {
-            font-size: 7pt;
-            margin-bottom: 1mm;
+            font-weight: {{ 'bold' if t.preparador_bold else 'normal' }};
+            font-size: {{ t.preparador_size }}pt;
+            position: absolute;
+            top: {{ t.preparador_y }}%;
+            left: {{ t.preparador_x }}%;
+            transform: translate(-50%, -50%);
+            width: 90%;
         }
         
         .fecha {
-            font-size: 7pt;
-            margin-bottom: 2mm;
+            font-weight: {{ 'bold' if t.fecha_bold else 'normal' }};
+            font-size: {{ t.fecha_size }}pt;
+            position: absolute;
+            top: {{ t.fecha_y }}%;
+            left: {{ t.fecha_x }}%;
+            transform: translate(-50%, -50%);
+            width: 90%;
         }
         
         .caducidad {
-            margin-top: 1mm;
+            font-weight: {{ 'bold' if t.caducidad_bold else 'normal' }};
+            font-size: {{ t.caducidad_size }}pt;
             border: 1.5pt solid #000; /* Borde más grueso */
             padding: 1.5mm;
             display: inline-block;
-            font-weight: bold;
-            font-size: 9pt;      /* Incremento de tamaño */
             background-color: #fff;
             box-shadow: 0px 0px 2px rgba(0,0,0,0.2);
+            position: absolute;
+            top: {{ t.caducidad_y }}%;
+            left: {{ t.caducidad_x }}%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            min-width: 80%;
         }
         
         .caducidad-secundaria {
-            margin-top: 1mm;
+            font-weight: {{ 'bold' if t.caducidad2_bold else 'normal' }};
+            font-size: {{ t.caducidad2_size }}pt;
             border: 1.5pt dashed #555; /* Borde punteado para diferenciar */
-            font-size: 8pt;  /* Tamaño ligeramente menor */
             background-color: #f8f9fa;
+            position: absolute;
+            top: {{ t.caducidad2_y }}%;
+            left: {{ t.caducidad2_x }}%;
+            transform: translate(-50%, -50%);
+            width: auto;
+            min-width: 80%;
         }
         
         /* Diferenciación por tipo de conservación */

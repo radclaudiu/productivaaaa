@@ -2372,6 +2372,19 @@ def generate_labels():
         if product.shelf_life_days > 0:
             secondary_expiry_date = product.get_shelf_life_expiry(now)
         
+        # Obtener la plantilla de etiquetas predeterminada para este local
+        template = LabelTemplate.query.filter_by(location_id=user.location_id, is_default=True).first()
+        
+        # Si no existe una plantilla predeterminada, crear una
+        if not template:
+            template = LabelTemplate(
+                name="Diseño Predeterminado",
+                location_id=user.location_id,
+                is_default=True
+            )
+            db.session.add(template)
+            db.session.commit()
+        
         # Registrar las etiquetas en la base de datos
         try:
             for _ in range(quantity):
@@ -2398,7 +2411,8 @@ def generate_labels():
             now=now,
             expiry_datetime=expiry_datetime,
             secondary_expiry_date=secondary_expiry_date,
-            quantity=quantity
+            quantity=quantity,
+            template=template  # Pasamos la plantilla a la vista
         )
         
     except Exception as e:
