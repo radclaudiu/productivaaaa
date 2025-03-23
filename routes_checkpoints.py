@@ -395,7 +395,7 @@ def record_signature(id):
             if is_admin_or_manager:
                 return redirect(url_for('checkpoints.list_checkpoint_records', id=record.checkpoint_id))
             else:
-                return redirect(url_for('dashboard'))
+                return redirect(url_for('main.dashboard'))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al guardar la firma: {str(e)}', 'danger')
