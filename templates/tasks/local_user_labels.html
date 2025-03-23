@@ -5,13 +5,22 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h5 class="mb-0"><i class="bi bi-tag-fill me-2"></i>Generador de Etiquetas - {{ location.name }}</h5>
+                    <a href="{{ url_for('tasks.local_user_tasks') }}" class="btn btn-light btn-sm">
+                        <i class="bi bi-list-check me-1"></i> Volver a Tareas
+                    </a>
                 </div>
                 <div class="card-body">
                     <p class="card-text">
                         Seleccione un producto y tipo de conservación para generar etiquetas con fechas de caducidad.
+                        Las etiquetas mostrarán automáticamente el nombre del local y calcularán las fechas de caducidad según el tipo de conservación.
                     </p>
+                    <div class="alert alert-info mb-0">
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        <strong>Consejo:</strong> Para cambiar entre la vista de tareas y etiquetas, use el menú superior o los botones de navegación.
+                        Las etiquetas generadas están asociadas a este local ({{ location.name }}).
+                    </div>
                 </div>
             </div>
         </div>
