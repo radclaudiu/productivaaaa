@@ -33,15 +33,13 @@
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                             
                             <div class="mb-3">
-                                <label for="product_id" class="form-label">Producto</label>
-                                <select id="product_id" name="product_id" class="form-select" required>
-                                    <option value="">Seleccionar producto...</option>
-                                    {% for product in products %}
-                                        <option value="{{ product.id }}" data-conservation-types="{{ product.conservation_types|map(attribute='conservation_type.value')|list|tojson }}">
-                                            {{ product.name }}
-                                        </option>
-                                    {% endfor %}
-                                </select>
+                                <label for="product_search" class="form-label">Buscar Producto</label>
+                                <input type="text" id="product_search" class="form-control" placeholder="Escriba para buscar..." autocomplete="off" autofocus>
+                                <div id="product_results" class="list-group mt-2 d-none">
+                                    <!-- Los resultados de la búsqueda aparecerán aquí -->
+                                </div>
+                                <input type="hidden" id="product_id" name="product_id" required>
+                                <div id="selected_product" class="mt-2 fw-bold"></div>
                             </div>
                             
                             <div class="mb-3">
@@ -99,11 +97,25 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const productSelect = document.getElementById('product_id');
+    const productSearchInput = document.getElementById('product_search');
+    const productIdInput = document.getElementById('product_id');
+    const productResultsDiv = document.getElementById('product_results');
+    const selectedProductDiv = document.getElementById('selected_product');
     const conservationSelect = document.getElementById('conservation_type');
     const previewProductName = document.getElementById('preview-product-name');
     const previewConservationType = document.getElementById('preview-conservation-type');
     const previewExpiry = document.getElementById('preview-expiry');
+    
+    // Lista de productos disponibles (obtenida del servidor)
+    const products = [
+        {% for product in products %}
+        {
+            id: {{ product.id }},
+            name: "{{ product.name }}",
+            conservationTypes: {{ product.conservation_types|map(attribute='conservation_type.value')|list|tojson }}
+        },
+        {% endfor %}
+    ];
     
     // Conservación a texto
     const conservationTypeText = {
@@ -114,36 +126,91 @@ document.addEventListener('DOMContentLoaded', function() {
         'seco': 'Seco'
     };
     
-    // Actualizar vista previa de producto
-    productSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const productName = selectedOption.text;
-        previewProductName.textContent = productName.toUpperCase();
+    // Función para mostrar y enfocar el campo de búsqueda cuando se carga la página
+    function focusSearchField() {
+        productSearchInput.focus();
+        // Mostrar teclado en pantalla (en dispositivos móviles)
+        productSearchInput.click();
+    }
+    
+    // Ejecutar después de cargar la página
+    setTimeout(focusSearchField, 500);
+    
+    // Buscar productos al escribir
+    productSearchInput.addEventListener('input', function() {
+        const searchTerm = this.value.toLowerCase().trim();
         
-        // Filtrar los tipos de conservación según el producto
-        const conservationTypes = selectedOption.dataset.conservationTypes;
-        if (conservationTypes) {
-            try {
-                const types = JSON.parse(conservationTypes);
-                
-                // Resetear select de conservación
-                conservationSelect.value = '';
-                
-                // Habilitar/deshabilitar opciones según el producto
-                Array.from(conservationSelect.options).forEach(option => {
-                    if (option.value) { // Ignorar la opción vacía
-                        if (types.includes(option.value)) {
-                            option.disabled = false;
-                        } else {
-                            option.disabled = true;
-                        }
-                    }
-                });
-            } catch (e) {
-                console.error('Error parsing conservation types:', e);
-            }
+        // Si la búsqueda está vacía, ocultar resultados
+        if (searchTerm === '') {
+            productResultsDiv.classList.add('d-none');
+            return;
         }
+        
+        // Filtrar productos que coincidan con la búsqueda
+        const filteredProducts = products.filter(product => 
+            product.name.toLowerCase().includes(searchTerm)
+        );
+        
+        // Mostrar resultados
+        renderSearchResults(filteredProducts);
     });
+    
+    // Función para renderizar los resultados de búsqueda
+    function renderSearchResults(results) {
+        productResultsDiv.innerHTML = '';
+        
+        if (results.length === 0) {
+            productResultsDiv.innerHTML = '<div class="list-group-item">No se encontraron resultados</div>';
+            productResultsDiv.classList.remove('d-none');
+            return;
+        }
+        
+        results.forEach(product => {
+            const resultItem = document.createElement('button');
+            resultItem.type = 'button';
+            resultItem.className = 'list-group-item list-group-item-action';
+            resultItem.textContent = product.name;
+            resultItem.dataset.id = product.id;
+            resultItem.dataset.conservationTypes = JSON.stringify(product.conservationTypes);
+            
+            resultItem.addEventListener('click', function() {
+                selectProduct(product);
+                productResultsDiv.classList.add('d-none');
+                productSearchInput.value = '';
+            });
+            
+            productResultsDiv.appendChild(resultItem);
+        });
+        
+        productResultsDiv.classList.remove('d-none');
+    }
+    
+    // Función para seleccionar un producto
+    function selectProduct(product) {
+        // Establecer el ID del producto seleccionado
+        productIdInput.value = product.id;
+        selectedProductDiv.textContent = product.name;
+        
+        // Actualizar vista previa
+        previewProductName.textContent = product.name.toUpperCase();
+        
+        // Resetear el select de conservación
+        conservationSelect.value = '';
+        
+        // Filtrar tipos de conservación disponibles para este producto
+        Array.from(conservationSelect.options).forEach(option => {
+            if (option.value) { // Ignorar la opción vacía
+                if (product.conservationTypes.includes(option.value)) {
+                    option.disabled = false;
+                } else {
+                    option.disabled = true;
+                }
+            }
+        });
+        
+        // Enfocar siguiente campo
+        conservationSelect.focus();
+    }
     
     // Actualizar vista previa del tipo de conservación y fecha de caducidad
     conservationSelect.addEventListener('change', function() {
@@ -185,6 +252,22 @@ document.addEventListener('DOMContentLoaded', function() {
             previewExpiry.textContent = 'Caducidad: DD/MM/AAAA HH:MM';
         }
     });
+    
+    // Cerrar resultados al hacer clic fuera
+    document.addEventListener('click', function(event) {
+        if (!productSearchInput.contains(event.target) && !productResultsDiv.contains(event.target)) {
+            productResultsDiv.classList.add('d-none');
+        }
+    });
+    
+    // Validar que se ha seleccionado un producto antes de enviar
+    document.getElementById('labelForm').addEventListener('submit', function(event) {
+        if (productIdInput.value === '') {
+            event.preventDefault();
+            alert('Por favor, seleccione un producto');
+            productSearchInput.focus();
+        }
+    });
 });
 </script>
 
@@ -203,6 +286,35 @@ document.addEventListener('DOMContentLoaded', function() {
     display: inline-block;
     margin: 0 auto;
     border-radius: 4px;
+}
+
+/* Estilos para el buscador */
+#product_results {
+    max-height: 250px;
+    overflow-y: auto;
+    position: absolute;
+    width: 100%;
+    z-index: 1000;
+    border: 1px solid rgba(0,0,0,.125);
+    border-radius: 0.25rem;
+    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+}
+
+#product_results .list-group-item {
+    cursor: pointer;
+    padding: 0.75rem 1rem;
+    font-size: 1.1rem;
+}
+
+#product_results .list-group-item:hover {
+    background-color: rgba(0,0,0,.05);
+}
+
+#selected_product {
+    padding: 0.5rem;
+    background-color: #f8f9fa;
+    border-radius: 0.25rem;
+    border: 1px solid #dee2e6;
 }
 </style>
 {% endblock %}
