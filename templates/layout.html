@@ -73,7 +73,7 @@
                     
                     <li class="nav-item">
                         <a class="nav-link {% if request.endpoint and request.endpoint.startswith('checkpoints.') %}active{% endif %}" 
-                           href="{{ url_for('checkpoints.index') }}">
+                           href="{{ url_for('checkpoints.select_company') }}">
                             <i class="bi bi-clock-history"></i> Puntos de Fichaje
                         </a>
                     </li>
@@ -172,7 +172,7 @@
                         
                         <li class="nav-item">
                             <a class="nav-link {% if request.endpoint and request.endpoint.startswith('checkpoints.') %}active{% endif %}" 
-                               href="{{ url_for('checkpoints.index') }}">
+                               href="{{ url_for('checkpoints.select_company') }}">
                                 <i class="bi bi-clock-history"></i> Puntos de Fichaje
                             </a>
                         </li>
@@ -198,7 +198,7 @@
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link bg-primary text-white rounded mb-2" href="{{ url_for('checkpoints.index') }}">
+                            <a class="nav-link bg-primary text-white rounded mb-2" href="{{ url_for('checkpoints.select_company') }}">
                                 <i class="bi bi-clock-history"></i> <strong>Puntos de Fichaje</strong>
                             </a>
                         </li>
