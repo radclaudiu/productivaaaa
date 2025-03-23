@@ -197,11 +197,19 @@ def create_checkpoint():
         form.company_id.data = company_id
     
     if form.validate_on_submit():
+        # Convertir el string del status a un objeto de enumeración
+        status_value = form.status.data
+        status_enum = CheckPointStatus.ACTIVE  # Default
+        for status in CheckPointStatus:
+            if status.value == status_value:
+                status_enum = status
+                break
+                
         checkpoint = CheckPoint(
             name=form.name.data,
             description=form.description.data,
             location=form.location.data,
-            status=form.status.data,
+            status=status_enum,
             username=form.username.data,
             company_id=form.company_id.data,
             auto_checkout_time=form.auto_checkout_time.data,
@@ -248,10 +256,18 @@ def edit_checkpoint(id):
     form.company_id.choices = [(c.id, c.name) for c in companies]
     
     if form.validate_on_submit():
+        # Convertir el string del status a un objeto de enumeración
+        status_value = form.status.data
+        status_enum = CheckPointStatus.ACTIVE  # Default
+        for status in CheckPointStatus:
+            if status.value == status_value:
+                status_enum = status
+                break
+                
         checkpoint.name = form.name.data
         checkpoint.description = form.description.data
         checkpoint.location = form.location.data
-        checkpoint.status = form.status.data
+        checkpoint.status = status_enum
         checkpoint.username = form.username.data
         checkpoint.company_id = form.company_id.data
         checkpoint.auto_checkout_time = form.auto_checkout_time.data
