@@ -2269,6 +2269,7 @@ def create_product(location_id=None):
         product = Product(
             name=form.name.data,
             description=form.description.data,
+            shelf_life_days=form.shelf_life_days.data or 0,
             is_active=form.is_active.data,
             location_id=form.location_id.data
         )

@@ -184,6 +184,10 @@ class ProductForm(FlaskForm):
     """Formulario para crear y editar productos"""
     name = StringField('Nombre del producto', validators=[DataRequired(), Length(max=128)])
     description = TextAreaField('Descripción', validators=[Optional(), Length(max=500)])
+    shelf_life_days = IntegerField('Vida útil (días)', validators=[
+        Optional(),
+        NumberRange(min=0, max=365, message='La vida útil debe estar entre 0 y 365 días')
+    ], default=0, description='Días hasta caducidad secundaria (0 = sin fecha secundaria)')
     is_active = BooleanField('Producto activo', default=True)
     location_id = SelectField('Local', coerce=int, validators=[DataRequired()])
     submit = SubmitField('Guardar Producto')

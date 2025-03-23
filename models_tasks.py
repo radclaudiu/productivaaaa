@@ -407,6 +407,7 @@ class Product(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     name = db.Column(db.String(128), nullable=False)
     description = db.Column(db.Text)
+    shelf_life_days = db.Column(db.Integer, default=0, nullable=False)  # Vida útil en días (0 = no aplicable)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
@@ -429,10 +430,26 @@ class Product(db.Model):
             'id': self.id,
             'name': self.name,
             'description': self.description,
+            'shelf_life_days': self.shelf_life_days,
             'location_id': self.location_id,
             'location_name': self.location.name if self.location else None,
             'is_active': self.is_active
         }
+        
+    def get_shelf_life_expiry(self, from_date=None):
+        """Calcula la fecha de caducidad secundaria basada en la vida útil en días"""
+        if self.shelf_life_days <= 0:
+            return None
+            
+        if from_date is None:
+            from_date = datetime.now()
+            
+        # Asegurar que trabajamos con un datetime
+        if isinstance(from_date, date) and not isinstance(from_date, datetime):
+            from_date = datetime.combine(from_date, datetime.min.time())
+            
+        # Calcular fecha de caducidad secundaria (solo fecha, sin hora)
+        return (from_date + timedelta(days=self.shelf_life_days)).date()
 
 class ProductConservation(db.Model):
     """Modelo para definir los tiempos de conservación de un producto según el tipo"""
