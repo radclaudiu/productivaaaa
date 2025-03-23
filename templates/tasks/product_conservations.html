@@ -49,6 +49,8 @@
                                                     <span class="text-success"><i class="bi bi-cup-hot me-2"></i>Gastro</span>
                                                 {% elif conservation.conservation_type.value == 'caliente' %}
                                                     <span class="text-danger"><i class="bi bi-fire me-2"></i>Caliente</span>
+                                                {% elif conservation.conservation_type.value == 'seco' %}
+                                                    <span class="text-warning"><i class="bi bi-box2 me-2"></i>Seco</span>
                                                 {% else %}
                                                     {{ conservation.conservation_type.name }}
                                                 {% endif %}
@@ -123,6 +125,10 @@
                         <li class="mb-2">
                             <span class="text-danger"><i class="bi bi-fire me-2"></i>Caliente</span>: 
                             <small class="text-muted">Para productos calientes listos para servir.</small>
+                        </li>
+                        <li class="mb-2">
+                            <span class="text-warning"><i class="bi bi-box2 me-2"></i>Seco</span>: 
+                            <small class="text-muted">Para productos almacenados en seco a temperatura ambiente.</small>
                         </li>
                     </ul>
                     <p class="small text-muted mb-0">

@@ -62,7 +62,12 @@ def index():
         # Otros usuarios no tendrían acceso, pero por si acaso
         locations = []
     
-    # Mostrar siempre la página de dashboard, tanto si hay locales como si no
+    # Si hay locales, redirigir al primero
+    if locations:
+        first_location = locations[0]
+        return redirect(url_for('tasks.view_location', id=first_location.id))
+        
+    # Si no hay locales, mostrar la página de dashboard con el botón para crear el primer local
     return render_template('tasks/dashboard.html', locations=locations)
 
 # Rutas para gestión de locales
