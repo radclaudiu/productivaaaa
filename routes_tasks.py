@@ -1773,10 +1773,11 @@ def local_user_labels():
 
 # Gestor de etiquetas en la página de tareas
 @tasks_bp.route('/dashboard/labels')
+@tasks_bp.route('/dashboard/labels/<int:location_id>')
 @login_required
 @manager_required
-def manage_labels():
-    """Gestor de etiquetas para la página de tareas"""
+def manage_labels(location_id=None):
+    """Gestor de etiquetas para la página de tareas, filtrado por ubicación si se especifica"""
     companies = []
     
     # Filtrar empresas según el rol del usuario
@@ -1787,18 +1788,31 @@ def manage_labels():
     
     # Obtener ubicaciones asociadas a las empresas que puede ver
     company_ids = [c.id for c in companies]
-    locations = Location.query.filter(Location.company_id.in_(company_ids)).all()
     
-    # Obtener todos los productos
+    # Si se especifica una ubicación, verificar permisos
+    location = None
+    if location_id:
+        location = Location.query.get_or_404(location_id)
+        if location.company_id not in company_ids and not current_user.is_admin():
+            flash('No tiene permisos para acceder a esta ubicación', 'danger')
+            return redirect(url_for('tasks.index'))
+        
+        # Filtrar sólo por la ubicación especificada
+        locations = [location]
+        location_ids = [location_id]
+    else:
+        # Sin filtro de ubicación, mostrar todas las ubicaciones permitidas
+        locations = Location.query.filter(Location.company_id.in_(company_ids)).all()
+        location_ids = [loc.id for loc in locations]
+    
+    # Obtener todos los productos de las ubicaciones permitidas
     products = []
     if locations:
-        location_ids = [loc.id for loc in locations]
         products = Product.query.filter(Product.location_id.in_(location_ids)).order_by(Product.name).all()
     
     # Obtener etiquetas generadas recientemente (últimos 30 días)
     recent_labels = []
     if products:  # Si hay productos
-        location_ids = [loc.id for loc in locations]
         thirty_days_ago = datetime.now() - timedelta(days=30)
         
         recent_labels = db.session.query(
@@ -1814,10 +1828,13 @@ def manage_labels():
             ProductLabel.created_at.desc()
         ).limit(50).all()
     
+    título = f'Etiquetas de {location.name}' if location else 'Gestor de Etiquetas'
+    
     return render_template('tasks/manage_labels.html',
-                          title='Gestor de Etiquetas',
+                          title=título,
                           companies=companies,
                           locations=locations,
+                          selected_location=location,
                           products=products,
                           recent_labels=recent_labels)
 
@@ -1947,11 +1964,22 @@ def list_products():
     )
 
 @tasks_bp.route('/admin/products/create', methods=['GET', 'POST'])
+@tasks_bp.route('/admin/products/create/<int:location_id>', methods=['GET', 'POST'])
 @login_required
 @manager_required
-def create_product():
-    """Crear nuevo producto"""
+def create_product(location_id=None):
+    """Crear nuevo producto, opcionalmente preseleccionando una ubicación"""
     form = ProductForm()
+    
+    # Si se proporciona un ID de ubicación, verificar permisos
+    preselected_location = None
+    if location_id:
+        preselected_location = Location.query.get_or_404(location_id)
+        if not current_user.is_admin():
+            company_ids = [c.id for c in current_user.companies]
+            if preselected_location.company_id not in company_ids:
+                flash('No tiene permisos para crear productos en esta ubicación', 'danger')
+                return redirect(url_for('tasks.list_products'))
     
     # Opciones de ubicaciones
     locations = []
@@ -1962,6 +1990,10 @@ def create_product():
         locations = Location.query.filter(Location.company_id.in_(company_ids)).order_by(Location.name).all()
     
     form.location_id.choices = [(l.id, f"{l.name} ({l.company.name})") for l in locations]
+    
+    # Si hay una ubicación preseleccionada, establecerla como valor predeterminado
+    if preselected_location and request.method == 'GET':
+        form.location_id.data = preselected_location.id
     
     if form.validate_on_submit():
         product = Product(
