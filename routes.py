@@ -314,21 +314,10 @@ def export_company_data(id):
         mimetype='application/zip'
     )
 
-@company_bp.route('/<int:id>/delete', methods=['GET', 'POST'])
+@company_bp.route('/<int:id>/delete', methods=['POST'])
 @admin_required
 def delete_company(id):
     company = Company.query.get_or_404(id)
-    
-    # GET request shows confirmation page
-    if request.method == 'GET':
-        return render_template('company_delete_confirm.html', company=company)
-    
-    # POST request processes the deletion if confirmed
-    confirm = request.form.get('confirm')
-    
-    if not confirm:
-        flash('Se requiere confirmación para eliminar la empresa.', 'warning')
-        return redirect(url_for('company.view_company', id=company.id))
     
     # Proceed with deletion
     company_name = company.name

@@ -17,9 +17,9 @@
             <a href="{{ url_for('company.export_company_data', id=company.id) }}" class="btn btn-secondary">
                 <i class="bi bi-file-earmark-zip"></i> Exportar Datos
             </a>
-            <a href="{{ url_for('company.delete_company', id=company.id) }}" class="btn btn-danger">
+            <button class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#deleteCompanyModal">
                 <i class="bi bi-trash"></i> Eliminar Empresa
-            </a>
+            </button>
             {% endif %}
         </div>
     </div>
@@ -200,6 +200,43 @@
         </div>
     </div>
 </div>
+
+<!-- Modal para confirmar eliminación de empresa -->
+<div class="modal fade" id="deleteCompanyModal" tabindex="-1" aria-labelledby="deleteCompanyModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title" id="deleteCompanyModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar la empresa <strong>{{ company.name }}</strong>?</p>
+                
+                <div class="alert alert-warning">
+                    <h6 class="alert-heading">¡Atención! Esta acción no se puede deshacer</h6>
+                    <p>Al eliminar esta empresa se eliminará también:</p>
+                    <ul>
+                        <li>Toda la información relacionada con la empresa</li>
+                        <li>Todos los empleados asociados y sus documentos</li>
+                        <li>Todos los locales y tareas asociadas</li>
+                        <li>Todos los usuarios locales</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form action="{{ url_for('company.delete_company', id=company.id) }}" method="post">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                    <input type="hidden" name="confirm" value="true" />
+                    <button type="submit" class="btn btn-danger">
+                        <i class="bi bi-trash"></i> Eliminar Definitivamente
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
 {% endblock %}
 
 {% block scripts %}
