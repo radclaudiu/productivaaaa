@@ -7,8 +7,8 @@
     <style>
         @media print {
             @page {
-                size: 57mm 57mm; /* Tamaño estándar para etiquetas pequeñas */
-                margin: 2mm;
+                size: 40mm 45mm; /* Tamaño exacto para la etiquetadora */
+                margin: 0; /* Sin márgenes */
             }
             
             body {
@@ -18,9 +18,21 @@
                 -webkit-print-color-adjust: exact !important;
                 color-adjust: exact !important;
                 print-color-adjust: exact !important;
+                background: white;
             }
             
-            .no-print {
+            .label {
+                width: 40mm;
+                height: 45mm;
+                box-sizing: border-box;
+                overflow: hidden;
+                display: flex;
+                flex-direction: column;
+                justify-content: center;
+                padding: 2mm;
+            }
+            
+            .preview-container {
                 display: none !important;
             }
             
@@ -29,14 +41,8 @@
             }
         }
         
-        body {
-            font-family: Arial, sans-serif;
-            margin: 0;
-            padding: 0;
-            background: #f5f5f5;
-        }
-        
-        .container {
+        /* Estilos solo para previsualización en pantalla (no afectan a la impresión) */
+        .preview-container {
             max-width: 800px;
             margin: 20px auto;
             padding: 20px;
@@ -44,123 +50,71 @@
             box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
         }
         
-        .header {
-            margin-bottom: 20px;
-            text-align: center;
-        }
-        
-        h1 {
-            font-size: 24px;
-            margin-bottom: 10px;
-        }
-        
-        .actions {
-            margin-bottom: 20px;
-            display: flex;
-            justify-content: space-between;
-        }
-        
-        .btn {
-            padding: 8px 16px;
-            background: #007bff;
-            color: white;
-            border: none;
-            border-radius: 4px;
-            cursor: pointer;
-            text-decoration: none;
-            font-size: 14px;
-        }
-        
-        .btn-print {
-            background: #28a745;
-        }
-        
-        .btn-back {
-            background: #6c757d;
-        }
-        
-        .label-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
-            gap: 10px;
-        }
-        
+        /* Estilos para la etiqueta */
         .label {
+            text-align: center;
             border: 1px solid #000;
-            padding: 10px;
             background: white;
-            width: 200px;
-            height: 200px;
+            padding: 5px;
+            width: 40mm;
+            height: 45mm;
+            margin: 0 auto;
+            box-sizing: border-box;
             display: flex;
             flex-direction: column;
             justify-content: center;
-            box-sizing: border-box;
-        }
-        
-        .label-inner {
-            text-align: center;
         }
         
         .product-name {
-            font-size: 16px;
+            font-size: 14px;
             font-weight: bold;
-            margin-bottom: 8px;
+            margin-bottom: 3px;
+            line-height: 1.2;
+        }
+        
+        .conservation-info {
+            font-size: 10px;
+            font-style: italic;
+            margin-bottom: 2px;
         }
         
         .user-info {
-            font-size: 12px;
-            margin-bottom: 4px;
+            font-size: 9px;
+            margin-bottom: 2px;
         }
         
         .date-info {
-            font-size: 12px;
-            margin-bottom: 4px;
+            font-size: 9px;
+            margin-bottom: 2px;
         }
         
         .expiry-info {
-            font-size: 14px;
+            font-size: 12px;
             font-weight: bold;
-            margin-top: 8px;
+            margin-top: 3px;
             padding: 2px;
             border: 1px solid #000;
             background-color: #ffffe0;
         }
-        
-        .conservation-info {
-            font-size: 12px;
-            font-style: italic;
-            margin-bottom: 4px;
-        }
     </style>
 </head>
 <body>
-    <div class="container no-print">
-        <div class="header">
-            <h1>Etiquetas para imprimir: {{ product.name }}</h1>
-            <p>Se generarán {{ quantity }} etiqueta(s)</p>
-        </div>
-        
-        <div class="actions">
-            <a href="{{ url_for('tasks.local_user_labels') }}" class="btn btn-back">
-                Volver
-            </a>
-            <button onclick="window.print()" class="btn btn-print">
-                Imprimir Etiquetas
-            </button>
-        </div>
+    <!-- Contenedor solo visible en navegador, no en impresión -->
+    <div class="preview-container">
+        <h2>Vista previa de la etiqueta</h2>
+        <p>Tamaño real: 40mm x 45mm para etiquetadora. Al imprimir, solo aparecerá la etiqueta.</p>
+        <button onclick="window.print()">Imprimir Etiquetas</button>
+        <a href="{{ url_for('tasks.local_user_labels') }}">Volver</a>
     </div>
     
     {% for i in range(quantity) %}
         {% if i > 0 %}<div class="page-break"></div>{% endif %}
         <div class="label">
-            <div class="label-inner">
-                <div class="product-name">{{ product.name|upper }}</div>
-                <div class="conservation-info">{{ conservation_type.name }}</div>
-                <div class="user-info">Preparado por: {{ user.name }} {{ user.last_name }}</div>
-                <div class="date-info">Fecha: {{ now.strftime('%d/%m/%Y') }}</div>
-                <div class="date-info">Hora: {{ now.strftime('%H:%M') }}</div>
-                <div class="expiry-info">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
-            </div>
+            <div class="product-name">{{ product.name|upper }}</div>
+            <div class="conservation-info">{{ conservation_type.name }}</div>
+            <div class="user-info">Prep: {{ user.name }} {{ user.last_name }}</div>
+            <div class="date-info">{{ now.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div class="expiry-info">Cad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
         </div>
     {% endfor %}
     
