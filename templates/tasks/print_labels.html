@@ -99,12 +99,12 @@
         
         .caducidad-secundaria {
             font-weight: normal; /* Normal para la caducidad secundaria */
-            font-size: {{ t.caducidad2_size > 12 ? 12 : t.caducidad2_size }}pt; /* Limitar tamaño */
+            font-size: {{ t.caducidad2_size }}pt; /* Usar tamaño original */
             border: 1pt dashed #555; /* Borde punteado más fino */
             background-color: #f8f9fa;
             position: absolute;
-            top: {{ t.caducidad2_y + 10 }}%; /* Ajustar posición para evitar sobreposición */
-            left: {{ t.caducidad2_x }}%;
+            top: 75%; /* Posición fija para evitar sobreposición */
+            left: 50%;
             transform: translate(-50%, -50%);
             width: auto;
             min-width: 60%; /* Reducir ancho para mejor ajuste */
