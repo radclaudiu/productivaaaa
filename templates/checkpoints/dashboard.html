@@ -1,311 +1,230 @@
-<!DOCTYPE html>
-<html lang="es">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Panel de Fichaje - {{ checkpoint.name }}</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
-    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
-    <style>
-        body {
-            background-color: #f8f9fa;
-        }
-        
-        .header {
-            background-color: #343a40;
-            color: white;
-            padding: 15px 0;
-            text-align: center;
-            margin-bottom: 20px;
-        }
-        
-        .time-display {
-            font-size: 3rem;
-            font-weight: bold;
-            text-align: center;
-            margin: 30px 0;
-        }
-        
-        .date-display {
-            font-size: 1.5rem;
-            text-align: center;
-            margin-bottom: 40px;
-        }
-        
-        .employee-grid {
-            display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
-            gap: 15px;
-            margin-bottom: 30px;
-        }
-        
+{% extends 'checkpoints/portal_layout.html' %}
+
+{% block title %}Punto de Fichaje - {{ checkpoint.name }}{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .employee-card {
+        transition: all 0.3s ease;
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+        margin-bottom: 1.5rem;
+        height: 100%;
+    }
+    
+    .employee-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        border-color: var(--bs-primary);
+    }
+    
+    .employee-card .card-body {
+        display: flex;
+        flex-direction: column;
+        justify-content: center;
+        align-items: center;
+        padding: 1.5rem;
+        text-align: center;
+    }
+    
+    .employee-card .employee-name {
+        font-size: 1.2rem;
+        margin-top: 0.5rem;
+        margin-bottom: 0.5rem;
+        font-weight: 500;
+    }
+    
+    .employee-avatar {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #e9ecef;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .employee-avatar .avatar-text {
+        font-size: 2.5rem;
+        font-weight: 500;
+        color: var(--bs-primary);
+    }
+    
+    .employee-avatar img {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        border-radius: 50%;
+    }
+    
+    .time-display {
+        font-size: 2rem;
+        font-weight: 600;
+        margin-bottom: 1.5rem;
+        text-align: center;
+    }
+    
+    .date-display {
+        font-size: 1.2rem;
+        margin-bottom: 1rem;
+        text-align: center;
+    }
+    
+    .recent-records {
+        margin-top: 2rem;
+    }
+    
+    @media (max-width: 768px) {
         .employee-card {
-            background-color: white;
-            border-radius: 10px;
-            overflow: hidden;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
-            text-align: center;
-            cursor: pointer;
-            transition: transform 0.3s ease;
-            position: relative;
-        }
-        
-        .employee-card:hover {
-            transform: translateY(-5px);
+            margin-bottom: 1rem;
         }
         
         .employee-avatar {
             width: 80px;
             height: 80px;
-            background-color: #6c757d;
-            color: white;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 40px;
-            margin: 15px auto;
-            border-radius: 50%;
         }
         
         .employee-name {
-            padding: 10px;
-            font-weight: bold;
-            height: 60px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            text-align: center;
-            font-size: 0.9rem;
+            font-size: 1rem;
         }
-        
-        .status-indicator {
-            position: absolute;
-            top: 10px;
-            right: 10px;
-            width: 15px;
-            height: 15px;
-            border-radius: 50%;
-        }
-        
-        .status-active {
-            background-color: #28a745;
-        }
-        
-        .status-inactive {
-            background-color: #dc3545;
-        }
-        
-        .status-working {
-            background-color: #007bff;
-        }
-        
-        .footer {
-            margin-top: 30px;
-            text-align: center;
-            padding-bottom: 30px;
-        }
-        
-        .action-buttons {
-            display: flex;
-            justify-content: center;
-            gap: 15px;
-            margin-bottom: 20px;
-        }
-        
-        .btn-lg {
-            padding: 15px 25px;
-        }
-        
-        /* Paginación */
-        .pagination {
-            display: flex;
-            justify-content: center;
-            margin-top: 20px;
-        }
-        
-        .page-link {
-            padding: 10px 15px;
-        }
-        
-        /* Buscador */
-        .search-container {
-            max-width: 600px;
-            margin: 0 auto 30px;
-        }
-        
-        @media (max-width: 768px) {
-            .employee-grid {
-                grid-template-columns: repeat(auto-fill, minmax(120px, 1fr));
-            }
-            
-            .employee-avatar {
-                width: 60px;
-                height: 60px;
-                font-size: 30px;
-            }
-            
-            .employee-name {
-                font-size: 0.8rem;
-                height: 50px;
-            }
-        }
-    </style>
-</head>
-<body>
-    <div class="header">
-        <div class="container">
-            <h2>{{ checkpoint.name }}</h2>
-            <p>{{ checkpoint.company.name }}</p>
-        </div>
-    </div>
-    
-    <div class="container">
-        {% with messages = get_flashed_messages(with_categories=true) %}
-            {% if messages %}
-                {% for category, message in messages %}
-                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                        {{ message }}
-                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card bg-primary text-white">
+                <div class="card-body p-4">
+                    <h1 class="text-center mb-0">{{ checkpoint.name }}</h1>
+                    <p class="text-center mb-0">{{ checkpoint.location }}</p>
+                    <div class="text-center mt-3">
+                        <div class="date-display" id="currentDate"></div>
+                        <div class="time-display" id="currentTime"></div>
                     </div>
-                {% endfor %}
-            {% endif %}
-        {% endwith %}
-        
-        <div class="time-display" id="clock">00:00:00</div>
-        <div class="date-display" id="date">Cargando...</div>
-        
-        <div class="search-container">
-            <div class="input-group mb-3">
-                <span class="input-group-text"><i class="fas fa-search"></i></span>
-                <input type="text" class="form-control" id="employeeSearch" placeholder="Buscar empleado..." aria-label="Buscar empleado">
+                </div>
             </div>
         </div>
-        
-        {% if employees %}
-        <div class="employee-grid" id="employeeGrid">
-            {% for employee in employees %}
-            <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none employee-item">
-                <div class="employee-card">
-                    {% if employee.id in working_employees %}
-                    <div class="status-indicator status-working" title="Trabajando"></div>
-                    {% elif employee.is_active %}
-                    <div class="status-indicator status-active" title="Activo"></div>
-                    {% else %}
-                    <div class="status-indicator status-inactive" title="Inactivo"></div>
-                    {% endif %}
-                    
-                    <div class="employee-avatar">
-                        <i class="fas fa-user"></i>
-                    </div>
-                    <div class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</div>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-            </a>
             {% endfor %}
-        </div>
-        
-        <!-- Paginación -->
-        {% if pagination and pagination.pages > 1 %}
-        <div class="pagination">
-            <ul class="pagination">
-                {% if pagination.has_prev %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('checkpoints.checkpoint_dashboard', page=pagination.prev_num) }}">
-                        <i class="fas fa-chevron-left"></i> Anterior
+        {% endif %}
+    {% endwith %}
+    
+    <div class="row">
+        <div class="col-12">
+            <h2 class="mb-4 text-center">Seleccione su Nombre</h2>
+            
+            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4">
+                {% for employee in employees %}
+                <div class="col">
+                    <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none">
+                        <div class="card employee-card">
+                            <div class="card-body">
+                                <div class="employee-avatar">
+                                    {% if employee.photo_path %}
+                                    <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="{{ employee.first_name }}">
+                                    {% else %}
+                                    <div class="avatar-text">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</div>
+                                    {% endif %}
+                                </div>
+                                <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
+                                <p class="text-muted mb-0">{{ employee.position or 'Sin cargo' }}</p>
+                            </div>
+                        </div>
                     </a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link"><i class="fas fa-chevron-left"></i> Anterior</span>
-                </li>
-                {% endif %}
-                
-                {% for page in pagination.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
-                    {% if page %}
-                        {% if page == pagination.page %}
-                        <li class="page-item active">
-                            <span class="page-link">{{ page }}</span>
-                        </li>
-                        {% else %}
-                        <li class="page-item">
-                            <a class="page-link" href="{{ url_for('checkpoints.checkpoint_dashboard', page=page) }}">{{ page }}</a>
-                        </li>
-                        {% endif %}
-                    {% else %}
-                    <li class="page-item disabled">
-                        <span class="page-link">…</span>
-                    </li>
-                    {% endif %}
+                </div>
                 {% endfor %}
-                
-                {% if pagination.has_next %}
-                <li class="page-item">
-                    <a class="page-link" href="{{ url_for('checkpoints.checkpoint_dashboard', page=pagination.next_num) }}">
-                        Siguiente <i class="fas fa-chevron-right"></i>
-                    </a>
-                </li>
-                {% else %}
-                <li class="page-item disabled">
-                    <span class="page-link">Siguiente <i class="fas fa-chevron-right"></i></span>
-                </li>
-                {% endif %}
-            </ul>
-        </div>
-        {% endif %}
-        
-        {% else %}
-        <div class="alert alert-info">
-            No hay empleados disponibles para esta empresa.
-        </div>
-        {% endif %}
-        
-        <div class="action-buttons">
-            <a href="{{ url_for('checkpoints.daily_report') }}" class="btn btn-primary btn-lg">
-                <i class="fas fa-clipboard-list"></i> Informe Diario
-            </a>
-            <a href="{{ url_for('checkpoints.logout') }}" class="btn btn-secondary btn-lg">
-                <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
-            </a>
+            </div>
         </div>
     </div>
     
-    <div class="footer">
-        <p class="text-muted">© {{ current_year }} Sistema de Fichajes</p>
+    {% if recent_records %}
+    <div class="row mt-5 recent-records">
+        <div class="col-12">
+            <h3 class="mb-3">Registros Recientes</h3>
+            <div class="table-responsive">
+                <table class="table table-striped table-hover">
+                    <thead>
+                        <tr>
+                            <th>Empleado</th>
+                            <th>Acción</th>
+                            <th>Fecha</th>
+                            <th>Hora</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for record in recent_records %}
+                        <tr>
+                            <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
+                            <td>
+                                {% if record.check_out_time %}
+                                <span class="badge bg-danger">Salida</span>
+                                {% else %}
+                                <span class="badge bg-success">Entrada</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.check_out_time %}
+                                {{ record.check_out_time.strftime('%d/%m/%Y') }}
+                                {% else %}
+                                {{ record.check_in_time.strftime('%d/%m/%Y') }}
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if record.check_out_time %}
+                                {{ record.check_out_time.strftime('%H:%M') }}
+                                {% else %}
+                                {{ record.check_in_time.strftime('%H:%M') }}
+                                {% endif %}
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
     </div>
+    {% endif %}
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Función para actualizar la hora y fecha
+    function updateTime() {
+        const now = new Date();
+        
+        // Formatear la hora: HH:MM:SS
+        const hours = String(now.getHours()).padStart(2, '0');
+        const minutes = String(now.getMinutes()).padStart(2, '0');
+        const seconds = String(now.getSeconds()).padStart(2, '0');
+        document.getElementById('currentTime').textContent = `${hours}:${minutes}:${seconds}`;
+        
+        // Formatear la fecha: día de la semana, día mes, año
+        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
+        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+        
+        const dayOfWeek = days[now.getDay()];
+        const day = now.getDate();
+        const month = months[now.getMonth()];
+        const year = now.getFullYear();
+        
+        document.getElementById('currentDate').textContent = `${dayOfWeek}, ${day} de ${month} de ${year}`;
+    }
     
-    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
-    <script>
-        // Reloj en tiempo real
-        function updateClock() {
-            const now = new Date();
-            const hours = now.getHours().toString().padStart(2, '0');
-            const minutes = now.getMinutes().toString().padStart(2, '0');
-            const seconds = now.getSeconds().toString().padStart(2, '0');
-            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
-            
-            // Actualizar fecha
-            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
-            document.getElementById('date').textContent = now.toLocaleDateString('es-ES', options);
-        }
-        
-        // Actualizar cada segundo
-        setInterval(updateClock, 1000);
-        updateClock(); // Inicializar
-        
-        // Búsqueda de empleados
-        document.getElementById('employeeSearch').addEventListener('input', function() {
-            const searchTerm = this.value.toLowerCase();
-            const employeeItems = document.querySelectorAll('.employee-item');
-            
-            employeeItems.forEach(item => {
-                const employeeName = item.querySelector('.employee-name').textContent.toLowerCase();
-                
-                if (employeeName.includes(searchTerm)) {
-                    item.style.display = '';
-                } else {
-                    item.style.display = 'none';
-                }
-            });
-        });
-    </script>
-</body>
-</html>
+    // Actualizar cada segundo
+    updateTime();
+    setInterval(updateTime, 1000);
+</script>
+{% endblock %}

@@ -70,7 +70,13 @@
                             <i class="bi bi-tags"></i> Gestor de Etiquetas
                         </a>
                     </li>
-
+                    
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('checkpoints.') %}active{% endif %}" 
+                           href="{{ url_for('checkpoints.index') }}">
+                            <i class="bi bi-clock-history"></i> Puntos de Fichaje
+                        </a>
+                    </li>
                     
                     {% if current_user.is_admin() %}
                     <li class="nav-item">
@@ -163,7 +169,13 @@
                                 <i class="bi bi-tags"></i> Gestor de Etiquetas
                             </a>
                         </li>
-
+                        
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('checkpoints.') %}active{% endif %}" 
+                               href="{{ url_for('checkpoints.index') }}">
+                                <i class="bi bi-clock-history"></i> Puntos de Fichaje
+                            </a>
+                        </li>
                         
                         {% if current_user.is_admin() %}
                         <li class="nav-item">
@@ -182,6 +194,12 @@
                         <li class="nav-item">
                             <a class="nav-link bg-info text-white rounded mb-2" href="{{ url_for('tasks.manage_labels') }}">
                                 <i class="bi bi-tags"></i> <strong>Gestor de Etiquetas</strong>
+                            </a>
+                        </li>
+                        
+                        <li class="nav-item">
+                            <a class="nav-link bg-primary text-white rounded mb-2" href="{{ url_for('checkpoints.index') }}">
+                                <i class="bi bi-clock-history"></i> <strong>Puntos de Fichaje</strong>
                             </a>
                         </li>
                         

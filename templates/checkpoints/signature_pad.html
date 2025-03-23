@@ -1,0 +1,178 @@
+{% extends 'layout.html' %}
+
+{% block title %}Firma Digital{% endblock %}
+
+{% block head %}
+{{ super() }}
+<!-- Librería para firmas digitales -->
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<style>
+    #signature-pad {
+        width: 100%;
+        height: 200px;
+        background-color: #f8f9fa;
+        border: 1px solid #ced4da;
+        border-radius: 0.25rem;
+    }
+    #signature-message {
+        display: none;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Firma Digital</h1>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Detalles del Registro</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <p><strong>Empleado:</strong> {{ record.employee.first_name }} {{ record.employee.last_name }}</p>
+                            <p><strong>Punto de fichaje:</strong> {{ record.checkpoint.name }}</p>
+                            <p><strong>Fecha:</strong> {{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <p><strong>Entrada:</strong> {{ record.check_in_time.strftime('%H:%M') }}</p>
+                            <p><strong>Salida:</strong> 
+                                {% if record.check_out_time %}
+                                {{ record.check_out_time.strftime('%H:%M') }}
+                                {% else %}
+                                <span class="text-warning">Pendiente</span>
+                                {% endif %}
+                            </p>
+                            <p>
+                                <strong>Duración:</strong> 
+                                {% if record.check_out_time %}
+                                {{ "%.2f"|format(record.duration()) }} horas
+                                {% else %}
+                                <span class="text-warning">En curso</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            {% with messages = get_flashed_messages(with_categories=true) %}
+                {% if messages %}
+                    {% for category, message in messages %}
+                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                            {{ message }}
+                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                        </div>
+                    {% endfor %}
+                {% endif %}
+            {% endwith %}
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Firma</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-3">Por favor, firme a continuación para confirmar este registro de fichaje:</p>
+                    
+                    <div id="signature-container" class="mb-3">
+                        <canvas id="signature-pad"></canvas>
+                    </div>
+                    
+                    <div class="alert alert-info" id="signature-message">
+                        <i class="fas fa-info-circle"></i> 
+                        Firma capturada correctamente.
+                    </div>
+                    
+                    <div class="d-flex justify-content-between mb-3">
+                        <button type="button" id="clear-button" class="btn btn-secondary">
+                            <i class="fas fa-eraser"></i> Borrar
+                        </button>
+                    </div>
+                    
+                    <form method="POST" id="signature-form">
+                        {{ form.csrf_token }}
+                        {{ form.record_id(value=record.id) }}
+                        {{ form.signature_data }}
+                        
+                        <div class="alert alert-warning">
+                            <i class="fas fa-exclamation-triangle"></i> 
+                            Al firmar, confirma la veracidad de los datos de este registro de fichaje.
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('checkpoints.list_checkpoint_records', id=record.checkpoint_id) }}" 
+                              class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary", id="submit-button", disabled="disabled") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Configuración de signature pad
+        var canvas = document.getElementById('signature-pad');
+        var signaturePad = new SignaturePad(canvas, {
+            backgroundColor: '#f8f9fa',
+            penColor: 'black',
+            minWidth: 1,
+            maxWidth: 3
+        });
+        
+        // Ajustar el tamaño del canvas
+        function resizeCanvas() {
+            var ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear(); // Limpiar el canvas después de cambiar su tamaño
+        }
+        
+        // Eventos de botones
+        document.getElementById('clear-button').addEventListener('click', function() {
+            signaturePad.clear();
+            document.getElementById('submit-button').disabled = true;
+            document.getElementById('signature-message').style.display = 'none';
+        });
+        
+        // Capturar la firma al enviar el formulario
+        document.getElementById('signature-form').addEventListener('submit', function(e) {
+            if (signaturePad.isEmpty()) {
+                e.preventDefault();
+                alert('Por favor, firme antes de continuar.');
+                return false;
+            }
+            
+            // Guardar la firma como base64
+            var dataURL = signaturePad.toDataURL();
+            document.getElementById('{{ form.signature_data.id }}').value = dataURL;
+            return true;
+        });
+        
+        // Detectar cuando se ha realizado una firma
+        signaturePad.addEventListener('endStroke', function() {
+            if (!signaturePad.isEmpty()) {
+                document.getElementById('submit-button').disabled = false;
+                document.getElementById('signature-message').style.display = 'block';
+            }
+        });
+        
+        // Inicializar
+        window.addEventListener('resize', resizeCanvas);
+        resizeCanvas();
+    });
+</script>
+{% endblock %}
