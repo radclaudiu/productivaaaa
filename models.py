@@ -176,6 +176,7 @@ class Employee(db.Model):
     status_start_date = db.Column(db.Date)
     status_end_date = db.Column(db.Date)
     status_notes = db.Column(db.Text)
+    is_on_shift = db.Column(db.Boolean, default=False)  # Indica si el empleado está en jornada activa (1=sí, 0=no)
     
     # Relationships
     company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
@@ -205,6 +206,7 @@ class Employee(db.Model):
             'start_date': self.start_date.isoformat() if self.start_date else None,
             'end_date': self.end_date.isoformat() if self.end_date else None,
             'is_active': self.is_active,
+            'is_on_shift': self.is_on_shift,  # Agregar estado de jornada
             'status': self.status.value if self.status else 'activo',
             'status_start_date': self.status_start_date.isoformat() if self.status_start_date else None,
             'status_end_date': self.status_end_date.isoformat() if self.status_end_date else None,

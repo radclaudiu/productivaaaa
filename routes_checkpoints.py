@@ -891,6 +891,10 @@ def employee_pin(id):
             if action == 'checkout' and pending_record:
                 # Registrar salida
                 pending_record.check_out_time = datetime.now()
+                
+                # Cambiar el estado de jornada del empleado a 0 (No en jornada)
+                employee.is_on_shift = False
+                
                 db.session.commit()
                 
                 flash(f'Salida registrada para {employee.first_name} {employee.last_name}', 'success')
@@ -903,6 +907,10 @@ def employee_pin(id):
                     check_in_time=datetime.now()
                 )
                 db.session.add(new_record)
+                
+                # Cambiar el estado de jornada del empleado a 1 (En jornada)
+                employee.is_on_shift = True
+                
                 db.session.commit()
                 
                 flash(f'Entrada registrada para {employee.first_name} {employee.last_name}', 'success')
