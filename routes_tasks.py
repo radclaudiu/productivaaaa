@@ -1851,24 +1851,22 @@ def download_excel_template():
     ws.title = "Productos"
     
     # Añadir encabezados
-    ws['A1'] = "ID"
-    ws['B1'] = "Nombre"
-    ws['C1'] = "Descripción"
-    ws['D1'] = "Descongelación (días)"
-    ws['E1'] = "Refrigeración (días)"
-    ws['F1'] = "Gastro (días)"
-    ws['G1'] = "Caliente (días)"
-    ws['H1'] = "Seco (días)"
+    ws['A1'] = "Nombre"
+    ws['B1'] = "Descripción"
+    ws['C1'] = "Descongelación (horas)"
+    ws['D1'] = "Refrigeración (horas)"
+    ws['E1'] = "Gastro (horas)"
+    ws['F1'] = "Caliente (horas)"
+    ws['G1'] = "Seco (horas)"
     
     # Añadir una fila de ejemplo
-    ws['A2'] = ""  # Dejar ID vacío para nuevo producto
-    ws['B2'] = "Ejemplo Producto"
-    ws['C2'] = "Descripción de ejemplo"
-    ws['D2'] = 2  # Días para descongelación
-    ws['E2'] = 3  # Días para refrigeración
-    ws['F2'] = 4  # Días para gastro
-    ws['G2'] = 1  # Días para caliente
-    ws['H2'] = 7  # Días para seco
+    ws['A2'] = "Ejemplo Producto"
+    ws['B2'] = "Descripción de ejemplo"
+    ws['C2'] = 48  # Horas para descongelación (2 días)
+    ws['D2'] = 72  # Horas para refrigeración (3 días) 
+    ws['E2'] = 96  # Horas para gastro (4 días)
+    ws['F2'] = 2   # Horas para caliente
+    ws['G2'] = 168 # Horas para seco (7 días)
     
     # Guardar a un objeto BytesIO
     output = io.BytesIO()
@@ -1905,14 +1903,13 @@ def export_labels_excel(location_id):
     ws.title = "Productos"
     
     # Añadir encabezados
-    ws['A1'] = "ID"
-    ws['B1'] = "Nombre"
-    ws['C1'] = "Descripción"
-    ws['D1'] = "Descongelación (días)"
-    ws['E1'] = "Refrigeración (días)"
-    ws['F1'] = "Gastro (días)"
-    ws['G1'] = "Caliente (días)"
-    ws['H1'] = "Seco (días)"
+    ws['A1'] = "Nombre"
+    ws['B1'] = "Descripción"
+    ws['C1'] = "Descongelación (horas)"
+    ws['D1'] = "Refrigeración (horas)"
+    ws['E1'] = "Gastro (horas)"
+    ws['F1'] = "Caliente (horas)"
+    ws['G1'] = "Seco (horas)"
     
     # Obtener productos de este local
     products = Product.query.filter_by(location_id=location_id).order_by(Product.name).all()
@@ -1920,22 +1917,24 @@ def export_labels_excel(location_id):
     # Rellenar datos
     row = 2
     for product in products:
-        ws[f'A{row}'] = product.id
-        ws[f'B{row}'] = product.name
-        ws[f'C{row}'] = product.description or ""
+        ws[f'A{row}'] = product.name
+        ws[f'B{row}'] = product.description or ""
         
-        # Buscar días de conservación para cada tipo
+        # Buscar días de conservación para cada tipo y convertir a horas
         for conservation in product.conservation_types:
+            # Convertir días a horas (multiplicar por 24)
+            hours_valid = round(conservation.days_valid * 24)
+            
             if conservation.conservation_type == ConservationType.DESCONGELACION:
-                ws[f'D{row}'] = conservation.days_valid
+                ws[f'C{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.REFRIGERACION:
-                ws[f'E{row}'] = conservation.days_valid
+                ws[f'D{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.GASTRO:
-                ws[f'F{row}'] = conservation.days_valid
+                ws[f'E{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.CALIENTE:
-                ws[f'G{row}'] = conservation.days_valid
+                ws[f'F{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.SECO:
-                ws[f'H{row}'] = conservation.days_valid
+                ws[f'G{row}'] = hours_valid
         
         row += 1
     
@@ -1997,29 +1996,29 @@ def import_labels_excel(location_id):
         for row in range(2, ws.max_row + 1):
             try:
                 # Obtener datos del producto
-                product_id = ws[f'A{row}'].value
-                product_name = ws[f'B{row}'].value
-                product_description = ws[f'C{row}'].value or ""
+                product_name = ws[f'A{row}'].value
+                product_description = ws[f'B{row}'].value or ""
                 
                 # Si no hay nombre, ignorar esta fila
                 if not product_name:
                     continue
                 
-                # Días para cada tipo de conservación
-                days_descongelacion = ws[f'D{row}'].value
-                days_refrigeracion = ws[f'E{row}'].value
-                days_gastro = ws[f'F{row}'].value
-                days_caliente = ws[f'G{row}'].value
-                days_seco = ws[f'H{row}'].value
+                # Horas para cada tipo de conservación
+                hours_descongelacion = ws[f'C{row}'].value
+                hours_refrigeracion = ws[f'D{row}'].value
+                hours_gastro = ws[f'E{row}'].value
+                hours_caliente = ws[f'F{row}'].value
+                hours_seco = ws[f'G{row}'].value
                 
-                # Buscar producto existente o crear uno nuevo
-                product = None
-                if product_id:
-                    product = Product.query.filter_by(id=product_id, location_id=location_id).first()
+                # Convertir horas a días para almacenar en la base de datos (divide por 24 y redondea a 2 decimales)
+                days_descongelacion = round(hours_descongelacion / 24.0, 2) if hours_descongelacion is not None else None
+                days_refrigeracion = round(hours_refrigeracion / 24.0, 2) if hours_refrigeracion is not None else None
+                days_gastro = round(hours_gastro / 24.0, 2) if hours_gastro is not None else None
+                days_caliente = round(hours_caliente / 24.0, 2) if hours_caliente is not None else None
+                days_seco = round(hours_seco / 24.0, 2) if hours_seco is not None else None
                 
-                if not product:
-                    # Buscar por nombre en esta ubicación
-                    product = Product.query.filter_by(name=product_name, location_id=location_id).first()
+                # Buscar producto existente por nombre en esta ubicación
+                product = Product.query.filter_by(name=product_name, location_id=location_id).first()
                 
                 if product:
                     # Actualizar producto existente
