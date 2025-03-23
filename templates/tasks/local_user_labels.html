@@ -108,13 +108,13 @@
                         <h5 class="mb-0">Vista Previa</h5>
                     </div>
                     <div class="card-body">
-                        <div class="label-preview border p-3 mb-3 text-center">
-                            <div id="preview-product-name" class="fw-bold fs-5 mb-2">NOMBRE DEL PRODUCTO</div>
-                            <div id="preview-conservation-type" class="fst-italic mb-2">Tipo de conservación</div>
-                            <div class="text-muted mb-1">Preparado por: {{ user.name }} {{ user.last_name }}</div>
-                            <div class="text-muted mb-1">Fecha: {{ now.strftime('%d/%m/%Y') }}</div>
-                            <div class="text-muted mb-1">Hora: {{ now.strftime('%H:%M') }}</div>
-                            <div id="preview-expiry" class="fw-bold mt-2 p-1 border bg-light">Caducidad: DD/MM/AAAA HH:MM</div>
+                        <div class="label-preview border p-3 mb-3 text-center bg-light">
+                            <div id="preview-product-name" class="fw-bold fs-5 mb-2 text-dark">NOMBRE DEL PRODUCTO</div>
+                            <div id="preview-conservation-type" class="fst-italic mb-2 text-dark">Tipo de conservación</div>
+                            <div class="text-dark mb-1">Preparado por: {{ user.name }} {{ user.last_name }}</div>
+                            <div class="text-dark mb-1">Fecha: {{ now.strftime('%d/%m/%Y') }}</div>
+                            <div class="text-dark mb-1">Hora: {{ now.strftime('%H:%M') }}</div>
+                            <div id="preview-expiry" class="fw-bold mt-2 p-1 border bg-secondary text-white">Caducidad: DD/MM/AAAA HH:MM</div>
                         </div>
 
                         <div class="alert alert-info">
