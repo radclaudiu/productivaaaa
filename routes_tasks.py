@@ -2134,7 +2134,12 @@ def generate_labels():
     
     # Si no hay configuración específica, usar valores predeterminados en horas
     hours_valid = 24  # 1 día por defecto
-    if conservation_type == ConservationType.DESCONGELACION:
+    
+    # Si existe la configuración para este producto, usarla
+    if conservation:
+        hours_valid = conservation.hours_valid
+    # Sino, usar valores por defecto según el tipo    
+    elif conservation_type == ConservationType.DESCONGELACION:
         hours_valid = 24  # 1 día
     elif conservation_type == ConservationType.REFRIGERACION:
         hours_valid = 72  # 3 días

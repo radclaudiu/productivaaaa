@@ -283,6 +283,16 @@ document.addEventListener('DOMContentLoaded', function() {
     ];
     
     console.log("Productos cargados:", products);
+    
+    // Verificar si hay productos disponibles
+    if (products.length === 0) {
+        console.warn("No se encontraron productos para este local.");
+    } else {
+        // Mostrar tipos de conservación disponibles para cada producto
+        products.forEach(product => {
+            console.log(`Producto: ${product.name}, Tipos: ${product.conservationTypes.join(', ') || 'Ninguno'}`);
+        });
+    }
 
     // Conservación a texto
     const conservationTypeText = {
