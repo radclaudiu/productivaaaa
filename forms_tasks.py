@@ -220,3 +220,39 @@ class GenerateLabelForm(FlaskForm):
         super(GenerateLabelForm, self).__init__(*args, **kwargs)
         from models_tasks import ConservationType
         self.conservation_type.choices = [(ct.value, ct.name.capitalize()) for ct in ConservationType]
+        
+class LabelEditorForm(FlaskForm):
+    """Formulario para el editor de etiquetas personalizado"""
+    titulo_x = IntegerField('Posición X del Título', validators=[NumberRange(min=0, max=100)], default=50)
+    titulo_y = IntegerField('Posición Y del Título', validators=[NumberRange(min=0, max=100)], default=10)
+    titulo_size = IntegerField('Tamaño del Título', validators=[NumberRange(min=6, max=16)], default=11)
+    titulo_bold = BooleanField('Título en Negrita', default=True)
+    
+    conservacion_x = IntegerField('Posición X del Tipo de Conservación', validators=[NumberRange(min=0, max=100)], default=50)
+    conservacion_y = IntegerField('Posición Y del Tipo de Conservación', validators=[NumberRange(min=0, max=100)], default=25)
+    conservacion_size = IntegerField('Tamaño del Tipo de Conservación', validators=[NumberRange(min=6, max=14)], default=9)
+    conservacion_bold = BooleanField('Tipo de Conservación en Negrita', default=True)
+    
+    preparador_x = IntegerField('Posición X del Preparador', validators=[NumberRange(min=0, max=100)], default=50)
+    preparador_y = IntegerField('Posición Y del Preparador', validators=[NumberRange(min=0, max=100)], default=40)
+    preparador_size = IntegerField('Tamaño del Preparador', validators=[NumberRange(min=6, max=12)], default=7)
+    preparador_bold = BooleanField('Preparador en Negrita', default=False)
+    
+    fecha_x = IntegerField('Posición X de la Fecha', validators=[NumberRange(min=0, max=100)], default=50)
+    fecha_y = IntegerField('Posición Y de la Fecha', validators=[NumberRange(min=0, max=100)], default=50)
+    fecha_size = IntegerField('Tamaño de la Fecha', validators=[NumberRange(min=6, max=12)], default=7)
+    fecha_bold = BooleanField('Fecha en Negrita', default=False)
+    
+    caducidad_x = IntegerField('Posición X de la Caducidad', validators=[NumberRange(min=0, max=100)], default=50)
+    caducidad_y = IntegerField('Posición Y de la Caducidad', validators=[NumberRange(min=0, max=100)], default=65)
+    caducidad_size = IntegerField('Tamaño de la Caducidad', validators=[NumberRange(min=6, max=14)], default=9)
+    caducidad_bold = BooleanField('Caducidad en Negrita', default=True)
+    
+    caducidad2_x = IntegerField('Posición X de la Caducidad Secundaria', validators=[NumberRange(min=0, max=100)], default=50)
+    caducidad2_y = IntegerField('Posición Y de la Caducidad Secundaria', validators=[NumberRange(min=0, max=100)], default=80)
+    caducidad2_size = IntegerField('Tamaño de la Caducidad Secundaria', validators=[NumberRange(min=6, max=12)], default=8)
+    caducidad2_bold = BooleanField('Caducidad Secundaria en Negrita', default=False)
+    
+    layout_name = StringField('Nombre del Diseño', validators=[DataRequired(), Length(max=64)], default="Diseño Personalizado")
+    
+    submit = SubmitField('Guardar Diseño')
