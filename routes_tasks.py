@@ -2196,6 +2196,7 @@ def generate_labels():
     """Endpoint para generar e imprimir etiquetas"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
+    location_id = user.location_id
     
     # Obtener datos del formulario
     product_id = request.form.get('product_id', type=int)
@@ -2221,6 +2222,35 @@ def generate_labels():
         # No añadir flash message, usamos nuestro propio sistema de notificaciones
         # Devolvemos JSON con error para manejo AJAX
         return jsonify({'success': False, 'message': 'Tipo de conservación no válido'})
+    
+    # Verificar disponibilidad de impresora
+    from models_tasks import PrinterConfig
+    
+    # Buscar impresora predeterminada para esta ubicación
+    default_printer = PrinterConfig.query.filter_by(
+        location_id=location_id,
+        is_default=True,
+        is_active=True
+    ).first()
+    
+    # Si no hay impresora predeterminada, buscar cualquier impresora activa
+    if not default_printer:
+        default_printer = PrinterConfig.query.filter_by(
+            location_id=location_id,
+            is_active=True
+        ).first()
+    
+    # Si no hay impresoras configuradas, mostrar mensaje
+    if not default_printer:
+        return jsonify({
+            'success': False, 
+            'message': 'No hay impresoras configuradas. Por favor, configure una impresora en la sección de Configuración.',
+            'printer_required': True
+        })
+    
+    # Actualizar la última verificación de la impresora
+    default_printer.last_check = datetime.utcnow()
+    db.session.commit()
     
     # Obtener configuración de conservación específica para este producto
     conservation = ProductConservation.query.filter_by(
@@ -2278,7 +2308,8 @@ def generate_labels():
         conservation_type=conservation_type,
         now=now,
         expiry_datetime=expiry_datetime,
-        quantity=quantity
+        quantity=quantity,
+        printer_name=default_printer.printer_name
     )
     
     # Verificar si es una solicitud AJAX

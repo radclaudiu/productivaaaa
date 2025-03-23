@@ -133,7 +133,22 @@
         window.onload = function() {
             // Retrasamos la impresión un poco para asegurar que todo está cargado
             setTimeout(function() {
-                window.print();
+                try {
+                    {% if printer_name %}
+                    // Si hay una impresora configurada, intentar usarla
+                    const printOptions = {
+                        printerName: "{{ printer_name }}"
+                    };
+                    window.print(printOptions);
+                    {% else %}
+                    // Si no hay impresora configurada, usar la predeterminada del sistema
+                    window.print();
+                    {% endif %}
+                } catch (e) {
+                    console.error("Error al imprimir:", e);
+                    // Si falla la impresión específica, intentar con la predeterminada
+                    window.print();
+                }
             }, 500);
         };
     </script>

@@ -1,130 +1,134 @@
 {% extends "tasks/portal_layout.html" %}
-
 {% block content %}
-<div class="container py-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Configuración del Portal</h5>
+<div class="container mb-5 mt-4">
+    <div class="card shadow-sm">
+        <div class="card-header bg-primary text-white">
+            <h4 class="mb-0"><i class="fas fa-cogs me-2"></i>Configuración del Portal</h4>
+        </div>
+        <div class="card-body">
+            <h5 class="mb-4">Configuración de Impresoras</h5>
+
+            <!-- Lista de impresoras configuradas -->
+            <div class="mb-4">
+                <h6>Impresoras Disponibles</h6>
+                {% if printers %}
+                <div class="table-responsive">
+                    <table class="table table-striped table-hover">
+                        <thead class="table-light">
+                            <tr>
+                                <th>Nombre</th>
+                                <th>Estado</th>
+                                <th>Predeterminada</th>
+                                <th>Acciones</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for printer in printers %}
+                            <tr>
+                                <td>{{ printer.printer_name }}</td>
+                                <td>
+                                    {% if printer.is_active %}
+                                    <span class="badge bg-success">Activa</span>
+                                    {% else %}
+                                    <span class="badge bg-danger">Inactiva</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    {% if printer.is_default %}
+                                    <span class="badge bg-primary">Predeterminada</span>
+                                    {% endif %}
+                                </td>
+                                <td>
+                                    <a href="{{ url_for('tasks.local_user_config', printer_id=printer.id) }}" class="btn btn-sm btn-outline-secondary">
+                                        <i class="fas fa-edit"></i> Editar
+                                    </a>
+                                </td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+                {% else %}
+                <div class="alert alert-warning">
+                    <i class="fas fa-exclamation-triangle me-2"></i>No hay impresoras configuradas. Añade una impresora para generar etiquetas.
+                </div>
+                {% endif %}
+            </div>
+
+            <!-- Formulario para añadir/editar impresora -->
+            <div class="card mb-4">
+                <div class="card-header bg-light">
+                    {% if printer_to_edit %}
+                    <h6 class="mb-0">Editar Impresora</h6>
+                    {% else %}
+                    <h6 class="mb-0">Añadir Nueva Impresora</h6>
+                    {% endif %}
                 </div>
                 <div class="card-body">
-                    <ul class="nav nav-tabs mb-3" id="configTabs" role="tablist">
-                        <li class="nav-item" role="presentation">
-                            <button class="nav-link active" id="printers-tab" data-bs-toggle="tab" 
-                                    data-bs-target="#printers-content" type="button" role="tab" 
-                                    aria-controls="printers-content" aria-selected="true">
-                                <i class="bi bi-printer me-2"></i>Impresoras
-                            </button>
-                        </li>
-                        <!-- Posibles pestañas adicionales en el futuro -->
-                    </ul>
-                    
-                    <div class="tab-content" id="configTabsContent">
-                        <div class="tab-pane fade show active" id="printers-content" role="tabpanel" aria-labelledby="printers-tab">
-                            <div class="row">
-                                <div class="col-12 col-md-5">
-                                    <div class="card">
-                                        <div class="card-header bg-light">
-                                            <h6 class="mb-0">Impresoras Configuradas</h6>
-                                        </div>
-                                        <div class="card-body">
-                                            {% if printers %}
-                                                <div class="list-group">
-                                                {% for printer in printers %}
-                                                    <a href="?printer_id={{ printer.id }}" class="list-group-item list-group-item-action d-flex justify-content-between align-items-center">
-                                                        <div>
-                                                            <i class="bi bi-printer me-2"></i>
-                                                            {{ printer.printer_name }}
-                                                            {% if printer.is_default %}
-                                                                <span class="badge bg-success ms-2">Predeterminada</span>
-                                                            {% endif %}
-                                                        </div>
-                                                        <div>
-                                                            {% if printer.is_active %}
-                                                                <span class="badge bg-success">Activa</span>
-                                                            {% else %}
-                                                                <span class="badge bg-danger">Inactiva</span>
-                                                            {% endif %}
-                                                        </div>
-                                                    </a>
-                                                {% endfor %}
-                                                </div>
-                                            {% else %}
-                                                <div class="alert alert-info">
-                                                    <i class="bi bi-info-circle-fill me-2"></i>
-                                                    No hay impresoras configuradas. Utiliza el formulario para añadir una.
-                                                </div>
-                                            {% endif %}
-                                            
-                                            <button id="checkPrintersBtn" class="btn btn-outline-primary btn-sm mt-3">
-                                                <i class="bi bi-arrow-repeat me-1"></i>Verificar Impresoras
-                                            </button>
-                                        </div>
-                                    </div>
-                                </div>
-                                
-                                <div class="col-12 col-md-7">
-                                    <div class="card">
-                                        <div class="card-header bg-light">
-                                            {% if printer_to_edit %}
-                                                <h6 class="mb-0">Editar Impresora</h6>
-                                            {% else %}
-                                                <h6 class="mb-0">Nueva Impresora</h6>
-                                            {% endif %}
-                                        </div>
-                                        <div class="card-body">
-                                            <form method="POST" action="{{ url_for('tasks.local_user_config') }}">
-                                                {{ form.hidden_tag() }}
-                                                
-                                                {% if printer_to_edit %}
-                                                    <input type="hidden" name="printer_id" value="{{ printer_to_edit.id }}">
-                                                {% endif %}
-                                                
-                                                <div class="mb-3">
-                                                    {{ form.printer_name.label(class="form-label") }}
-                                                    {{ form.printer_name(class="form-control", id="printer_name") }}
-                                                    {% if form.printer_name.errors %}
-                                                        <div class="invalid-feedback d-block">
-                                                            {% for error in form.printer_name.errors %}
-                                                                {{ error }}
-                                                            {% endfor %}
-                                                        </div>
-                                                    {% endif %}
-                                                </div>
-                                                
-                                                <div class="mb-3 form-check">
-                                                    {{ form.is_default(class="form-check-input", id="is_default") }}
-                                                    {{ form.is_default.label(class="form-check-label") }}
-                                                </div>
-                                                
-                                                <div class="mb-3 form-check">
-                                                    {{ form.is_active(class="form-check-input", id="is_active") }}
-                                                    {{ form.is_active.label(class="form-check-label") }}
-                                                </div>
-                                                
-                                                <div id="detected-printers" class="mb-3 d-none">
-                                                    <label class="form-label">Impresoras Detectadas</label>
-                                                    <div class="list-group detected-printers-list">
-                                                        <!-- La lista de impresoras detectadas se cargará aquí mediante JavaScript -->
-                                                    </div>
-                                                </div>
-                                                
-                                                <div class="d-flex justify-content-between">
-                                                    <button type="button" id="detectPrintersBtn" class="btn btn-secondary">
-                                                        <i class="bi bi-search me-1"></i>Detectar Impresoras
-                                                    </button>
-                                                    
-                                                    {{ form.submit(class="btn btn-primary") }}
-                                                </div>
-                                            </form>
-                                        </div>
-                                    </div>
-                                </div>
+                    <form method="POST" action="{{ url_for('tasks.local_user_config') }}">
+                        {{ form.hidden_tag() }}
+                        
+                        {% if printer_to_edit %}
+                        <input type="hidden" name="printer_id" value="{{ printer_to_edit.id }}">
+                        {% endif %}
+                        
+                        <div class="mb-3">
+                            <label for="printer_name" class="form-label">{{ form.printer_name.label }}</label>
+                            {{ form.printer_name(class="form-control form-control-lg", placeholder="Nombre de la impresora") }}
+                            {% if form.printer_name.errors %}
+                            <div class="invalid-feedback d-block">
+                                {% for error in form.printer_name.errors %}
+                                {{ error }}
+                                {% endfor %}
+                            </div>
+                            {% endif %}
+                            <div class="form-text text-muted">
+                                Ingresa el nombre exacto de la impresora como aparece en el sistema
                             </div>
                         </div>
-                    </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_default(class="form-check-input") }}
+                                <label class="form-check-label" for="is_default">{{ form.is_default.label }}</label>
+                            </div>
+                            <div class="form-text text-muted">
+                                Marca esta opción para usar esta impresora como predeterminada para las etiquetas
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.is_active(class="form-check-input") }}
+                                <label class="form-check-label" for="is_active">{{ form.is_active.label }}</label>
+                            </div>
+                            <div class="form-text text-muted">
+                                Desactiva temporalmente una impresora sin eliminarla
+                            </div>
+                        </div>
+
+                        <div class="d-grid gap-2">
+                            <button type="submit" class="btn btn-primary btn-lg">
+                                <i class="fas fa-save me-2"></i>
+                                {% if printer_to_edit %}
+                                Actualizar Impresora
+                                {% else %}
+                                Guardar Impresora
+                                {% endif %}
+                            </button>
+                        </div>
+                    </form>
                 </div>
+            </div>
+
+            <!-- Información sobre la detección de impresoras -->
+            <div class="alert alert-info">
+                <h6><i class="fas fa-info-circle me-2"></i>Información sobre las impresoras</h6>
+                <p class="mb-0">
+                    Para imprimir etiquetas correctamente, debe configurar al menos una impresora.
+                    El nombre de la impresora debe coincidir exactamente con el nombre que aparece en el sistema.
+                    La aplicación intentará usar la impresora predeterminada al generar etiquetas.
+                </p>
             </div>
         </div>
     </div>
@@ -132,98 +136,18 @@
 {% endblock %}
 
 {% block scripts %}
+{{ super() }}
 <script>
-document.addEventListener('DOMContentLoaded', function() {
-    const detectPrintersBtn = document.getElementById('detectPrintersBtn');
-    const checkPrintersBtn = document.getElementById('checkPrintersBtn');
-    const detectedPrintersDiv = document.getElementById('detected-printers');
-    const printerNameInput = document.getElementById('printer_name');
-    
-    // Función para detectar impresoras (simulada)
-    function detectPrinters() {
-        // Esta parte normalmente debería hacer una llamada AJAX al servidor
-        // Pero debido a limitaciones del navegador, solo podemos simularlo
-        
-        // Mostrar spinner mientras "detectamos"
-        detectPrintersBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Detectando...';
-        detectPrintersBtn.disabled = true;
-        
-        // Simular un tiempo de espera para la detección
-        setTimeout(function() {
-            // Aquí simularemos algunas impresoras detectadas
-            const printers = [
-                'HP LaserJet Pro',
-                'Canon PIXMA',
-                'Epson WorkForce',
-                'Brother HL-L2350DW'
-            ];
-            
-            // Mostrar la lista de impresoras detectadas
-            const printersList = document.querySelector('.detected-printers-list');
-            printersList.innerHTML = '';
-            
-            printers.forEach(printer => {
-                const item = document.createElement('button');
-                item.type = 'button';
-                item.className = 'list-group-item list-group-item-action';
-                item.innerHTML = `<i class="bi bi-printer me-2"></i>${printer}`;
-                item.addEventListener('click', function() {
-                    printerNameInput.value = printer;
-                });
-                printersList.appendChild(item);
+    // Activar automáticamente el teclado en pantalla al hacer clic en el campo de nombre de impresora
+    document.addEventListener('DOMContentLoaded', function() {
+        var printerInput = document.getElementById('printer_name');
+        if (printerInput) {
+            printerInput.addEventListener('focus', function() {
+                if ('virtualKeyboard' in navigator) {
+                    navigator.virtualKeyboard.show();
+                }
             });
-            
-            // Mostrar el div con las impresoras detectadas
-            detectedPrintersDiv.classList.remove('d-none');
-            
-            // Restaurar el botón
-            detectPrintersBtn.innerHTML = '<i class="bi bi-search me-1"></i>Detectar Impresoras';
-            detectPrintersBtn.disabled = false;
-        }, 1500);
-    }
-    
-    // Función para verificar el estado de las impresoras
-    function checkPrinters() {
-        // Mostrar spinner mientras "verificamos"
-        checkPrintersBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span> Verificando...';
-        checkPrintersBtn.disabled = true;
-        
-        // Simular un tiempo de espera para la verificación
-        setTimeout(function() {
-            // Aquí haríamos una llamada AJAX al servidor
-            
-            // Mostrar mensaje de éxito
-            const notification = document.createElement('div');
-            notification.className = 'alert alert-success alert-dismissible fade show mt-3';
-            notification.innerHTML = `
-                <i class="bi bi-check-circle-fill me-2"></i>
-                Impresoras verificadas correctamente
-                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-            `;
-            
-            // Añadir notificación al contenedor
-            const container = document.querySelector('#printers-content .col-12.col-md-5 .card-body');
-            container.appendChild(notification);
-            
-            // Restaurar el botón
-            checkPrintersBtn.innerHTML = '<i class="bi bi-arrow-repeat me-1"></i>Verificar Impresoras';
-            checkPrintersBtn.disabled = false;
-            
-            // Auto-ocultar la notificación después de 3 segundos
-            setTimeout(() => {
-                notification.remove();
-            }, 3000);
-        }, 1500);
-    }
-    
-    // Añadir event listeners
-    if (detectPrintersBtn) {
-        detectPrintersBtn.addEventListener('click', detectPrinters);
-    }
-    
-    if (checkPrintersBtn) {
-        checkPrintersBtn.addEventListener('click', checkPrinters);
-    }
-});
+        }
+    });
 </script>
 {% endblock %}
