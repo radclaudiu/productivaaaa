@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Etiqueta: {{ product.name }}</title>
+    <link rel="stylesheet" href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css">
     <style>
         body, html {
             margin: 0;
@@ -106,7 +107,7 @@
             transform: translate(-50%, -50%);
             width: auto;
             min-width: 80%;
-            margin-top: 2mm; /* Aumentamos la separación a 2mm */
+            margin-top: 2mm; /* Establecemos la separación a 2mm */
             padding: 1mm;
         }
         
@@ -118,6 +119,17 @@
         .conservacion-seco { 
             color: #000000; /* Negro para impresora térmica */
             font-weight: bold; /* Hacemos bold para mayor claridad */
+        }
+        
+        /* Estilos para controles de impresión (solo visibles en pantalla) */
+        .print-controls {
+            text-align: center;
+            margin: 20px auto;
+            padding: 15px;
+            max-width: 600px;
+            background-color: var(--bs-dark);
+            border-radius: 8px;
+            color: white;
         }
         
         /* Para asegurar que la impresión sea correcta */
@@ -145,48 +157,60 @@
             .nueva-pagina {
                 display: none; /* No necesitamos este elemento en la impresión */
             }
+            .print-controls {
+                display: none; /* Ocultar controles en la impresión */
+            }
         }
     </style>
 </head>
 <body>
+    <!-- Controles de impresión - solo visibles en pantalla -->
+    <div class="print-controls">
+        <h4>Opciones de Impresión</h4>
+        <div class="row g-3 justify-content-center">
+            <div class="col-auto">
+                <button id="browser-print-btn" class="btn btn-primary">Imprimir con Navegador</button>
+            </div>
+            <div class="col-auto">
+                <button id="brother-print-btn" class="btn btn-success">Imprimir con Brother TD-40</button>
+            </div>
+        </div>
+        <div id="print-message" class="alert alert-info mt-3" style="display: none;"></div>
+    </div>
+
+    <!-- Etiquetas para imprimir -->
     {% for i in range(quantity) %}
         <div class="etiqueta">
-            <div class="producto">{{ product.name|upper }}</div>
-            <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
-            <div class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
-            <div class="fecha">INICIO: {{ now.strftime('%d/%m/%Y %H:%M') }}</div>
-            <div class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div id="product-name" class="producto">{{ product.name|upper }}</div>
+            <div id="conservation-type" class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
+            <div id="prepared-by" class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
+            <div id="start-date" class="fecha">INICIO: {{ now.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div id="expiry-date" class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
             {% if secondary_expiry_date %}
-            <div class="caducidad caducidad-secundaria">Caducidad primaria: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
+            <div id="secondary-expiry-date" class="caducidad caducidad-secundaria">Caducidad primaria: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
             {% endif %}
         </div>
     {% endfor %}
     
+    <!-- Datos ocultos para la impresión con Brother -->
+    <input type="hidden" id="quantity" value="{{ quantity }}">
+    
+    <!-- Script para la impresora Brother -->
+    <script src="/static/js/brother-printer.js"></script>
+    
     <script>
-        // Imprimir inmediatamente al cargar
-        window.onload = function() {
-            // Pequeño retardo para asegurar que todo está cargado
-            setTimeout(function() {
-                window.print();
-                
-                // Cerrar ventana después de imprimir en navegadores que lo permitan
-                window.onfocus = function() {
-                    setTimeout(function() {
-                        window.close();
-                    }, 300);
-                };
-                
-                // Intentar cerrar después de un tiempo razonable en caso de que
-                // el usuario cancele la impresión o haya un problema
-                setTimeout(function() {
-                    try {
-                        window.close();
-                    } catch (e) {
-                        console.log('No se pudo cerrar automáticamente');
-                    }
-                }, 60000); // 1 minuto
-            }, 300);
-        };
+        // Inicializar controles
+        document.addEventListener('DOMContentLoaded', function() {
+            // Configurar botón de impresión del navegador
+            const browserPrintBtn = document.getElementById('browser-print-btn');
+            if (browserPrintBtn) {
+                browserPrintBtn.addEventListener('click', function() {
+                    window.print();
+                });
+            }
+            
+            // El script brother-printer.js ya maneja el botón Brother
+        });
     </script>
 </body>
 </html>
