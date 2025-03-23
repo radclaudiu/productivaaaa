@@ -12,13 +12,13 @@ from app import db
 from models import User, Company
 from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, 
                          TaskFrequency, TaskStatus, WeekDay, TaskGroup, TaskWeekday,
-                         Product, ProductConservation, ProductLabel, ConservationType)
+                         Product, ProductConservation, ProductLabel, ConservationType, PrinterConfig)
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
                         LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm, PortalLoginForm,
                         ProductForm, ProductConservationForm, GenerateLabelForm)
 from utils import log_activity, can_manage_company, save_file
-from utils_tasks import create_default_local_user, regenerate_portal_password
+from utils_tasks import create_default_local_user, regenerate_portal_password, get_system_printers
 
 # Crear el Blueprint para las tareas
 tasks_bp = Blueprint('tasks', __name__)
