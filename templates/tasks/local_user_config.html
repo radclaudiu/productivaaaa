@@ -74,7 +74,27 @@
                         
                         <div class="mb-3">
                             <label for="printer_name" class="form-label">{{ form.printer_name.label }}</label>
-                            {{ form.printer_name(class="form-control form-control-lg", placeholder="Nombre de la impresora") }}
+                            {% if system_printers and not printer_to_edit %}
+                                {# Si hay impresoras del sistema disponibles y no estamos editando, mostrar con datalist #}
+                                {{ form.printer_name(class="form-control form-control-lg", placeholder="Nombre de la impresora", list="printer-list") }}
+                                <datalist id="printer-list">
+                                    {% for printer in system_printers %}
+                                        <option value="{{ printer.name }}">{{ printer.name }}</option>
+                                    {% endfor %}
+                                </datalist>
+                                <div class="form-text text-success">
+                                    <i class="fas fa-check-circle me-1"></i> {{ system_printers|length }} impresoras detectadas automáticamente
+                                </div>
+                            {% else %}
+                                {# Si no hay impresoras detectadas o estamos editando, mostrar como campo de texto normal #}
+                                {{ form.printer_name(class="form-control form-control-lg", placeholder="Nombre de la impresora") }}
+                                {% if not system_printers %}
+                                    <div class="form-text text-warning">
+                                        <i class="fas fa-exclamation-triangle me-1"></i> No se detectaron impresoras en el sistema
+                                    </div>
+                                {% endif %}
+                            {% endif %}
+                            
                             {% if form.printer_name.errors %}
                             <div class="invalid-feedback d-block">
                                 {% for error in form.printer_name.errors %}
@@ -82,9 +102,12 @@
                                 {% endfor %}
                             </div>
                             {% endif %}
+                            
+                            {% if printer_to_edit %}
                             <div class="form-text text-muted">
                                 Ingresa el nombre exacto de la impresora como aparece en el sistema
                             </div>
+                            {% endif %}
                         </div>
 
                         <div class="mb-3">
@@ -124,10 +147,21 @@
             <!-- Información sobre la detección de impresoras -->
             <div class="alert alert-info">
                 <h6><i class="fas fa-info-circle me-2"></i>Información sobre las impresoras</h6>
-                <p class="mb-0">
+                <p>
                     Para imprimir etiquetas correctamente, debe configurar al menos una impresora.
-                    El nombre de la impresora debe coincidir exactamente con el nombre que aparece en el sistema.
-                    La aplicación intentará usar la impresora predeterminada al generar etiquetas.
+                    {% if system_printers %}
+                    <span class="text-success fw-bold">
+                        <i class="fas fa-check-circle me-1"></i> Se han detectado automáticamente {{ system_printers|length }} impresoras en el sistema.
+                    </span>
+                    {% else %}
+                    <span class="text-warning">
+                        <i class="fas fa-exclamation-triangle me-1"></i> No se han detectado impresoras en el sistema.
+                    </span>
+                    {% endif %}
+                </p>
+                <p class="mb-0">
+                    <i class="fas fa-lightbulb me-1 text-warning"></i> La aplicación intentará usar la impresora <b>marcada como predeterminada</b> al generar etiquetas. 
+                    Si no hay ninguna configurada como predeterminada, deberá seleccionar la impresora manualmente cada vez.
                 </p>
             </div>
         </div>

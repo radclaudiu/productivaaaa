@@ -1300,19 +1300,8 @@ def local_user_config():
     # Crear formulario
     form = PrinterConfigForm(obj=printer_to_edit)
     
-    # Si hay impresoras disponibles en el sistema y no estamos editando, mostrar como un select
-    if system_printers and not printer_to_edit:
-        # Preparar lista de impresoras del sistema como opciones para el select
-        printer_choices = [(p['name'], p['name']) for p in system_printers]
-        
-        # Filtrar las impresoras que ya están configuradas
-        configured_printer_names = [p.printer_name for p in printers]
-        available_printers = [(name, name) for name, _ in printer_choices if name not in configured_printer_names]
-        
-        # Si hay impresoras disponibles después de filtrar, usar un select
-        if available_printers:
-            form.printer_name.choices = available_printers
-            form.printer_name.render_kw = {'class': 'form-select form-select-lg'}
+    # Si hay impresoras disponibles en el sistema y no estamos editando, configurar para la plantilla
+    # En lugar de intentar cambiar el tipo de campo, usaremos la plantilla para manejar la visualización
     
     if form.validate_on_submit():
         # Si se está editando una impresora existente
@@ -1349,6 +1338,16 @@ def local_user_config():
             flash(f'Impresora "{printer.printer_name}" actualizada correctamente', 'success')
             
         else:
+            # Verificar si ya existe una impresora con este nombre
+            existing_printer = PrinterConfig.query.filter_by(
+                location_id=location_id,
+                printer_name=form.printer_name.data
+            ).first()
+            
+            if existing_printer:
+                flash(f'Ya existe una impresora con el nombre "{form.printer_name.data}" configurada. Modifique esa impresora o elija otro nombre.', 'warning')
+                return redirect(url_for('tasks.local_user_config'))
+            
             # Crear nueva impresora
             printer = PrinterConfig(
                 printer_name=form.printer_name.data,
