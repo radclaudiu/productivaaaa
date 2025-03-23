@@ -96,10 +96,23 @@
                         </div>
                         
                         <div class="d-grid gap-2 mt-4">
-                            {{ form.submit(class="btn {% if pending_record %}btn-danger{% else %}btn-success{% endif %} btn-lg", value=pending_record and 'Terminar Jornada' or 'Iniciar Jornada') }}
-                            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary">
-                                Cancelar
-                            </a>
+                            <div id="pin-entry-buttons">
+                                <button type="button" id="validate-pin" class="btn btn-primary btn-lg w-100 mb-2">Verificar PIN</button>
+                                <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100">
+                                    Cancelar
+                                </a>
+                            </div>
+                            
+                            <div id="action-buttons" class="d-none">
+                                {% if pending_record %}
+                                    <button type="submit" name="action" value="checkout" class="btn btn-danger btn-lg w-100 mb-2">Terminar Jornada</button>
+                                {% else %}
+                                    <button type="submit" name="action" value="checkin" class="btn btn-success btn-lg w-100 mb-2">Iniciar Jornada</button>
+                                {% endif %}
+                                <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100 mb-2">
+                                    Volver a Empleados
+                                </a>
+                            </div>
                         </div>
                     </form>
                 </div>
@@ -158,10 +171,8 @@
             
             pinDisplay.textContent = displayValue;
             
-            // Enviar automáticamente cuando se completan los 4 dígitos
-            if (pinValue.length === 4) {
-                setTimeout(() => form.submit(), 300);
-            }
+            // Habilitar el botón de verificar cuando se completan los 4 dígitos
+            document.getElementById('validate-pin').disabled = pinValue.length !== 4;
         }
         
         // Añadir dígito
@@ -197,6 +208,25 @@
         
         // Enfocar automáticamente el campo de PIN
         pinInput.focus();
+        
+        // Al inicio, desactivar el botón de verificar hasta que se tenga un PIN completo
+        document.getElementById('validate-pin').disabled = true;
+        
+        // Al hacer clic en el botón de verificar PIN
+        document.getElementById('validate-pin').addEventListener('click', function() {
+            // Verificar que el PIN tiene 4 dígitos
+            if (pinInput.value.length === 4) {
+                // Aquí se podría hacer una verificación AJAX del PIN, pero en su lugar
+                // simplemente mostramos los botones de acción y ocultamos el teclado numérico
+                
+                // Ocultar el teclado PIN y los botones de entrada
+                document.querySelector('.pin-container').style.display = 'none';
+                document.getElementById('pin-entry-buttons').style.display = 'none';
+                
+                // Mostrar los botones de acción
+                document.getElementById('action-buttons').classList.remove('d-none');
+            }
+        });
     });
 </script>
 {% endblock %}

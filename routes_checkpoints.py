@@ -878,6 +878,9 @@ def employee_pin(id):
             # Guardar el ID del empleado en la sesión
             session['employee_id'] = employee.id
             
+            # Obtener la acción del formulario (checkin o checkout)
+            action = request.form.get('action')
+            
             # Comprobar si hay un registro de entrada sin salida
             pending_record = CheckPointRecord.query.filter_by(
                 employee_id=employee.id,
@@ -885,14 +888,14 @@ def employee_pin(id):
                 check_out_time=None
             ).first()
             
-            if pending_record:
+            if action == 'checkout' and pending_record:
                 # Registrar salida
                 pending_record.check_out_time = datetime.now()
                 db.session.commit()
                 
                 flash(f'Salida registrada para {employee.first_name} {employee.last_name}', 'success')
                 return redirect(url_for('checkpoints.record_details', id=pending_record.id))
-            else:
+            elif action == 'checkin' and not pending_record:
                 # Registrar entrada
                 new_record = CheckPointRecord(
                     employee_id=employee.id,
@@ -904,6 +907,14 @@ def employee_pin(id):
                 
                 flash(f'Entrada registrada para {employee.first_name} {employee.last_name}', 'success')
                 return redirect(url_for('checkpoints.record_details', id=new_record.id))
+            else:
+                # Si la acción no es válida o no coincide con el estado actual
+                if pending_record and action == 'checkin':
+                    flash('El empleado ya tiene una entrada activa sin salida registrada.', 'warning')
+                elif not pending_record and action == 'checkout':
+                    flash('El empleado no tiene ninguna entrada activa para registrar salida.', 'warning')
+                else:
+                    flash('Acción no válida.', 'danger')
         else:
             flash('PIN incorrecto. Inténtelo de nuevo.', 'danger')
     
