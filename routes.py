@@ -324,7 +324,48 @@ def delete_company(id):
     
     # Delete all related entities
     try:
-        # Step 1: Delete all task completions for tasks related to this company's locations
+        # Step 1: Delete checkpoints and related records
+        from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, EmployeeContractHours
+        
+        # First, get employee IDs for this company (needed for multiple operations)
+        employee_ids = [emp.id for emp in company.employees]
+        
+        # Delete checkpoint incidents and records first
+        checkpoints = CheckPoint.query.filter_by(company_id=company.id).all()
+        checkpoint_ids = [checkpoint.id for checkpoint in checkpoints]
+        
+        # Locate all checkpoint records for all employees of this company first
+        # (this covers both records from company checkpoints and from other checkpoints)
+        all_records = []
+        all_record_ids = []
+        
+        if employee_ids:
+            # Get employee checkpoint records
+            employee_records = CheckPointRecord.query.filter(CheckPointRecord.employee_id.in_(employee_ids)).all()
+            all_records.extend(employee_records)
+            all_record_ids.extend([r.id for r in employee_records])
+        
+        if checkpoint_ids:
+            # Also get checkpoint records by checkpoint_id
+            checkpoint_records = CheckPointRecord.query.filter(CheckPointRecord.checkpoint_id.in_(checkpoint_ids)).all()
+            
+            # Add only records not already included
+            new_records = [r for r in checkpoint_records if r.id not in all_record_ids]
+            all_records.extend(new_records)
+            all_record_ids.extend([r.id for r in new_records])
+            
+        # Delete all checkpoint incidents for all identified records
+        if all_record_ids:
+            CheckPointIncident.query.filter(CheckPointIncident.record_id.in_(all_record_ids)).delete(synchronize_session=False)
+            
+            # Delete all checkpoint records
+            CheckPointRecord.query.filter(CheckPointRecord.id.in_(all_record_ids)).delete(synchronize_session=False)
+        
+        # Delete all checkpoints for this company
+        if checkpoint_ids:
+            CheckPoint.query.filter(CheckPoint.company_id == company.id).delete(synchronize_session=False)
+        
+        # Step 2: Delete all task completions for tasks related to this company's locations
         from models_tasks import TaskCompletion, Task, Location, LocalUser, TaskSchedule, TaskWeekday, TaskGroup
         
         # Get all locations for this company
@@ -351,6 +392,34 @@ def delete_company(id):
             # Delete task groups
             TaskGroup.query.filter(TaskGroup.location_id.in_(location_ids)).delete(synchronize_session=False)
             
+            # Primero necesitamos obtener todos los productos para poder eliminar sus etiquetas
+            from models_tasks import Product, ProductLabel, ProductConservation, LabelTemplate
+            
+            # Get all products for these locations
+            products = Product.query.filter(Product.location_id.in_(location_ids)).all()
+            product_ids = [product.id for product in products]
+            
+            # Delete all product labels first
+            if product_ids:
+                ProductLabel.query.filter(ProductLabel.product_id.in_(product_ids)).delete(synchronize_session=False)
+                
+                # Delete all product conservation settings
+                ProductConservation.query.filter(ProductConservation.product_id.in_(product_ids)).delete(synchronize_session=False)
+            
+            # Get all local users for these locations to delete their product labels
+            local_users = LocalUser.query.filter(LocalUser.location_id.in_(location_ids)).all()
+            local_user_ids = [user.id for user in local_users]
+            
+            # Delete any product labels created by these local users (even for products outside these locations)
+            if local_user_ids:
+                ProductLabel.query.filter(ProductLabel.local_user_id.in_(local_user_ids)).delete(synchronize_session=False)
+            
+            # Delete all label templates for these locations
+            LabelTemplate.query.filter(LabelTemplate.location_id.in_(location_ids)).delete(synchronize_session=False)
+            
+            # Delete all products
+            Product.query.filter(Product.location_id.in_(location_ids)).delete(synchronize_session=False)
+            
             # Delete all local users for these locations
             LocalUser.query.filter(LocalUser.location_id.in_(location_ids)).delete(synchronize_session=False)
             
@@ -363,6 +432,9 @@ def delete_company(id):
         employee_ids = [emp.id for emp in company.employees]
         
         if employee_ids:
+            # Delete employee contract hours (from checkpoints module)
+            EmployeeContractHours.query.filter(EmployeeContractHours.employee_id.in_(employee_ids)).delete(synchronize_session=False)
+            
             # Delete documents
             EmployeeDocument.query.filter(EmployeeDocument.employee_id.in_(employee_ids)).delete(synchronize_session=False)
             
