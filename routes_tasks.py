@@ -1922,6 +1922,7 @@ def export_labels_excel(location_id):
     for product in products:
         ws[f'A{row}'] = product.name
         ws[f'B{row}'] = product.description or ""
+        ws[f'C{row}'] = product.shelf_life_days
         
         # Buscar horas de conservación para cada tipo
         for conservation in product.conservation_types:
@@ -1929,15 +1930,15 @@ def export_labels_excel(location_id):
             hours_valid = conservation.hours_valid
             
             if conservation.conservation_type == ConservationType.DESCONGELACION:
-                ws[f'C{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.REFRIGERACION:
                 ws[f'D{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.GASTRO:
+            elif conservation.conservation_type == ConservationType.REFRIGERACION:
                 ws[f'E{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.CALIENTE:
+            elif conservation.conservation_type == ConservationType.GASTRO:
                 ws[f'F{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.SECO:
+            elif conservation.conservation_type == ConservationType.CALIENTE:
                 ws[f'G{row}'] = hours_valid
+            elif conservation.conservation_type == ConservationType.SECO:
+                ws[f'H{row}'] = hours_valid
         
         row += 1
     
@@ -2006,12 +2007,16 @@ def import_labels_excel(location_id):
                 if not product_name:
                     continue
                 
+                # Vida útil en días (caducidad secundaria)
+                shelf_life_days = ws[f'C{row}'].value
+                shelf_life_days = int(shelf_life_days) if shelf_life_days is not None else 0
+                
                 # Horas para cada tipo de conservación
-                hours_descongelacion = ws[f'C{row}'].value
-                hours_refrigeracion = ws[f'D{row}'].value
-                hours_gastro = ws[f'E{row}'].value
-                hours_caliente = ws[f'F{row}'].value
-                hours_seco = ws[f'G{row}'].value
+                hours_descongelacion = ws[f'D{row}'].value
+                hours_refrigeracion = ws[f'E{row}'].value
+                hours_gastro = ws[f'F{row}'].value
+                hours_caliente = ws[f'G{row}'].value
+                hours_seco = ws[f'H{row}'].value
                 
                 # Usar horas directamente para almacenar en la base de datos
                 hours_descongelacion = int(hours_descongelacion) if hours_descongelacion is not None else None
@@ -2027,12 +2032,14 @@ def import_labels_excel(location_id):
                     # Actualizar producto existente
                     product.name = product_name
                     product.description = product_description
+                    product.shelf_life_days = shelf_life_days
                     updated += 1
                 else:
                     # Crear nuevo producto
                     product = Product(
                         name=product_name,
                         description=product_description,
+                        shelf_life_days=shelf_life_days,
                         location_id=location_id
                     )
                     db.session.add(product)
