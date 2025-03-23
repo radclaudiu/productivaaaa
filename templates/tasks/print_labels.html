@@ -14,8 +14,8 @@
         
         /* Estilos para la etiqueta */
         .etiqueta {
-            width: 45mm;   /* Ligeramente más ancho para mejor legibilidad */
-            height: 50mm;  /* Aumentado para acomodar la fecha secundaria */
+            width: 40mm;   /* Ancho exacto para impresora de etiquetas */
+            height: 45mm;  /* Alto exacto para impresora de etiquetas */
             padding: 2mm;
             text-align: center;
             box-sizing: border-box;
@@ -46,11 +46,7 @@
             border-radius: 2mm;
         }
         
-        .local {
-            font-size: 7pt;
-            margin-bottom: 1mm;
-        }
-        
+
         .preparado {
             font-size: 7pt;
             margin-bottom: 1mm;
@@ -108,7 +104,6 @@
         <div class="etiqueta">
             <div class="producto">{{ product.name|upper }}</div>
             <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
-            <div class="local">{{ location.name }}</div>
             <div class="preparado">Prep: {{ user.name }} {{ user.last_name }}</div>
             <div class="fecha">{{ now.strftime('%d/%m/%Y %H:%M') }}</div>
             <div class="caducidad">Cad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
