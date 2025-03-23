@@ -7,7 +7,12 @@
     <div class="d-flex justify-content-between align-items-center mb-4">
         <div>
             <h1>Sistema de Puntos de Fichaje</h1>
-            <p class="text-muted">Gestione los puntos de fichaje para sus empleados</p>
+            <p class="text-muted">
+                Empresa: <strong>{{ company.name }}</strong> 
+                <a href="{{ url_for('checkpoints.select_company') }}" class="btn btn-sm btn-outline-primary ms-2">
+                    <i class="bi bi-building"></i> Cambiar empresa
+                </a>
+            </p>
         </div>
         <div>
             <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">

@@ -62,38 +62,86 @@ def checkpoint_required(f):
 # Rutas para administración de checkpoints
 @checkpoints_bp.route('/')
 @login_required
-def index():
-    """Página principal del sistema de fichajes"""
-    # Obtener estadísticas para el dashboard
+def select_company():
+    """Página de selección de empresa para el sistema de fichajes"""
+    # Obtener empresas según los permisos del usuario
+    if current_user.is_admin():
+        companies = Company.query.filter_by(is_active=True).all()
+    else:
+        companies = current_user.companies
+    
+    # Si solo hay una empresa o el usuario solo gestiona una, redirigir directamente
+    if len(companies) == 1:
+        return redirect(url_for('checkpoints.index_company', company_id=companies[0].id))
+    
+    return render_template('checkpoints/select_company.html', companies=companies)
+
+@checkpoints_bp.route('/company/<int:company_id>')
+@login_required
+def index_company(company_id):
+    """Página principal del sistema de fichajes para una empresa específica"""
+    # Verificar permiso para acceder a esta empresa
+    company = Company.query.get_or_404(company_id)
+    
+    if not current_user.is_admin() and company not in current_user.companies:
+        flash('No tiene permiso para gestionar esta empresa.', 'danger')
+        return redirect(url_for('main.dashboard'))
+    
+    # Guardar la empresa seleccionada en la sesión
+    session['selected_company_id'] = company_id
+    
+    # Obtener estadísticas para el dashboard filtradas por la empresa
     stats = {
-        'active_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.ACTIVE).count(),
-        'maintenance_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.MAINTENANCE).count(),
-        'disabled_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.DISABLED).count(),
-        'employees_with_hours': EmployeeContractHours.query.count(),
-        'employees_with_overtime': EmployeeContractHours.query.filter_by(allow_overtime=True).count(),
-        'today_records': CheckPointRecord.query.filter(
-            CheckPointRecord.check_in_time >= datetime.combine(date.today(), time.min)
-        ).count(),
-        'pending_checkout': CheckPointRecord.query.filter(
-            CheckPointRecord.check_out_time.is_(None)
-        ).count(),
-        'active_incidents': CheckPointIncident.query.filter_by(resolved=False).count()
+        'active_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.ACTIVE, company_id=company_id).count(),
+        'maintenance_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.MAINTENANCE, company_id=company_id).count(),
+        'disabled_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.DISABLED, company_id=company_id).count(),
+        'employees_with_hours': db.session.query(EmployeeContractHours)
+            .join(Employee, EmployeeContractHours.employee_id == Employee.id)
+            .filter(Employee.company_id == company_id).count(),
+        'employees_with_overtime': db.session.query(EmployeeContractHours)
+            .join(Employee, EmployeeContractHours.employee_id == Employee.id)
+            .filter(Employee.company_id == company_id, EmployeeContractHours.allow_overtime == True).count(),
+        'today_records': db.session.query(CheckPointRecord)
+            .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)
+            .filter(
+                CheckPoint.company_id == company_id,
+                CheckPointRecord.check_in_time >= datetime.combine(date.today(), time.min)
+            ).count(),
+        'pending_checkout': db.session.query(CheckPointRecord)
+            .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)
+            .filter(
+                CheckPoint.company_id == company_id,
+                CheckPointRecord.check_out_time.is_(None)
+            ).count(),
+        'active_incidents': db.session.query(CheckPointIncident)
+            .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)
+            .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)
+            .filter(
+                CheckPoint.company_id == company_id,
+                CheckPointIncident.resolved == False
+            ).count()
     }
     
-    # Obtener los últimos registros
-    latest_records = CheckPointRecord.query.order_by(
-        CheckPointRecord.check_in_time.desc()
-    ).limit(10).all()
+    # Obtener los últimos registros filtrados por empresa
+    latest_records = db.session.query(CheckPointRecord).\
+        join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id).\
+        filter(CheckPoint.company_id == company_id).\
+        order_by(CheckPointRecord.check_in_time.desc()).\
+        limit(10).all()
     
-    # Obtener las últimas incidencias
-    latest_incidents = CheckPointIncident.query.order_by(
-        CheckPointIncident.created_at.desc()
-    ).limit(10).all()
+    # Obtener las últimas incidencias filtradas por empresa
+    latest_incidents = db.session.query(CheckPointIncident).\
+        join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id).\
+        join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id).\
+        filter(CheckPoint.company_id == company_id).\
+        order_by(CheckPointIncident.created_at.desc()).\
+        limit(10).all()
     
     return render_template('checkpoints/index.html', 
                           stats=stats, 
                           latest_records=latest_records,
-                          latest_incidents=latest_incidents)
+                          latest_incidents=latest_incidents,
+                          company=company)
 
 
 @checkpoints_bp.route('/checkpoints')
@@ -101,14 +149,21 @@ def index():
 @manager_required
 def list_checkpoints():
     """Lista todos los puntos de fichaje disponibles"""
-    if current_user.is_admin():
-        checkpoints = CheckPoint.query.all()
-    else:
-        # Si es gerente, solo muestra los puntos de las empresas que gestiona
-        company_ids = [company.id for company in current_user.companies]
-        checkpoints = CheckPoint.query.filter(CheckPoint.company_id.in_(company_ids)).all()
+    # Verificar si hay una empresa seleccionada
+    company_id = session.get('selected_company_id')
+    if not company_id:
+        return redirect(url_for('checkpoints.select_company'))
     
-    return render_template('checkpoints/list_checkpoints.html', checkpoints=checkpoints)
+    # Verificar permiso para acceder a esta empresa
+    company = Company.query.get_or_404(company_id)
+    if not current_user.is_admin() and company not in current_user.companies:
+        flash('No tiene permiso para gestionar esta empresa.', 'danger')
+        return redirect(url_for('checkpoints.select_company'))
+    
+    # Filtrar por la empresa seleccionada
+    checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
+    
+    return render_template('checkpoints/list_checkpoints.html', checkpoints=checkpoints, company=company)
 
 
 @checkpoints_bp.route('/checkpoints/new', methods=['GET', 'POST'])
@@ -116,15 +171,30 @@ def list_checkpoints():
 @manager_required
 def create_checkpoint():
     """Crea un nuevo punto de fichaje"""
+    # Verificar si hay una empresa seleccionada
+    company_id = session.get('selected_company_id')
+    if not company_id:
+        return redirect(url_for('checkpoints.select_company'))
+    
+    # Verificar permiso para acceder a esta empresa
+    company = Company.query.get_or_404(company_id)
+    if not current_user.is_admin() and company not in current_user.companies:
+        flash('No tiene permiso para gestionar esta empresa.', 'danger')
+        return redirect(url_for('checkpoints.select_company'))
+    
     form = CheckPointForm()
     
-    # Cargar las empresas disponibles para el usuario actual
+    # Cargar las empresas disponibles para el usuario actual pero preseleccionar la empresa actual
     if current_user.is_admin():
         companies = Company.query.filter_by(is_active=True).all()
     else:
         companies = current_user.companies
         
     form.company_id.choices = [(c.id, c.name) for c in companies]
+    
+    # Si es GET, preseleccionamos la empresa de la sesión
+    if request.method == 'GET':
+        form.company_id.data = company_id
     
     if form.validate_on_submit():
         checkpoint = CheckPoint(
@@ -152,7 +222,7 @@ def create_checkpoint():
             db.session.rollback()
             flash(f'Error al crear el punto de fichaje: {str(e)}', 'danger')
     
-    return render_template('checkpoints/checkpoint_form.html', form=form, title='Nuevo Punto de Fichaje')
+    return render_template('checkpoints/checkpoint_form.html', form=form, title='Nuevo Punto de Fichaje', company=company)
 
 
 @checkpoints_bp.route('/checkpoints/<int:id>/edit', methods=['GET', 'POST'])

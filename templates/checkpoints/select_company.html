@@ -1,0 +1,69 @@
+{% extends 'layout.html' %}
+
+{% block title %}Seleccionar Empresa - Sistema de Puntos de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1>Sistema de Puntos de Fichaje</h1>
+            <p class="text-muted">Seleccione la empresa para gestionar los puntos de fichaje</p>
+        </div>
+        <div>
+            <a href="{{ url_for('main.dashboard') }}" class="btn btn-outline-secondary">
+                <i class="bi bi-arrow-left"></i> Volver al Dashboard
+            </a>
+        </div>
+    </div>
+
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+
+    <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
+        {% for company in companies %}
+        <div class="col">
+            <a href="{{ url_for('checkpoints.index_company', company_id=company.id) }}" class="text-decoration-none">
+                <div class="card h-100 company-card">
+                    <div class="card-body text-center">
+                        <h3 class="card-title mb-3">{{ company.name }}</h3>
+                        <p class="text-muted mb-2">{{ company.tax_id }}</p>
+                        <p class="text-muted mb-0">{{ company.city }}{% if company.city and company.country %}, {% endif %}{{ company.country }}</p>
+                    </div>
+                    <div class="card-footer bg-transparent text-center">
+                        <span class="btn btn-primary">Seleccionar empresa</span>
+                    </div>
+                </div>
+            </a>
+        </div>
+        {% else %}
+        <div class="col-12">
+            <div class="alert alert-warning">
+                No tiene empresas asignadas. Contacte con el administrador para asignarle empresas.
+            </div>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<style>
+    .company-card {
+        transition: all 0.3s ease;
+        border: 2px solid #dee2e6;
+        border-radius: 0.5rem;
+    }
+    
+    .company-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+        border-color: var(--bs-primary);
+    }
+</style>
+{% endblock %}
