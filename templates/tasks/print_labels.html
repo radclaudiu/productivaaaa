@@ -21,10 +21,11 @@
             box-sizing: border-box;
             margin: 0;
             page-break-inside: avoid;
-            display: inline-block;
+            display: block; /* Cambiado de inline-block a block para mejor impresión */
             vertical-align: top;
             border: 0.5pt dotted #ccc; /* Borde sutil para ayudar en el corte */
             position: relative;
+            overflow: hidden; /* Evitar desbordamiento */
         }
         
         /* Estilos dinámicos según la plantilla */
@@ -123,17 +124,23 @@
             }
             @page {
                 margin: 0;
-                size: auto;
+                size: 40mm 45mm; /* Forzar el tamaño exacto de la etiqueta */
+            }
+            .etiqueta {
+                page-break-after: always; /* Forzar salto de página después de cada etiqueta */
+                width: 40mm;
+                height: 45mm;
+                /* Quitar bordes en la impresión */
+                border: none;
             }
             .nueva-pagina {
-                page-break-before: always;
+                display: none; /* No necesitamos este elemento en la impresión */
             }
         }
     </style>
 </head>
 <body>
     {% for i in range(quantity) %}
-        {% if i > 0 and i % 1 == 0 %}<div class="nueva-pagina"></div>{% endif %}
         <div class="etiqueta">
             <div class="producto">{{ product.name|upper }}</div>
             <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
