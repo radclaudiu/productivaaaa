@@ -2357,7 +2357,21 @@ def manage_product_conservations(id):
     for conservation in conservations:
         conservation_dict[conservation.conservation_type.value] = conservation
     
-    form = ProductConservationForm()
+    # Si es GET y hay un tipo de conservación seleccionado, prellenar el formulario
+    selected_conservation = None
+    selected_type = request.args.get('type')
+    if request.method == 'GET' and selected_type:
+        for cons in conservations:
+            if cons.conservation_type.value == selected_type:
+                selected_conservation = cons
+                break
+    
+    # Crear formulario con o sin objeto preexistente
+    form = ProductConservationForm(obj=selected_conservation)
+    
+    # Si se proporciona un tipo en la URL, preseleccionarlo
+    if request.method == 'GET' and selected_type:
+        form.conservation_type.data = selected_type
     
     if form.validate_on_submit():
         conservation_type_str = form.conservation_type.data
@@ -2383,6 +2397,9 @@ def manage_product_conservations(id):
         hours_valid = form.days_valid.data
         days_valid = round(hours_valid / 24.0, 2)
         
+        # Debug logging
+        current_app.logger.debug(f"Horas recibidas: {hours_valid}, convertido a días: {days_valid}")
+        
         if conservation:
             # Actualizar existente
             conservation.days_valid = days_valid
@@ -2397,6 +2414,10 @@ def manage_product_conservations(id):
         
         try:
             db.session.commit()
+            # Verificar que se guardó correctamente
+            db.session.refresh(conservation)
+            current_app.logger.debug(f"Guardado en BD: {conservation.days_valid} días, {conservation.days_valid * 24} horas")
+            
             flash('Configuración de conservación guardada correctamente', 'success')
             return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         except Exception as e:
