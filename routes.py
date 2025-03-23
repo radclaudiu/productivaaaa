@@ -458,7 +458,7 @@ def delete_company(id):
             db.session.delete(employee)
         
         # Delete all users related to this company
-        for user in company.users:
+        for user in company.users_relation:
             db.session.delete(user)
         
         # Finally delete the company
