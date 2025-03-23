@@ -3,16 +3,26 @@
 <head>
     <meta charset="UTF-8">
     <style>
-        .label {
-            width: 90mm;
-            height: 40mm;
-            padding: 2mm;
-            margin: 1mm;
-            border: 1px solid #000;
-            font-family: Arial, sans-serif;
-            font-size: 10pt;
-            page-break-inside: avoid;
-        }
+.label {
+    width: 44mm;
+    height: 39mm;
+    position: relative;
+    page-break-after: always;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+}
+
+@page {
+    size: 44mm 39mm;
+    margin: 0;
+}
+
+@media print {
+    .label {
+        page-break-after: always;
+    }
+}
         .product-name {
             font-weight: bold;
             font-size: 12pt;
@@ -22,15 +32,6 @@
         .info-row {
             margin: 1mm 0;
             text-align: center;
-        }
-        @media print {
-            @page {
-                size: A4;
-                margin: 0;
-            }
-            body {
-                margin: 5mm;
-            }
         }
     </style>
 </head>
