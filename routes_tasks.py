@@ -2181,7 +2181,13 @@ def generate_labels():
     # Verificar si es una solicitud AJAX
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
-    # Si es AJAX, devolver solo el HTML para mostrar en la página
+    # Si es AJAX, devolver JSON con el HTML para mostrar en la página
+    if is_ajax:
+        return jsonify({
+            'success': True,
+            'html': labels_html,
+            'quantity': quantity
+        })
     # Si no, devolver la página completa para compatibilidad con la versión anterior
     return labels_html
 
