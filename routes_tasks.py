@@ -2178,6 +2178,11 @@ def generate_labels():
         quantity=quantity
     )
     
+    # Verificar si es una solicitud AJAX
+    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
+    
+    # Si es AJAX, devolver solo el HTML para mostrar en la página
+    # Si no, devolver la página completa para compatibilidad con la versión anterior
     return labels_html
 
 @tasks_bp.route('/admin/products')
