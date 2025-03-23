@@ -4,11 +4,17 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center">
-                <h1>Sistema de Fichajes</h1>
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Sistema de Fichajes</h1>
+        <div>
+            <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-primary">
+                <i class="bi bi-list"></i> Puntos de Fichaje
+            </a>
+            {% if current_user.is_admin() %}
+            <a href="{{ url_for('checkpoints.create_checkpoint') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nuevo Punto de Fichaje
+            </a>
+            {% endif %}
         </div>
     </div>
     
@@ -23,88 +29,70 @@
         {% endif %}
     {% endwith %}
     
-    <div class="row">
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Gestión de Puntos de Fichaje</h5>
-                </div>
+    <!-- Estadísticas -->
+    <div class="row mb-4">
+        <div class="col-md-3">
+            <div class="card bg-primary text-white h-100">
                 <div class="card-body">
-                    <p>Administre los dispositivos y ubicaciones donde sus empleados pueden registrar entradas y salidas.</p>
-                    <ul class="list-group mb-3">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Total de puntos activos
-                            <span class="badge bg-primary rounded-pill">{{ stats.active_checkpoints }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Puntos en mantenimiento
-                            <span class="badge bg-warning rounded-pill">{{ stats.maintenance_checkpoints }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Puntos desactivados
-                            <span class="badge bg-danger rounded-pill">{{ stats.disabled_checkpoints }}</span>
-                        </li>
-                    </ul>
-                    <div class="d-grid">
-                        <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-primary">
-                            <i class="fas fa-list"></i> Ver Puntos de Fichaje
-                        </a>
+                    <h5 class="card-title">Puntos de Fichaje</h5>
+                    <h2 class="display-4">{{ stats.active_checkpoints }}</h2>
+                    <p class="card-text">Dispositivos activos</p>
+                </div>
+                <div class="card-footer bg-primary border-top border-light border-opacity-25">
+                    <div class="d-flex justify-content-between">
+                        <small>En mantenimiento: {{ stats.maintenance_checkpoints }}</small>
+                        <small>Desactivados: {{ stats.disabled_checkpoints }}</small>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Configuración de Horas</h5>
-                </div>
+        <div class="col-md-3">
+            <div class="card bg-success text-white h-100">
                 <div class="card-body">
-                    <p>Configure las horas de trabajo de sus empleados y personalice los ajustes de fichajes.</p>
-                    <ul class="list-group mb-3">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Empleados con horario configurado
-                            <span class="badge bg-success rounded-pill">{{ stats.employees_with_hours }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Empleados con horas extra permitidas
-                            <span class="badge bg-info rounded-pill">{{ stats.employees_with_overtime }}</span>
-                        </li>
-                    </ul>
-                    <div class="d-grid">
-                        <a href="{{ url_for('list_employees') }}" class="btn btn-primary">
-                            <i class="fas fa-user-clock"></i> Gestionar Horarios
-                        </a>
+                    <h5 class="card-title">Empleados</h5>
+                    <h2 class="display-4">{{ stats.employees_with_hours }}</h2>
+                    <p class="card-text">Con horas configuradas</p>
+                </div>
+                <div class="card-footer bg-success border-top border-light border-opacity-25">
+                    <div class="d-flex justify-content-between">
+                        <small>Con horas extra: {{ stats.employees_with_overtime }}</small>
                     </div>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-4 mb-4">
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Informes y Exportación</h5>
-                </div>
+        <div class="col-md-3">
+            <div class="card bg-info text-white h-100">
                 <div class="card-body">
-                    <p>Genere informes de fichajes, exporte datos y analice la actividad de sus empleados.</p>
-                    <ul class="list-group mb-3">
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Fichajes registrados hoy
-                            <span class="badge bg-primary rounded-pill">{{ stats.today_records }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Fichajes pendientes de salida
-                            <span class="badge bg-warning rounded-pill">{{ stats.pending_checkout }}</span>
-                        </li>
-                        <li class="list-group-item d-flex justify-content-between align-items-center">
-                            Incidencias activas
-                            <span class="badge bg-danger rounded-pill">{{ stats.active_incidents }}</span>
-                        </li>
-                    </ul>
-                    <div class="d-grid">
-                        <a href="{{ url_for('checkpoints.export_records') }}" class="btn btn-primary">
-                            <i class="fas fa-file-export"></i> Exportar Registros
+                    <h5 class="card-title">Registros Hoy</h5>
+                    <h2 class="display-4">{{ stats.today_records }}</h2>
+                    <p class="card-text">Fichajes realizados</p>
+                </div>
+                <div class="card-footer bg-info border-top border-light border-opacity-25">
+                    <div class="d-flex justify-content-between">
+                        <small>Pendientes de salida: {{ stats.pending_checkout }}</small>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-3">
+            <div class="card {% if stats.active_incidents > 0 %}bg-danger{% else %}bg-secondary{% endif %} text-white h-100">
+                <div class="card-body">
+                    <h5 class="card-title">Incidencias</h5>
+                    <h2 class="display-4">{{ stats.active_incidents }}</h2>
+                    <p class="card-text">Activas sin resolver</p>
+                </div>
+                <div class="card-footer {% if stats.active_incidents > 0 %}bg-danger{% else %}bg-secondary{% endif %} border-top border-light border-opacity-25">
+                    <div class="d-flex justify-content-between">
+                        {% if stats.active_incidents > 0 %}
+                        <a href="{{ url_for('checkpoints.list_incidents') }}" class="text-white">
+                            <i class="bi bi-eye"></i> Ver incidencias
                         </a>
+                        {% else %}
+                        <small>Sin incidencias pendientes</small>
+                        {% endif %}
                     </div>
                 </div>
             </div>
@@ -112,133 +100,156 @@
     </div>
     
     <div class="row">
-        <div class="col-md-6 mb-4">
-            <div class="card">
+        <!-- Últimos registros -->
+        <div class="col-md-6">
+            <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Últimos Fichajes</h5>
+                    <h5 class="mb-0">Últimos registros de fichaje</h5>
                 </div>
-                <div class="card-body p-0">
-                    {% if latest_records %}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Empleado</th>
-                                    <th>Entrada</th>
-                                    <th>Salida</th>
-                                    <th>Punto de fichaje</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Empleado</th>
+                                <th>Dispositivo</th>
+                                <th>Entrada</th>
+                                <th>Salida</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if latest_records %}
                                 {% for record in latest_records %}
                                 <tr>
                                     <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
-                                    <td>{{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}</td>
+                                    <td>{{ record.checkpoint.name }}</td>
+                                    <td>{{ record.check_in_time.strftime('%d/%m %H:%M') }}</td>
                                     <td>
                                         {% if record.check_out_time %}
                                         {{ record.check_out_time.strftime('%H:%M') }}
                                         {% else %}
-                                        <span class="text-warning">Pendiente</span>
+                                        <span class="badge bg-warning">Pendiente</span>
                                         {% endif %}
                                     </td>
-                                    <td>{{ record.checkpoint.name }}</td>
                                     <td>
                                         {% if record.incidents %}
                                         <span class="badge bg-danger">Con incidencias</span>
                                         {% elif record.adjusted %}
                                         <span class="badge bg-warning">Ajustado</span>
-                                        {% elif not record.check_out_time %}
-                                        <span class="badge bg-primary">En curso</span>
                                         {% else %}
-                                        <span class="badge bg-success">Completado</span>
+                                        <span class="badge bg-success">OK</span>
                                         {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info m-3">
-                        No hay registros de fichaje recientes.
-                    </div>
-                    {% endif %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="5" class="text-center">No hay registros disponibles</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-footer text-end">
-                    <a href="{{ url_for('checkpoints.list_records_all') }}" class="btn btn-sm btn-outline-primary">Ver Todos</a>
+                <div class="card-footer">
+                    <a href="{{ url_for('checkpoints.list_records_all') }}" class="btn btn-sm btn-primary">Ver todos los registros</a>
                 </div>
             </div>
         </div>
         
-        <div class="col-md-6 mb-4">
-            <div class="card">
+        <!-- Últimas incidencias -->
+        <div class="col-md-6">
+            <div class="card mb-4">
                 <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Incidencias Recientes</h5>
+                    <h5 class="mb-0">Últimas incidencias</h5>
                 </div>
-                <div class="card-body p-0">
-                    {% if latest_incidents %}
-                    <div class="table-responsive">
-                        <table class="table table-striped table-hover mb-0">
-                            <thead>
-                                <tr>
-                                    <th>Empleado</th>
-                                    <th>Fecha</th>
-                                    <th>Tipo</th>
-                                    <th>Estado</th>
-                                </tr>
-                            </thead>
-                            <tbody>
+                <div class="table-responsive">
+                    <table class="table table-hover table-striped mb-0">
+                        <thead>
+                            <tr>
+                                <th>Fecha</th>
+                                <th>Empleado</th>
+                                <th>Tipo</th>
+                                <th>Estado</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% if latest_incidents %}
                                 {% for incident in latest_incidents %}
                                 <tr>
+                                    <td>{{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                     <td>{{ incident.record.employee.first_name }} {{ incident.record.employee.last_name }}</td>
-                                    <td>{{ incident.created_at.strftime('%d/%m/%Y') }}</td>
                                     <td>
                                         {% if incident.incident_type.value == 'missed_checkout' %}
-                                        Falta de salida
+                                        <span class="badge bg-danger">Sin fichaje de salida</span>
                                         {% elif incident.incident_type.value == 'late_checkin' %}
-                                        Entrada tarde
+                                        <span class="badge bg-warning">Entrada tardía</span>
                                         {% elif incident.incident_type.value == 'early_checkout' %}
-                                        Salida temprana
+                                        <span class="badge bg-warning">Salida temprana</span>
                                         {% elif incident.incident_type.value == 'overtime' %}
-                                        Horas extra
+                                        <span class="badge bg-info">Horas extra</span>
                                         {% elif incident.incident_type.value == 'manual_adjustment' %}
-                                        Ajuste manual
+                                        <span class="badge bg-secondary">Ajuste manual</span>
                                         {% elif incident.incident_type.value == 'contract_hours_adjustment' %}
-                                        Ajuste horas contrato
+                                        <span class="badge bg-primary">Ajuste horas contrato</span>
                                         {% else %}
-                                        {{ incident.incident_type.value }}
+                                        <span class="badge bg-dark">Otro</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if incident.resolved %}
-                                        <span class="badge bg-success">Resuelta</span>
+                                        <span class="badge bg-success">Resuelto</span>
                                         {% else %}
                                         <span class="badge bg-danger">Pendiente</span>
                                         {% endif %}
                                     </td>
                                 </tr>
                                 {% endfor %}
-                            </tbody>
-                        </table>
-                    </div>
-                    {% else %}
-                    <div class="alert alert-info m-3">
-                        No hay incidencias recientes.
-                    </div>
-                    {% endif %}
+                            {% else %}
+                                <tr>
+                                    <td colspan="4" class="text-center">No hay incidencias registradas</td>
+                                </tr>
+                            {% endif %}
+                        </tbody>
+                    </table>
                 </div>
-                <div class="card-footer text-end">
-                    <a href="{{ url_for('checkpoints.list_incidents') }}" class="btn btn-sm btn-outline-primary">Ver Todas</a>
+                <div class="card-footer">
+                    <a href="{{ url_for('checkpoints.list_incidents') }}" class="btn btn-sm btn-primary">Ver todas las incidencias</a>
                 </div>
             </div>
         </div>
     </div>
     
-    <div class="mt-4">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
-            <i class="fas fa-arrow-left"></i> Volver al Dashboard
-        </a>
+    <!-- Acciones rápidas -->
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Acciones Rápidas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('checkpoints.export_records') }}" class="btn btn-info w-100 py-3">
+                                <i class="bi bi-file-earmark-pdf fs-4 d-block mb-2"></i>
+                                Exportar Registros
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('checkpoints.create_checkpoint') }}" class="btn btn-success w-100 py-3">
+                                <i class="bi bi-plus-circle fs-4 d-block mb-2"></i>
+                                Crear Punto de Fichaje
+                            </a>
+                        </div>
+                        <div class="col-md-4 mb-3">
+                            <a href="{{ url_for('checkpoints.list_incidents') }}" class="btn btn-warning w-100 py-3">
+                                <i class="bi bi-exclamation-triangle fs-4 d-block mb-2"></i>
+                                Gestionar Incidencias
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 </div>
 {% endblock %}
