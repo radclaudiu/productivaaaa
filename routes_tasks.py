@@ -2382,15 +2382,19 @@ def manage_product_conservations(id):
             conservation_type=conservation_type
         ).first()
         
+        # Convertir horas a días para almacenar en la base de datos
+        hours_valid = form.days_valid.data
+        days_valid = round(hours_valid / 24.0, 2)
+        
         if conservation:
             # Actualizar existente
-            conservation.days_valid = form.days_valid.data
+            conservation.days_valid = days_valid
         else:
             # Crear nueva
             conservation = ProductConservation(
                 product_id=product.id,
                 conservation_type=conservation_type,
-                days_valid=form.days_valid.data
+                days_valid=days_valid
             )
             db.session.add(conservation)
         

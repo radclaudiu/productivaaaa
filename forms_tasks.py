@@ -191,9 +191,9 @@ class ProductForm(FlaskForm):
 class ProductConservationForm(FlaskForm):
     """Formulario para asignar tiempos de conservación a un producto"""
     conservation_type = SelectField('Tipo de conservación', validators=[DataRequired()])
-    days_valid = IntegerField('Días válidos', validators=[
+    days_valid = IntegerField('Horas válidas', validators=[
         DataRequired(),
-        NumberRange(min=1, max=90, message='Los días deben estar entre 1 y 90')
+        NumberRange(min=1, max=2160, message='Las horas deben estar entre 1 y 2160 (90 días)')
     ])
     submit = SubmitField('Guardar Configuración')
     
