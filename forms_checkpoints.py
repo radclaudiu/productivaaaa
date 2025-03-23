@@ -67,9 +67,11 @@ class ContractHoursForm(FlaskForm):
         NumberRange(min=0, max=12, message='Las horas extra deben estar entre 0 y 12')
     ])
     
+    use_normal_schedule = BooleanField('Aplicar horario normal', default=False)
     normal_start_time = TimeField('Hora normal de entrada', validators=[Optional()])
     normal_end_time = TimeField('Hora normal de salida', validators=[Optional()])
     
+    use_flexibility = BooleanField('Aplicar margen de flexibilidad', default=False)
     checkin_flexibility = IntegerField('Flexibilidad entrada (minutos)', validators=[
         Optional(),
         NumberRange(min=0, max=120, message='La flexibilidad debe estar entre 0 y 120 minutos')

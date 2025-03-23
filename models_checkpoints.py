@@ -174,10 +174,12 @@ class EmployeeContractHours(db.Model):
     max_overtime_daily = db.Column(db.Float, default=2.0)  # Horas extra máximas diarias permitidas
     
     # Horario normal de trabajo (para cálculo de retrasos)
+    use_normal_schedule = db.Column(db.Boolean, default=False)  # Activar horario normal
     normal_start_time = db.Column(db.Time)
     normal_end_time = db.Column(db.Time)
     
     # Margen de flexibilidad (en minutos)
+    use_flexibility = db.Column(db.Boolean, default=False)  # Activar margen de flexibilidad
     checkin_flexibility = db.Column(db.Integer, default=15)  # Minutos de flexibilidad en la entrada
     checkout_flexibility = db.Column(db.Integer, default=15)  # Minutos de flexibilidad en la salida
     

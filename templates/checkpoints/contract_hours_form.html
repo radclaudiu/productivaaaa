@@ -112,6 +112,20 @@
                         </div>
                         
                         <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    {{ form.use_normal_schedule(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.use_normal_schedule.id }}">
+                                        Aplicar horario normal
+                                    </label>
+                                    {% for error in form.use_normal_schedule.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3" id="normalScheduleSettings">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="{{ form.normal_start_time.id }}" class="form-label">Hora normal de entrada</label>
@@ -133,6 +147,20 @@
                         </div>
                         
                         <div class="row mb-3">
+                            <div class="col-12">
+                                <div class="form-check form-switch">
+                                    {{ form.use_flexibility(class="form-check-input") }}
+                                    <label class="form-check-label" for="{{ form.use_flexibility.id }}">
+                                        Aplicar margen de flexibilidad
+                                    </label>
+                                    {% for error in form.use_flexibility.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3" id="flexibilitySettings">
                             <div class="col-md-6">
                                 <div class="form-group">
                                     <label for="{{ form.checkin_flexibility.id }}" class="form-label">Flexibilidad entrada (minutos)</label>
