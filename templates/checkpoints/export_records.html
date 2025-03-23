@@ -1,0 +1,116 @@
+{% extends 'layout.html' %}
+
+{% block title %}Exportar Registros de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Exportar Registros de Fichaje</h1>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Parámetros de Exportación</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.start_date.id }}" class="form-label">Fecha de inicio</label>
+                                    {{ form.start_date(class="form-control", type="date") }}
+                                    {% for error in form.start_date.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.end_date.id }}" class="form-label">Fecha de fin</label>
+                                    {{ form.end_date(class="form-control", type="date") }}
+                                    {% for error in form.end_date.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <label for="{{ form.employee_id.id }}" class="form-label">Empleado</label>
+                            {{ form.employee_id(class="form-control") }}
+                            {% for error in form.employee_id.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">
+                                Seleccione un empleado específico o deje vacío para incluir a todos.
+                            </small>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            <div class="form-check form-switch">
+                                {{ form.include_signature(class="form-check-input") }}
+                                <label class="form-check-label" for="{{ form.include_signature.id }}">
+                                    Incluir firmas
+                                </label>
+                                {% for error in form.include_signature.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <small class="form-text text-muted">
+                                Si está activado, el PDF incluirá las firmas digitales si están disponibles.
+                            </small>
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Validar fechas
+    document.getElementById('{{ form.end_date.id }}').addEventListener('change', function() {
+        const startDate = document.getElementById('{{ form.start_date.id }}').value;
+        const endDate = this.value;
+        
+        if (startDate && endDate) {
+            if (endDate < startDate) {
+                alert('La fecha de fin debe ser posterior o igual a la fecha de inicio.');
+                this.value = startDate;
+            }
+        }
+    });
+    
+    // Inicializar fechas por defecto
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date();
+        const startDate = document.getElementById('{{ form.start_date.id }}');
+        const endDate = document.getElementById('{{ form.end_date.id }}');
+        
+        if (!startDate.value) {
+            // Primer día del mes actual
+            const firstDay = new Date(today.getFullYear(), today.getMonth(), 1);
+            startDate.value = firstDay.toISOString().split('T')[0];
+        }
+        
+        if (!endDate.value) {
+            // Último día del mes actual
+            const lastDay = new Date(today.getFullYear(), today.getMonth() + 1, 0);
+            endDate.value = lastDay.toISOString().split('T')[0];
+        }
+    });
+</script>
+{% endblock %}

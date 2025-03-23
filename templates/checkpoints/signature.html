@@ -1,0 +1,172 @@
+{% extends 'layout.html' %}
+
+{% block title %}Firma de Registro de Fichaje{% endblock %}
+
+{% block styles %}
+<style>
+    .signature-container {
+        max-width: 600px;
+        margin: 20px auto;
+    }
+    
+    #signature-pad {
+        border: 1px solid #ced4da;
+        border-radius: 5px;
+        width: 100%;
+        height: 300px;
+        background-color: white;
+    }
+    
+    .signature-buttons {
+        margin-top: 10px;
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+    }
+    
+    .record-details {
+        background-color: #f8f9fa;
+        border-radius: 5px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .record-details table {
+        margin-bottom: 0;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Firma de Registro de Fichaje</h1>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información del Registro</h5>
+                </div>
+                <div class="card-body">
+                    <div class="record-details">
+                        <div class="row">
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th>Empleado:</th>
+                                        <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Punto de fichaje:</th>
+                                        <td>{{ record.checkpoint.name }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Fecha:</th>
+                                        <td>{{ record.check_in_time.strftime('%d/%m/%Y') }}</td>
+                                    </tr>
+                                </table>
+                            </div>
+                            <div class="col-md-6">
+                                <table class="table table-borderless">
+                                    <tr>
+                                        <th>Hora de entrada:</th>
+                                        <td>{{ record.check_in_time.strftime('%H:%M') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Hora de salida:</th>
+                                        <td>{{ record.check_out_time.strftime('%H:%M') }}</td>
+                                    </tr>
+                                    <tr>
+                                        <th>Duración:</th>
+                                        <td>
+                                            {% set duration = record.duration() %}
+                                            {% set hours = duration|int %}
+                                            {% set minutes = ((duration - hours) * 60)|int %}
+                                            {{ hours }}h {{ minutes }}min
+                                        </td>
+                                    </tr>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <p class="alert alert-info">
+                        <i class="fas fa-info-circle"></i> La firma digital se utilizará como confirmación de las horas registradas.
+                        Este documento puede ser utilizado con fines legales o administrativos.
+                    </p>
+                    
+                    <div class="signature-container">
+                        <h5>Firma del Empleado</h5>
+                        <p class="text-muted">Utilice el ratón o pantalla táctil para firmar en el recuadro a continuación:</p>
+                        
+                        <canvas id="signature-pad"></canvas>
+                        
+                        <form method="POST" id="signatureForm">
+                            {{ form.csrf_token }}
+                            {{ form.record_id(value=record.id) }}
+                            {{ form.signature_data(id="signature_data") }}
+                            
+                            <div class="signature-buttons">
+                                <button type="button" class="btn btn-secondary" id="clear-button">
+                                    <i class="fas fa-eraser"></i> Borrar Firma
+                                </button>
+                                {{ form.submit(class="btn btn-primary", id="save-button") }}
+                            </div>
+                        </form>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="d-flex justify-content-between">
+                <a href="{{ url_for('checkpoints.list_checkpoint_records', id=record.checkpoint_id) }}" class="btn btn-secondary">
+                    <i class="fas fa-arrow-left"></i> Volver a Registros
+                </a>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+<script>
+    // Inicializar pad de firma
+    const canvas = document.getElementById('signature-pad');
+    const signaturePad = new SignaturePad(canvas, {
+        backgroundColor: 'rgb(255, 255, 255)',
+        penColor: 'rgb(0, 0, 0)'
+    });
+    
+    // Ajustar tamaño del canvas
+    function resizeCanvas() {
+        const ratio = Math.max(window.devicePixelRatio || 1, 1);
+        canvas.width = canvas.offsetWidth * ratio;
+        canvas.height = canvas.offsetHeight * ratio;
+        canvas.getContext("2d").scale(ratio, ratio);
+        signaturePad.clear(); // Limpiar
+    }
+    
+    window.addEventListener("resize", resizeCanvas);
+    resizeCanvas();
+    
+    // Botón para limpiar firma
+    document.getElementById('clear-button').addEventListener('click', function() {
+        signaturePad.clear();
+    });
+    
+    // Guardar firma
+    document.getElementById('signatureForm').addEventListener('submit', function(e) {
+        if (signaturePad.isEmpty()) {
+            e.preventDefault();
+            alert('Por favor, firme antes de guardar.');
+            return false;
+        }
+        
+        const signatureData = signaturePad.toDataURL();
+        document.getElementById('signature_data').value = signatureData;
+        return true;
+    });
+</script>
+{% endblock %}

@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles del Fichaje</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f8f9fa;
+        }
+        
+        .header {
+            background-color: #343a40;
+            color: white;
+            padding: 15px 0;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        .success-icon {
+            text-align: center;
+            font-size: 80px;
+            color: #28a745;
+            margin: 30px 0;
+        }
+        
+        .success-message {
+            text-align: center;
+            margin-bottom: 40px;
+        }
+        
+        .details-card {
+            max-width: 500px;
+            margin: 0 auto;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .footer {
+            margin-top: 40px;
+            text-align: center;
+        }
+        
+        .clock {
+            font-size: 2rem;
+            font-weight: bold;
+            text-align: center;
+            margin: 20px 0;
+        }
+        
+        .date {
+            text-align: center;
+            font-size: 1.2rem;
+            margin-bottom: 20px;
+        }
+        
+        .countdown {
+            text-align: center;
+            margin-top: 20px;
+            font-size: 1.2rem;
+        }
+        
+        .signature-pad-container {
+            max-width: 500px;
+            margin: 40px auto;
+            text-align: center;
+        }
+        
+        #signature-pad {
+            border: 1px solid #ced4da;
+            border-radius: 5px;
+            width: 100%;
+            height: 200px;
+            background-color: white;
+        }
+        
+        .signature-buttons {
+            margin-top: 10px;
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <div class="container">
+            <h2>Registro de Fichaje</h2>
+        </div>
+    </div>
+    
+    <div class="container">
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <div class="success-icon">
+            {% if record.check_out_time %}
+            <i class="fas fa-sign-out-alt"></i>
+            {% else %}
+            <i class="fas fa-sign-in-alt"></i>
+            {% endif %}
+        </div>
+        
+        <div class="success-message">
+            <h3>
+                {% if record.check_out_time %}
+                ¡Salida registrada con éxito!
+                {% else %}
+                ¡Entrada registrada con éxito!
+                {% endif %}
+            </h3>
+            <div class="clock" id="clock">00:00:00</div>
+            <div class="date" id="date">Cargando...</div>
+        </div>
+        
+        <div class="details-card">
+            <div class="card-header bg-primary text-white">
+                <h5 class="mb-0">Detalles del fichaje</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-5 fw-bold">Empleado:</div>
+                    <div class="col-7">{{ record.employee.first_name }} {{ record.employee.last_name }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-5 fw-bold">Fecha:</div>
+                    <div class="col-7">{{ record.check_in_time.strftime('%d/%m/%Y') }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-5 fw-bold">Hora de entrada:</div>
+                    <div class="col-7">{{ record.check_in_time.strftime('%H:%M:%S') }}</div>
+                </div>
+                
+                {% if record.check_out_time %}
+                <div class="row mb-3">
+                    <div class="col-5 fw-bold">Hora de salida:</div>
+                    <div class="col-7">{{ record.check_out_time.strftime('%H:%M:%S') }}</div>
+                </div>
+                
+                <div class="row mb-3">
+                    <div class="col-5 fw-bold">Duración:</div>
+                    <div class="col-7">
+                        {% set duration = record.duration() %}
+                        {% if duration %}
+                            {% set hours = duration|int %}
+                            {% set minutes = ((duration - hours) * 60)|int %}
+                            {{ hours }}h {{ minutes }}min
+                        {% else %}
+                            -
+                        {% endif %}
+                    </div>
+                </div>
+                {% else %}
+                <div class="countdown">
+                    <p>La sesión volverá al inicio en <span id="countdown">10</span> segundos</p>
+                </div>
+                {% endif %}
+                
+                {% if record.adjusted %}
+                <div class="alert alert-warning mt-3">
+                    <i class="fas fa-exclamation-triangle"></i> Este registro ha sido ajustado.
+                    {% if record.adjustment_reason %}
+                    <p class="mb-0"><small>Motivo: {{ record.adjustment_reason }}</small></p>
+                    {% endif %}
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        
+        {% if record.check_out_time and not record.has_signature %}
+        <div class="signature-pad-container">
+            <h5>Firma</h5>
+            <p>Por favor, firme para confirmar el registro de horas:</p>
+            
+            <canvas id="signature-pad"></canvas>
+            
+            <form method="POST" action="{{ url_for('checkpoints.record_signature', id=record.id) }}" id="signatureForm">
+                <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                <input type="hidden" name="signature_data" id="signature_data">
+                <input type="hidden" name="record_id" value="{{ record.id }}">
+                
+                <div class="signature-buttons">
+                    <button type="button" class="btn btn-secondary" id="clear-button">Borrar</button>
+                    <button type="submit" class="btn btn-primary" id="save-button">Guardar Firma</button>
+                </div>
+            </form>
+        </div>
+        {% endif %}
+        
+        <div class="footer">
+            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-primary">
+                <i class="fas fa-home"></i> Volver al Inicio
+            </a>
+        </div>
+    </div>
+    
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.1.3/dist/js/bootstrap.bundle.min.js"></script>
+    {% if record.check_out_time and not record.has_signature %}
+    <script src="https://cdn.jsdelivr.net/npm/signature_pad@4.0.0/dist/signature_pad.umd.min.js"></script>
+    {% endif %}
+    <script>
+        // Reloj en tiempo real
+        function updateClock() {
+            const now = new Date();
+            const hours = now.getHours().toString().padStart(2, '0');
+            const minutes = now.getMinutes().toString().padStart(2, '0');
+            const seconds = now.getSeconds().toString().padStart(2, '0');
+            document.getElementById('clock').textContent = `${hours}:${minutes}:${seconds}`;
+            
+            // Actualizar fecha
+            const options = { weekday: 'long', year: 'numeric', month: 'long', day: 'numeric' };
+            document.getElementById('date').textContent = now.toLocaleDateString('es-ES', options);
+        }
+        
+        // Actualizar cada segundo
+        setInterval(updateClock, 1000);
+        updateClock(); // Inicializar
+        
+        {% if not record.check_out_time %}
+        // Cuenta regresiva para redirección
+        let countDown = 10;
+        const countDownDisplay = document.getElementById('countdown');
+        
+        const timer = setInterval(() => {
+            countDown--;
+            countDownDisplay.textContent = countDown;
+            
+            if (countDown <= 0) {
+                clearInterval(timer);
+                window.location.href = "{{ url_for('checkpoints.checkpoint_dashboard') }}";
+            }
+        }, 1000);
+        {% endif %}
+        
+        {% if record.check_out_time and not record.has_signature %}
+        // Inicializar pad de firma
+        const canvas = document.getElementById('signature-pad');
+        const signaturePad = new SignaturePad(canvas, {
+            backgroundColor: 'rgb(255, 255, 255)',
+            penColor: 'rgb(0, 0, 0)'
+        });
+        
+        // Ajustar tamaño del canvas
+        function resizeCanvas() {
+            const ratio = Math.max(window.devicePixelRatio || 1, 1);
+            canvas.width = canvas.offsetWidth * ratio;
+            canvas.height = canvas.offsetHeight * ratio;
+            canvas.getContext("2d").scale(ratio, ratio);
+            signaturePad.clear(); // Limpiar
+        }
+        
+        window.addEventListener("resize", resizeCanvas);
+        resizeCanvas();
+        
+        // Botón para limpiar firma
+        document.getElementById('clear-button').addEventListener('click', function() {
+            signaturePad.clear();
+        });
+        
+        // Guardar firma
+        document.getElementById('signatureForm').addEventListener('submit', function(e) {
+            if (signaturePad.isEmpty()) {
+                e.preventDefault();
+                alert('Por favor, firme antes de guardar.');
+                return false;
+            }
+            
+            const signatureData = signaturePad.toDataURL();
+            document.getElementById('signature_data').value = signatureData;
+            return true;
+        });
+        {% endif %}
+    </script>
+</body>
+</html>

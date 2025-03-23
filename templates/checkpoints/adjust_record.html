@@ -1,0 +1,216 @@
+{% extends 'layout.html' %}
+
+{% block title %}Ajustar Registro de Fichaje{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="row">
+        <div class="col-md-8 offset-md-2">
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>Ajustar Registro de Fichaje</h1>
+            </div>
+            
+            <div class="card mb-4">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Información del Registro</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Empleado:</th>
+                                    <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Punto de fichaje:</th>
+                                    <td>{{ record.checkpoint.name }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Fecha:</th>
+                                    <td>{{ record.check_in_time.strftime('%d/%m/%Y') }}</td>
+                                </tr>
+                            </table>
+                        </div>
+                        <div class="col-md-6">
+                            <table class="table table-borderless">
+                                <tr>
+                                    <th>Hora de entrada:</th>
+                                    <td>{{ record.check_in_time.strftime('%H:%M') }}</td>
+                                </tr>
+                                <tr>
+                                    <th>Hora de salida:</th>
+                                    <td>
+                                        {% if record.check_out_time %}
+                                        {{ record.check_out_time.strftime('%H:%M') }}
+                                        {% else %}
+                                        <span class="text-warning">Pendiente</span>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <th>Duración:</th>
+                                    <td>
+                                        {% if record.check_out_time %}
+                                            {% set duration = record.duration() %}
+                                            {% set hours = duration|int %}
+                                            {% set minutes = ((duration - hours) * 60)|int %}
+                                            {{ hours }}h {{ minutes }}min
+                                        {% else %}
+                                        -
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                            </table>
+                        </div>
+                    </div>
+                    
+                    {% if record.adjusted %}
+                    <div class="alert alert-warning">
+                        <h6><i class="fas fa-exclamation-triangle"></i> Este registro ya ha sido ajustado</h6>
+                        <p><strong>Motivo:</strong> {{ record.adjustment_reason }}</p>
+                        {% if record.original_check_in_time %}
+                        <p><strong>Entrada original:</strong> {{ record.original_check_in_time.strftime('%d/%m/%Y %H:%M') }}</p>
+                        {% endif %}
+                        {% if record.original_check_out_time %}
+                        <p><strong>Salida original:</strong> {{ record.original_check_out_time.strftime('%d/%m/%Y %H:%M') }}</p>
+                        {% endif %}
+                    </div>
+                    {% endif %}
+                    
+                    {% if record.incidents %}
+                    <div class="alert alert-danger">
+                        <h6><i class="fas fa-exclamation-circle"></i> Incidencias Detectadas</h6>
+                        <ul class="mb-0">
+                            {% for incident in record.incidents %}
+                            <li>
+                                {{ incident.incident_type.name.replace('_', ' ').title() }} - 
+                                {{ incident.description }}
+                                {% if incident.resolved %}
+                                <span class="badge bg-success">Resuelta</span>
+                                {% endif %}
+                            </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    {% endif %}
+                </div>
+            </div>
+            
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Ajustar Horas</h5>
+                </div>
+                <div class="card-body">
+                    <form method="POST">
+                        {{ form.csrf_token }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.check_in_date.id }}" class="form-label">Fecha</label>
+                                    {{ form.check_in_date(class="form-control", value=record.check_in_time.strftime('%Y-%m-%d')) }}
+                                    {% for error in form.check_in_date.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.check_in_time.id }}" class="form-label">Hora de entrada</label>
+                                    {{ form.check_in_time(class="form-control", value=record.check_in_time.strftime('%H:%M')) }}
+                                    {% for error in form.check_in_time.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    <label for="{{ form.check_out_time.id }}" class="form-label">Hora de salida</label>
+                                    {{ form.check_out_time(class="form-control", value=record.check_out_time.strftime('%H:%M') if record.check_out_time else '') }}
+                                    {% for error in form.check_out_time.errors %}
+                                    <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            <div class="form-check form-switch">
+                                {{ form.enforce_contract_hours(class="form-check-input") }}
+                                <label class="form-check-label" for="{{ form.enforce_contract_hours.id }}">
+                                    Aplicar límite de horas de contrato
+                                </label>
+                                {% for error in form.enforce_contract_hours.errors %}
+                                <div class="text-danger">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            <small class="form-text text-muted">
+                                Si se activa, las horas se ajustarán automáticamente para no superar las horas 
+                                máximas diarias definidas en el contrato del empleado.
+                            </small>
+                        </div>
+                        
+                        <div class="form-group mb-4">
+                            <label for="{{ form.adjustment_reason.id }}" class="form-label">Motivo del ajuste</label>
+                            {{ form.adjustment_reason(class="form-control", rows=3) }}
+                            {% for error in form.adjustment_reason.errors %}
+                            <div class="text-danger">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="d-flex justify-content-between">
+                            <a href="{{ url_for('checkpoints.list_checkpoint_records', id=record.checkpoint_id) }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left"></i> Cancelar
+                            </a>
+                            {{ form.submit(class="btn btn-primary") }}
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Detectar cambios en los campos de tiempo para calcular la duración
+    function updateDuration() {
+        const checkInTime = document.getElementById('{{ form.check_in_time.id }}').value;
+        const checkOutTime = document.getElementById('{{ form.check_out_time.id }}').value;
+        
+        if (checkInTime && checkOutTime) {
+            // Calcular horas y minutos
+            const [inHours, inMinutes] = checkInTime.split(':').map(Number);
+            const [outHours, outMinutes] = checkOutTime.split(':').map(Number);
+            
+            // Calcular minutos totales
+            let inTotalMinutes = inHours * 60 + inMinutes;
+            let outTotalMinutes = outHours * 60 + outMinutes;
+            
+            // Si la salida es anterior a la entrada, asumimos que es del día siguiente
+            if (outTotalMinutes < inTotalMinutes) {
+                outTotalMinutes += 24 * 60; // Añadir un día completo
+            }
+            
+            // Calcular diferencia en horas y minutos
+            const diffMinutes = outTotalMinutes - inTotalMinutes;
+            const hours = Math.floor(diffMinutes / 60);
+            const minutes = diffMinutes % 60;
+            
+            // Mostrar la duración (si existiera un elemento con id 'duration')
+            const durationElement = document.getElementById('duration');
+            if (durationElement) {
+                durationElement.textContent = `${hours}h ${minutes}min`;
+            }
+        }
+    }
+    
+    document.getElementById('{{ form.check_in_time.id }}').addEventListener('change', updateDuration);
+    document.getElementById('{{ form.check_out_time.id }}').addEventListener('change', updateDuration);
+</script>
+{% endblock %}
