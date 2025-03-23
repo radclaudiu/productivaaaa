@@ -902,8 +902,8 @@ def employee_pin(id):
                 db.session.add(employee)
                 db.session.commit()
                 
-                # Mensaje de depuración
-                flash(f'Salida registrada para {employee.first_name} {employee.last_name}. Estado de jornada actualizado a: {employee.is_on_shift}', 'success')
+                # Mensaje de confirmación
+                flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}', 'success')
                 return redirect(url_for('checkpoints.record_details', id=pending_record.id))
             elif action == 'checkin' and not pending_record:
                 # Registrar entrada
@@ -921,8 +921,8 @@ def employee_pin(id):
                 db.session.add(employee)
                 db.session.commit()
                 
-                # Mensaje de depuración
-                flash(f'Entrada registrada para {employee.first_name} {employee.last_name}. Estado de jornada actualizado a: {employee.is_on_shift}', 'success')
+                # Mensaje de confirmación
+                flash(f'Jornada iniciada correctamente para {employee.first_name} {employee.last_name}', 'success')
                 return redirect(url_for('checkpoints.record_details', id=new_record.id))
             else:
                 # Si la acción no es válida o no coincide con el estado actual
