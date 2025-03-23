@@ -58,12 +58,18 @@
                     </li>
                     
                     <li class="nav-item">
-                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') %}active{% endif %}" 
+                        <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') and not request.endpoint == 'tasks.manage_labels' %}active{% endif %}" 
                            href="{{ url_for('tasks.index') }}">
                             <i class="bi bi-list-check"></i> Tareas
                         </a>
                     </li>
                     
+                    <li class="nav-item">
+                        <a class="nav-link {% if request.endpoint == 'tasks.manage_labels' %}active{% endif %}" 
+                           href="{{ url_for('tasks.manage_labels') }}">
+                            <i class="bi bi-tags"></i> Gestor de Etiquetas
+                        </a>
+                    </li>
 
                     
                     {% if current_user.is_admin() %}
@@ -145,12 +151,18 @@
                         </li>
                         
                         <li class="nav-item">
-                            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') %}active{% endif %}" 
+                            <a class="nav-link {% if request.endpoint and request.endpoint.startswith('tasks.') and not request.endpoint.startswith('tasks.local_') and not request.endpoint == 'tasks.manage_labels' %}active{% endif %}" 
                                href="{{ url_for('tasks.index') }}">
                                 <i class="bi bi-list-check"></i> Tareas
                             </a>
                         </li>
                         
+                        <li class="nav-item">
+                            <a class="nav-link {% if request.endpoint == 'tasks.manage_labels' %}active{% endif %}" 
+                               href="{{ url_for('tasks.manage_labels') }}">
+                                <i class="bi bi-tags"></i> Gestor de Etiquetas
+                            </a>
+                        </li>
 
                         
                         {% if current_user.is_admin() %}
@@ -167,6 +179,12 @@
                         <span>Acciones Rápidas</span>
                     </h6>
                     <ul class="nav flex-column mb-2">
+                        <li class="nav-item">
+                            <a class="nav-link bg-info text-white rounded mb-2" href="{{ url_for('tasks.manage_labels') }}">
+                                <i class="bi bi-tags"></i> <strong>Gestor de Etiquetas</strong>
+                            </a>
+                        </li>
+                        
                         {% if current_user.is_admin() or current_user.is_gerente() %}
                         <li class="nav-item">
                             <a class="nav-link" href="{{ url_for('employee.create_employee') }}">
