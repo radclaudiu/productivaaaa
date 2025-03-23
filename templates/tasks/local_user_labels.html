@@ -31,7 +31,7 @@
                     <div class="card-body">
                         <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post" target="_blank">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            
+
                             <div class="mb-3">
                                 <label for="product_search" class="form-label">Buscar Producto</label>
                                 <input type="text" id="product_search" class="form-control" placeholder="Escriba para buscar..." autocomplete="off" autofocus>
@@ -41,32 +41,32 @@
                                 <input type="hidden" id="product_id" name="product_id" required>
                                 <div id="selected_product" class="mt-2 fw-bold"></div>
                             </div>
-                            
+
                             <div class="mb-4">
                                 <label class="form-label d-block">Tipo de Conservación</label>
                                 <div class="conservation-buttons">
                                     <input type="hidden" id="conservation_type" name="conservation_type" required>
-                                    
+
                                     <button type="button" class="btn-conservation" data-value="descongelacion" data-days="1">
                                         <i class="bi bi-snow"></i>
                                         <span>Descongelación</span>
                                     </button>
-                                    
+
                                     <button type="button" class="btn-conservation" data-value="refrigeracion" data-days="3">
                                         <i class="bi bi-thermometer-low"></i>
                                         <span>Refrigeración</span>
                                     </button>
-                                    
+
                                     <button type="button" class="btn-conservation" data-value="gastro" data-days="2">
                                         <i class="bi bi-cup-hot"></i>
                                         <span>Gastro</span>
                                     </button>
-                                    
+
                                     <button type="button" class="btn-conservation" data-value="caliente" data-days="0.08">
                                         <i class="bi bi-fire"></i>
                                         <span>Caliente</span>
                                     </button>
-                                    
+
                                     <button type="button" class="btn-conservation" data-value="seco" data-days="30">
                                         <i class="bi bi-box2"></i>
                                         <span>Seco</span>
@@ -74,7 +74,7 @@
                                 </div>
                                 <small class="form-text text-muted">Seleccione el tipo de conservación tocando uno de los botones.</small>
                             </div>
-                            
+
                             <div class="mb-4">
                                 <label class="form-label d-block">Cantidad</label>
                                 <div class="quantity-control">
@@ -91,7 +91,7 @@
                                 </div>
                                 <small class="form-text text-muted">Número de etiquetas a generar.</small>
                             </div>
-                            
+
                             <div class="d-grid mt-4">
                                 <button type="submit" class="btn btn-primary">
                                     <i class="bi bi-printer-fill me-2"></i>Generar Etiquetas
@@ -101,7 +101,7 @@
                     </div>
                 </div>
             </div>
-            
+
             <div class="col-lg-6">
                 <div class="card shadow-sm">
                     <div class="card-header bg-light">
@@ -116,7 +116,7 @@
                             <div class="text-muted mb-1">Hora: {{ now.strftime('%H:%M') }}</div>
                             <div id="preview-expiry" class="fw-bold mt-2 p-1 border bg-light">Caducidad: DD/MM/AAAA HH:MM</div>
                         </div>
-                        
+
                         <div class="alert alert-info">
                             <i class="bi bi-info-circle-fill me-2"></i>Esta es una vista previa. La etiqueta final se abrirá en una nueva ventana lista para imprimir.
                         </div>
@@ -137,13 +137,13 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewProductName = document.getElementById('preview-product-name');
     const previewConservationType = document.getElementById('preview-conservation-type');
     const previewExpiry = document.getElementById('preview-expiry');
-    
+
     // Elementos del control de cantidad
     const quantityInput = document.getElementById('quantity');
     const quantityValueSpan = document.getElementById('quantity-value');
     const decreaseBtn = document.getElementById('decrease-quantity');
     const increaseBtn = document.getElementById('increase-quantity');
-    
+
     // Lista de productos disponibles (obtenida del servidor)
     const products = [
         {% for product in products %}
@@ -154,7 +154,7 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         {% endfor %}
     ];
-    
+
     // Conservación a texto
     const conservationTypeText = {
         'descongelacion': 'Descongelación',
@@ -163,46 +163,46 @@ document.addEventListener('DOMContentLoaded', function() {
         'caliente': 'Caliente',
         'seco': 'Seco'
     };
-    
+
     // Función para mostrar y enfocar el campo de búsqueda cuando se carga la página
     function focusSearchField() {
         productSearchInput.focus();
         // Mostrar teclado en pantalla (en dispositivos móviles)
         productSearchInput.click();
     }
-    
+
     // Ejecutar después de cargar la página
     setTimeout(focusSearchField, 500);
-    
+
     // Buscar productos al escribir
     productSearchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase().trim();
-        
+
         // Si la búsqueda está vacía, ocultar resultados
         if (searchTerm === '') {
             productResultsDiv.classList.add('d-none');
             return;
         }
-        
+
         // Filtrar productos que coincidan con la búsqueda
         const filteredProducts = products.filter(product => 
             product.name.toLowerCase().includes(searchTerm)
         );
-        
+
         // Mostrar resultados
         renderSearchResults(filteredProducts);
     });
-    
+
     // Función para renderizar los resultados de búsqueda
     function renderSearchResults(results) {
         productResultsDiv.innerHTML = '';
-        
+
         if (results.length === 0) {
             productResultsDiv.innerHTML = '<div class="list-group-item">No se encontraron resultados</div>';
             productResultsDiv.classList.remove('d-none');
             return;
         }
-        
+
         results.forEach(product => {
             const resultItem = document.createElement('button');
             resultItem.type = 'button';
@@ -210,40 +210,40 @@ document.addEventListener('DOMContentLoaded', function() {
             resultItem.textContent = product.name;
             resultItem.dataset.id = product.id;
             resultItem.dataset.conservationTypes = JSON.stringify(product.conservationTypes);
-            
+
             resultItem.addEventListener('click', function() {
                 selectProduct(product);
                 productResultsDiv.classList.add('d-none');
                 productSearchInput.value = '';
             });
-            
+
             productResultsDiv.appendChild(resultItem);
         });
-        
+
         productResultsDiv.classList.remove('d-none');
     }
-    
+
     // Función para seleccionar un producto
     function selectProduct(product) {
         // Establecer el ID del producto seleccionado
         productIdInput.value = product.id;
         selectedProductDiv.textContent = product.name;
-        
+
         // Actualizar vista previa
         previewProductName.textContent = product.name.toUpperCase();
-        
+
         // Resetear la selección de conservación
         conservationSelect.value = '';
         previewConservationType.textContent = 'Tipo de conservación';
-        
+
         // Obtener todos los botones de conservación
         const conservationButtons = document.querySelectorAll('.btn-conservation');
-        
+
         // Resetear todos los botones
         conservationButtons.forEach(button => {
             button.classList.remove('selected');
             button.classList.remove('disabled');
-            
+
             // Deshabilitar los tipos de conservación que no están disponibles para este producto
             if (product.conservationTypes.length > 0) {
                 const buttonValue = button.dataset.value;
@@ -253,7 +253,7 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
-    
+
     // Configurar el manejo de eventos para los botones de conservación
     document.querySelectorAll('.btn-conservation').forEach(button => {
         button.addEventListener('click', function() {
@@ -261,28 +261,28 @@ document.addEventListener('DOMContentLoaded', function() {
             if (this.classList.contains('disabled')) {
                 return;
             }
-            
+
             // Obtener el valor y los días de validez
             const conservationType = this.dataset.value;
             const daysValid = this.dataset.days;
-            
+
             // Establecer el valor en el campo oculto
             conservationSelect.value = conservationType;
-            
+
             // Resaltar el botón seleccionado y desmarcar los demás
             document.querySelectorAll('.btn-conservation').forEach(btn => {
                 btn.classList.remove('selected');
             });
             this.classList.add('selected');
-            
+
             // Actualizar vista previa
             previewConservationType.textContent = conservationTypeText[conservationType] || 'Tipo de conservación';
-            
+
             // Calcular fecha de caducidad
             if (daysValid) {
                 const now = new Date();
                 let expiryDate;
-                
+
                 if (conservationType === 'caliente') {
                     // Calcular en horas (aproximadamente 2 horas)
                     expiryDate = new Date(now.getTime() + parseFloat(daysValid) * 24 * 60 * 60 * 1000);
@@ -291,34 +291,34 @@ document.addEventListener('DOMContentLoaded', function() {
                     expiryDate = new Date(now);
                     expiryDate.setDate(expiryDate.getDate() + parseInt(daysValid));
                 }
-                
+
                 // Formatear fecha
                 const formattedDate = expiryDate.toLocaleDateString('es-ES', {
                     day: '2-digit',
                     month: '2-digit',
                     year: 'numeric'
                 });
-                
+
                 // Formatear hora
                 const formattedTime = expiryDate.toLocaleTimeString('es-ES', {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
-                
+
                 previewExpiry.textContent = `Caducidad: ${formattedDate} ${formattedTime}`;
             } else {
                 previewExpiry.textContent = 'Caducidad: DD/MM/AAAA HH:MM';
             }
         });
     });
-    
+
     // Cerrar resultados al hacer clic fuera
     document.addEventListener('click', function(event) {
         if (!productSearchInput.contains(event.target) && !productResultsDiv.contains(event.target)) {
             productResultsDiv.classList.add('d-none');
         }
     });
-    
+
     // Configurar los botones de incremento y decremento de cantidad
     decreaseBtn.addEventListener('click', function() {
         let currentValue = parseInt(quantityInput.value);
@@ -328,7 +328,7 @@ document.addEventListener('DOMContentLoaded', function() {
             quantityValueSpan.textContent = currentValue;
         }
     });
-    
+
     increaseBtn.addEventListener('click', function() {
         let currentValue = parseInt(quantityInput.value);
         if (currentValue < 100) {
@@ -337,7 +337,7 @@ document.addEventListener('DOMContentLoaded', function() {
             quantityValueSpan.textContent = currentValue;
         }
     });
-    
+
     // Validar que se ha seleccionado un producto y un tipo de conservación antes de enviar
     document.getElementById('labelForm').addEventListener('submit', function(event) {
         if (productIdInput.value === '') {
@@ -346,7 +346,7 @@ document.addEventListener('DOMContentLoaded', function() {
             productSearchInput.focus();
             return;
         }
-        
+
         if (conservationSelect.value === '') {
             event.preventDefault();
             alert('Por favor, seleccione un tipo de conservación');
@@ -416,12 +416,14 @@ document.addEventListener('DOMContentLoaded', function() {
     align-items: center;
     justify-content: center;
     padding: 15px 10px;
-    border: 2px solid #dee2e6;
+    border: 2px solid #ced4da;
     border-radius: 8px;
-    background-color: #f8f9fa;
+    background-color: #e9ecef;
+    color: #495057;
     cursor: pointer;
     transition: all 0.2s ease;
     height: 100px;
+    font-weight: 500;
 }
 
 .btn-conservation i {
@@ -484,11 +486,13 @@ document.addEventListener('DOMContentLoaded', function() {
     height: 100px;
     width: 100px;
     font-size: 1.8rem;
-    border: 2px solid #dee2e6;
+    border: 2px solid #ced4da;
     border-radius: 8px;
-    background-color: #f8f9fa;
+    background-color: #e9ecef;
+    color: #495057;
     cursor: pointer;
     transition: all 0.2s ease;
+    font-weight: 500;
 }
 
 .btn-quantity:hover {
