@@ -398,6 +398,7 @@ class ConservationType(enum.Enum):
     REFRIGERACION = "refrigeracion"
     GASTRO = "gastro"
     CALIENTE = "caliente"
+    SECO = "seco"
 
 class Product(db.Model):
     """Modelo para productos alimenticios que pueden ser etiquetados"""
