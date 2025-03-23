@@ -112,14 +112,17 @@
                             
                             <div id="action-buttons" class="d-none">
                                 {% if pending_record %}
-                                    <button type="submit" name="action" value="checkout" class="btn btn-danger btn-lg w-100 mb-2">Terminar Jornada</button>
+                                    <button type="submit" name="action" value="checkout" class="btn btn-danger btn-lg w-100 mb-2" id="btn-checkout">Terminar Jornada</button>
                                 {% else %}
-                                    <button type="submit" name="action" value="checkin" class="btn btn-success btn-lg w-100 mb-2">Iniciar Jornada</button>
+                                    <button type="submit" name="action" value="checkin" class="btn btn-success btn-lg w-100 mb-2" id="btn-checkin">Iniciar Jornada</button>
                                 {% endif %}
                                 <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100 mb-2">
                                     Volver a Empleados
                                 </a>
                             </div>
+                            
+                            <!-- Campo oculto para indicar que el PIN ha sido verificado -->
+                            <input type="hidden" name="pin_verified" id="pin-verified" value="0">
                         </div>
                     </form>
                 </div>
@@ -219,19 +222,95 @@
         // Al inicio, desactivar el botón de verificar hasta que se tenga un PIN completo
         document.getElementById('validate-pin').disabled = true;
         
+        // Función para mostrar mensajes de error
+        function showErrorMessage(message) {
+            // Crear o actualizar el elemento de alerta
+            let alertContainer = document.getElementById('pin-alert');
+            if (!alertContainer) {
+                alertContainer = document.createElement('div');
+                alertContainer.id = 'pin-alert';
+                alertContainer.className = 'alert alert-danger alert-dismissible fade show';
+                alertContainer.setAttribute('role', 'alert');
+                
+                const closeButton = document.createElement('button');
+                closeButton.type = 'button';
+                closeButton.className = 'btn-close';
+                closeButton.setAttribute('data-bs-dismiss', 'alert');
+                closeButton.setAttribute('aria-label', 'Close');
+                
+                alertContainer.appendChild(closeButton);
+                document.querySelector('.form-group').insertBefore(alertContainer, document.querySelector('.pin-container'));
+            }
+            
+            // Actualizar el mensaje
+            alertContainer.textContent = message;
+            alertContainer.appendChild(document.createElement('button')).outerHTML = '<button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>';
+        }
+        
+        // Función para limpiar mensajes de error
+        function clearErrorMessage() {
+            const alertContainer = document.getElementById('pin-alert');
+            if (alertContainer) {
+                alertContainer.remove();
+            }
+        }
+        
         // Al hacer clic en el botón de verificar PIN
         document.getElementById('validate-pin').addEventListener('click', function() {
             // Verificar que el PIN tiene 4 dígitos
             if (pinInput.value.length === 4) {
-                // Aquí se podría hacer una verificación AJAX del PIN, pero en su lugar
-                // simplemente mostramos los botones de acción y ocultamos el teclado numérico
+                // Mostrar indicador de carga
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verificando...';
+                this.disabled = true;
                 
-                // Ocultar el teclado PIN y los botones de entrada
-                document.querySelector('.pin-container').style.display = 'none';
-                document.getElementById('pin-entry-buttons').style.display = 'none';
+                // Limpiar mensajes de error anteriores
+                clearErrorMessage();
                 
-                // Mostrar los botones de acción
-                document.getElementById('action-buttons').classList.remove('d-none');
+                // Hacer una verificación AJAX del PIN
+                fetch('{{ url_for("checkpoints.validate_pin") }}', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRFToken': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        employee_id: '{{ employee.id }}',
+                        pin: pinInput.value
+                    })
+                })
+                .then(response => response.json())
+                .then(data => {
+                    // Restablecer el botón
+                    document.getElementById('validate-pin').innerHTML = 'Verificar PIN';
+                    document.getElementById('validate-pin').disabled = false;
+                    
+                    if (data.success) {
+                        // PIN correcto, ocultar el teclado PIN y los botones de entrada
+                        document.querySelector('.pin-container').style.display = 'none';
+                        document.getElementById('pin-entry-buttons').style.display = 'none';
+                        
+                        // Marcar el PIN como verificado
+                        document.getElementById('pin-verified').value = '1';
+                        
+                        // Mostrar los botones de acción
+                        document.getElementById('action-buttons').classList.remove('d-none');
+                    } else {
+                        // PIN incorrecto, mostrar mensaje de error
+                        showErrorMessage(data.message || 'PIN incorrecto. Inténtelo de nuevo.');
+                        
+                        // Limpiar el campo PIN
+                        pinInput.value = '';
+                        updatePinDisplay();
+                    }
+                })
+                .catch(error => {
+                    // Error de red o del servidor
+                    document.getElementById('validate-pin').innerHTML = 'Verificar PIN';
+                    document.getElementById('validate-pin').disabled = false;
+                    
+                    showErrorMessage('Error al verificar el PIN. Inténtelo de nuevo.');
+                    console.error('Error:', error);
+                });
             }
         });
     });
