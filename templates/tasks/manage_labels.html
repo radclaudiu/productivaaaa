@@ -24,6 +24,9 @@
             <a href="{{ url_for('tasks.list_label_templates', location_id=selected_location.id) }}" class="btn btn-secondary me-2">
                 <i class="bi bi-collection me-2"></i>Plantillas
             </a>
+            <a href="{{ url_for('tasks.label_preview_tool') }}" class="btn btn-warning me-2">
+                <i class="bi bi-rulers me-2"></i>Herramienta de Tamaño
+            </a>
             <a href="{{ url_for('tasks.export_labels_excel', location_id=selected_location.id) }}" class="btn btn-info me-2">
                 <i class="bi bi-file-earmark-excel me-2"></i>Exportar a Excel
             </a>
@@ -34,6 +37,9 @@
             <button type="button" class="btn btn-secondary me-2" disabled title="Seleccione un local para ver plantillas">
                 <i class="bi bi-collection me-2"></i>Plantillas
             </button>
+            <a href="{{ url_for('tasks.label_preview_tool') }}" class="btn btn-warning me-2">
+                <i class="bi bi-rulers me-2"></i>Herramienta de Tamaño
+            </a>
             <button type="button" class="btn btn-info me-2" disabled title="Seleccione un local para exportar">
                 <i class="bi bi-file-earmark-excel me-2"></i>Exportar a Excel
             </button>
