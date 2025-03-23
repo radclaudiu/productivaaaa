@@ -875,6 +875,9 @@ def employee_pin(id):
         pin_from_dni = employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
         
         if form.pin.data == pin_from_dni:
+            # Mensaje de depuración
+            print(f"PIN correcto para el empleado {employee.first_name} {employee.last_name}. Estado actual: {employee.is_on_shift}")
+            
             # Guardar el ID del empleado en la sesión
             session['employee_id'] = employee.id
             
@@ -895,9 +898,12 @@ def employee_pin(id):
                 # Cambiar el estado de jornada del empleado a 0 (No en jornada)
                 employee.is_on_shift = False
                 
+                # Forzar la actualización explícitamente
+                db.session.add(employee)
                 db.session.commit()
                 
-                flash(f'Salida registrada para {employee.first_name} {employee.last_name}', 'success')
+                # Mensaje de depuración
+                flash(f'Salida registrada para {employee.first_name} {employee.last_name}. Estado de jornada actualizado a: {employee.is_on_shift}', 'success')
                 return redirect(url_for('checkpoints.record_details', id=pending_record.id))
             elif action == 'checkin' and not pending_record:
                 # Registrar entrada
@@ -911,9 +917,12 @@ def employee_pin(id):
                 # Cambiar el estado de jornada del empleado a 1 (En jornada)
                 employee.is_on_shift = True
                 
+                # Forzar la actualización explícitamente
+                db.session.add(employee)
                 db.session.commit()
                 
-                flash(f'Entrada registrada para {employee.first_name} {employee.last_name}', 'success')
+                # Mensaje de depuración
+                flash(f'Entrada registrada para {employee.first_name} {employee.last_name}. Estado de jornada actualizado a: {employee.is_on_shift}', 'success')
                 return redirect(url_for('checkpoints.record_details', id=new_record.id))
             else:
                 # Si la acción no es válida o no coincide con el estado actual
