@@ -1920,10 +1920,10 @@ def export_labels_excel(location_id):
         ws[f'A{row}'] = product.name
         ws[f'B{row}'] = product.description or ""
         
-        # Buscar días de conservación para cada tipo y convertir a horas
+        # Buscar horas de conservación para cada tipo
         for conservation in product.conservation_types:
-            # Convertir días a horas (multiplicar por 24)
-            hours_valid = int(conservation.days_valid * 24)  # Sin redondeo
+            # Usar horas directamente
+            hours_valid = conservation.hours_valid
             
             if conservation.conservation_type == ConservationType.DESCONGELACION:
                 ws[f'C{row}'] = hours_valid
@@ -2010,12 +2010,12 @@ def import_labels_excel(location_id):
                 hours_caliente = ws[f'F{row}'].value
                 hours_seco = ws[f'G{row}'].value
                 
-                # Convertir horas a días para almacenar en la base de datos (divide por 24 con precisión exacta)
-                days_descongelacion = float(hours_descongelacion) / 24.0 if hours_descongelacion is not None else None
-                days_refrigeracion = float(hours_refrigeracion) / 24.0 if hours_refrigeracion is not None else None
-                days_gastro = float(hours_gastro) / 24.0 if hours_gastro is not None else None
-                days_caliente = float(hours_caliente) / 24.0 if hours_caliente is not None else None
-                days_seco = float(hours_seco) / 24.0 if hours_seco is not None else None
+                # Usar horas directamente para almacenar en la base de datos
+                hours_descongelacion = int(hours_descongelacion) if hours_descongelacion is not None else None
+                hours_refrigeracion = int(hours_refrigeracion) if hours_refrigeracion is not None else None
+                hours_gastro = int(hours_gastro) if hours_gastro is not None else None
+                hours_caliente = int(hours_caliente) if hours_caliente is not None else None
+                hours_seco = int(hours_seco) if hours_seco is not None else None
                 
                 # Buscar producto existente por nombre en esta ubicación
                 product = Product.query.filter_by(name=product_name, location_id=location_id).first()
@@ -2038,15 +2038,15 @@ def import_labels_excel(location_id):
                 
                 # Actualizar tipos de conservación
                 conservation_types = [
-                    (ConservationType.DESCONGELACION, days_descongelacion),
-                    (ConservationType.REFRIGERACION, days_refrigeracion),
-                    (ConservationType.GASTRO, days_gastro),
-                    (ConservationType.CALIENTE, days_caliente),
-                    (ConservationType.SECO, days_seco)
+                    (ConservationType.DESCONGELACION, hours_descongelacion),
+                    (ConservationType.REFRIGERACION, hours_refrigeracion),
+                    (ConservationType.GASTRO, hours_gastro),
+                    (ConservationType.CALIENTE, hours_caliente),
+                    (ConservationType.SECO, hours_seco)
                 ]
                 
-                for cons_type, days in conservation_types:
-                    if days is not None and days > 0:
+                for cons_type, hours in conservation_types:
+                    if hours is not None and hours > 0:
                         # Buscar conservación existente o crear una nueva
                         conservation = ProductConservation.query.filter_by(
                             product_id=product.id, 
@@ -2054,12 +2054,12 @@ def import_labels_excel(location_id):
                         ).first()
                         
                         if conservation:
-                            conservation.days_valid = days
+                            conservation.hours_valid = hours
                         else:
                             conservation = ProductConservation(
                                 product_id=product.id,
                                 conservation_type=cons_type,
-                                days_valid=days
+                                hours_valid=hours
                             )
                             db.session.add(conservation)
             
@@ -2139,9 +2139,9 @@ def generate_labels():
     # Establecer la fecha/hora actual para todos los casos
     now = datetime.now()
     
-    # Si hay configuración específica, usarla (convertir de días a horas sin redondeo)
+    # Si hay configuración específica, usarla directamente en horas
     if conservation:
-        # Usar valor exacto en días y calcular la expiración directamente
+        # Usar horas de la configuración directamente
         expiry_datetime = conservation.get_expiry_datetime(now)
     else:
         # Calcular la fecha exacta añadiendo las horas correspondientes
