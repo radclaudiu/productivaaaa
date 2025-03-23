@@ -910,7 +910,8 @@ def employee_pin(id):
     return render_template('checkpoints/employee_pin.html', 
                           form=form,
                           employee=employee,
-                          pending_record=pending_record)
+                          pending_record=pending_record,
+                          checkpoint=checkpoint)
 
 
 @checkpoints_bp.route('/record/<int:id>')
@@ -920,11 +921,15 @@ def record_details(id):
     record = CheckPointRecord.query.get_or_404(id)
     
     # Verificar que el registro pertenece al punto de fichaje actual
-    if record.checkpoint_id != session.get('checkpoint_id'):
+    checkpoint_id = session.get('checkpoint_id')
+    if record.checkpoint_id != checkpoint_id:
         flash('Registro no válido para este punto de fichaje.', 'danger')
         return redirect(url_for('checkpoints.checkpoint_dashboard'))
     
-    return render_template('checkpoints/record_details.html', record=record)
+    # Obtener el checkpoint para la plantilla
+    checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
+    
+    return render_template('checkpoints/record_details.html', record=record, checkpoint=checkpoint)
 
 
 @checkpoints_bp.route('/daily-report')
