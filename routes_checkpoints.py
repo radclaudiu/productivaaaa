@@ -867,79 +867,82 @@ def employee_pin(id):
     ).first()
     
     if form.validate_on_submit():
-        # Aquí comprobaríamos el PIN del empleado
-        # Como aún no tenemos PINs implementados, hacemos una verificación sencilla
-        # En un escenario real, habría que comparar con un hash almacenado
-        
-        # Por ahora, asumimos que el PIN es los últimos 4 dígitos del DNI
+        # Verificación del PIN (últimos 4 dígitos del DNI)
         pin_from_dni = employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
         
         if form.pin.data == pin_from_dni:
-            # Mensaje de depuración
-            print(f"PIN correcto para el empleado {employee.first_name} {employee.last_name}. Estado actual: {employee.is_on_shift}")
-            
-            # Guardar el ID del empleado en la sesión
-            session['employee_id'] = employee.id
-            
             # Obtener la acción del formulario (checkin o checkout)
             action = request.form.get('action')
             
-            # Comprobar si hay un registro de entrada sin salida
-            pending_record = CheckPointRecord.query.filter_by(
-                employee_id=employee.id,
-                checkpoint_id=checkpoint_id,
-                check_out_time=None
-            ).first()
-            
-            if action == 'checkout' and pending_record:
-                # Registrar salida
-                pending_record.check_out_time = datetime.now()
-                
-                # Cambiar el estado de jornada del empleado a 0 (No en jornada)
-                employee.is_on_shift = False
-                
-                # Forzar la actualización explícitamente
-                db.session.add(employee)
-                db.session.commit()
-                
-                # Mensaje de confirmación
-                flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}', 'success')
-                return redirect(url_for('checkpoints.record_details', id=pending_record.id))
-            elif action == 'checkin' and not pending_record:
-                # Registrar entrada
-                new_record = CheckPointRecord(
-                    employee_id=employee.id,
-                    checkpoint_id=checkpoint_id,
-                    check_in_time=datetime.now()
-                )
-                db.session.add(new_record)
-                
-                # Cambiar el estado de jornada del empleado a 1 (En jornada)
-                employee.is_on_shift = True
-                
-                # Forzar la actualización explícitamente
-                db.session.add(employee)
-                db.session.commit()
-                
-                # Mensaje de confirmación
-                flash(f'Jornada iniciada correctamente para {employee.first_name} {employee.last_name}', 'success')
-                return redirect(url_for('checkpoints.record_details', id=new_record.id))
-            else:
-                # Si la acción no es válida o no coincide con el estado actual
-                if pending_record and action == 'checkin':
-                    flash('El empleado ya tiene una entrada activa sin salida registrada.', 'warning')
-                elif not pending_record and action == 'checkout':
-                    flash('El empleado no tiene ninguna entrada activa para registrar salida.', 'warning')
+            # Actualizar ambos datos juntos dentro de una transacción
+            try:
+                if action == 'checkout' and pending_record:
+                    # 1. Actualizar el registro de fichaje
+                    pending_record.check_out_time = datetime.now()
+                    db.session.add(pending_record)
+                    
+                    # 2. Cambiar el estado del empleado
+                    employee.is_on_shift = False
+                    db.session.add(employee)
+                    
+                    # 3. Confirmar ambas operaciones
+                    db.session.commit()
+                    
+                    # Crear mensaje de éxito
+                    flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}', 'success')
+                    
+                    # Log para el servidor
+                    print(f"CHECKOUT: Empleado ID {employee.id} - Estado actualizado a: {employee.is_on_shift} - Fichaje ID: {pending_record.id}")
+                    
+                    return redirect(url_for('checkpoints.record_details', id=pending_record.id))
+                    
+                elif action == 'checkin' and not pending_record:
+                    # 1. Crear el nuevo registro de fichaje
+                    new_record = CheckPointRecord(
+                        employee_id=employee.id,
+                        checkpoint_id=checkpoint_id,
+                        check_in_time=datetime.now()
+                    )
+                    db.session.add(new_record)
+                    
+                    # 2. Cambiar el estado del empleado
+                    employee.is_on_shift = True
+                    db.session.add(employee)
+                    
+                    # 3. Confirmar ambas operaciones
+                    db.session.commit()
+                    
+                    # Obtener el ID del registro recién creado
+                    db.session.refresh(new_record)
+                    
+                    # Crear mensaje de éxito
+                    flash(f'Jornada iniciada correctamente para {employee.first_name} {employee.last_name}', 'success')
+                    
+                    # Log para el servidor
+                    print(f"CHECKIN: Empleado ID {employee.id} - Estado actualizado a: {employee.is_on_shift} - Nuevo fichaje ID: {new_record.id}")
+                    
+                    return redirect(url_for('checkpoints.record_details', id=new_record.id))
                 else:
-                    flash('Acción no válida.', 'danger')
+                    # Manejar situaciones de error
+                    if pending_record and action == 'checkin':
+                        flash('El empleado ya tiene una entrada activa sin salida registrada.', 'warning')
+                    elif not pending_record and action == 'checkout':
+                        flash('El empleado no tiene ninguna entrada activa para registrar salida.', 'warning')
+                    else:
+                        flash('Acción no válida.', 'danger')
+            except Exception as e:
+                # Si hay algún error, hacer rollback y mostrar mensaje
+                db.session.rollback()
+                print(f"ERROR en fichaje: {str(e)}")
+                flash(f'Error al procesar el fichaje: {str(e)}', 'danger')
         else:
             flash('PIN incorrecto. Inténtelo de nuevo.', 'danger')
     
     return render_template('checkpoints/employee_pin.html', 
-                          form=form,
-                          employee=employee,
-                          pending_record=pending_record,
-                          checkpoint=checkpoint)
+                         form=form,
+                         employee=employee,
+                         pending_record=pending_record,
+                         checkpoint=checkpoint)
 
 
 @checkpoints_bp.route('/record/<int:id>')
@@ -957,7 +960,102 @@ def record_details(id):
     # Obtener el checkpoint para la plantilla
     checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
     
+    # Log para depuración
+    print(f"Mostrando registro: ID {record.id}, Empleado {record.employee.first_name} {record.employee.last_name}, " +
+          f"Entrada: {record.check_in_time}, Salida: {record.check_out_time}, Estado: {record.employee.is_on_shift}")
+    
     return render_template('checkpoints/record_details.html', record=record, checkpoint=checkpoint)
+
+
+@checkpoints_bp.route('/record/<int:id>/checkout', methods=['POST'])
+@checkpoint_required
+def record_checkout(id):
+    """Registra la salida para un fichaje pendiente desde la pantalla de detalles"""
+    record = CheckPointRecord.query.get_or_404(id)
+    
+    # Verificaciones de seguridad
+    checkpoint_id = session.get('checkpoint_id')
+    if record.checkpoint_id != checkpoint_id:
+        flash('Registro no válido para este punto de fichaje.', 'danger')
+        return redirect(url_for('checkpoints.checkpoint_dashboard'))
+    
+    # Verificar que el registro no tenga ya una salida
+    if record.check_out_time:
+        flash('Este fichaje ya tiene registrada una salida.', 'warning')
+        return redirect(url_for('checkpoints.record_details', id=record.id))
+    
+    try:
+        # Actualizar el registro con la hora de salida
+        record.check_out_time = datetime.now()
+        
+        # Actualizar el estado del empleado
+        employee = record.employee
+        employee.is_on_shift = False
+        
+        # Guardar los cambios
+        db.session.add(record)
+        db.session.add(employee)
+        db.session.commit()
+        
+        # Log para seguimiento
+        print(f"CHECKOUT desde pantalla detalles: Empleado ID {employee.id} - Estado actualizado a: {employee.is_on_shift} - Fichaje ID: {record.id}")
+        
+        flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}', 'success')
+    except Exception as e:
+        db.session.rollback()
+        print(f"ERROR en salida de fichaje: {str(e)}")
+        flash(f'Error al registrar la salida: {str(e)}', 'danger')
+    
+    return redirect(url_for('checkpoints.record_details', id=record.id))
+
+
+@checkpoints_bp.route('/record/<int:id>/signature_pad', methods=['GET', 'POST'])
+@checkpoint_required
+def checkpoint_record_signature(id):
+    """Permite al empleado firmar un registro de fichaje desde el punto de fichaje"""
+    record = CheckPointRecord.query.get_or_404(id)
+    
+    # Verificaciones de seguridad
+    checkpoint_id = session.get('checkpoint_id')
+    if record.checkpoint_id != checkpoint_id:
+        flash('Registro no válido para este punto de fichaje.', 'danger')
+        return redirect(url_for('checkpoints.checkpoint_dashboard'))
+    
+    # Verificar que el registro tenga salida (no se puede firmar sin checkout)
+    if not record.check_out_time:
+        flash('No se puede firmar un registro sin hora de salida.', 'warning')
+        return redirect(url_for('checkpoints.record_details', id=record.id))
+    
+    # Verificar que no esté ya firmado
+    if record.has_signature:
+        flash('Este registro ya ha sido firmado anteriormente.', 'info')
+        return redirect(url_for('checkpoints.record_details', id=record.id))
+    
+    form = SignaturePadForm()
+    form.record_id.data = record.id
+    
+    if form.validate_on_submit():
+        try:
+            # Guardar los datos de la firma
+            signature_data = form.signature_data.data
+            
+            # Actualizar el registro
+            record.signature_data = signature_data
+            record.has_signature = True
+            
+            db.session.add(record)
+            db.session.commit()
+            
+            flash('Firma registrada correctamente.', 'success')
+            return redirect(url_for('checkpoints.record_details', id=record.id))
+        except Exception as e:
+            db.session.rollback()
+            print(f"ERROR al guardar la firma: {str(e)}")
+            flash(f'Error al guardar la firma: {str(e)}', 'danger')
+    
+    return render_template('checkpoints/signature_pad.html', 
+                         form=form,
+                         record=record)
 
 
 @checkpoints_bp.route('/daily-report')
