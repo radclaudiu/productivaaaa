@@ -62,7 +62,7 @@ def create_app(config_class='config.Config'):
     
     # Register blueprints
     from routes import (auth_bp, main_bp, company_bp, employee_bp, user_bp, 
-                       schedule_bp, checkin_bp, vacation_bp)
+                       schedule_bp, checkin_bp, vacation_bp, ui_bp)
     from routes_tasks import tasks_bp
     from routes_checkpoints import init_app as init_checkpoints_app
     
@@ -74,6 +74,7 @@ def create_app(config_class='config.Config'):
     app.register_blueprint(schedule_bp)
     app.register_blueprint(checkin_bp)
     app.register_blueprint(vacation_bp)
+    app.register_blueprint(ui_bp)
     app.register_blueprint(tasks_bp, url_prefix='/tasks')
     
     # Inicializar el sistema de puntos de fichaje
