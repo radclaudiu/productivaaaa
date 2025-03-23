@@ -75,9 +75,20 @@
                                 <small class="form-text text-muted">Seleccione el tipo de conservación tocando uno de los botones.</small>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="quantity" class="form-label">Cantidad</label>
-                                <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1" max="100" required>
+                            <div class="mb-4">
+                                <label class="form-label d-block">Cantidad</label>
+                                <div class="quantity-control">
+                                    <button type="button" class="btn-quantity" id="decrease-quantity">
+                                        <i class="bi bi-dash-lg"></i>
+                                    </button>
+                                    <div class="quantity-display">
+                                        <span id="quantity-value">1</span>
+                                        <input type="hidden" id="quantity" name="quantity" value="1" min="1" max="100" required>
+                                    </div>
+                                    <button type="button" class="btn-quantity" id="increase-quantity">
+                                        <i class="bi bi-plus-lg"></i>
+                                    </button>
+                                </div>
                                 <small class="form-text text-muted">Número de etiquetas a generar.</small>
                             </div>
                             
@@ -126,6 +137,12 @@ document.addEventListener('DOMContentLoaded', function() {
     const previewProductName = document.getElementById('preview-product-name');
     const previewConservationType = document.getElementById('preview-conservation-type');
     const previewExpiry = document.getElementById('preview-expiry');
+    
+    // Elementos del control de cantidad
+    const quantityInput = document.getElementById('quantity');
+    const quantityValueSpan = document.getElementById('quantity-value');
+    const decreaseBtn = document.getElementById('decrease-quantity');
+    const increaseBtn = document.getElementById('increase-quantity');
     
     // Lista de productos disponibles (obtenida del servidor)
     const products = [
@@ -302,6 +319,25 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
+    // Configurar los botones de incremento y decremento de cantidad
+    decreaseBtn.addEventListener('click', function() {
+        let currentValue = parseInt(quantityInput.value);
+        if (currentValue > 1) {
+            currentValue--;
+            quantityInput.value = currentValue;
+            quantityValueSpan.textContent = currentValue;
+        }
+    });
+    
+    increaseBtn.addEventListener('click', function() {
+        let currentValue = parseInt(quantityInput.value);
+        if (currentValue < 100) {
+            currentValue++;
+            quantityInput.value = currentValue;
+            quantityValueSpan.textContent = currentValue;
+        }
+    });
+    
     // Validar que se ha seleccionado un producto y un tipo de conservación antes de enviar
     document.getElementById('labelForm').addEventListener('submit', function(event) {
         if (productIdInput.value === '') {
@@ -430,6 +466,51 @@ document.addEventListener('DOMContentLoaded', function() {
 .btn-conservation.disabled {
     opacity: 0.5;
     cursor: not-allowed;
+}
+
+/* Estilos para el control de cantidad */
+.quantity-control {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.btn-quantity {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    width: 100px;
+    font-size: 1.8rem;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-quantity:hover {
+    background-color: #e9ecef;
+}
+
+.btn-quantity:active {
+    transform: scale(0.95);
+}
+
+.quantity-display {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100px;
+    min-width: 100px;
+    padding: 0 20px;
+    background-color: #fff;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    font-size: 2rem;
+    font-weight: bold;
 }
 </style>
 {% endblock %}
