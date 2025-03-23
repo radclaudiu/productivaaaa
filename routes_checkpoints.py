@@ -1269,7 +1269,7 @@ def validate_pin():
         return jsonify({"success": False, "message": "Falta ID de empleado o PIN"}), 400
         
     # Obtener el checkpoint activo desde la sesión
-    checkpoint_id = session.get('active_checkpoint_id')
+    checkpoint_id = session.get('checkpoint_id')
     if not checkpoint_id:
         return jsonify({"success": False, "message": "Sesión de punto de fichaje no iniciada."}), 401
     
