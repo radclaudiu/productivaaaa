@@ -12,13 +12,13 @@ from app import db
 from models import User, Company
 from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, 
                          TaskFrequency, TaskStatus, WeekDay, TaskGroup, TaskWeekday,
-                         Product, ProductConservation, ProductLabel, ConservationType, PrinterConfig)
+                         Product, ProductConservation, ProductLabel, ConservationType)
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
                         LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm, PortalLoginForm,
                         ProductForm, ProductConservationForm, GenerateLabelForm)
 from utils import log_activity, can_manage_company, save_file
-from utils_tasks import create_default_local_user, regenerate_portal_password, get_system_printers
+from utils_tasks import create_default_local_user, regenerate_portal_password
 
 # Crear el Blueprint para las tareas
 tasks_bp = Blueprint('tasks', __name__)
@@ -1263,128 +1263,6 @@ def portal_logout():
     
     flash('Has cerrado sesión del portal correctamente.', 'success')
     return redirect(url_for('tasks.index'))
-    
-    
-@tasks_bp.route('/local-user/config', methods=['GET', 'POST'])
-@local_user_required
-def local_user_config():
-    """Configuración de opciones del portal para el usuario local"""
-    from forms_tasks import PrinterConfigForm
-    from models_tasks import PrinterConfig
-    
-    # Obtener la ubicación actual
-    location_id = session.get('portal_location_id')
-    location = Location.query.get_or_404(location_id)
-    
-    # Obtener el usuario local actual
-    local_user_id = session.get('local_user_id')
-    local_user = LocalUser.query.get_or_404(local_user_id)
-    
-    # Obtener impresoras configuradas para esta ubicación
-    printers = PrinterConfig.query.filter_by(location_id=location_id).all()
-    
-    # Obtener impresoras del sistema
-    system_printers = get_system_printers()
-    
-    # Verificar si se está editando una impresora existente
-    printer_id = request.args.get('printer_id', type=int)
-    printer_to_edit = None
-    
-    if printer_id:
-        printer_to_edit = PrinterConfig.query.get_or_404(printer_id)
-        # Verificar permisos
-        if printer_to_edit.location_id != location_id:
-            flash('No tienes permisos para editar esta impresora', 'danger')
-            return redirect(url_for('tasks.local_user_config'))
-    
-    # Crear formulario
-    form = PrinterConfigForm(obj=printer_to_edit)
-    
-    # Si hay impresoras disponibles en el sistema y no estamos editando, configurar para la plantilla
-    # En lugar de intentar cambiar el tipo de campo, usaremos la plantilla para manejar la visualización
-    
-    if form.validate_on_submit():
-        # Si se está editando una impresora existente
-        if request.form.get('printer_id'):
-            printer_id = int(request.form.get('printer_id'))
-            printer = PrinterConfig.query.get_or_404(printer_id)
-            
-            # Verificar permisos
-            if printer.location_id != location_id:
-                flash('No tienes permisos para editar esta impresora', 'danger')
-                return redirect(url_for('tasks.local_user_config'))
-            
-            # Actualizar datos
-            printer.printer_name = form.printer_name.data
-            printer.is_active = form.is_active.data
-            
-            # Si se marca como predeterminada, desmarcar las demás
-            if form.is_default.data and not printer.is_default:
-                # Desmarcar otras impresoras predeterminadas
-                other_defaults = PrinterConfig.query.filter_by(
-                    location_id=location_id, 
-                    is_default=True
-                ).all()
-                
-                for other in other_defaults:
-                    other.is_default = False
-                
-                printer.is_default = True
-            
-            # Actualizar última vez que se editó
-            printer.updated_at = datetime.utcnow()
-            
-            db.session.commit()
-            flash(f'Impresora "{printer.printer_name}" actualizada correctamente', 'success')
-            
-        else:
-            # Verificar si ya existe una impresora con este nombre
-            existing_printer = PrinterConfig.query.filter_by(
-                location_id=location_id,
-                printer_name=form.printer_name.data
-            ).first()
-            
-            if existing_printer:
-                flash(f'Ya existe una impresora con el nombre "{form.printer_name.data}" configurada. Modifique esa impresora o elija otro nombre.', 'warning')
-                return redirect(url_for('tasks.local_user_config'))
-            
-            # Crear nueva impresora
-            printer = PrinterConfig(
-                printer_name=form.printer_name.data,
-                is_active=form.is_active.data,
-                location_id=location_id,
-                local_user_id=local_user_id
-            )
-            
-            # Si se marca como predeterminada, desmarcar las demás
-            if form.is_default.data:
-                # Desmarcar otras impresoras predeterminadas
-                other_defaults = PrinterConfig.query.filter_by(
-                    location_id=location_id, 
-                    is_default=True
-                ).all()
-                
-                for other in other_defaults:
-                    other.is_default = False
-                
-                printer.is_default = True
-            
-            db.session.add(printer)
-            db.session.commit()
-            flash(f'Impresora "{printer.printer_name}" añadida correctamente', 'success')
-        
-        return redirect(url_for('tasks.local_user_config'))
-    
-    return render_template(
-        'tasks/local_user_config.html',
-        title='Configuración del Portal',
-        form=form,
-        printers=printers,
-        printer_to_edit=printer_to_edit,
-        system_printers=system_printers,
-        location=location,
-        local_user=local_user
-    )
 
 @tasks_bp.route('/local-user/tasks')
 @tasks_bp.route('/local-user/tasks/<string:date_str>')
@@ -2215,7 +2093,6 @@ def generate_labels():
     """Endpoint para generar e imprimir etiquetas"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
-    location_id = user.location_id
     
     # Obtener datos del formulario
     product_id = request.form.get('product_id', type=int)
@@ -2241,35 +2118,6 @@ def generate_labels():
         # No añadir flash message, usamos nuestro propio sistema de notificaciones
         # Devolvemos JSON con error para manejo AJAX
         return jsonify({'success': False, 'message': 'Tipo de conservación no válido'})
-    
-    # Verificar disponibilidad de impresora
-    from models_tasks import PrinterConfig
-    
-    # Buscar impresora predeterminada para esta ubicación
-    default_printer = PrinterConfig.query.filter_by(
-        location_id=location_id,
-        is_default=True,
-        is_active=True
-    ).first()
-    
-    # Si no hay impresora predeterminada, buscar cualquier impresora activa
-    if not default_printer:
-        default_printer = PrinterConfig.query.filter_by(
-            location_id=location_id,
-            is_active=True
-        ).first()
-    
-    # Si no hay impresoras configuradas, mostrar mensaje
-    if not default_printer:
-        return jsonify({
-            'success': False, 
-            'message': 'No hay impresoras configuradas. Por favor, configure una impresora en la sección de Configuración.',
-            'printer_required': True
-        })
-    
-    # Actualizar la última verificación de la impresora
-    default_printer.last_check = datetime.utcnow()
-    db.session.commit()
     
     # Obtener configuración de conservación específica para este producto
     conservation = ProductConservation.query.filter_by(
@@ -2327,8 +2175,7 @@ def generate_labels():
         conservation_type=conservation_type,
         now=now,
         expiry_datetime=expiry_datetime,
-        quantity=quantity,
-        printer_name=default_printer.printer_name
+        quantity=quantity
     )
     
     # Verificar si es una solicitud AJAX

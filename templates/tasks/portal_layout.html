@@ -156,11 +156,6 @@
                                         <i class="bi bi-tags me-1"></i> Etiquetas
                                     </a>
                                 </li>
-                                <li class="nav-item">
-                                    <a class="nav-link {% if request.endpoint == 'tasks.local_user_config' %}active{% endif %}" href="{{ url_for('tasks.local_user_config') }}">
-                                        <i class="bi bi-gear me-1"></i> Configuración
-                                    </a>
-                                </li>
                                 <li class="nav-item ms-2">
                                     <div class="btn-group">
                                         <a href="{{ url_for('tasks.local_logout') }}" class="btn btn-outline-secondary btn-sm">
