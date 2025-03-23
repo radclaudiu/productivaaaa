@@ -54,20 +54,16 @@ def index():
     if current_user.is_admin():
         # Los administradores ven todos los locales
         locations = Location.query.all()
-    elif current_user.is_gerente() and current_user.company_id:
-        # Los gerentes ven solo los locales de su empresa
-        locations = Location.query.filter_by(company_id=current_user.company_id).all()
+    elif current_user.is_gerente():
+        # Los gerentes ven solo los locales de sus empresas
+        company_ids = [c.id for c in current_user.companies]
+        locations = Location.query.filter(Location.company_id.in_(company_ids)).all()
     else:
         # Otros usuarios no tendrían acceso, pero por si acaso
         locations = []
     
-    # Si hay locales, redirigir al primero
-    if locations:
-        first_location = locations[0]
-        return redirect(url_for('tasks.view_location', id=first_location.id))
-        
-    # Si no hay locales, mostrar la página de dashboard con el botón para crear el primer local
-    return render_template('tasks/dashboard.html', locations=[])
+    # Mostrar siempre la página de dashboard, tanto si hay locales como si no
+    return render_template('tasks/dashboard.html', locations=locations)
 
 # Rutas para gestión de locales
 @tasks_bp.route('/locations')
