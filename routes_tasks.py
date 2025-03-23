@@ -1923,7 +1923,7 @@ def export_labels_excel(location_id):
         # Buscar días de conservación para cada tipo y convertir a horas
         for conservation in product.conservation_types:
             # Convertir días a horas (multiplicar por 24)
-            hours_valid = round(conservation.days_valid * 24)
+            hours_valid = int(conservation.days_valid * 24)  # Sin redondeo
             
             if conservation.conservation_type == ConservationType.DESCONGELACION:
                 ws[f'C{row}'] = hours_valid
@@ -2136,15 +2136,16 @@ def generate_labels():
     elif conservation_type == ConservationType.SECO:
         hours_valid = 168 # 7 días
     
-    # Si hay configuración específica, usarla (convertir de días a horas)
-    if conservation:
-        hours_valid = conservation.days_valid * 24
-    
-    # Calcular fecha de caducidad exacta
+    # Establecer la fecha/hora actual para todos los casos
     now = datetime.now()
     
-    # Calcular la fecha exacta añadiendo las horas correspondientes
-    expiry_datetime = now + timedelta(hours=hours_valid)
+    # Si hay configuración específica, usarla (convertir de días a horas sin redondeo)
+    if conservation:
+        # Usar valor exacto en días y calcular la expiración directamente
+        expiry_datetime = conservation.get_expiry_datetime(now)
+    else:
+        # Calcular la fecha exacta añadiendo las horas correspondientes
+        expiry_datetime = now + timedelta(hours=hours_valid)
     
     # Registrar las etiquetas generadas
     for i in range(quantity):
@@ -2393,9 +2394,9 @@ def manage_product_conservations(id):
             conservation_type=conservation_type
         ).first()
         
-        # Convertir horas a días para almacenar en la base de datos
+        # Convertir horas a días para almacenar en la base de datos (sin redondeo)
         hours_valid = form.days_valid.data
-        days_valid = round(hours_valid / 24.0, 2)
+        days_valid = float(hours_valid) / 24.0  # Mantener precisión exacta
         
         # Debug logging
         current_app.logger.debug(f"Horas recibidas: {hours_valid}, convertido a días: {days_valid}")
