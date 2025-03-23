@@ -59,27 +59,27 @@
                                 <div class="conservation-buttons">
                                     <input type="hidden" id="conservation_type" name="conservation_type" required>
 
-                                    <button type="button" class="btn-conservation" data-value="DESCONGELACION" data-days="1">
+                                    <button type="button" class="btn-conservation" data-value="descongelacion" data-days="1">
                                         <i class="bi bi-snow"></i>
                                         <span>Descongelación</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="REFRIGERACION" data-days="3">
+                                    <button type="button" class="btn-conservation" data-value="refrigeracion" data-days="3">
                                         <i class="bi bi-thermometer-low"></i>
                                         <span>Refrigeración</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="GASTRO" data-days="2">
+                                    <button type="button" class="btn-conservation" data-value="gastro" data-days="2">
                                         <i class="bi bi-cup-hot"></i>
                                         <span>Gastro</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="CALIENTE" data-days="0.08">
+                                    <button type="button" class="btn-conservation" data-value="caliente" data-days="0.08">
                                         <i class="bi bi-fire"></i>
                                         <span>Caliente</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="SECO" data-days="30">
+                                    <button type="button" class="btn-conservation" data-value="seco" data-days="30">
                                         <i class="bi bi-box2"></i>
                                         <span>Seco</span>
                                     </button>
@@ -106,7 +106,7 @@
 
                             <div class="d-grid mt-4">
                                 <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-printer-fill me-2"></i>Generar e Imprimir
+                                    <i class="bi bi-printer-fill me-2"></i>Generar Etiquetas
                                 </button>
                             </div>
                         </form>
@@ -130,15 +130,7 @@
                         </div>
 
                         <div class="alert alert-info">
-                            <i class="bi bi-info-circle-fill me-2"></i>Esta es una vista previa. Al generar las etiquetas se imprimirán automáticamente.
-                        </div>
-                        
-                        <!-- Área para mostrar etiquetas generadas -->
-                        <div id="generatedLabels" class="mt-3 d-none">
-                            <div class="alert alert-success">
-                                <i class="bi bi-check-circle-fill me-2"></i><strong>Etiquetas generadas e impresas correctamente</strong>
-                            </div>
-                            <div id="labelsContainer" class="border rounded bg-white p-3 mt-2"></div>
+                            <i class="bi bi-info-circle-fill me-2"></i>Esta es una vista previa. Al generar las etiquetas se abrirá directamente el diálogo de impresión.
                         </div>
                     </div>
                 </div>
@@ -148,105 +140,6 @@
 </div>
 
 <script>
-// Función simplificada para imprimir etiquetas
-function printLabels(labelsHtml) {
-    console.log('Imprimiendo etiquetas...');
-    
-    // Crear un nuevo iframe para cada impresión
-    const printFrame = document.createElement('iframe');
-    
-    // Ocultar completamente el iframe
-    printFrame.style.position = 'fixed';
-    printFrame.style.top = '-1000px';
-    printFrame.style.left = '-1000px';
-    printFrame.style.width = '100px';
-    printFrame.style.height = '100px';
-    printFrame.style.border = '0';
-    
-    // Añadir a la página
-    document.body.appendChild(printFrame);
-    
-    // Añadir el contenido al iframe
-    const doc = printFrame.contentWindow.document;
-    doc.open();
-    doc.write(`
-        <!DOCTYPE html>
-        <html>
-        <head>
-            <title>Etiquetas</title>
-            <style>
-                body { 
-                    margin: 0; 
-                    padding: 0; 
-                    font-family: Arial, sans-serif;
-                }
-                .label-grid-item {
-                    display: inline-block;
-                    box-sizing: border-box;
-                    width: 45mm;
-                    height: 40mm;
-                    padding: 3mm;
-                    margin: 0;
-                    page-break-inside: avoid;
-                    vertical-align: top;
-                    text-align: center;
-                    overflow: hidden;
-                    font-size: 8pt;
-                }
-                .label-product-name {
-                    font-weight: bold;
-                    font-size: 10pt;
-                    margin-bottom: 2mm;
-                    text-transform: uppercase;
-                }
-                .label-conservation {
-                    font-style: italic;
-                    margin-bottom: 1mm;
-                }
-                .label-info {
-                    margin-bottom: 0.5mm;
-                    font-size: 7pt;
-                }
-                .label-expiry {
-                    margin-top: 2mm;
-                    border: 1px solid #000;
-                    padding: 1mm;
-                    display: inline-block;
-                    font-weight: bold;
-                    font-size: 8pt;
-                }
-                @media print {
-                    body { margin: 0; padding: 0; }
-                    @page { margin: 0; size: auto; }
-                }
-            </style>
-        </head>
-        <body>${labelsHtml}</body>
-        </html>
-    `);
-    doc.close();
-    
-    // Después de cargar el contenido, imprimir
-    printFrame.onload = function() {
-        // Pequeña pausa para asegurar que el contenido está renderizado
-        setTimeout(function() {
-            try {
-                // Imprimir el iframe
-                printFrame.contentWindow.print();
-                
-                // Eliminar el iframe después de un tiempo
-                setTimeout(function() {
-                    document.body.removeChild(printFrame);
-                }, 1000);
-            } catch (error) {
-                console.error('Error al imprimir:', error);
-                document.body.removeChild(printFrame);
-                showNotification('Error al imprimir. Intente nuevamente.', 'error');
-            }
-        }, 500);
-    };
-}
-
 document.addEventListener('DOMContentLoaded', function() {
     const productSearchInput = document.getElementById('product_search');
     const productIdInput = document.getElementById('product_id');
@@ -263,13 +156,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const decreaseBtn = document.getElementById('decrease-quantity');
     const increaseBtn = document.getElementById('increase-quantity');
     
-    // Mostrar etiquetas (si son muchas)
-    function showLabelsInContainer(labelsHtml) {
-        const labelsContainer = document.getElementById('labelsContainer');
-        if (labelsContainer) {
-            labelsContainer.innerHTML = labelsHtml;
-        }
-    }
+    // Ya no se necesita el botón de impresión ya que se imprime automáticamente
 
     // Lista de productos disponibles (obtenida del servidor)
     const products = [
@@ -281,26 +168,14 @@ document.addEventListener('DOMContentLoaded', function() {
         },
         {% endfor %}
     ];
-    
-    console.log("Productos cargados:", products);
-    
-    // Verificar si hay productos disponibles
-    if (products.length === 0) {
-        console.warn("No se encontraron productos para este local.");
-    } else {
-        // Mostrar tipos de conservación disponibles para cada producto
-        products.forEach(product => {
-            console.log(`Producto: ${product.name}, Tipos: ${product.conservationTypes.join(', ') || 'Ninguno'}`);
-        });
-    }
 
     // Conservación a texto
     const conservationTypeText = {
-        'DESCONGELACION': 'Descongelación',
-        'REFRIGERACION': 'Refrigeración',
-        'GASTRO': 'Gastro',
-        'CALIENTE': 'Caliente',
-        'SECO': 'Seco'
+        'descongelacion': 'Descongelación',
+        'refrigeracion': 'Refrigeración',
+        'gastro': 'Gastro',
+        'caliente': 'Caliente',
+        'seco': 'Seco'
     };
 
     // Función para mostrar y enfocar el campo de búsqueda cuando se carga la página
@@ -422,7 +297,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const now = new Date();
                 let expiryDate;
 
-                if (conservationType === 'CALIENTE') {
+                if (conservationType === 'caliente') {
                     // Calcular en horas (aproximadamente 2 horas)
                     expiryDate = new Date(now.getTime() + parseFloat(daysValid) * 24 * 60 * 60 * 1000);
                 } else {
@@ -538,156 +413,91 @@ document.addEventListener('DOMContentLoaded', function() {
                 throw new Error('Error en la solicitud');
             }
             
-            // Se espera una respuesta JSON con el HTML
-            return response.json();
+            // Se espera una respuesta HTML para la impresión
+            return response.text();
         })
-        .then(data => {
-            if (!data.success) {
-                throw new Error(data.message || 'Error al generar etiquetas');
-            }
-            
+        .then(html => {
             // Mostrar notificación de éxito
-            const quantity = data.quantity;
+            const quantity = quantityInput.value;
             const message = quantity > 1 
                 ? `${quantity} etiquetas generadas correctamente` 
                 : 'Etiqueta generada correctamente';
             
             showNotification(message, 'success');
             
-            // Obtener el HTML de las etiquetas
-            const labelsHtml = data.html;
+            // Crear un iframe oculto para imprimir
+            const printFrame = document.createElement('iframe');
+            printFrame.style.position = 'absolute';
+            printFrame.style.top = '-9999px';
+            document.body.appendChild(printFrame);
             
-            // En lugar de usar print(), mostrar directamente en la página
-            const labelsContainer = document.getElementById('labelsContainer');
-            labelsContainer.innerHTML = labelsHtml;
-            
-            // Mostrar la sección de etiquetas generadas
-            document.getElementById('generatedLabels').classList.remove('d-none');
-            
-            // Imprimir directamente
-            printLabels(labelsHtml);
-            
-            // Scroll a la sección de etiquetas
-            document.getElementById('generatedLabels').scrollIntoView({ behavior: 'smooth' });
-            // Eliminamos la referencia al botón antiguo
-            /*if (printButton) {
-                printButton.addEventListener('click', function() {
-                    // Imprimir directamente usando la API de impresión del navegador
-                    const printContents = labelsContainer.innerHTML;
-                    const originalContents = document.body.innerHTML;
-                    
-                    // Crear un iframe oculto para imprimir sin abrir nueva ventana
-                    const printFrame = document.createElement('iframe');
-                    printFrame.style.position = 'absolute';
-                    printFrame.style.top = '-9999px';
-                    printFrame.style.left = '-9999px';
-                    printFrame.style.width = '0';
-                    printFrame.style.height = '0';
-                    
-                    document.body.appendChild(printFrame);
-                    
-                    // Inicializar el dataset para seguimiento
-                    printFrame.dataset.printed = 'false';
-                    
-                    printFrame.contentDocument.write(`
-                        <!DOCTYPE html>
-                        <html>
-                        <head>
-                            <title>Etiquetas para imprimir</title>
-                            <style>
-                                body { margin: 0; padding: 0; }
-                                .label-grid-item {
-                                    display: inline-block;
-                                    box-sizing: border-box;
-                                    width: 45mm;
-                                    height: 40mm;
-                                    padding: 3mm;
-                                    margin: 0;
-                                    page-break-inside: avoid;
-                                    vertical-align: top;
-                                    text-align: center;
-                                    overflow: hidden;
-                                    font-family: Arial, sans-serif;
-                                    font-size: 8pt;
-                                }
-                                .label-product-name {
-                                    font-weight: bold;
-                                    font-size: 10pt;
-                                    margin-bottom: 2mm;
-                                    text-transform: uppercase;
-                                }
-                                .label-conservation {
-                                    font-style: italic;
-                                    margin-bottom: 1mm;
-                                }
-                                .label-info {
-                                    margin-bottom: 0.5mm;
-                                    font-size: 7pt;
-                                }
-                                .label-expiry {
-                                    margin-top: 2mm;
-                                    border: 1px solid #000;
-                                    padding: 1mm;
-                                    display: inline-block;
-                                    font-weight: bold;
-                                    font-size: 8pt;
-                                }
-                                @media print {
-                                    body { margin: 0; padding: 0; }
-                                    @page { margin: 0; size: auto; }
-                                }
-                            </style>
-                        </head>
-                        <body>
-                            ${printContents}
-                        </body>
-                        </html>
-                    `);
-                    
-                    // Cerrar el documento y esperar a que se cargue
-                    printFrame.contentDocument.close();
-                    
-                    // Añadir evento beforeprint para detectar cuando se abre el diálogo de impresión
-                    printFrame.contentWindow.addEventListener('beforeprint', function() {
-                        // Marcar como en proceso de impresión
-                        printFrame.dataset.printing = 'true';
-                    });
-                    
-                    // Añadir evento afterprint para detectar cuando se cierra el diálogo
-                    printFrame.contentWindow.addEventListener('afterprint', function() {
-                        // Marcar que ya se ha impreso
-                        printFrame.dataset.printed = 'true';
-                        
-                        // Eliminar el iframe después de la impresión
-                        setTimeout(function() {
-                            if (document.body.contains(printFrame)) {
-                                document.body.removeChild(printFrame);
-                            }
-                        }, 1000);
-                    });
-                    
-                    setTimeout(function() {
-                        try {
-                            // Abrir diálogo de impresión
-                            printFrame.contentWindow.focus();
-                            printFrame.contentWindow.print();
-                            
-                            // Si no se dispara el evento afterprint, eliminar el iframe después de un tiempo
-                            setTimeout(function() {
-                                if (document.body.contains(printFrame)) {
-                                    document.body.removeChild(printFrame);
-                                }
-                            }, 10000);
-                        } catch (error) {
-                            console.error('Error al imprimir:', error);
-                            if (document.body.contains(printFrame)) {
-                                document.body.removeChild(printFrame);
-                            }
-                            showNotification('Error al imprimir. Intente nuevamente.', 'error');
+            printFrame.contentDocument.write(`
+                <!DOCTYPE html>
+                <html>
+                <head>
+                    <title>Etiquetas para imprimir</title>
+                    <style>
+                        body { margin: 0; padding: 0; }
+                        .label-grid-item {
+                            display: inline-block;
+                            box-sizing: border-box;
+                            width: 45mm;
+                            height: 40mm;
+                            padding: 3mm;
+                            margin: 0;
+                            page-break-inside: avoid;
+                            vertical-align: top;
+                            text-align: center;
+                            overflow: hidden;
+                            font-family: Arial, sans-serif;
+                            font-size: 8pt;
                         }
-                    }, 500);
-                });
-            }
+                        .label-product-name {
+                            font-weight: bold;
+                            font-size: 10pt;
+                            margin-bottom: 2mm;
+                            text-transform: uppercase;
+                        }
+                        .label-conservation {
+                            font-style: italic;
+                            margin-bottom: 1mm;
+                        }
+                        .label-info {
+                            margin-bottom: 0.5mm;
+                            font-size: 7pt;
+                        }
+                        .label-expiry {
+                            margin-top: 2mm;
+                            border: 1px solid #000;
+                            padding: 1mm;
+                            display: inline-block;
+                            font-weight: bold;
+                            font-size: 8pt;
+                        }
+                        @media print {
+                            body { margin: 0; padding: 0; }
+                            @page { margin: 0; size: auto; }
+                        }
+                    </style>
+                </head>
+                <body>
+                    ${html}
+                </body>
+                </html>
+            `);
+            
+            printFrame.contentDocument.close();
+            
+            // Imprimir y eliminar el iframe - con pequeño retraso para asegurar que se cargue todo
+            setTimeout(function() {
+                printFrame.contentWindow.focus();
+                printFrame.contentWindow.print();
+                
+                // Eliminar el iframe después de la impresión
+                setTimeout(function() {
+                    document.body.removeChild(printFrame);
+                }, 1000);
+            }, 500);
         })
         .catch(error => {
             console.error('Error:', error);
@@ -779,23 +589,23 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: bold;
 }
 
-.btn-conservation[data-value="DESCONGELACION"] i {
+.btn-conservation[data-value="descongelacion"] i {
     color: #0d6efd; /* Azul */
 }
 
-.btn-conservation[data-value="REFRIGERACION"] i {
+.btn-conservation[data-value="refrigeracion"] i {
     color: #0dcaf0; /* Celeste */
 }
 
-.btn-conservation[data-value="GASTRO"] i {
+.btn-conservation[data-value="gastro"] i {
     color: #198754; /* Verde */
 }
 
-.btn-conservation[data-value="CALIENTE"] i {
+.btn-conservation[data-value="caliente"] i {
     color: #dc3545; /* Rojo */
 }
 
-.btn-conservation[data-value="SECO"] i {
+.btn-conservation[data-value="seco"] i {
     color: #ffc107; /* Amarillo */
 }
 

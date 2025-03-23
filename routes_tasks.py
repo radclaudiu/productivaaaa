@@ -1763,13 +1763,6 @@ def local_user_labels():
     # Obtener los productos disponibles para este local
     products = Product.query.filter_by(location_id=location.id, is_active=True).order_by(Product.name).all()
     
-    # Logging para depurar
-    print(f"Local user: {user.name}, location: {location.name}, location_id: {location.id}")
-    print(f"Número de productos encontrados: {len(products)}")
-    for product in products:
-        types = [ct.conservation_type.value for ct in product.conservation_types]
-        print(f"Producto: {product.name}, ID: {product.id}, Tipos de conservación: {types}")
-    
     # Obtener la fecha y hora actual para la vista previa
     now = datetime.now()
     
@@ -2134,12 +2127,7 @@ def generate_labels():
     
     # Si no hay configuración específica, usar valores predeterminados en horas
     hours_valid = 24  # 1 día por defecto
-    
-    # Si existe la configuración para este producto, usarla
-    if conservation:
-        hours_valid = conservation.hours_valid
-    # Sino, usar valores por defecto según el tipo    
-    elif conservation_type == ConservationType.DESCONGELACION:
+    if conservation_type == ConservationType.DESCONGELACION:
         hours_valid = 24  # 1 día
     elif conservation_type == ConservationType.REFRIGERACION:
         hours_valid = 72  # 3 días
@@ -2193,13 +2181,7 @@ def generate_labels():
     # Verificar si es una solicitud AJAX
     is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
     
-    # Si es AJAX, devolver JSON con el HTML para mostrar en la página
-    if is_ajax:
-        return jsonify({
-            'success': True,
-            'html': labels_html,
-            'quantity': quantity
-        })
+    # Si es AJAX, devolver solo el HTML para mostrar en la página
     # Si no, devolver la página completa para compatibilidad con la versión anterior
     return labels_html
 
