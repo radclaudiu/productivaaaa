@@ -1,0 +1,293 @@
+{% extends 'tasks/portal_layout.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .template-card {
+        margin-bottom: 20px;
+        background-color: var(--bs-dark);
+        border-radius: 8px;
+        border: 1px solid var(--bs-gray-700);
+        transition: transform 0.2s;
+    }
+    
+    .template-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 5px 15px rgba(0,0,0,0.3);
+    }
+    
+    .template-preview {
+        width: 40mm;
+        height: 45mm;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        padding: 2mm;
+        position: relative;
+        background-color: white;
+        color: black;
+        margin: 0 auto 15px auto;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .template-element {
+        position: absolute;
+        text-align: center;
+        width: 100%;
+        left: 0;
+        transform: translateY(-50%);
+    }
+    
+    .template-actions {
+        display: flex;
+        justify-content: center;
+        gap: 10px;
+        margin-top: 10px;
+    }
+    
+    .default-badge {
+        position: absolute;
+        top: 10px;
+        right: 10px;
+        z-index: 10;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.index') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.view_location', id=location.id) }}">{{ location.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.manage_labels', location_id=location.id) }}">Etiquetas</a></li>
+                    <li class="breadcrumb-item active">Plantillas</li>
+                </ol>
+            </nav>
+            
+            <div class="d-flex justify-content-between align-items-center mb-4">
+                <h1>{{ title }}</h1>
+                <a href="{{ url_for('tasks.create_label_template', location_id=location.id) }}" class="btn btn-primary">
+                    <i class="bi bi-plus-circle"></i> Nueva Plantilla
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-4">
+            <div class="card template-card">
+                <div class="card-body text-center">
+                    {% if templates|selectattr('is_default', 'equalto', true)|list|length > 0 %}
+                        <span class="badge bg-success default-badge">Predeterminada</span>
+                    {% endif %}
+                    <h5 class="card-title mb-3">Diseño Predeterminado</h5>
+                    <div class="template-preview" id="default-preview">
+                        <!-- Los elementos se añadirán con JavaScript -->
+                    </div>
+                    <div class="template-actions">
+                        <a href="{{ url_for('tasks.label_editor', location_id=location.id) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        {% for template in templates if not template.is_default %}
+        <div class="col-md-4">
+            <div class="card template-card">
+                <div class="card-body text-center">
+                    <h5 class="card-title mb-3">{{ template.name }}</h5>
+                    <div class="template-preview" id="template-preview-{{ template.id }}">
+                        <!-- Los elementos se añadirán con JavaScript -->
+                    </div>
+                    <div class="template-actions">
+                        <a href="{{ url_for('tasks.edit_label_template', template_id=template.id) }}" class="btn btn-sm btn-primary">
+                            <i class="bi bi-pencil"></i> Editar
+                        </a>
+                        <button type="button" class="btn btn-sm btn-danger" 
+                                onclick="confirmDelete('{{ template.id }}', '{{ template.name }}')">
+                            <i class="bi bi-trash"></i> Eliminar
+                        </button>
+                        <button type="button" class="btn btn-sm btn-success" 
+                                onclick="confirmSetDefault('{{ template.id }}', '{{ template.name }}')">
+                            <i class="bi bi-check-circle"></i> Predeterminado
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+        {% endfor %}
+        
+        {% if templates|length == 0 or (templates|length == 1 and templates[0].is_default) %}
+        <div class="col-12 mt-4 text-center">
+            <div class="alert alert-info">
+                No hay plantillas personalizadas. Puedes crear una nueva haciendo clic en "Nueva Plantilla".
+            </div>
+        </div>
+        {% endif %}
+    </div>
+</div>
+
+<!-- Modal para confirmar eliminación -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas eliminar la plantilla "<span id="delete-template-name"></span>"?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="delete-form" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-danger">Eliminar</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para confirmar establecer como predeterminado -->
+<div class="modal fade" id="defaultModal" tabindex="-1" aria-labelledby="defaultModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="defaultModalLabel">Confirmar</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                ¿Estás seguro de que deseas establecer la plantilla "<span id="default-template-name"></span>" como predeterminada?
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <form id="default-form" method="POST" action="">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    <button type="submit" class="btn btn-success">Establecer como Predeterminada</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Función para renderizar la vista previa de una plantilla
+        function renderTemplatePreview(containerId, templateData) {
+            const container = document.getElementById(containerId);
+            if (!container) return;
+            
+            // Limpiar el contenedor
+            container.innerHTML = '';
+            
+            // Crear elementos de muestra
+            createTemplateElement(container, 'NOMBRE DEL PRODUCTO', {
+                x: templateData.titulo_x,
+                y: templateData.titulo_y,
+                size: templateData.titulo_size,
+                bold: templateData.titulo_bold
+            });
+            
+            createTemplateElement(container, 'REFRIGERACIÓN', {
+                x: templateData.conservacion_x,
+                y: templateData.conservacion_y,
+                size: templateData.conservacion_size,
+                bold: templateData.conservacion_bold
+            });
+            
+            createTemplateElement(container, 'Preparado por: Juan Pérez', {
+                x: templateData.preparador_x,
+                y: templateData.preparador_y,
+                size: templateData.preparador_size,
+                bold: templateData.preparador_bold
+            });
+            
+            createTemplateElement(container, 'Fecha: 23/03/2025', {
+                x: templateData.fecha_x,
+                y: templateData.fecha_y,
+                size: templateData.fecha_size,
+                bold: templateData.fecha_bold
+            });
+            
+            createTemplateElement(container, 'CONSUMIR ANTES DE: 26/03/2025', {
+                x: templateData.caducidad_x,
+                y: templateData.caducidad_y,
+                size: templateData.caducidad_size,
+                bold: templateData.caducidad_bold
+            });
+            
+            createTemplateElement(container, 'Cad. secundaria: 04/04/2025', {
+                x: templateData.caducidad2_x,
+                y: templateData.caducidad2_y,
+                size: templateData.caducidad2_size,
+                bold: templateData.caducidad2_bold
+            });
+        }
+        
+        // Función para crear un elemento en la vista previa
+        function createTemplateElement(container, text, style) {
+            const element = document.createElement('div');
+            element.className = 'template-element';
+            element.textContent = text;
+            element.style.top = style.y + '%';
+            element.style.fontSize = style.size + 'pt';
+            element.style.fontWeight = style.bold ? 'bold' : 'normal';
+            container.appendChild(element);
+        }
+        
+        // Renderizar las plantillas
+        {% for template in templates %}
+        renderTemplatePreview('{{ "default-preview" if template.is_default else "template-preview-" + template.id|string }}', {
+            titulo_x: {{ template.titulo_x }},
+            titulo_y: {{ template.titulo_y }},
+            titulo_size: {{ template.titulo_size }},
+            titulo_bold: {{ template.titulo_bold }},
+            conservacion_x: {{ template.conservacion_x }},
+            conservacion_y: {{ template.conservacion_y }},
+            conservacion_size: {{ template.conservacion_size }},
+            conservacion_bold: {{ template.conservacion_bold }},
+            preparador_x: {{ template.preparador_x }},
+            preparador_y: {{ template.preparador_y }},
+            preparador_size: {{ template.preparador_size }},
+            preparador_bold: {{ template.preparador_bold }},
+            fecha_x: {{ template.fecha_x }},
+            fecha_y: {{ template.fecha_y }},
+            fecha_size: {{ template.fecha_size }},
+            fecha_bold: {{ template.fecha_bold }},
+            caducidad_x: {{ template.caducidad_x }},
+            caducidad_y: {{ template.caducidad_y }},
+            caducidad_size: {{ template.caducidad_size }},
+            caducidad_bold: {{ template.caducidad_bold }},
+            caducidad2_x: {{ template.caducidad2_x }},
+            caducidad2_y: {{ template.caducidad2_y }},
+            caducidad2_size: {{ template.caducidad2_size }},
+            caducidad2_bold: {{ template.caducidad2_bold }}
+        });
+        {% endfor %}
+    });
+    
+    // Confirmar eliminación
+    function confirmDelete(templateId, templateName) {
+        document.getElementById('delete-template-name').textContent = templateName;
+        document.getElementById('delete-form').action = "{{ url_for('tasks.delete_label_template', template_id=0) }}".replace('0', templateId);
+        new bootstrap.Modal(document.getElementById('deleteModal')).show();
+    }
+    
+    // Confirmar establecer como predeterminado
+    function confirmSetDefault(templateId, templateName) {
+        document.getElementById('default-template-name').textContent = templateName;
+        document.getElementById('default-form').action = "{{ url_for('tasks.set_default_label_template', template_id=0) }}".replace('0', templateId);
+        new bootstrap.Modal(document.getElementById('defaultModal')).show();
+    }
+</script>
+{% endblock %}

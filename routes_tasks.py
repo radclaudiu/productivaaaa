@@ -12,7 +12,7 @@ from app import db
 from models import User, Company
 from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, 
                          TaskFrequency, TaskStatus, WeekDay, TaskGroup, TaskWeekday,
-                         Product, ProductConservation, ProductLabel, ConservationType)
+                         Product, ProductConservation, ProductLabel, ConservationType, LabelTemplate)
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
                         LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm, PortalLoginForm,
@@ -1839,6 +1839,213 @@ def manage_labels(location_id=None):
                           selected_location=location,
                           products=products,
                           recent_labels=recent_labels)
+
+@tasks_bp.route('/locations/<int:location_id>/label-editor', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def label_editor(location_id):
+    """Editor de diseño de etiquetas para un local"""
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar permisos
+    if not current_user.is_admin() and (not current_user.is_gerente() or location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para editar etiquetas en este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    # Buscar plantilla existente o crear una nueva
+    template = LabelTemplate.query.filter_by(location_id=location_id, is_default=True).first()
+    
+    if not template:
+        template = LabelTemplate(
+            name="Diseño Predeterminado",
+            location_id=location_id,
+            is_default=True
+        )
+        db.session.add(template)
+        db.session.commit()
+    
+    form = LabelEditorForm(obj=template)
+    
+    if form.validate_on_submit():
+        # Actualizar la plantilla con los datos del formulario
+        form.populate_obj(template)
+        template.name = form.layout_name.data
+        template.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_activity(f'Diseño de etiquetas actualizado para {location.name}')
+        flash('Diseño de etiquetas actualizado correctamente.', 'success')
+        return redirect(url_for('tasks.manage_labels', location_id=location_id))
+    
+    return render_template('tasks/label_editor.html',
+                          title=f'Editor de Etiquetas - {location.name}',
+                          form=form,
+                          location=location,
+                          template=template)
+
+@tasks_bp.route('/locations/<int:location_id>/label-templates', methods=['GET'])
+@login_required
+@manager_required
+def list_label_templates(location_id):
+    """Lista de plantillas de etiquetas para un local"""
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar permisos
+    if not current_user.is_admin() and (not current_user.is_gerente() or location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para ver plantillas de etiquetas en este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    templates = LabelTemplate.query.filter_by(location_id=location_id).all()
+    
+    return render_template('tasks/label_template_list.html',
+                          title=f'Plantillas de Etiquetas - {location.name}',
+                          location=location,
+                          templates=templates)
+
+@tasks_bp.route('/locations/<int:location_id>/label-templates/create', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def create_label_template(location_id):
+    """Crear una nueva plantilla de etiquetas"""
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar permisos
+    if not current_user.is_admin() and (not current_user.is_gerente() or location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para crear plantillas de etiquetas en este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    form = LabelEditorForm()
+    
+    if form.validate_on_submit():
+        template = LabelTemplate(
+            name=form.layout_name.data,
+            location_id=location_id,
+            is_default=False,
+            titulo_x=form.titulo_x.data,
+            titulo_y=form.titulo_y.data,
+            titulo_size=form.titulo_size.data,
+            titulo_bold=form.titulo_bold.data,
+            conservacion_x=form.conservacion_x.data,
+            conservacion_y=form.conservacion_y.data,
+            conservacion_size=form.conservacion_size.data,
+            conservacion_bold=form.conservacion_bold.data,
+            preparador_x=form.preparador_x.data,
+            preparador_y=form.preparador_y.data,
+            preparador_size=form.preparador_size.data,
+            preparador_bold=form.preparador_bold.data,
+            fecha_x=form.fecha_x.data,
+            fecha_y=form.fecha_y.data,
+            fecha_size=form.fecha_size.data,
+            fecha_bold=form.fecha_bold.data,
+            caducidad_x=form.caducidad_x.data,
+            caducidad_y=form.caducidad_y.data,
+            caducidad_size=form.caducidad_size.data,
+            caducidad_bold=form.caducidad_bold.data,
+            caducidad2_x=form.caducidad2_x.data,
+            caducidad2_y=form.caducidad2_y.data,
+            caducidad2_size=form.caducidad2_size.data,
+            caducidad2_bold=form.caducidad2_bold.data
+        )
+        
+        db.session.add(template)
+        db.session.commit()
+        
+        log_activity(f'Plantilla de etiquetas creada: {template.name} para {location.name}')
+        flash(f'Plantilla "{template.name}" creada correctamente.', 'success')
+        return redirect(url_for('tasks.list_label_templates', location_id=location_id))
+    
+    return render_template('tasks/label_editor.html',
+                          title=f'Nueva Plantilla de Etiquetas - {location.name}',
+                          form=form,
+                          location=location,
+                          is_new=True)
+
+@tasks_bp.route('/label-templates/<int:template_id>/edit', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def edit_label_template(template_id):
+    """Editar una plantilla de etiquetas existente"""
+    template = LabelTemplate.query.get_or_404(template_id)
+    location = Location.query.get_or_404(template.location_id)
+    
+    # Verificar permisos
+    if not current_user.is_admin() and (not current_user.is_gerente() or location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para editar plantillas de etiquetas en este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    form = LabelEditorForm(obj=template)
+    
+    if form.validate_on_submit():
+        # Actualizar la plantilla con los datos del formulario
+        form.populate_obj(template)
+        template.updated_at = datetime.utcnow()
+        
+        db.session.commit()
+        
+        log_activity(f'Plantilla de etiquetas actualizada: {template.name}')
+        flash(f'Plantilla "{template.name}" actualizada correctamente.', 'success')
+        return redirect(url_for('tasks.list_label_templates', location_id=location.id))
+    
+    return render_template('tasks/label_editor.html',
+                          title=f'Editar Plantilla: {template.name}',
+                          form=form,
+                          location=location,
+                          template=template)
+
+@tasks_bp.route('/label-templates/<int:template_id>/delete', methods=['POST'])
+@login_required
+@manager_required
+def delete_label_template(template_id):
+    """Eliminar una plantilla de etiquetas"""
+    template = LabelTemplate.query.get_or_404(template_id)
+    location = Location.query.get_or_404(template.location_id)
+    
+    # Verificar permisos
+    if not current_user.is_admin() and (not current_user.is_gerente() or location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para eliminar plantillas de etiquetas en este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    # No permitir eliminar la plantilla predeterminada
+    if template.is_default:
+        flash('No puedes eliminar la plantilla predeterminada.', 'warning')
+        return redirect(url_for('tasks.list_label_templates', location_id=location.id))
+    
+    name = template.name
+    location_id = location.id
+    
+    db.session.delete(template)
+    db.session.commit()
+    
+    log_activity(f'Plantilla de etiquetas eliminada: {name}')
+    flash(f'Plantilla "{name}" eliminada correctamente.', 'success')
+    return redirect(url_for('tasks.list_label_templates', location_id=location_id))
+
+@tasks_bp.route('/label-templates/<int:template_id>/set-default', methods=['POST'])
+@login_required
+@manager_required
+def set_default_label_template(template_id):
+    """Establecer una plantilla como predeterminada"""
+    template = LabelTemplate.query.get_or_404(template_id)
+    location = Location.query.get_or_404(template.location_id)
+    
+    # Verificar permisos
+    if not current_user.is_admin() and (not current_user.is_gerente() or location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para modificar plantillas de etiquetas en este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    # Quitar el estado predeterminado de todas las plantillas de esta ubicación
+    default_templates = LabelTemplate.query.filter_by(location_id=location.id, is_default=True).all()
+    for default_template in default_templates:
+        default_template.is_default = False
+    
+    # Establecer esta plantilla como predeterminada
+    template.is_default = True
+    db.session.commit()
+    
+    log_activity(f'Plantilla de etiquetas establecida como predeterminada: {template.name}')
+    flash(f'Plantilla "{template.name}" establecida como predeterminada.', 'success')
+    return redirect(url_for('tasks.list_label_templates', location_id=location.id))
 
 @tasks_bp.route('/dashboard/labels/download-template')
 @login_required

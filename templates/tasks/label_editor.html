@@ -1,0 +1,486 @@
+{% extends 'tasks/portal_layout.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block styles %}
+{{ super() }}
+<style>
+    .editor-section {
+        background-color: var(--bs-dark);
+        border-radius: 8px;
+        padding: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .preview-label {
+        width: 40mm;
+        height: 45mm;
+        border: 1px solid #ccc;
+        border-radius: 3px;
+        padding: 2mm;
+        position: relative;
+        background-color: white;
+        color: black;
+        margin: 10px auto;
+        box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    
+    .label-element {
+        position: absolute;
+        text-align: center;
+        width: 100%;
+        left: 0;
+        transform: translateY(-50%);
+    }
+    
+    .label-input-group {
+        margin-bottom: 10px;
+    }
+    
+    .label-controls {
+        display: flex;
+        flex-direction: column;
+        gap: 5px;
+    }
+    
+    .position-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .position-controls .form-group {
+        flex: 1;
+    }
+    
+    .style-controls {
+        display: flex;
+        gap: 10px;
+    }
+    
+    .style-controls .form-group {
+        flex: 1;
+    }
+    
+    .preview-controls {
+        text-align: center;
+        margin-bottom: 15px;
+    }
+    
+    /* Editor tabs */
+    .nav-tabs .nav-link {
+        color: var(--bs-light);
+        background-color: var(--bs-dark);
+        border-color: var(--bs-gray-700);
+    }
+    
+    .nav-tabs .nav-link.active {
+        color: var(--bs-light);
+        background-color: var(--bs-gray-800);
+        border-color: var(--bs-gray-700);
+        border-bottom-color: var(--bs-gray-800);
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container">
+    <div class="row">
+        <div class="col-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.index') }}">Dashboard</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.view_location', id=location.id) }}">{{ location.name }}</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('tasks.manage_labels', location_id=location.id) }}">Etiquetas</a></li>
+                    <li class="breadcrumb-item active">Editor de Diseño</li>
+                </ol>
+            </nav>
+            
+            <h1>{{ title }}</h1>
+            <p class="lead">Personaliza la posición y el tamaño de los elementos en tus etiquetas</p>
+        </div>
+    </div>
+    
+    <div class="row mt-4">
+        <div class="col-lg-4 order-lg-2">
+            <div class="editor-section">
+                <h3 class="mb-3">Vista Previa</h3>
+                
+                <div class="preview-controls">
+                    <div class="form-check form-switch">
+                        <input class="form-check-input" type="checkbox" id="toggle-grid" checked>
+                        <label class="form-check-label" for="toggle-grid">Mostrar cuadrícula</label>
+                    </div>
+                </div>
+                
+                <div class="preview-label" id="label-preview">
+                    <!-- Los elementos de la etiqueta se añadirán con JavaScript -->
+                </div>
+                
+                <div class="mt-3">
+                    <p class="small text-muted text-center">
+                        Las etiquetas se imprimirán en un tamaño de 40x45mm.
+                    </p>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-8 order-lg-1">
+            <div class="editor-section">
+                <form method="POST" action="" id="label-editor-form">
+                    {{ form.hidden_tag() }}
+                    
+                    <div class="mb-3">
+                        {{ form.layout_name.label(class="form-label") }}
+                        {{ form.layout_name(class="form-control") }}
+                        {% if form.layout_name.errors %}
+                            <div class="invalid-feedback">
+                                {% for error in form.layout_name.errors %}
+                                    {{ error }}
+                                {% endfor %}
+                            </div>
+                        {% endif %}
+                    </div>
+                    
+                    <ul class="nav nav-tabs" id="editorTabs" role="tablist">
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link active" id="titulo-tab" data-bs-toggle="tab" data-bs-target="#titulo" type="button" role="tab" aria-controls="titulo" aria-selected="true">Título</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="conservacion-tab" data-bs-toggle="tab" data-bs-target="#conservacion" type="button" role="tab" aria-controls="conservacion" aria-selected="false">Conservación</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="preparador-tab" data-bs-toggle="tab" data-bs-target="#preparador" type="button" role="tab" aria-controls="preparador" aria-selected="false">Preparador</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="fecha-tab" data-bs-toggle="tab" data-bs-target="#fecha" type="button" role="tab" aria-controls="fecha" aria-selected="false">Fecha</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="caducidad-tab" data-bs-toggle="tab" data-bs-target="#caducidad" type="button" role="tab" aria-controls="caducidad" aria-selected="false">Caducidad</button>
+                        </li>
+                        <li class="nav-item" role="presentation">
+                            <button class="nav-link" id="caducidad2-tab" data-bs-toggle="tab" data-bs-target="#caducidad2" type="button" role="tab" aria-controls="caducidad2" aria-selected="false">Cad. 2ª</button>
+                        </li>
+                    </ul>
+                    
+                    <div class="tab-content p-3 bg-dark" id="editorTabsContent">
+                        <!-- Título -->
+                        <div class="tab-pane fade show active" id="titulo" role="tabpanel" aria-labelledby="titulo-tab">
+                            <h4>Ajustes del Título</h4>
+                            <div class="position-controls">
+                                <div class="form-group">
+                                    {{ form.titulo_x.label(class="form-label") }}
+                                    {{ form.titulo_x(class="form-control", min=0, max=100) }}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.titulo_y.label(class="form-label") }}
+                                    {{ form.titulo_y(class="form-control", min=0, max=100) }}
+                                </div>
+                            </div>
+                            <div class="style-controls mt-2">
+                                <div class="form-group">
+                                    {{ form.titulo_size.label(class="form-label") }}
+                                    {{ form.titulo_size(class="form-control", min=6, max=16) }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check mt-2">
+                                        {{ form.titulo_bold(class="form-check-input") }}
+                                        {{ form.titulo_bold.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Conservación -->
+                        <div class="tab-pane fade" id="conservacion" role="tabpanel" aria-labelledby="conservacion-tab">
+                            <h4>Ajustes del Tipo de Conservación</h4>
+                            <div class="position-controls">
+                                <div class="form-group">
+                                    {{ form.conservacion_x.label(class="form-label") }}
+                                    {{ form.conservacion_x(class="form-control", min=0, max=100) }}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.conservacion_y.label(class="form-label") }}
+                                    {{ form.conservacion_y(class="form-control", min=0, max=100) }}
+                                </div>
+                            </div>
+                            <div class="style-controls mt-2">
+                                <div class="form-group">
+                                    {{ form.conservacion_size.label(class="form-label") }}
+                                    {{ form.conservacion_size(class="form-control", min=6, max=14) }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check mt-2">
+                                        {{ form.conservacion_bold(class="form-check-input") }}
+                                        {{ form.conservacion_bold.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Preparador -->
+                        <div class="tab-pane fade" id="preparador" role="tabpanel" aria-labelledby="preparador-tab">
+                            <h4>Ajustes del Preparador</h4>
+                            <div class="position-controls">
+                                <div class="form-group">
+                                    {{ form.preparador_x.label(class="form-label") }}
+                                    {{ form.preparador_x(class="form-control", min=0, max=100) }}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.preparador_y.label(class="form-label") }}
+                                    {{ form.preparador_y(class="form-control", min=0, max=100) }}
+                                </div>
+                            </div>
+                            <div class="style-controls mt-2">
+                                <div class="form-group">
+                                    {{ form.preparador_size.label(class="form-label") }}
+                                    {{ form.preparador_size(class="form-control", min=6, max=12) }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check mt-2">
+                                        {{ form.preparador_bold(class="form-check-input") }}
+                                        {{ form.preparador_bold.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Fecha -->
+                        <div class="tab-pane fade" id="fecha" role="tabpanel" aria-labelledby="fecha-tab">
+                            <h4>Ajustes de la Fecha</h4>
+                            <div class="position-controls">
+                                <div class="form-group">
+                                    {{ form.fecha_x.label(class="form-label") }}
+                                    {{ form.fecha_x(class="form-control", min=0, max=100) }}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.fecha_y.label(class="form-label") }}
+                                    {{ form.fecha_y(class="form-control", min=0, max=100) }}
+                                </div>
+                            </div>
+                            <div class="style-controls mt-2">
+                                <div class="form-group">
+                                    {{ form.fecha_size.label(class="form-label") }}
+                                    {{ form.fecha_size(class="form-control", min=6, max=12) }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check mt-2">
+                                        {{ form.fecha_bold(class="form-check-input") }}
+                                        {{ form.fecha_bold.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Caducidad -->
+                        <div class="tab-pane fade" id="caducidad" role="tabpanel" aria-labelledby="caducidad-tab">
+                            <h4>Ajustes de la Caducidad</h4>
+                            <div class="position-controls">
+                                <div class="form-group">
+                                    {{ form.caducidad_x.label(class="form-label") }}
+                                    {{ form.caducidad_x(class="form-control", min=0, max=100) }}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.caducidad_y.label(class="form-label") }}
+                                    {{ form.caducidad_y(class="form-control", min=0, max=100) }}
+                                </div>
+                            </div>
+                            <div class="style-controls mt-2">
+                                <div class="form-group">
+                                    {{ form.caducidad_size.label(class="form-label") }}
+                                    {{ form.caducidad_size(class="form-control", min=6, max=14) }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check mt-2">
+                                        {{ form.caducidad_bold(class="form-check-input") }}
+                                        {{ form.caducidad_bold.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Caducidad Secundaria -->
+                        <div class="tab-pane fade" id="caducidad2" role="tabpanel" aria-labelledby="caducidad2-tab">
+                            <h4>Ajustes de la Caducidad Secundaria</h4>
+                            <div class="position-controls">
+                                <div class="form-group">
+                                    {{ form.caducidad2_x.label(class="form-label") }}
+                                    {{ form.caducidad2_x(class="form-control", min=0, max=100) }}
+                                </div>
+                                <div class="form-group">
+                                    {{ form.caducidad2_y.label(class="form-label") }}
+                                    {{ form.caducidad2_y(class="form-control", min=0, max=100) }}
+                                </div>
+                            </div>
+                            <div class="style-controls mt-2">
+                                <div class="form-group">
+                                    {{ form.caducidad2_size.label(class="form-label") }}
+                                    {{ form.caducidad2_size(class="form-control", min=6, max=12) }}
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label d-block">&nbsp;</label>
+                                    <div class="form-check mt-2">
+                                        {{ form.caducidad2_bold(class="form-check-input") }}
+                                        {{ form.caducidad2_bold.label(class="form-check-label") }}
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-4 text-center">
+                        <a href="{{ url_for('tasks.manage_labels', location_id=location.id) }}" class="btn btn-secondary">Cancelar</a>
+                        {{ form.submit(class="btn btn-primary") }}
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+{{ super() }}
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const preview = document.getElementById('label-preview');
+        const toggleGrid = document.getElementById('toggle-grid');
+        const fields = {
+            titulo: {
+                x: document.getElementById('titulo_x'),
+                y: document.getElementById('titulo_y'),
+                size: document.getElementById('titulo_size'),
+                bold: document.getElementById('titulo_bold')
+            },
+            conservacion: {
+                x: document.getElementById('conservacion_x'),
+                y: document.getElementById('conservacion_y'),
+                size: document.getElementById('conservacion_size'),
+                bold: document.getElementById('conservacion_bold')
+            },
+            preparador: {
+                x: document.getElementById('preparador_x'),
+                y: document.getElementById('preparador_y'),
+                size: document.getElementById('preparador_size'),
+                bold: document.getElementById('preparador_bold')
+            },
+            fecha: {
+                x: document.getElementById('fecha_x'),
+                y: document.getElementById('fecha_y'),
+                size: document.getElementById('fecha_size'),
+                bold: document.getElementById('fecha_bold')
+            },
+            caducidad: {
+                x: document.getElementById('caducidad_x'),
+                y: document.getElementById('caducidad_y'),
+                size: document.getElementById('caducidad_size'),
+                bold: document.getElementById('caducidad_bold')
+            },
+            caducidad2: {
+                x: document.getElementById('caducidad2_x'),
+                y: document.getElementById('caducidad2_y'),
+                size: document.getElementById('caducidad2_size'),
+                bold: document.getElementById('caducidad2_bold')
+            }
+        };
+        
+        // Crear elementos en la vista previa
+        function createPreviewElements() {
+            preview.innerHTML = '';
+            
+            if (toggleGrid.checked) {
+                // Añadir cuadrícula de guía (líneas cada 10%)
+                const gridOverlay = document.createElement('div');
+                gridOverlay.style.position = 'absolute';
+                gridOverlay.style.top = '0';
+                gridOverlay.style.left = '0';
+                gridOverlay.style.width = '100%';
+                gridOverlay.style.height = '100%';
+                gridOverlay.style.pointerEvents = 'none';
+                
+                // Líneas horizontales
+                for (let i = 10; i < 100; i += 10) {
+                    const hLine = document.createElement('div');
+                    hLine.style.position = 'absolute';
+                    hLine.style.left = '0';
+                    hLine.style.top = i + '%';
+                    hLine.style.width = '100%';
+                    hLine.style.height = '1px';
+                    hLine.style.backgroundColor = 'rgba(200, 200, 200, 0.3)';
+                    gridOverlay.appendChild(hLine);
+                }
+                
+                // Líneas verticales
+                for (let i = 10; i < 100; i += 10) {
+                    const vLine = document.createElement('div');
+                    vLine.style.position = 'absolute';
+                    vLine.style.left = i + '%';
+                    vLine.style.top = '0';
+                    vLine.style.width = '1px';
+                    vLine.style.height = '100%';
+                    vLine.style.backgroundColor = 'rgba(200, 200, 200, 0.3)';
+                    gridOverlay.appendChild(vLine);
+                }
+                
+                preview.appendChild(gridOverlay);
+            }
+            
+            // Crear elementos de la etiqueta
+            createLabelElement('titulo', 'NOMBRE DEL PRODUCTO');
+            createLabelElement('conservacion', 'REFRIGERACIÓN');
+            createLabelElement('preparador', 'Preparado por: Juan Pérez');
+            createLabelElement('fecha', 'Fecha: 23/03/2025');
+            createLabelElement('caducidad', 'CONSUMIR ANTES DE: 26/03/2025');
+            createLabelElement('caducidad2', 'Cad. secundaria: 04/04/2025');
+        }
+        
+        // Crear un elemento para la etiqueta
+        function createLabelElement(id, text) {
+            const element = document.createElement('div');
+            element.id = 'preview-' + id;
+            element.className = 'label-element';
+            element.textContent = text;
+            updateElementStyle(element, id);
+            preview.appendChild(element);
+        }
+        
+        // Actualizar el estilo de un elemento
+        function updateElementStyle(element, id) {
+            const data = fields[id];
+            element.style.left = '0';
+            element.style.top = data.y.value + '%';
+            element.style.fontSize = data.size.value + 'pt';
+            element.style.fontWeight = data.bold.checked ? 'bold' : 'normal';
+        }
+        
+        // Actualizar la vista previa cuando cambian los valores
+        function setupListeners() {
+            toggleGrid.addEventListener('change', createPreviewElements);
+            
+            // Configurar listeners para cada campo
+            Object.keys(fields).forEach(id => {
+                const data = fields[id];
+                
+                // Para cada propiedad (x, y, size, bold)
+                Object.keys(data).forEach(prop => {
+                    const input = data[prop];
+                    input.addEventListener('input', function() {
+                        const element = document.getElementById('preview-' + id);
+                        if (element) {
+                            updateElementStyle(element, id);
+                        }
+                    });
+                });
+            });
+        }
+        
+        // Inicializar
+        createPreviewElements();
+        setupListeners();
+    });
+</script>
+{% endblock %}
