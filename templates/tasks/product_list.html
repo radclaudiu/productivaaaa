@@ -59,6 +59,7 @@
                                 <th scope="col">Nombre</th>
                                 <th scope="col">Descripción</th>
                                 <th scope="col">Local</th>
+                                <th scope="col">Vida útil</th>
                                 <th scope="col">Estado</th>
                                 <th scope="col">Acciones</th>
                             </tr>
@@ -75,6 +76,13 @@
                                         {% endif %}
                                     </td>
                                     <td>{{ product.location.name }}</td>
+                                    <td>
+                                        {% if product.shelf_life_days > 0 %}
+                                            <span class="badge rounded-pill bg-info">{{ product.shelf_life_days }} días</span>
+                                        {% else %}
+                                            <span class="text-muted small">No definida</span>
+                                        {% endif %}
+                                    </td>
                                     <td>
                                         {% if product.is_active %}
                                             <span class="badge rounded-pill bg-success">Activo</span>
