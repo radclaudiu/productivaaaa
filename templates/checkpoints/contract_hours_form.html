@@ -160,8 +160,8 @@
                         </div>
                         
                         <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('view_employee', id=employee.id) }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Volver
+                            <a href="{{ url_for('checkpoints.index_company', company_id=employee.company_id) }}" class="btn btn-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Dashboard
                             </a>
                             {{ form.submit(class="btn btn-primary") }}
                         </div>
