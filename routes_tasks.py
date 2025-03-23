@@ -1763,6 +1763,13 @@ def local_user_labels():
     # Obtener los productos disponibles para este local
     products = Product.query.filter_by(location_id=location.id, is_active=True).order_by(Product.name).all()
     
+    # Logging para depurar
+    print(f"Local user: {user.name}, location: {location.name}, location_id: {location.id}")
+    print(f"Número de productos encontrados: {len(products)}")
+    for product in products:
+        types = [ct.conservation_type.value for ct in product.conservation_types]
+        print(f"Producto: {product.name}, ID: {product.id}, Tipos de conservación: {types}")
+    
     # Obtener la fecha y hora actual para la vista previa
     now = datetime.now()
     
