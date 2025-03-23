@@ -107,6 +107,8 @@
             transform: translate(-50%, -50%);
             width: auto;
             min-width: 80%;
+            margin-top: 2mm; /* Agregar separación adicional entre caducidades */
+            padding: 1mm;
         }
         
         /* Diferenciación por tipo de conservación */
@@ -146,9 +148,9 @@
             <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
             <div class="preparado">Prep: {{ user.name }} {{ user.last_name }}</div>
             <div class="fecha">{{ now.strftime('%d/%m/%Y %H:%M') }}</div>
-            <div class="caducidad">Cad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
             {% if secondary_expiry_date %}
-            <div class="caducidad caducidad-secundaria">Cad. 2ª: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
+            <div class="caducidad caducidad-secundaria">Caducidad primaria: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
             {% endif %}
         </div>
     {% endfor %}
