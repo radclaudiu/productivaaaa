@@ -1,0 +1,80 @@
+2025-03-23 16:09:54 [ERROR] app: Exception on /tasks/locations/1/label-editor [GET]
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+psycopg2.errors.UndefinedTable: relation "label_templates" does not exist
+LINE 2: FROM label_templates 
+             ^
+
+
+The above exception was the direct cause of the following exception:
+
+Traceback (most recent call last):
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 1511, in wsgi_app
+    response = self.full_dispatch_request()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 919, in full_dispatch_request
+    rv = self.handle_user_exception(e)
+         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 917, in full_dispatch_request
+    rv = self.dispatch_request()
+         ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask/app.py", line 902, in dispatch_request
+    return self.ensure_sync(self.view_functions[rule.endpoint])(**view_args)  # type: ignore[no-any-return]
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/flask_login/utils.py", line 290, in decorated_view
+    return current_app.ensure_sync(func)(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/routes_tasks.py", line 37, in decorated_function
+    return f(*args, **kwargs)
+           ^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/routes_tasks.py", line 1856, in label_editor
+    template = LabelTemplate.query.filter_by(location_id=location_id, is_default=True).first()
+               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2759, in first
+    return self.limit(1)._iter().first()  # type: ignore
+           ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/query.py", line 2858, in _iter
+    result: Union[ScalarResult[_T], Result[_T]] = self.session.execute(
+                                                  ^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2365, in execute
+    return self._execute_internal(
+           ^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/session.py", line 2251, in _execute_internal
+    result: Result[Any] = compile_state_cls.orm_execute_statement(
+                          ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/orm/context.py", line 306, in orm_execute_statement
+    result = conn.execute(
+             ^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1416, in execute
+    return meth(
+           ^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/sql/elements.py", line 523, in _execute_on_connection
+    return connection._execute_clauseelement(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1638, in _execute_clauseelement
+    ret = self._execute_context(
+          ^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1843, in _execute_context
+    return self._exec_single_context(
+           ^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1983, in _exec_single_context
+    self._handle_dbapi_exception(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 2352, in _handle_dbapi_exception
+    raise sqlalchemy_exception.with_traceback(exc_info[2]) from e
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/base.py", line 1964, in _exec_single_context
+    self.dialect.do_execute(
+  File "/home/runner/workspace/.pythonlibs/lib/python3.11/site-packages/sqlalchemy/engine/default.py", line 942, in do_execute
+    cursor.execute(statement, parameters)
+sqlalchemy.exc.ProgrammingError: (psycopg2.errors.UndefinedTable) relation "label_templates" does not exist
+LINE 2: FROM label_templates 
+             ^
+
+[SQL: SELECT label_templates.id AS label_templates_id, label_templates.name AS label_templates_name, label_templates.created_at AS label_templates_created_at, label_templates.updated_at AS label_templates_updated_at, label_templates.is_default AS label_templates_is_default, label_templates.titulo_x AS label_templates_titulo_x, label_templates.titulo_y AS label_templates_titulo_y, label_templates.titulo_size AS label_templates_titulo_size, label_templates.titulo_bold AS label_templates_titulo_bold, label_templates.conservacion_x AS label_templates_conservacion_x, label_templates.conservacion_y AS label_templates_conservacion_y, label_templates.conservacion_size AS label_templates_conservacion_size, label_templates.conservacion_bold AS label_templates_conservacion_bold, label_templates.preparador_x AS label_templates_preparador_x, label_templates.preparador_y AS label_templates_preparador_y, label_templates.preparador_size AS label_templates_preparador_size, label_templates.preparador_bold AS label_templates_preparador_bold, label_templates.fecha_x AS label_templates_fecha_x, label_templates.fecha_y AS label_templates_fecha_y, label_templates.fecha_size AS label_templates_fecha_size, label_templates.fecha_bold AS label_templates_fecha_bold, label_templates.caducidad_x AS label_templates_caducidad_x, label_templates.caducidad_y AS label_templates_caducidad_y, label_templates.caducidad_size AS label_templates_caducidad_size, label_templates.caducidad_bold AS label_templates_caducidad_bold, label_templates.caducidad2_x AS label_templates_caducidad2_x, label_templates.caducidad2_y AS label_templates_caducidad2_y, label_templates.caducidad2_size AS label_templates_caducidad2_size, label_templates.caducidad2_bold AS label_templates_caducidad2_bold, label_templates.location_id AS label_templates_location_id 
+FROM label_templates 
+WHERE label_templates.location_id = %(location_id_1)s AND label_templates.is_default = true 
+ LIMIT %(param_1)s]
+[parameters: {'location_id_1': 1, 'param_1': 1}]
+(Background on this error at: https://sqlalche.me/e/20/f405)
