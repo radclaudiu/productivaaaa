@@ -133,32 +133,104 @@ def get_system_printers():
     - En Linux: utiliza lpstat o CUPS
     - En macOS: utiliza la API de CUPS
     
+    En entornos de desarrollo o cuando los comandos no están disponibles,
+    utiliza el archivo dev_printers.json para obtener impresoras simuladas.
+    
     Returns:
-        Una lista de diccionarios con información sobre las impresoras o una lista vacía si hay error
+        Una lista de diccionarios con información sobre las impresoras o impresoras simuladas
     """
     printers = []
     system = platform.system().lower()
     
+    # Primero comprobar si estamos en un entorno de desarrollo 
+    # o si los comandos necesarios no están disponibles
+    dev_printers_file = os.path.join(os.path.dirname(__file__), 'dev_printers.json')
+    command_not_found = False
+    
     try:
         # Para entornos Windows
         if system == "windows":
-            output = subprocess.check_output("wmic printer list brief", shell=True)
-            printer_lines = output.decode('utf-8', errors='ignore').strip().split('\n')[1:]
-            
-            for line in printer_lines:
-                if line.strip():
-                    parts = line.split()
-                    if len(parts) >= 2:
-                        printer_name = ' '.join(parts[:-1])  # Todo menos el último elemento (estado)
-                        printers.append({
-                            'name': printer_name.strip(),
-                            'state': parts[-1]
-                        })
+            try:
+                output = subprocess.check_output("wmic printer list brief", shell=True)
+                printer_lines = output.decode('utf-8', errors='ignore').strip().split('\n')[1:]
+                
+                for line in printer_lines:
+                    if line.strip():
+                        parts = line.split()
+                        if len(parts) >= 2:
+                            printer_name = ' '.join(parts[:-1])  # Todo menos el último elemento (estado)
+                            printers.append({
+                                'name': printer_name.strip(),
+                                'state': parts[-1]
+                            })
+            except subprocess.CalledProcessError:
+                print("Comando wmic no disponible")
+                command_not_found = True
         
         # Para entornos Linux con CUPS
         elif system == "linux":
+            command_not_found = True  # Asumimos que los comandos pueden no estar disponibles
+            
+            # Intentamos diferentes métodos para detectar impresoras
+            # Primer intento con lpstat
             try:
-                # Primer intento con lpstat
+                output = subprocess.check_output("lpstat -p", shell=True)
+                command_not_found = False  # Si llegamos aquí, el comando está disponible
+                printer_lines = output.decode('utf-8').strip().split('\n')
+                
+                for line in printer_lines:
+                    if line.startswith("printer"):
+                        parts = line.split(' ', 2)
+                        if len(parts) >= 2:
+                            printer_name = parts[1].strip(':')
+                            printer_state = "unknown"
+                            if len(parts) > 2:
+                                printer_state = parts[2]
+                            printers.append({
+                                'name': printer_name,
+                                'state': printer_state
+                            })
+            except (subprocess.CalledProcessError, FileNotFoundError):
+                print("Comando lpstat no disponible")
+                
+                # Segundo intento con CUPS vía lpoptions
+                try:
+                    output = subprocess.check_output("lpoptions -l", shell=True)
+                    command_not_found = False  # Si llegamos aquí, el comando está disponible
+                    if output:
+                        # Si hay salida, hay al menos una impresora predeterminada
+                        default_printer = subprocess.check_output("lpstat -d", shell=True)
+                        default_printer = default_printer.decode('utf-8').strip()
+                        if "system default destination:" in default_printer:
+                            printer_name = default_printer.split("system default destination:")[1].strip()
+                            printers.append({
+                                'name': printer_name,
+                                'state': 'default'
+                            })
+                except (subprocess.CalledProcessError, FileNotFoundError):
+                    print("Comando lpoptions no disponible")
+                    
+                    # Tercer intento: buscar impresoras con lpinfo
+                    try:
+                        output = subprocess.check_output("lpinfo -v", shell=True)
+                        command_not_found = False  # Si llegamos aquí, el comando está disponible
+                        printer_lines = output.decode('utf-8').strip().split('\n')
+                        
+                        for line in printer_lines:
+                            if ":" in line:
+                                parts = line.split(':', 1)
+                                if len(parts) >= 2:
+                                    printer_name = parts[1].strip()
+                                    printers.append({
+                                        'name': printer_name,
+                                        'state': 'available'
+                                    })
+                    except (subprocess.CalledProcessError, FileNotFoundError):
+                        print("Comando lpinfo no disponible")
+        
+        # Para entornos macOS
+        elif system == "darwin":
+            try:
                 output = subprocess.check_output("lpstat -p", shell=True)
                 printer_lines = output.decode('utf-8').strip().split('\n')
                 
@@ -174,71 +246,39 @@ def get_system_printers():
                                 'name': printer_name,
                                 'state': printer_state
                             })
-            except:
-                # Segundo intento con CUPS vía lpoptions
-                try:
-                    output = subprocess.check_output("lpoptions -l", shell=True)
-                    if output:
-                        # Si hay salida, hay al menos una impresora predeterminada
-                        default_printer = subprocess.check_output("lpstat -d", shell=True)
-                        default_printer = default_printer.decode('utf-8').strip()
-                        if "system default destination:" in default_printer:
-                            printer_name = default_printer.split("system default destination:")[1].strip()
-                            printers.append({
-                                'name': printer_name,
-                                'state': 'default'
-                            })
-                except:
-                    # Tercer intento: buscar impresoras con lpinfo
-                    try:
-                        output = subprocess.check_output("lpinfo -v", shell=True)
-                        printer_lines = output.decode('utf-8').strip().split('\n')
-                        
-                        for line in printer_lines:
-                            if ":" in line:
-                                parts = line.split(':', 1)
-                                if len(parts) >= 2:
-                                    printer_name = parts[1].strip()
-                                    printers.append({
-                                        'name': printer_name,
-                                        'state': 'available'
-                                    })
-                    except:
-                        # Si todo lo demás falla, probamos con una lista simulada
-                        print("No se pudieron detectar impresoras con los comandos estándar")
-                        
-                        # En un entorno de producción, podríamos añadir printers simuladas para pruebas
-                        printers = []
+            except subprocess.CalledProcessError:
+                print("Comando lpstat no disponible en macOS")
+                command_not_found = True
         
-        # Para entornos macOS
-        elif system == "darwin":
-            output = subprocess.check_output("lpstat -p", shell=True)
-            printer_lines = output.decode('utf-8').strip().split('\n')
-            
-            for line in printer_lines:
-                if line.startswith("printer"):
-                    parts = line.split(' ', 2)
-                    if len(parts) >= 2:
-                        printer_name = parts[1].strip(':')
-                        printer_state = "unknown"
-                        if len(parts) > 2:
-                            printer_state = parts[2]
-                        printers.append({
-                            'name': printer_name,
-                            'state': printer_state
-                        })
-        
-        # Si no se detectaron impresoras con los métodos anteriores
-        if not printers:
-            # Verificar si hay datos simulados para desarrollo
-            dev_printers_file = os.path.join(os.path.dirname(__file__), 'dev_printers.json')
+        # Si no se detectaron impresoras reales o los comandos no estaban disponibles
+        if not printers or command_not_found:
+            # Usar datos simulados para desarrollo cuando los comandos no están disponibles
             if os.path.exists(dev_printers_file):
+                print("Usando impresoras simuladas desde dev_printers.json")
                 with open(dev_printers_file, 'r') as f:
                     printers = json.load(f)
+                # Asegurarse de que al menos hay una lista vacía
+                if not isinstance(printers, list):
+                    printers = []
     
     except Exception as e:
         print(f"Error al detectar impresoras: {str(e)}")
-        # En caso de error, devolver una lista vacía
-        printers = []
+        # En caso de error, intentar usar el archivo de desarrollo
+        if os.path.exists(dev_printers_file):
+            try:
+                with open(dev_printers_file, 'r') as f:
+                    printers = json.load(f)
+                print("Usando impresoras simuladas debido a un error")
+            except:
+                print("No se pudo leer el archivo de impresoras simuladas")
+                printers = []
+    
+    # Si después de todo no hay impresoras, devolver al menos algunas predeterminadas
+    if not printers:
+        printers = [
+            {"name": "Impresora Predeterminada", "state": "enabled"},
+            {"name": "PDF Printer", "state": "enabled"}
+        ]
+        print("Usando impresoras predeterminadas de respaldo")
     
     return printers
