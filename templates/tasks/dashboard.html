@@ -6,6 +6,12 @@
         <h1 class="h2"><i class="bi bi-grid"></i> Gestión de Locales y Tareas</h1>
         <div class="btn-toolbar mb-2 mb-md-0">
             <div class="btn-group me-2">
+                <a href="{{ url_for('tasks.manage_labels') }}" class="btn btn-sm btn-outline-primary">
+                    <i class="bi bi-tags"></i> Gestor de Etiquetas
+                </a>
+                <a href="{{ url_for('tasks.list_products') }}" class="btn btn-sm btn-outline-success">
+                    <i class="bi bi-box"></i> Productos
+                </a>
                 <a href="{{ url_for('main.dashboard') }}" class="btn btn-sm btn-outline-secondary">
                     <i class="bi bi-arrow-left"></i> Volver al Dashboard Principal
                 </a>

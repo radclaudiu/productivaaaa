@@ -1770,6 +1770,56 @@ def local_user_labels():
                           products=products,
                           now=now)
 
+# Gestor de etiquetas en la página de tareas
+@tasks_bp.route('/dashboard/labels')
+@login_required
+@manager_required
+def manage_labels():
+    """Gestor de etiquetas para la página de tareas"""
+    companies = []
+    
+    # Filtrar empresas según el rol del usuario
+    if current_user.is_admin():
+        companies = Company.query.all()
+    else:
+        companies = current_user.companies
+    
+    # Obtener ubicaciones asociadas a las empresas que puede ver
+    company_ids = [c.id for c in companies]
+    locations = Location.query.filter(Location.company_id.in_(company_ids)).all()
+    
+    # Obtener todos los productos
+    products = []
+    if locations:
+        location_ids = [loc.id for loc in locations]
+        products = Product.query.filter(Product.location_id.in_(location_ids)).order_by(Product.name).all()
+    
+    # Obtener etiquetas generadas recientemente (últimos 30 días)
+    recent_labels = []
+    if products:  # Si hay productos
+        location_ids = [loc.id for loc in locations]
+        thirty_days_ago = datetime.now() - timedelta(days=30)
+        
+        recent_labels = db.session.query(
+            ProductLabel, Product, LocalUser
+        ).join(
+            Product, ProductLabel.product_id == Product.id
+        ).join(
+            LocalUser, ProductLabel.local_user_id == LocalUser.id
+        ).filter(
+            Product.location_id.in_(location_ids),
+            ProductLabel.created_at > thirty_days_ago
+        ).order_by(
+            ProductLabel.created_at.desc()
+        ).limit(50).all()
+    
+    return render_template('tasks/manage_labels.html',
+                          title='Gestor de Etiquetas',
+                          companies=companies,
+                          locations=locations,
+                          products=products,
+                          recent_labels=recent_labels)
+
 @tasks_bp.route('/local-user/generate-labels', methods=['POST'])
 @local_user_required
 def generate_labels():
