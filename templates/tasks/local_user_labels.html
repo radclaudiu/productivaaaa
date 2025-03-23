@@ -6,21 +6,15 @@
         <div class="col-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0"><i class="bi bi-tag-fill me-2"></i>Generador de Etiquetas - {{ location.name }}</h5>
+                    <h5 class="mb-0"><i class="bi bi-tag-fill me-2"></i>Etiquetas de Productos - {{ location.name }}</h5>
                     <a href="{{ url_for('tasks.local_user_tasks') }}" class="btn btn-light btn-sm">
                         <i class="bi bi-list-check me-1"></i> Volver a Tareas
                     </a>
                 </div>
                 <div class="card-body">
-                    <p class="card-text">
-                        Seleccione un producto y tipo de conservación para generar etiquetas con fechas de caducidad.
-                        Las etiquetas mostrarán automáticamente el nombre del local y calcularán las fechas de caducidad según el tipo de conservación.
+                    <p class="text-center">
+                        Seleccione un producto, tipo de conservación y cantidad para generar etiquetas que se imprimirán automáticamente.
                     </p>
-                    <div class="alert alert-info mb-0">
-                        <i class="bi bi-info-circle-fill me-2"></i>
-                        <strong>Consejo:</strong> Para cambiar entre la vista de tareas y etiquetas, use el menú superior o los botones de navegación.
-                        Las etiquetas generadas están asociadas a este local ({{ location.name }}).
-                    </div>
                 </div>
             </div>
         </div>
@@ -28,67 +22,75 @@
 
     {% if not products %}
         <div class="alert alert-warning">
-            <i class="bi bi-exclamation-triangle-fill me-2"></i>No hay productos disponibles para generar etiquetas. Contacte con un administrador para añadir productos.
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>No hay productos disponibles. Contacte con un administrador.
         </div>
     {% else %}
         <div class="row">
-            <div class="col-lg-6">
+            <div class="col-lg-6 mx-auto">
                 <div class="card shadow-sm mb-4">
                     <div class="card-header bg-light">
-                        <h5 class="mb-0">Crear Etiqueta</h5>
+                        <h5 class="mb-0 text-center">GENERAR ETIQUETA</h5>
                     </div>
                     <div class="card-body">
-                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post">
+                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post" target="_blank">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-
-                            <!-- Contenedor para notificaciones emergentes -->
-                            <div id="notificationContainer"></div>
                             
-                            <div class="mb-3">
-                                <label for="product_search" class="form-label">Buscar Producto</label>
-                                <input type="text" id="product_search" class="form-control" placeholder="Escriba para buscar..." autocomplete="off" autofocus>
+                            <!-- Mensaje de status -->
+                            <div id="statusMessage" class="alert alert-info mb-4" style="display: none;">
+                                <i class="bi bi-info-circle-fill me-2"></i>
+                                <span id="statusText"></span>
+                            </div>
+                            
+                            <!-- 1. Selección de producto -->
+                            <div class="mb-4">
+                                <label for="product_search" class="form-label fw-bold">1. Buscar Producto</label>
+                                <div class="input-group mb-2">
+                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
+                                    <input type="text" id="product_search" class="form-control form-control-lg" placeholder="Nombre del producto..." autocomplete="off" autofocus>
+                                </div>
                                 <div id="product_results" class="list-group mt-2 d-none">
-                                    <!-- Los resultados de la búsqueda aparecerán aquí -->
+                                    <!-- Los resultados se mostrarán aquí -->
                                 </div>
                                 <input type="hidden" id="product_id" name="product_id" required>
-                                <div id="selected_product" class="mt-2 fw-bold"></div>
+                                <div id="selected_product" class="mt-2 p-2 bg-light border rounded text-center fs-5 fw-bold" style="display:none;"></div>
                             </div>
 
+                            <!-- 2. Tipo de conservación -->
                             <div class="mb-4">
-                                <label class="form-label d-block">Tipo de Conservación</label>
+                                <label class="form-label fw-bold">2. Tipo de Conservación</label>
                                 <div class="conservation-buttons">
                                     <input type="hidden" id="conservation_type" name="conservation_type" required>
 
-                                    <button type="button" class="btn-conservation" data-value="descongelacion" data-days="1">
+                                    <button type="button" class="btn-conservation" data-value="descongelacion">
                                         <i class="bi bi-snow"></i>
                                         <span>Descongelación</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="refrigeracion" data-days="3">
+                                    <button type="button" class="btn-conservation" data-value="refrigeracion">
                                         <i class="bi bi-thermometer-low"></i>
                                         <span>Refrigeración</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="gastro" data-days="2">
+                                    <button type="button" class="btn-conservation" data-value="gastro">
                                         <i class="bi bi-cup-hot"></i>
                                         <span>Gastro</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="caliente" data-days="0.08">
+                                    <button type="button" class="btn-conservation" data-value="caliente">
                                         <i class="bi bi-fire"></i>
                                         <span>Caliente</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="seco" data-days="30">
+                                    <button type="button" class="btn-conservation" data-value="seco">
                                         <i class="bi bi-box2"></i>
                                         <span>Seco</span>
                                     </button>
                                 </div>
-                                <small class="form-text text-muted">Seleccione el tipo de conservación tocando uno de los botones.</small>
                             </div>
 
+                            <!-- 3. Cantidad -->
                             <div class="mb-4">
-                                <label class="form-label d-block">Cantidad</label>
+                                <label class="form-label fw-bold">3. Cantidad</label>
                                 <div class="quantity-control">
                                     <button type="button" class="btn-quantity" id="decrease-quantity">
                                         <i class="bi bi-dash-lg"></i>
@@ -101,37 +103,15 @@
                                         <i class="bi bi-plus-lg"></i>
                                     </button>
                                 </div>
-                                <small class="form-text text-muted">Número de etiquetas a generar.</small>
                             </div>
 
+                            <!-- 4. Botón de imprimir -->
                             <div class="d-grid mt-4">
-                                <button type="submit" class="btn btn-primary">
-                                    <i class="bi bi-printer-fill me-2"></i>Generar Etiquetas
+                                <button type="submit" id="submitButton" class="btn btn-primary btn-lg py-3" disabled>
+                                    <i class="bi bi-printer-fill me-2"></i>IMPRIMIR ETIQUETAS
                                 </button>
                             </div>
                         </form>
-                    </div>
-                </div>
-            </div>
-
-            <div class="col-lg-6">
-                <div class="card shadow-sm">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0">Vista Previa</h5>
-                    </div>
-                    <div class="card-body">
-                        <div class="label-preview border p-3 mb-3 text-center">
-                            <div id="preview-product-name" class="fw-bold fs-5 mb-2">NOMBRE DEL PRODUCTO</div>
-                            <div id="preview-conservation-type" class="fst-italic mb-2">Tipo de conservación</div>
-                            <div class="text-muted mb-1">Preparado por: {{ user.name }} {{ user.last_name }}</div>
-                            <div class="text-muted mb-1">Fecha: {{ now.strftime('%d/%m/%Y') }}</div>
-                            <div class="text-muted mb-1">Hora: {{ now.strftime('%H:%M') }}</div>
-                            <div id="preview-expiry" class="fw-bold mt-2 p-1 border bg-light">Caducidad: DD/MM/AAAA HH:MM</div>
-                        </div>
-
-                        <div class="alert alert-info">
-                            <i class="bi bi-info-circle-fill me-2"></i>Esta es una vista previa. Al generar las etiquetas se abrirá directamente el diálogo de impresión.
-                        </div>
                     </div>
                 </div>
             </div>
@@ -141,24 +121,23 @@
 
 <script>
 document.addEventListener('DOMContentLoaded', function() {
+    // Variables principales
     const productSearchInput = document.getElementById('product_search');
     const productIdInput = document.getElementById('product_id');
     const productResultsDiv = document.getElementById('product_results');
     const selectedProductDiv = document.getElementById('selected_product');
     const conservationSelect = document.getElementById('conservation_type');
-    const previewProductName = document.getElementById('preview-product-name');
-    const previewConservationType = document.getElementById('preview-conservation-type');
-    const previewExpiry = document.getElementById('preview-expiry');
+    const submitButton = document.getElementById('submitButton');
+    const statusMessage = document.getElementById('statusMessage');
+    const statusText = document.getElementById('statusText');
 
-    // Elementos del control de cantidad
+    // Control de cantidad
     const quantityInput = document.getElementById('quantity');
     const quantityValueSpan = document.getElementById('quantity-value');
     const decreaseBtn = document.getElementById('decrease-quantity');
     const increaseBtn = document.getElementById('increase-quantity');
     
-    // Ya no se necesita el botón de impresión ya que se imprime automáticamente
-
-    // Lista de productos disponibles (obtenida del servidor)
+    // Lista de productos (del servidor)
     const products = [
         {% for product in products %}
         {
@@ -169,7 +148,7 @@ document.addEventListener('DOMContentLoaded', function() {
         {% endfor %}
     ];
 
-    // Conservación a texto
+    // Nombres amigables de tipos de conservación
     const conservationTypeText = {
         'descongelacion': 'Descongelación',
         'refrigeracion': 'Refrigeración',
@@ -178,87 +157,91 @@ document.addEventListener('DOMContentLoaded', function() {
         'seco': 'Seco'
     };
 
-    // Función para mostrar y enfocar el campo de búsqueda cuando se carga la página
-    function focusSearchField() {
-        productSearchInput.focus();
-        // Mostrar teclado en pantalla (en dispositivos móviles)
-        productSearchInput.click();
+    // Función para verificar formulario completo
+    function checkFormComplete() {
+        const productSelected = productIdInput.value !== '';
+        const conservationSelected = conservationSelect.value !== '';
+        
+        if (productSelected && conservationSelected) {
+            submitButton.disabled = false;
+        } else {
+            submitButton.disabled = true;
+        }
     }
 
-    // Ejecutar después de cargar la página
-    setTimeout(focusSearchField, 500);
+    // Función para mostrar mensaje de estado
+    function showStatus(message, type = 'info') {
+        statusText.textContent = message;
+        statusMessage.className = `alert alert-${type} mb-4`;
+        statusMessage.style.display = 'block';
+    }
+
+    // Función para ocultar mensaje de estado
+    function hideStatus() {
+        statusMessage.style.display = 'none';
+    }
+
+    // Enfocar campo de búsqueda al cargar
+    setTimeout(function() {
+        productSearchInput.focus();
+        // Mostrar teclado en pantalla (móviles)
+        productSearchInput.click();
+    }, 500);
 
     // Buscar productos al escribir
     productSearchInput.addEventListener('input', function() {
         const searchTerm = this.value.toLowerCase().trim();
-
-        // Si la búsqueda está vacía, ocultar resultados
+        
         if (searchTerm === '') {
             productResultsDiv.classList.add('d-none');
             return;
         }
 
-        // Filtrar productos que coincidan con la búsqueda
+        // Filtrar productos
         const filteredProducts = products.filter(product => 
             product.name.toLowerCase().includes(searchTerm)
         );
 
         // Mostrar resultados
-        renderSearchResults(filteredProducts);
-    });
-
-    // Función para renderizar los resultados de búsqueda
-    function renderSearchResults(results) {
         productResultsDiv.innerHTML = '';
-
-        if (results.length === 0) {
+        
+        if (filteredProducts.length === 0) {
             productResultsDiv.innerHTML = '<div class="list-group-item">No se encontraron resultados</div>';
-            productResultsDiv.classList.remove('d-none');
-            return;
-        }
-
-        results.forEach(product => {
-            const resultItem = document.createElement('button');
-            resultItem.type = 'button';
-            resultItem.className = 'list-group-item list-group-item-action';
-            resultItem.textContent = product.name;
-            resultItem.dataset.id = product.id;
-            resultItem.dataset.conservationTypes = JSON.stringify(product.conservationTypes);
-
-            resultItem.addEventListener('click', function() {
-                selectProduct(product);
-                productResultsDiv.classList.add('d-none');
-                productSearchInput.value = '';
+        } else {
+            filteredProducts.forEach(product => {
+                const item = document.createElement('button');
+                item.type = 'button';
+                item.className = 'list-group-item list-group-item-action py-3';
+                item.textContent = product.name;
+                item.dataset.id = product.id;
+                item.dataset.conservationTypes = JSON.stringify(product.conservationTypes);
+                
+                item.addEventListener('click', function() {
+                    selectProduct(product);
+                    productResultsDiv.classList.add('d-none');
+                    productSearchInput.value = '';
+                });
+                
+                productResultsDiv.appendChild(item);
             });
-
-            productResultsDiv.appendChild(resultItem);
-        });
-
+        }
+        
         productResultsDiv.classList.remove('d-none');
-    }
+    });
 
     // Función para seleccionar un producto
     function selectProduct(product) {
-        // Establecer el ID del producto seleccionado
         productIdInput.value = product.id;
         selectedProductDiv.textContent = product.name;
-
-        // Actualizar vista previa
-        previewProductName.textContent = product.name.toUpperCase();
-
-        // Resetear la selección de conservación
+        selectedProductDiv.style.display = 'block';
+        
+        // Resetear conservación
         conservationSelect.value = '';
-        previewConservationType.textContent = 'Tipo de conservación';
-
-        // Obtener todos los botones de conservación
-        const conservationButtons = document.querySelectorAll('.btn-conservation');
-
-        // Resetear todos los botones
-        conservationButtons.forEach(button => {
+        document.querySelectorAll('.btn-conservation').forEach(button => {
             button.classList.remove('selected');
             button.classList.remove('disabled');
-
-            // Deshabilitar los tipos de conservación que no están disponibles para este producto
+            
+            // Deshabilitar tipos no disponibles
             if (product.conservationTypes.length > 0) {
                 const buttonValue = button.dataset.value;
                 if (!product.conservationTypes.includes(buttonValue)) {
@@ -266,279 +249,100 @@ document.addEventListener('DOMContentLoaded', function() {
                 }
             }
         });
+        
+        showStatus(`Producto seleccionado: ${product.name}. Ahora elige el tipo de conservación.`);
+        
+        checkFormComplete();
     }
 
-    // Configurar el manejo de eventos para los botones de conservación
+    // Botones de conservación
     document.querySelectorAll('.btn-conservation').forEach(button => {
         button.addEventListener('click', function() {
-            // Si está deshabilitado, no hacer nada
-            if (this.classList.contains('disabled')) {
+            if (this.classList.contains('disabled')) return;
+            
+            if (productIdInput.value === '') {
+                showStatus('Primero debes seleccionar un producto', 'warning');
+                productSearchInput.focus();
                 return;
             }
-
-            // Obtener el valor y los días de validez
+            
             const conservationType = this.dataset.value;
-            const daysValid = this.dataset.days;
-
-            // Establecer el valor en el campo oculto
             conservationSelect.value = conservationType;
-
-            // Resaltar el botón seleccionado y desmarcar los demás
+            
+            // Marcar botón seleccionado
             document.querySelectorAll('.btn-conservation').forEach(btn => {
                 btn.classList.remove('selected');
             });
             this.classList.add('selected');
-
-            // Actualizar vista previa
-            previewConservationType.textContent = conservationTypeText[conservationType] || 'Tipo de conservación';
-
-            // Calcular fecha de caducidad
-            if (daysValid) {
-                const now = new Date();
-                let expiryDate;
-
-                if (conservationType === 'caliente') {
-                    // Calcular en horas (aproximadamente 2 horas)
-                    expiryDate = new Date(now.getTime() + parseFloat(daysValid) * 24 * 60 * 60 * 1000);
-                } else {
-                    // Calcular en días
-                    expiryDate = new Date(now);
-                    expiryDate.setDate(expiryDate.getDate() + parseInt(daysValid));
-                }
-
-                // Formatear fecha
-                const formattedDate = expiryDate.toLocaleDateString('es-ES', {
-                    day: '2-digit',
-                    month: '2-digit',
-                    year: 'numeric'
-                });
-
-                // Formatear hora
-                const formattedTime = expiryDate.toLocaleTimeString('es-ES', {
-                    hour: '2-digit',
-                    minute: '2-digit'
-                });
-
-                previewExpiry.textContent = `Caducidad: ${formattedDate} ${formattedTime}`;
-            } else {
-                previewExpiry.textContent = 'Caducidad: DD/MM/AAAA HH:MM';
-            }
+            
+            hideStatus();
+            checkFormComplete();
         });
     });
 
-    // Cerrar resultados al hacer clic fuera
+    // Controles de cantidad
+    decreaseBtn.addEventListener('click', function() {
+        let value = parseInt(quantityInput.value);
+        if (value > 1) {
+            value--;
+            quantityInput.value = value;
+            quantityValueSpan.textContent = value;
+        }
+    });
+
+    increaseBtn.addEventListener('click', function() {
+        let value = parseInt(quantityInput.value);
+        if (value < 100) {
+            value++;
+            quantityInput.value = value;
+            quantityValueSpan.textContent = value;
+        }
+    });
+
+    // Ocultar resultados al hacer clic fuera
     document.addEventListener('click', function(event) {
         if (!productSearchInput.contains(event.target) && !productResultsDiv.contains(event.target)) {
             productResultsDiv.classList.add('d-none');
         }
     });
 
-    // Configurar los botones de incremento y decremento de cantidad
-    decreaseBtn.addEventListener('click', function() {
-        let currentValue = parseInt(quantityInput.value);
-        if (currentValue > 1) {
-            currentValue--;
-            quantityInput.value = currentValue;
-            quantityValueSpan.textContent = currentValue;
-        }
-    });
-
-    increaseBtn.addEventListener('click', function() {
-        let currentValue = parseInt(quantityInput.value);
-        if (currentValue < 100) {
-            currentValue++;
-            quantityInput.value = currentValue;
-            quantityValueSpan.textContent = currentValue;
-        }
-    });
-
-    // Función para mostrar notificaciones temporales
-    function showNotification(message, type = 'success') {
-        const container = document.getElementById('notificationContainer');
-        
-        // Crear elemento de notificación
-        const notification = document.createElement('div');
-        notification.className = `label-notification ${type}`;
-        
-        const content = document.createElement('div');
-        content.className = 'notification-content';
-        
-        // Añadir icono según el tipo
-        const icon = document.createElement('i');
-        icon.className = type === 'success' 
-            ? 'bi bi-check-circle-fill me-2' 
-            : 'bi bi-exclamation-triangle-fill me-2';
-        
-        content.appendChild(icon);
-        content.appendChild(document.createTextNode(message));
-        notification.appendChild(content);
-        
-        // Añadir al contenedor
-        container.appendChild(notification);
-        
-        // Eliminar automáticamente después de la animación (2 segundos)
-        setTimeout(() => {
-            notification.remove();
-        }, 2000);
-    }
-    
-    // Validar que se ha seleccionado un producto y un tipo de conservación antes de enviar
+    // Validación al enviar formulario
     document.getElementById('labelForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Siempre prevenir el envío tradicional
-        
         if (productIdInput.value === '') {
-            showNotification('Por favor, seleccione un producto', 'error');
+            event.preventDefault();
+            showStatus('Por favor, seleccione un producto', 'danger');
             productSearchInput.focus();
-            return;
+            return false;
         }
 
         if (conservationSelect.value === '') {
-            showNotification('Por favor, seleccione un tipo de conservación', 'error');
-            return;
+            event.preventDefault();
+            showStatus('Por favor, seleccione un tipo de conservación', 'danger');
+            return false;
         }
         
-        // Obtener datos del formulario para envío AJAX
-        const formData = new FormData(this);
-        
-        // Realizar solicitud AJAX
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error en la solicitud');
-            }
-            
-            // Se espera una respuesta HTML para la impresión
-            return response.text();
-        })
-        .then(html => {
-            // Mostrar notificación de éxito
-            const quantity = quantityInput.value;
-            const message = quantity > 1 
-                ? `${quantity} etiquetas generadas correctamente` 
-                : 'Etiqueta generada correctamente';
-            
-            showNotification(message, 'success');
-            
-            // Crear un iframe oculto para imprimir
-            const printFrame = document.createElement('iframe');
-            printFrame.style.position = 'absolute';
-            printFrame.style.top = '-9999px';
-            document.body.appendChild(printFrame);
-            
-            printFrame.contentDocument.write(`
-                <!DOCTYPE html>
-                <html>
-                <head>
-                    <title>Etiquetas para imprimir</title>
-                    <style>
-                        body { margin: 0; padding: 0; }
-                        .label-grid-item {
-                            display: inline-block;
-                            box-sizing: border-box;
-                            width: 45mm;
-                            height: 40mm;
-                            padding: 3mm;
-                            margin: 0;
-                            page-break-inside: avoid;
-                            vertical-align: top;
-                            text-align: center;
-                            overflow: hidden;
-                            font-family: Arial, sans-serif;
-                            font-size: 8pt;
-                        }
-                        .label-product-name {
-                            font-weight: bold;
-                            font-size: 10pt;
-                            margin-bottom: 2mm;
-                            text-transform: uppercase;
-                        }
-                        .label-conservation {
-                            font-style: italic;
-                            margin-bottom: 1mm;
-                        }
-                        .label-info {
-                            margin-bottom: 0.5mm;
-                            font-size: 7pt;
-                        }
-                        .label-expiry {
-                            margin-top: 2mm;
-                            border: 1px solid #000;
-                            padding: 1mm;
-                            display: inline-block;
-                            font-weight: bold;
-                            font-size: 8pt;
-                        }
-                        @media print {
-                            body { margin: 0; padding: 0; }
-                            @page { margin: 0; size: auto; }
-                        }
-                    </style>
-                </head>
-                <body>
-                    ${html}
-                </body>
-                </html>
-            `);
-            
-            printFrame.contentDocument.close();
-            
-            // Imprimir y eliminar el iframe - con pequeño retraso para asegurar que se cargue todo
-            setTimeout(function() {
-                printFrame.contentWindow.focus();
-                printFrame.contentWindow.print();
-                
-                // Eliminar el iframe después de la impresión
-                setTimeout(function() {
-                    document.body.removeChild(printFrame);
-                }, 1000);
-            }, 500);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error al generar etiquetas', 'error');
-        });
+        // El formulario se enviará normalmente, abriendo una nueva pestaña para la impresión
+        showStatus('Generando etiquetas para imprimir...', 'success');
+        return true;
     });
 });
 </script>
 
 <style>
-.label-preview {
-    min-height: 200px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
-    background-color: white;
-    border-radius: 4px;
-    display: flex;
-    flex-direction: column;
-    justify-content: center;
-}
-
-#preview-expiry {
-    display: inline-block;
-    margin: 0 auto;
-    border-radius: 4px;
-}
-
 /* Estilos para el buscador */
 #product_results {
-    max-height: 250px;
+    max-height: 300px;
     overflow-y: auto;
     position: absolute;
-    width: 100%;
+    width: calc(100% - 2rem);
     z-index: 1000;
     border: 1px solid rgba(0,0,0,.125);
     border-radius: 0.25rem;
-    box-shadow: 0 4px 6px rgba(0,0,0,.1);
+    box-shadow: 0 4px 12px rgba(0,0,0,.15);
 }
 
 #product_results .list-group-item {
     cursor: pointer;
-    padding: 0.75rem 1rem;
     font-size: 1.1rem;
 }
 
@@ -546,14 +350,7 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: rgba(0,0,0,.05);
 }
 
-#selected_product {
-    padding: 0.5rem;
-    background-color: #f8f9fa;
-    border-radius: 0.25rem;
-    border: 1px solid #dee2e6;
-}
-
-/* Estilos para los botones de conservación */
+/* Botones de conservación */
 .conservation-buttons {
     display: grid;
     grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
@@ -569,8 +366,8 @@ document.addEventListener('DOMContentLoaded', function() {
     padding: 15px 10px;
     border: 2px solid #ced4da;
     border-radius: 8px;
-    background-color: #e9ecef;
-    color: #495057;
+    background-color: #f8f9fa;
+    color: #212529;
     cursor: pointer;
     transition: all 0.2s ease;
     height: 100px;
@@ -578,42 +375,27 @@ document.addEventListener('DOMContentLoaded', function() {
 }
 
 .btn-conservation i {
-    font-size: 1.8rem;
+    font-size: 2rem;
     margin-bottom: 8px;
-    opacity: 0.7;
 }
 
 .btn-conservation span {
-    font-size: 0.8rem;
+    font-size: 0.9rem;
     text-align: center;
     font-weight: bold;
 }
 
-.btn-conservation[data-value="descongelacion"] i {
-    color: #0d6efd; /* Azul */
-}
-
-.btn-conservation[data-value="refrigeracion"] i {
-    color: #0dcaf0; /* Celeste */
-}
-
-.btn-conservation[data-value="gastro"] i {
-    color: #198754; /* Verde */
-}
-
-.btn-conservation[data-value="caliente"] i {
-    color: #dc3545; /* Rojo */
-}
-
-.btn-conservation[data-value="seco"] i {
-    color: #ffc107; /* Amarillo */
-}
+.btn-conservation[data-value="descongelacion"] i { color: #0d6efd; }
+.btn-conservation[data-value="refrigeracion"] i { color: #0dcaf0; }
+.btn-conservation[data-value="gastro"] i { color: #198754; }
+.btn-conservation[data-value="caliente"] i { color: #dc3545; }
+.btn-conservation[data-value="seco"] i { color: #ffc107; }
 
 .btn-conservation.selected {
     border-color: #0d6efd;
-    background-color: #f0f7ff;
+    background-color: #e7f1ff;
     transform: scale(1.05);
-    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
 }
 
 .btn-conservation.disabled {
@@ -621,7 +403,7 @@ document.addEventListener('DOMContentLoaded', function() {
     cursor: not-allowed;
 }
 
-/* Estilos para el control de cantidad */
+/* Controles de cantidad */
 .quantity-control {
     display: flex;
     align-items: center;
@@ -634,20 +416,15 @@ document.addEventListener('DOMContentLoaded', function() {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100px;
-    width: 100px;
-    font-size: 1.8rem;
+    height: 80px;
+    width: 80px;
+    font-size: 2rem;
     border: 2px solid #ced4da;
     border-radius: 8px;
-    background-color: #e9ecef;
-    color: #495057;
+    background-color: #f8f9fa;
+    color: #212529;
     cursor: pointer;
-    transition: all 0.2s ease;
-    font-weight: 500;
-}
-
-.btn-quantity:hover {
-    background-color: #e9ecef;
+    transition: transform 0.1s ease;
 }
 
 .btn-quantity:active {
@@ -658,86 +435,14 @@ document.addEventListener('DOMContentLoaded', function() {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 100px;
+    height: 80px;
     min-width: 100px;
     padding: 0 20px;
     background-color: #fff;
     border: 2px solid #dee2e6;
     border-radius: 8px;
-    font-size: 2rem;
+    font-size: 2.5rem;
     font-weight: bold;
-}
-
-/* Estilos para las notificaciones */
-#notificationContainer {
-    position: fixed;
-    top: 20px;
-    right: 20px;
-    z-index: 9999;
-    max-width: 400px;
-}
-
-.label-notification {
-    background-color: #fff;
-    border-radius: 8px;
-    padding: 12px;
-    margin-bottom: 10px;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.1);
-    transform: translateX(100%);
-    opacity: 0;
-    animation: slideIn 0.3s forwards, fadeOut 0.3s 1.7s forwards;
-    overflow: hidden;
-}
-
-.label-notification.success {
-    border-left: 5px solid #28a745;
-}
-
-.label-notification.error {
-    border-left: 5px solid #dc3545;
-}
-
-.notification-content {
-    display: flex;
-    align-items: center;
-}
-
-.notification-content i.bi-check-circle-fill {
-    color: #28a745;
-    font-size: 1.3rem;
-}
-
-.notification-content i.bi-exclamation-triangle-fill {
-    color: #dc3545;
-    font-size: 1.3rem;
-}
-
-@keyframes slideIn {
-    to {
-        transform: translateX(0);
-        opacity: 1;
-    }
-}
-
-@keyframes fadeOut {
-    to {
-        opacity: 0;
-        transform: translateX(100%);
-    }
-}
-
-/* Estilos para las etiquetas generadas */
-#generatedLabelsContent {
-    padding: 15px;
-    background-color: #f8f9fa;
-    border-radius: 0 0 4px 4px;
-}
-
-#generatedLabelsContent .label-grid {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 5px;
-    justify-content: flex-start;
 }
 </style>
 {% endblock %}
