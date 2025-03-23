@@ -49,7 +49,8 @@ def create_app(config_class='config.Config'):
                            EmployeeCheckIn, EmployeeVacation)
         # Import task models
         from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletion, 
-                                TaskPriority, TaskFrequency, TaskStatus, WeekDay)
+                                TaskPriority, TaskFrequency, TaskStatus, WeekDay, TaskGroup,
+                                Product, ProductConservation, ProductLabel, ConservationType)
         
         # Create admin user if it doesn't exist
         from utils import create_admin_user

@@ -1,4 +1,4 @@
-from flask_migrate import Migrate, MigrateCommand, upgrade
+from flask_migrate import Migrate, upgrade
 from app import app, db
 
 migrate = Migrate(app, db)
