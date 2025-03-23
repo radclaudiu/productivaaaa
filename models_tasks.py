@@ -440,7 +440,7 @@ class ProductConservation(db.Model):
     
     id = db.Column(db.Integer, primary_key=True)
     conservation_type = db.Column(Enum(ConservationType), nullable=False)
-    days_valid = db.Column(db.Integer, nullable=False, default=1)  # Días que dura el producto en este tipo de conservación
+    days_valid = db.Column(db.Float, nullable=False, default=1)  # Días que dura el producto en este tipo de conservación (almacenado como fracción de día)
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     
@@ -457,7 +457,8 @@ class ProductConservation(db.Model):
             'product_id': self.product_id,
             'product_name': self.product.name if self.product else None,
             'conservation_type': self.conservation_type.value,
-            'days_valid': self.days_valid
+            'days_valid': self.days_valid,
+            'hours_valid': round(self.days_valid * 24)
         }
     
     def get_expiry_date(self, from_date=None):
