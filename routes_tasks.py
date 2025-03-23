@@ -1922,6 +1922,7 @@ def generate_labels():
         'tasks/print_labels.html',
         product=product,
         user=user,
+        location=user.location,
         conservation_type=conservation_type,
         now=now,
         expiry_datetime=expiry_datetime,
