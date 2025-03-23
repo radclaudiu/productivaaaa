@@ -66,9 +66,9 @@ def index():
     """Página principal del sistema de fichajes"""
     # Obtener estadísticas para el dashboard
     stats = {
-        'active_checkpoints': CheckPoint.query.filter_by(status='active').count(),
-        'maintenance_checkpoints': CheckPoint.query.filter_by(status='maintenance').count(),
-        'disabled_checkpoints': CheckPoint.query.filter_by(status='disabled').count(),
+        'active_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.ACTIVE).count(),
+        'maintenance_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.MAINTENANCE).count(),
+        'disabled_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.DISABLED).count(),
         'employees_with_hours': EmployeeContractHours.query.count(),
         'employees_with_overtime': EmployeeContractHours.query.filter_by(allow_overtime=True).count(),
         'today_records': CheckPointRecord.query.filter(
@@ -704,7 +704,7 @@ def login():
         checkpoint = CheckPoint.query.filter_by(username=form.username.data).first()
         
         if checkpoint and checkpoint.verify_password(form.password.data):
-            if checkpoint.status == CheckPointStatus.ACTIVE.value:
+            if checkpoint.status == CheckPointStatus.ACTIVE:
                 # Guardar ID del punto de fichaje en la sesión
                 session['checkpoint_id'] = checkpoint.id
                 session['checkpoint_name'] = checkpoint.name
