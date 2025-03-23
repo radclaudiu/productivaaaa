@@ -2090,100 +2090,97 @@ def import_labels_excel(location_id):
 @tasks_bp.route('/local-user/generate-labels', methods=['POST'])
 @local_user_required
 def generate_labels():
-    """Endpoint para generar e imprimir etiquetas"""
-    user_id = session['local_user_id']
-    user = LocalUser.query.get_or_404(user_id)
-    
-    # Obtener datos del formulario
-    product_id = request.form.get('product_id', type=int)
-    conservation_type_str = request.form.get('conservation_type')
-    quantity = request.form.get('quantity', type=int, default=1)
-    
-    if not product_id or not conservation_type_str:
-        # No añadir flash message, usamos nuestro propio sistema de notificaciones
-        # Devolvemos JSON con error para manejo AJAX
-        return jsonify({'success': False, 'message': 'Datos incompletos'})
-    
-    # Validar producto y tipo de conservación
-    product = Product.query.get_or_404(product_id)
-    
-    # Convertir string a enum
-    conservation_type = None
-    for ct in ConservationType:
-        if ct.value == conservation_type_str:
-            conservation_type = ct
-            break
-            
-    if not conservation_type:
-        # No añadir flash message, usamos nuestro propio sistema de notificaciones
-        # Devolvemos JSON con error para manejo AJAX
-        return jsonify({'success': False, 'message': 'Tipo de conservación no válido'})
-    
-    # Obtener configuración de conservación específica para este producto
-    conservation = ProductConservation.query.filter_by(
-        product_id=product.id, 
-        conservation_type=conservation_type
-    ).first()
-    
-    # Si no hay configuración específica, usar valores predeterminados en horas
-    hours_valid = 24  # 1 día por defecto
-    if conservation_type == ConservationType.DESCONGELACION:
-        hours_valid = 24  # 1 día
-    elif conservation_type == ConservationType.REFRIGERACION:
-        hours_valid = 72  # 3 días
-    elif conservation_type == ConservationType.GASTRO:
-        hours_valid = 48  # 2 días
-    elif conservation_type == ConservationType.CALIENTE:
-        hours_valid = 2   # 2 horas
-    elif conservation_type == ConservationType.SECO:
-        hours_valid = 168 # 7 días
-    
-    # Establecer la fecha/hora actual para todos los casos
-    now = datetime.now()
-    
-    # Si hay configuración específica, usarla directamente en horas
-    if conservation:
-        # Usar horas de la configuración directamente
-        expiry_datetime = conservation.get_expiry_datetime(now)
-    else:
-        # Calcular la fecha exacta añadiendo las horas correspondientes
-        expiry_datetime = now + timedelta(hours=hours_valid)
-    
-    # Registrar las etiquetas generadas
-    for i in range(quantity):
-        label = ProductLabel(
-            product_id=product.id,
-            local_user_id=user.id,
-            conservation_type=conservation_type,
-            expiry_date=expiry_datetime.date()
-        )
-        db.session.add(label)
-    
+    """Endpoint simplificado para generar e imprimir etiquetas directamente"""
     try:
-        db.session.commit()
-        # No añadir flash message, usamos nuestro propio sistema de notificaciones
+        # Obtener el usuario local
+        user_id = session['local_user_id']
+        user = LocalUser.query.get_or_404(user_id)
+        
+        # Obtener datos del formulario
+        product_id = request.form.get('product_id', type=int)
+        conservation_type_str = request.form.get('conservation_type')
+        quantity = request.form.get('quantity', type=int, default=1)
+        
+        # Validaciones básicas
+        if not product_id or not conservation_type_str:
+            return "Error: Faltan datos obligatorios", 400
+            
+        # Validar cantidad (entre 1 y 100)
+        quantity = max(1, min(100, quantity))
+        
+        # Obtener el producto
+        product = Product.query.get_or_404(product_id)
+        
+        # Verificar que el producto pertenece al local del usuario
+        if product.location_id != user.location_id:
+            return "Error: El producto no pertenece a este local", 403
+        
+        # Convertir string a enum
+        conservation_type = None
+        for ct in ConservationType:
+            if ct.value == conservation_type_str:
+                conservation_type = ct
+                break
+                
+        if not conservation_type:
+            return "Error: Tipo de conservación no válido", 400
+        
+        # Obtener configuración de conservación específica
+        conservation = ProductConservation.query.filter_by(
+            product_id=product.id, 
+            conservation_type=conservation_type
+        ).first()
+        
+        # Fecha y hora actual
+        now = datetime.now()
+        
+        # Calcular fecha de caducidad
+        if conservation:
+            # Usar la configuración específica del producto
+            expiry_datetime = now + timedelta(hours=conservation.hours_valid)
+        else:
+            # Valores predeterminados por tipo
+            hours_map = {
+                ConservationType.DESCONGELACION: 24,  # 1 día
+                ConservationType.REFRIGERACION: 72,   # 3 días
+                ConservationType.GASTRO: 48,          # 2 días
+                ConservationType.CALIENTE: 2,         # 2 horas
+                ConservationType.SECO: 720            # 30 días
+            }
+            hours = hours_map.get(conservation_type, 24)  # 24h por defecto
+            expiry_datetime = now + timedelta(hours=hours)
+        
+        # Registrar las etiquetas en la base de datos
+        try:
+            for _ in range(quantity):
+                label = ProductLabel(
+                    product_id=product.id,
+                    local_user_id=user.id,
+                    conservation_type=conservation_type,
+                    expiry_date=expiry_datetime.date()
+                )
+                db.session.add(label)
+            db.session.commit()
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error al registrar etiquetas: {str(e)}")
+            # Continuar generando etiquetas aunque falle el registro
+        
+        # Generar HTML para impresión directa
+        return render_template(
+            'tasks/print_labels.html',
+            product=product,
+            user=user,
+            location=user.location,
+            conservation_type=conservation_type,
+            now=now,
+            expiry_datetime=expiry_datetime,
+            quantity=quantity
+        )
+        
     except Exception as e:
-        db.session.rollback()
-        # No añadir flash message, usamos nuestro propio sistema de notificaciones
-    
-    # Generar HTML para impresión
-    labels_html = render_template(
-        'tasks/print_labels.html',
-        product=product,
-        user=user,
-        location=user.location,
-        conservation_type=conservation_type,
-        now=now,
-        expiry_datetime=expiry_datetime,
-        quantity=quantity
-    )
-    
-    # Verificar si es una solicitud AJAX
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
-    # Si es AJAX, devolver solo el HTML para mostrar en la página
-    # Si no, devolver la página completa para compatibilidad con la versión anterior
-    return labels_html
+        current_app.logger.error(f"Error en generate_labels: {str(e)}")
+        return "Error al generar etiquetas. Inténtelo nuevamente.", 500
 
 @tasks_bp.route('/admin/products')
 @tasks_bp.route('/admin/products/<int:location_id>')
