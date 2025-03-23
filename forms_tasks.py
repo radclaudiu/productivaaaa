@@ -177,3 +177,42 @@ class PortalLoginForm(FlaskForm):
     username = StringField('Nombre de usuario', validators=[DataRequired(), Length(min=3, max=64)])
     password = PasswordField('Contraseña', validators=[DataRequired(), Length(min=4)])
     submit = SubmitField('Acceder al Portal')
+
+# Formularios para el sistema de etiquetas
+
+class ProductForm(FlaskForm):
+    """Formulario para crear y editar productos"""
+    name = StringField('Nombre del producto', validators=[DataRequired(), Length(max=128)])
+    description = TextAreaField('Descripción', validators=[Optional(), Length(max=500)])
+    is_active = BooleanField('Producto activo', default=True)
+    location_id = SelectField('Local', coerce=int, validators=[DataRequired()])
+    submit = SubmitField('Guardar Producto')
+
+class ProductConservationForm(FlaskForm):
+    """Formulario para asignar tiempos de conservación a un producto"""
+    conservation_type = SelectField('Tipo de conservación', validators=[DataRequired()])
+    days_valid = IntegerField('Días válidos', validators=[
+        DataRequired(),
+        NumberRange(min=1, max=90, message='Los días deben estar entre 1 y 90')
+    ])
+    submit = SubmitField('Guardar Configuración')
+    
+    def __init__(self, *args, **kwargs):
+        super(ProductConservationForm, self).__init__(*args, **kwargs)
+        from models_tasks import ConservationType
+        self.conservation_type.choices = [(ct.value, ct.name.capitalize()) for ct in ConservationType]
+
+class GenerateLabelForm(FlaskForm):
+    """Formulario para generar etiquetas de productos"""
+    product_id = SelectField('Producto', coerce=int, validators=[DataRequired()])
+    conservation_type = SelectField('Tipo de conservación', validators=[DataRequired()])
+    quantity = IntegerField('Cantidad a imprimir', validators=[
+        DataRequired(),
+        NumberRange(min=1, max=100, message='La cantidad debe estar entre 1 y 100')
+    ], default=1)
+    submit = SubmitField('Generar Etiquetas')
+    
+    def __init__(self, *args, **kwargs):
+        super(GenerateLabelForm, self).__init__(*args, **kwargs)
+        from models_tasks import ConservationType
+        self.conservation_type.choices = [(ct.value, ct.name.capitalize()) for ct in ConservationType]

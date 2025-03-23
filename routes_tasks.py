@@ -1749,23 +1749,310 @@ def task_stats():
 @tasks_bp.route('/local-user/labels')
 @local_user_required
 def local_user_labels():
-    """Panel de grupos de trabajo para usuario local (sin mostrar tareas)"""
+    """Generador de etiquetas para productos"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
     location = user.location
     
-    # Obtener los grupos de tareas (que usaremos como etiquetas)
-    task_groups = TaskGroup.query.filter_by(location_id=location.id).all()
+    # Obtener los productos disponibles para este local
+    products = Product.query.filter_by(location_id=location.id, is_active=True).order_by(Product.name).all()
     
-    # Preparar grupos para mostrar en la vista
-    groups_with_counts = []
-    for group in task_groups:
-        groups_with_counts.append({
-            'group': group
-        })
+    # Obtener la fecha y hora actual para la vista previa
+    now = datetime.now()
     
     return render_template('tasks/local_user_labels.html',
-                          title=f'Grupos de Trabajo',
+                          title='Generador de Etiquetas',
                           user=user,
                           location=location,
-                          groups_with_counts=groups_with_counts)
+                          products=products,
+                          now=now)
+
+@tasks_bp.route('/local-user/generate-labels', methods=['POST'])
+@local_user_required
+def generate_labels():
+    """Endpoint para generar e imprimir etiquetas"""
+    user_id = session['local_user_id']
+    user = LocalUser.query.get_or_404(user_id)
+    
+    # Obtener datos del formulario
+    product_id = request.form.get('product_id', type=int)
+    conservation_type_str = request.form.get('conservation_type')
+    quantity = request.form.get('quantity', type=int, default=1)
+    
+    if not product_id or not conservation_type_str:
+        flash('Datos incompletos', 'danger')
+        return redirect(url_for('tasks.local_user_labels'))
+    
+    # Validar producto y tipo de conservación
+    product = Product.query.get_or_404(product_id)
+    
+    # Convertir string a enum
+    conservation_type = None
+    for ct in ConservationType:
+        if ct.value == conservation_type_str:
+            conservation_type = ct
+            break
+            
+    if not conservation_type:
+        flash('Tipo de conservación no válido', 'danger')
+        return redirect(url_for('tasks.local_user_labels'))
+    
+    # Obtener configuración de conservación específica para este producto
+    conservation = ProductConservation.query.filter_by(
+        product_id=product.id, 
+        conservation_type=conservation_type
+    ).first()
+    
+    # Si no hay configuración específica, usar valores predeterminados
+    days_valid = 1
+    if conservation_type == ConservationType.DESCONGELACION:
+        days_valid = 1
+    elif conservation_type == ConservationType.REFRIGERACION:
+        days_valid = 3
+    elif conservation_type == ConservationType.GASTRO:
+        days_valid = 2
+    elif conservation_type == ConservationType.CALIENTE:
+        days_valid = 0.08  # ~2 horas
+    
+    # Si hay configuración específica, usarla
+    if conservation:
+        days_valid = conservation.days_valid
+    
+    # Calcular fecha de caducidad
+    now = datetime.now()
+    
+    # Para tipos con días completos
+    if conservation_type != ConservationType.CALIENTE:
+        expiry_date = now.date() + timedelta(days=days_valid)
+        expiry_datetime = datetime.combine(expiry_date, now.time())
+    else:
+        # Para tipo "caliente" que usa horas
+        expiry_datetime = now + timedelta(days=days_valid)
+    
+    # Registrar las etiquetas generadas
+    for i in range(quantity):
+        label = ProductLabel(
+            product_id=product.id,
+            local_user_id=user.id,
+            conservation_type=conservation_type,
+            expiry_date=expiry_datetime.date()
+        )
+        db.session.add(label)
+    
+    try:
+        db.session.commit()
+        flash(f'{quantity} etiqueta(s) generada(s) correctamente', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al generar etiquetas: {str(e)}', 'danger')
+    
+    # Generar HTML para impresión
+    labels_html = render_template(
+        'tasks/print_labels.html',
+        product=product,
+        user=user,
+        conservation_type=conservation_type,
+        now=now,
+        expiry_datetime=expiry_datetime,
+        quantity=quantity
+    )
+    
+    return labels_html
+
+@tasks_bp.route('/admin/products')
+@login_required
+@manager_required
+def list_products():
+    """Lista de productos"""
+    companies = []
+    
+    # Filtrar empresas según el rol del usuario
+    if current_user.is_admin():
+        companies = Company.query.all()
+    else:
+        companies = current_user.companies
+    
+    # Obtener ubicaciones asociadas a las empresas que puede ver
+    company_ids = [c.id for c in companies]
+    locations = Location.query.filter(Location.company_id.in_(company_ids)).all()
+    
+    # Si no hay ubicaciones, redireccionar a crear ubicación
+    if not locations:
+        flash('Primero debe crear una ubicación', 'warning')
+        return redirect(url_for('tasks.list_locations'))
+    
+    # Obtener productos de esas ubicaciones
+    location_ids = [loc.id for loc in locations]
+    products = Product.query.filter(Product.location_id.in_(location_ids)).order_by(Product.name).all()
+    
+    return render_template(
+        'tasks/product_list.html',
+        title='Productos',
+        products=products,
+        locations=locations
+    )
+
+@tasks_bp.route('/admin/products/create', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def create_product():
+    """Crear nuevo producto"""
+    form = ProductForm()
+    
+    # Opciones de ubicaciones
+    locations = []
+    if current_user.is_admin():
+        locations = Location.query.order_by(Location.name).all()
+    else:
+        company_ids = [c.id for c in current_user.companies]
+        locations = Location.query.filter(Location.company_id.in_(company_ids)).order_by(Location.name).all()
+    
+    form.location_id.choices = [(l.id, f"{l.name} ({l.company.name})") for l in locations]
+    
+    if form.validate_on_submit():
+        product = Product(
+            name=form.name.data,
+            description=form.description.data,
+            is_active=form.is_active.data,
+            location_id=form.location_id.data
+        )
+        
+        db.session.add(product)
+        
+        try:
+            db.session.commit()
+            flash(f'Producto "{product.name}" creado correctamente', 'success')
+            return redirect(url_for('tasks.list_products'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al crear producto: {str(e)}', 'danger')
+    
+    return render_template(
+        'tasks/product_form.html',
+        title='Nuevo Producto',
+        form=form,
+        is_edit=False
+    )
+
+@tasks_bp.route('/admin/products/<int:id>/edit', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def edit_product(id):
+    """Editar producto existente"""
+    product = Product.query.get_or_404(id)
+    
+    # Verificar permisos
+    if not current_user.is_admin():
+        company_ids = [c.id for c in current_user.companies]
+        location = Location.query.get_or_404(product.location_id)
+        if location.company_id not in company_ids:
+            flash('No tiene permisos para editar este producto', 'danger')
+            return redirect(url_for('tasks.list_products'))
+    
+    form = ProductForm(obj=product)
+    
+    # Opciones de ubicaciones
+    locations = []
+    if current_user.is_admin():
+        locations = Location.query.order_by(Location.name).all()
+    else:
+        company_ids = [c.id for c in current_user.companies]
+        locations = Location.query.filter(Location.company_id.in_(company_ids)).order_by(Location.name).all()
+    
+    form.location_id.choices = [(l.id, f"{l.name} ({l.company.name})") for l in locations]
+    
+    if form.validate_on_submit():
+        product.name = form.name.data
+        product.description = form.description.data
+        product.is_active = form.is_active.data
+        product.location_id = form.location_id.data
+        
+        try:
+            db.session.commit()
+            flash(f'Producto "{product.name}" actualizado correctamente', 'success')
+            return redirect(url_for('tasks.list_products'))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar producto: {str(e)}', 'danger')
+    
+    return render_template(
+        'tasks/product_form.html',
+        title=f'Editar Producto: {product.name}',
+        form=form,
+        product=product,
+        is_edit=True
+    )
+
+@tasks_bp.route('/admin/products/<int:id>/conservations', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def manage_product_conservations(id):
+    """Gestionar tipos de conservación para un producto"""
+    product = Product.query.get_or_404(id)
+    
+    # Verificar permisos
+    if not current_user.is_admin():
+        company_ids = [c.id for c in current_user.companies]
+        location = Location.query.get_or_404(product.location_id)
+        if location.company_id not in company_ids:
+            flash('No tiene permisos para gestionar este producto', 'danger')
+            return redirect(url_for('tasks.list_products'))
+    
+    # Obtener configuraciones de conservación existentes
+    conservations = ProductConservation.query.filter_by(product_id=product.id).all()
+    
+    # Diccionario para facilitar acceso
+    conservation_dict = {}
+    for conservation in conservations:
+        conservation_dict[conservation.conservation_type.value] = conservation
+    
+    form = ProductConservationForm()
+    
+    if form.validate_on_submit():
+        conservation_type_str = form.conservation_type.data
+        conservation_type = None
+        
+        # Convertir string a enum
+        for ct in ConservationType:
+            if ct.value == conservation_type_str:
+                conservation_type = ct
+                break
+        
+        if not conservation_type:
+            flash('Tipo de conservación no válido', 'danger')
+            return redirect(url_for('tasks.manage_product_conservations', id=product.id))
+        
+        # Buscar si ya existe esta configuración
+        conservation = ProductConservation.query.filter_by(
+            product_id=product.id,
+            conservation_type=conservation_type
+        ).first()
+        
+        if conservation:
+            # Actualizar existente
+            conservation.days_valid = form.days_valid.data
+        else:
+            # Crear nueva
+            conservation = ProductConservation(
+                product_id=product.id,
+                conservation_type=conservation_type,
+                days_valid=form.days_valid.data
+            )
+            db.session.add(conservation)
+        
+        try:
+            db.session.commit()
+            flash('Configuración de conservación guardada correctamente', 'success')
+            return redirect(url_for('tasks.manage_product_conservations', id=product.id))
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al guardar configuración: {str(e)}', 'danger')
+    
+    return render_template(
+        'tasks/product_conservations.html',
+        title=f'Conservación: {product.name}',
+        product=product,
+        form=form,
+        conservations=conservations,
+        conservation_dict=conservation_dict
+    )

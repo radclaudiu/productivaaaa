@@ -1,5 +1,5 @@
 from app import db
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timedelta
 import enum
 from sqlalchemy import Enum
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -389,4 +389,108 @@ class TaskCompletion(db.Model):
             'local_user_name': self.local_user.name if self.local_user else None,
             'completion_date': self.completion_date.isoformat() if self.completion_date else None,
             'notes': self.notes
+        }
+
+# Modelos para el sistema de etiquetas
+
+class ConservationType(enum.Enum):
+    DESCONGELACION = "descongelacion"
+    REFRIGERACION = "refrigeracion"
+    GASTRO = "gastro"
+    CALIENTE = "caliente"
+
+class Product(db.Model):
+    """Modelo para productos alimenticios que pueden ser etiquetados"""
+    __tablename__ = 'products'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    name = db.Column(db.String(128), nullable=False)
+    description = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    is_active = db.Column(db.Boolean, default=True)
+    
+    # Relaciones
+    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
+    location = db.relationship('Location', backref=db.backref('products', lazy=True))
+    
+    # Relación con los tipos de conservación
+    conservation_types = db.relationship('ProductConservation', back_populates='product', cascade='all, delete-orphan')
+    
+    # Historial de etiquetas generadas
+    labels = db.relationship('ProductLabel', back_populates='product', cascade='all, delete-orphan')
+    
+    def __repr__(self):
+        return f'<Product {self.name}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'name': self.name,
+            'description': self.description,
+            'location_id': self.location_id,
+            'location_name': self.location.name if self.location else None,
+            'is_active': self.is_active
+        }
+
+class ProductConservation(db.Model):
+    """Modelo para definir los tiempos de conservación de un producto según el tipo"""
+    __tablename__ = 'product_conservations'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    conservation_type = db.Column(Enum(ConservationType), nullable=False)
+    days_valid = db.Column(db.Integer, nullable=False, default=1)  # Días que dura el producto en este tipo de conservación
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    product = db.relationship('Product', back_populates='conservation_types')
+    
+    def __repr__(self):
+        return f'<ProductConservation {self.product.name} - {self.conservation_type.value}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'product_id': self.product_id,
+            'product_name': self.product.name if self.product else None,
+            'conservation_type': self.conservation_type.value,
+            'days_valid': self.days_valid
+        }
+    
+    def get_expiry_date(self, from_date=None):
+        """Calcula la fecha de caducidad basada en los días válidos"""
+        if from_date is None:
+            from_date = date.today()
+        return from_date + timedelta(days=self.days_valid)
+
+class ProductLabel(db.Model):
+    """Modelo para registrar las etiquetas generadas"""
+    __tablename__ = 'product_labels'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    expiry_date = db.Column(db.Date, nullable=False)
+    
+    # Relaciones
+    product_id = db.Column(db.Integer, db.ForeignKey('products.id'), nullable=False)
+    product = db.relationship('Product', back_populates='labels')
+    local_user_id = db.Column(db.Integer, db.ForeignKey('local_users.id'), nullable=False)
+    local_user = db.relationship('LocalUser', backref=db.backref('generated_labels', lazy=True))
+    conservation_type = db.Column(Enum(ConservationType), nullable=False)
+    
+    def __repr__(self):
+        return f'<ProductLabel {self.product.name} - {self.conservation_type.value} - {self.expiry_date}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'product_id': self.product_id,
+            'product_name': self.product.name if self.product else None,
+            'local_user_id': self.local_user_id,
+            'local_user_name': self.local_user.name if self.local_user else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
+            'conservation_type': self.conservation_type.value
         }
