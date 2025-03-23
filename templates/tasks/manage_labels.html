@@ -17,9 +17,15 @@
             <a href="{{ url_for('tasks.list_products') }}" class="btn btn-primary me-2">
                 <i class="bi bi-list me-2"></i>Gestionar Productos
             </a>
-            <a href="{{ url_for('tasks.download_excel_template') }}" class="btn btn-info me-2">
-                <i class="bi bi-file-earmark-excel me-2"></i>Descargar Plantilla Excel
+            {% if selected_location %}
+            <a href="{{ url_for('tasks.export_labels_excel', location_id=selected_location.id) }}" class="btn btn-info me-2">
+                <i class="bi bi-file-earmark-excel me-2"></i>Exportar a Excel
             </a>
+            {% else %}
+            <button type="button" class="btn btn-info me-2" disabled title="Seleccione un local para exportar">
+                <i class="bi bi-file-earmark-excel me-2"></i>Exportar a Excel
+            </button>
+            {% endif %}
             <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
                 <i class="bi bi-upload me-2"></i>Subida Masiva
             </button>
@@ -180,7 +186,13 @@
                                 <li><span class="badge bg-danger">Caliente</span> - Para productos mantenidos en caliente (>65°C)</li>
                             </ul>
                             
-                            <h6 class="fw-bold mt-3"><i class="bi bi-4-circle-fill me-2"></i>Acceso Portal</h6>
+                            <h6 class="fw-bold mt-3"><i class="bi bi-4-circle-fill me-2"></i>Importación/Exportación</h6>
+                            <p>
+                                Utilice los botones de "Exportar a Excel" para descargar los productos y sus configuraciones,
+                                y "Subida Masiva" para importar productos y configuraciones desde un archivo Excel.
+                            </p>
+                            
+                            <h6 class="fw-bold mt-3"><i class="bi bi-5-circle-fill me-2"></i>Acceso Portal</h6>
                             <p>
                                 Los usuarios del local accederán a la generación de etiquetas a través del portal
                                 destinado a cada local.
@@ -207,14 +219,18 @@
                     Suba un archivo Excel con la información de los productos a crear. Descargue la plantilla para asegurarse de que su archivo tiene el formato correcto.
                 </div>
                 
-                <form method="POST" action="{{ url_for('tasks.upload_excel_products') }}" enctype="multipart/form-data">
+                {% if selected_location %}
+                <form method="POST" action="{{ url_for('tasks.import_labels_excel', location_id=selected_location.id) }}" enctype="multipart/form-data">
+                {% else %}
+                <form method="POST" action="#" enctype="multipart/form-data" id="excelFormWithoutLocation">
+                {% endif %}
                     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
                     
                     <div class="mb-3">
                         <label for="excelFile" class="form-label">Archivo Excel</label>
-                        <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx, .xls" required>
+                        <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx" required>
                         <div class="form-text">
-                            Solo se aceptan archivos Excel (.xlsx, .xls)
+                            Solo se aceptan archivos Excel (.xlsx)
                         </div>
                     </div>
                     
@@ -241,12 +257,68 @@
                 </form>
             </div>
             <div class="modal-footer">
-                <a href="{{ url_for('tasks.download_excel_template') }}" class="btn btn-info">
+                {% if selected_location %}
+                <a href="{{ url_for('tasks.export_labels_excel', location_id=selected_location.id) }}" class="btn btn-info">
                     <i class="bi bi-file-earmark-excel me-2"></i>Descargar Plantilla
                 </a>
+                {% else %}
+                <button type="button" class="btn btn-info" disabled title="Seleccione un local para descargar la plantilla">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Descargar Plantilla
+                </button>
+                {% endif %}
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
 </div>
+{% block scripts %}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Obtener el formulario sin ubicación
+    const formWithoutLocation = document.getElementById('excelFormWithoutLocation');
+    
+    if (formWithoutLocation) {
+        formWithoutLocation.addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Obtener la ubicación seleccionada del selector
+            const locationIdSelect = document.getElementById('locationId');
+            
+            if (locationIdSelect && locationIdSelect.value) {
+                // Redirigir al formulario correcto
+                const excelFile = document.getElementById('excelFile').files[0];
+                
+                if (excelFile) {
+                    // Crear un nuevo FormData
+                    const formData = new FormData();
+                    formData.append('excel_file', excelFile);
+                    formData.append('csrf_token', document.querySelector('input[name="csrf_token"]').value);
+                    
+                    // Enviar a la ruta correcta
+                    fetch(`/tasks/dashboard/labels/import/${locationIdSelect.value}`, {
+                        method: 'POST',
+                        body: formData
+                    })
+                    .then(response => {
+                        if (response.redirected) {
+                            window.location.href = response.url;
+                        } else {
+                            window.location.reload();
+                        }
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        alert('Ha ocurrido un error al procesar el archivo. Por favor, inténtelo de nuevo.');
+                    });
+                } else {
+                    alert('Por favor, seleccione un archivo Excel.');
+                }
+            } else {
+                alert('Por favor, seleccione un local para importar los productos.');
+            }
+        });
+    }
+});
+</script>
+{% endblock %}
 {% endblock %}

@@ -1840,6 +1840,209 @@ def manage_labels(location_id=None):
                           products=products,
                           recent_labels=recent_labels)
 
+@tasks_bp.route('/dashboard/labels/export/<int:location_id>')
+@login_required
+@manager_required
+def export_labels_excel(location_id):
+    """Exportar lista de productos y tipos de conservación a Excel"""
+    # Verificar que el local existe y el usuario tiene permisos
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar permisos (admin o gerente de la empresa)
+    if not current_user.is_admin() and (not current_user.is_gerente() or 
+                                       location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para exportar datos de este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    # Crear un nuevo libro de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Productos"
+    
+    # Añadir encabezados
+    ws['A1'] = "ID"
+    ws['B1'] = "Nombre"
+    ws['C1'] = "Descripción"
+    ws['D1'] = "Descongelación (días)"
+    ws['E1'] = "Refrigeración (días)"
+    ws['F1'] = "Gastro (días)"
+    ws['G1'] = "Caliente (días)"
+    ws['H1'] = "Seco (días)"
+    
+    # Obtener productos de este local
+    products = Product.query.filter_by(location_id=location_id).order_by(Product.name).all()
+    
+    # Rellenar datos
+    row = 2
+    for product in products:
+        ws[f'A{row}'] = product.id
+        ws[f'B{row}'] = product.name
+        ws[f'C{row}'] = product.description or ""
+        
+        # Buscar días de conservación para cada tipo
+        for conservation in product.conservation_types:
+            if conservation.conservation_type == ConservationType.DESCONGELACION:
+                ws[f'D{row}'] = conservation.days_valid
+            elif conservation.conservation_type == ConservationType.REFRIGERACION:
+                ws[f'E{row}'] = conservation.days_valid
+            elif conservation.conservation_type == ConservationType.GASTRO:
+                ws[f'F{row}'] = conservation.days_valid
+            elif conservation.conservation_type == ConservationType.CALIENTE:
+                ws[f'G{row}'] = conservation.days_valid
+            elif conservation.conservation_type == ConservationType.SECO:
+                ws[f'H{row}'] = conservation.days_valid
+        
+        row += 1
+    
+    # Guardar a un objeto BytesIO
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Crear nombre de archivo basado en la ubicación
+    filename = f"productos_{location.name.replace(' ', '_').lower()}_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    return send_file(
+        output,
+        download_name=filename,
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+@tasks_bp.route('/dashboard/labels/import/<int:location_id>', methods=['POST'])
+@login_required
+@manager_required
+def import_labels_excel(location_id):
+    """Importar lista de productos y tipos de conservación desde Excel"""
+    # Verificar que el local existe y el usuario tiene permisos
+    location = Location.query.get_or_404(location_id)
+    
+    # Verificar permisos (admin o gerente de la empresa)
+    if not current_user.is_admin() and (not current_user.is_gerente() or 
+                                       location.company_id not in [c.id for c in current_user.companies]):
+        flash('No tienes permiso para importar datos a este local.', 'danger')
+        return redirect(url_for('tasks.manage_labels'))
+    
+    # Comprobar si se ha subido un archivo
+    if 'excel_file' not in request.files:
+        flash('No se ha seleccionado ningún archivo.', 'danger')
+        return redirect(url_for('tasks.manage_labels', location_id=location_id))
+        
+    file = request.files['excel_file']
+    
+    if file.filename == '':
+        flash('No se ha seleccionado ningún archivo.', 'danger')
+        return redirect(url_for('tasks.manage_labels', location_id=location_id))
+    
+    if not file.filename.endswith('.xlsx'):
+        flash('El archivo debe ser un archivo Excel (.xlsx).', 'danger')
+        return redirect(url_for('tasks.manage_labels', location_id=location_id))
+    
+    try:
+        # Cargar el archivo Excel
+        wb = openpyxl.load_workbook(file)
+        ws = wb.active
+        
+        # Contar productos actualizados y creados
+        updated = 0
+        created = 0
+        errors = 0
+        
+        # Empezar desde la fila 2 (después de encabezados)
+        for row in range(2, ws.max_row + 1):
+            try:
+                # Obtener datos del producto
+                product_id = ws[f'A{row}'].value
+                product_name = ws[f'B{row}'].value
+                product_description = ws[f'C{row}'].value or ""
+                
+                # Si no hay nombre, ignorar esta fila
+                if not product_name:
+                    continue
+                
+                # Días para cada tipo de conservación
+                days_descongelacion = ws[f'D{row}'].value
+                days_refrigeracion = ws[f'E{row}'].value
+                days_gastro = ws[f'F{row}'].value
+                days_caliente = ws[f'G{row}'].value
+                days_seco = ws[f'H{row}'].value
+                
+                # Buscar producto existente o crear uno nuevo
+                product = None
+                if product_id:
+                    product = Product.query.filter_by(id=product_id, location_id=location_id).first()
+                
+                if not product:
+                    # Buscar por nombre en esta ubicación
+                    product = Product.query.filter_by(name=product_name, location_id=location_id).first()
+                
+                if product:
+                    # Actualizar producto existente
+                    product.name = product_name
+                    product.description = product_description
+                    updated += 1
+                else:
+                    # Crear nuevo producto
+                    product = Product(
+                        name=product_name,
+                        description=product_description,
+                        location_id=location_id
+                    )
+                    db.session.add(product)
+                    db.session.flush()  # Para obtener el ID generado
+                    created += 1
+                
+                # Actualizar tipos de conservación
+                conservation_types = [
+                    (ConservationType.DESCONGELACION, days_descongelacion),
+                    (ConservationType.REFRIGERACION, days_refrigeracion),
+                    (ConservationType.GASTRO, days_gastro),
+                    (ConservationType.CALIENTE, days_caliente),
+                    (ConservationType.SECO, days_seco)
+                ]
+                
+                for cons_type, days in conservation_types:
+                    if days is not None and days > 0:
+                        # Buscar conservación existente o crear una nueva
+                        conservation = ProductConservation.query.filter_by(
+                            product_id=product.id, 
+                            conservation_type=cons_type
+                        ).first()
+                        
+                        if conservation:
+                            conservation.days_valid = days
+                        else:
+                            conservation = ProductConservation(
+                                product_id=product.id,
+                                conservation_type=cons_type,
+                                days_valid=days
+                            )
+                            db.session.add(conservation)
+            
+            except Exception as e:
+                # Registrar error y continuar con la siguiente fila
+                errors += 1
+                current_app.logger.error(f"Error al importar fila {row}: {str(e)}")
+        
+        # Guardar todos los cambios
+        db.session.commit()
+        
+        # Mostrar mensaje de éxito
+        if errors > 0:
+            flash(f'Importación completada con {created} productos creados, {updated} actualizados y {errors} errores.', 'warning')
+        else:
+            flash(f'Importación completada con éxito: {created} productos creados y {updated} actualizados.', 'success')
+        
+        # Registrar actividad
+        log_activity(f'Importación de productos desde Excel para {location.name}: {created} creados, {updated} actualizados')
+        
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al procesar el archivo: {str(e)}', 'danger')
+        current_app.logger.error(f"Error al importar Excel: {str(e)}")
+    
+    return redirect(url_for('tasks.manage_labels', location_id=location_id))
+
 @tasks_bp.route('/local-user/generate-labels', methods=['POST'])
 @local_user_required
 def generate_labels():
