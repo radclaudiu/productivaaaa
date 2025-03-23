@@ -14,8 +14,8 @@
         
         /* Estilos para la etiqueta */
         .etiqueta {
-            width: 44mm;   /* Ancho exacto para impresora de etiquetas - ACTUALIZADO */
-            height: 39mm;  /* Alto exacto para impresora de etiquetas - ACTUALIZADO */
+            width: 35mm;   /* Ancho exacto para impresora de etiquetas - ACTUALIZADO */
+            height: 40mm;  /* Alto exacto para impresora de etiquetas - ACTUALIZADO */
             padding: 2mm;
             text-align: center;
             box-sizing: border-box;
@@ -125,12 +125,12 @@
             }
             @page {
                 margin: 0;
-                size: 44mm 39mm; /* Forzar el tamaño exacto de la etiqueta - ACTUALIZADO */
+                size: 35mm 40mm; /* Forzar el tamaño exacto de la etiqueta - ACTUALIZADO */
             }
             .etiqueta {
                 page-break-after: always; /* Forzar salto de página después de cada etiqueta */
-                width: 44mm;
-                height: 39mm;
+                width: 35mm;
+                height: 40mm;
                 /* Quitar bordes en la impresión */
                 border: none;
             }
