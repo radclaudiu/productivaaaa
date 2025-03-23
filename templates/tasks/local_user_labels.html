@@ -1,279 +1,207 @@
 {% extends "tasks/portal_layout.html" %}
 
 {% block content %}
-<div class="container-fluid px-3 py-3">
-    <div class="d-flex justify-content-between align-items-center mb-4">
-        <h1 class="h2">Generador de Etiquetas</h1>
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0"><i class="bi bi-tag-fill me-2"></i>Generador de Etiquetas</h5>
+                </div>
+                <div class="card-body">
+                    <p class="card-text">
+                        Seleccione un producto y tipo de conservación para generar etiquetas con fechas de caducidad.
+                    </p>
+                </div>
+            </div>
+        </div>
     </div>
-    
-    <!-- Mensaje informativo explicando la función -->
-    <div class="alert alert-info mb-4" role="alert">
-        <i class="bi bi-info-circle-fill me-2"></i> 
-        Este es el generador de etiquetas para productos. Selecciona un producto, elige el tipo de conservación y genera etiquetas para imprimir.
-    </div>
-    
-    <!-- Si no hay productos, mostrar mensaje -->
+
     {% if not products %}
-        <div class="text-center py-5">
-            <i class="bi bi-tags-fill fs-1 text-muted"></i>
-            <h4 class="mt-3">No hay productos definidos</h4>
-            <p class="text-muted">No se han creado productos para este local. Contacta con el administrador para añadir productos.</p>
+        <div class="alert alert-warning">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>No hay productos disponibles para generar etiquetas. Contacte con un administrador para añadir productos.
         </div>
     {% else %}
-        <!-- Paso 1: Seleccionar producto -->
-        <div class="card shadow-sm mb-4" id="product-selection">
-            <div class="card-header bg-primary text-white">
-                <h3 class="h5 mb-0">1. Elige un producto</h3>
-            </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush">
-                    {% for product in products %}
-                        <button type="button" 
-                                class="list-group-item list-group-item-action product-btn p-3" 
-                                data-product-id="{{ product.id }}" 
-                                data-product-name="{{ product.name }}">
-                            <div class="d-flex align-items-center">
-                                <i class="bi bi-basket fs-4 me-3"></i>
-                                <div>
-                                    <h5 class="mb-1">{{ product.name }}</h5>
-                                    {% if product.description %}
-                                        <p class="mb-0 text-muted small">{{ product.description }}</p>
-                                    {% endif %}
-                                </div>
+        <div class="row">
+            <div class="col-lg-6">
+                <div class="card shadow-sm mb-4">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Crear Etiqueta</h5>
+                    </div>
+                    <div class="card-body">
+                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post" target="_blank">
+                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                            
+                            <div class="mb-3">
+                                <label for="product_id" class="form-label">Producto</label>
+                                <select id="product_id" name="product_id" class="form-select" required>
+                                    <option value="">Seleccionar producto...</option>
+                                    {% for product in products %}
+                                        <option value="{{ product.id }}" data-conservation-types="{{ product.conservation_types|map(attribute='conservation_type.value')|list|tojson }}">
+                                            {{ product.name }}
+                                        </option>
+                                    {% endfor %}
+                                </select>
                             </div>
-                        </button>
-                    {% endfor %}
+                            
+                            <div class="mb-3">
+                                <label for="conservation_type" class="form-label">Tipo de Conservación</label>
+                                <select id="conservation_type" name="conservation_type" class="form-select" required>
+                                    <option value="">Seleccionar tipo...</option>
+                                    <option value="descongelacion" data-days="1">Descongelación</option>
+                                    <option value="refrigeracion" data-days="3">Refrigeración</option>
+                                    <option value="gastro" data-days="2">Gastro</option>
+                                    <option value="caliente" data-days="0.08">Caliente</option>
+                                </select>
+                                <small class="form-text text-muted">El tipo de conservación determina el tiempo de validez del producto.</small>
+                            </div>
+                            
+                            <div class="mb-3">
+                                <label for="quantity" class="form-label">Cantidad</label>
+                                <input type="number" id="quantity" name="quantity" class="form-control" value="1" min="1" max="100" required>
+                                <small class="form-text text-muted">Número de etiquetas a generar.</small>
+                            </div>
+                            
+                            <div class="d-grid mt-4">
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-printer-fill me-2"></i>Generar Etiquetas
+                                </button>
+                            </div>
+                        </form>
+                    </div>
                 </div>
             </div>
-        </div>
-        
-        <!-- Paso 2: Seleccionar tipo de conservación (inicialmente oculto) -->
-        <div class="card shadow-sm mb-4 d-none" id="conservation-selection">
-            <div class="card-header bg-primary text-white">
-                <h3 class="h5 mb-0">2. Tipo de conservación</h3>
-                <span class="selected-product-name badge bg-light text-dark mt-2"></span>
-            </div>
-            <div class="card-body p-0">
-                <div class="list-group list-group-flush">
-                    <button type="button" class="list-group-item list-group-item-action conservation-btn p-3" data-conservation-type="descongelacion">
-                        <i class="bi bi-snow fs-4 me-3"></i>
-                        <strong>Descongelación</strong>
-                    </button>
-                    <button type="button" class="list-group-item list-group-item-action conservation-btn p-3" data-conservation-type="refrigeracion">
-                        <i class="bi bi-thermometer-low fs-4 me-3"></i>
-                        <strong>Refrigeración</strong>
-                    </button>
-                    <button type="button" class="list-group-item list-group-item-action conservation-btn p-3" data-conservation-type="gastro">
-                        <i class="bi bi-cup-hot fs-4 me-3"></i>
-                        <strong>Gastro</strong>
-                    </button>
-                    <button type="button" class="list-group-item list-group-item-action conservation-btn p-3" data-conservation-type="caliente">
-                        <i class="bi bi-fire fs-4 me-3"></i>
-                        <strong>Caliente</strong>
-                    </button>
-                </div>
-                <div class="p-3 border-top">
-                    <button type="button" class="btn btn-outline-secondary btn-sm back-to-products">
-                        <i class="bi bi-arrow-left"></i> Volver a productos
-                    </button>
-                </div>
-            </div>
-        </div>
-        
-        <!-- Paso 3: Cantidad e imprimir (inicialmente oculto) -->
-        <div class="card shadow-sm mb-4 d-none" id="quantity-selection">
-            <div class="card-header bg-primary text-white">
-                <h3 class="h5 mb-0">3. Cantidad e impresión</h3>
-                <span class="selected-conservation-type badge bg-light text-dark mt-2"></span>
-            </div>
-            <div class="card-body">
-                <form id="label-form" method="post" action="{{ url_for('tasks.generate_labels') }}">
-                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                    <input type="hidden" name="product_id" id="product_id">
-                    <input type="hidden" name="conservation_type" id="conservation_type">
-                    
-                    <div class="mb-4">
-                        <label for="quantity" class="form-label">Cantidad de etiquetas</label>
-                        <div class="input-group">
-                            <button type="button" class="btn btn-outline-secondary" id="decrease-quantity">
-                                <i class="bi bi-dash"></i>
-                            </button>
-                            <input type="number" class="form-control text-center" id="quantity" name="quantity" min="1" max="100" value="1">
-                            <button type="button" class="btn btn-outline-secondary" id="increase-quantity">
-                                <i class="bi bi-plus"></i>
-                            </button>
+            
+            <div class="col-lg-6">
+                <div class="card shadow-sm">
+                    <div class="card-header bg-light">
+                        <h5 class="mb-0">Vista Previa</h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="label-preview border p-3 mb-3 text-center">
+                            <div id="preview-product-name" class="fw-bold fs-5 mb-2">NOMBRE DEL PRODUCTO</div>
+                            <div id="preview-conservation-type" class="fst-italic mb-2">Tipo de conservación</div>
+                            <div class="text-muted mb-1">Preparado por: {{ user.name }} {{ user.last_name }}</div>
+                            <div class="text-muted mb-1">Fecha: {{ now.strftime('%d/%m/%Y') }}</div>
+                            <div class="text-muted mb-1">Hora: {{ now.strftime('%H:%M') }}</div>
+                            <div id="preview-expiry" class="fw-bold mt-2 p-1 border bg-light">Caducidad: DD/MM/AAAA HH:MM</div>
+                        </div>
+                        
+                        <div class="alert alert-info">
+                            <i class="bi bi-info-circle-fill me-2"></i>Esta es una vista previa. La etiqueta final se abrirá en una nueva ventana lista para imprimir.
                         </div>
                     </div>
-                    
-                    <div class="row mb-3">
-                        <div class="col-12">
-                            <div class="card border-1 border-primary">
-                                <div class="card-header bg-light">
-                                    <h5 class="mb-0">Vista previa</h5>
-                                </div>
-                                <div class="card-body">
-                                    <div class="label-preview p-3 border border-dark rounded-3 mx-auto" style="max-width: 300px;">
-                                        <div class="text-center">
-                                            <h5 id="preview-product" class="mb-2">-</h5>
-                                            <p class="mb-1 small">Preparado por: <span id="preview-user">{{ session.get('local_user_name', '-') }}</span></p>
-                                            <p class="mb-1 small">Fecha: <span id="preview-date">{{ now.strftime('%d/%m/%Y') }}</span></p>
-                                            <p class="mb-1 small">Hora: <span id="preview-time">{{ now.strftime('%H:%M') }}</span></p>
-                                            <p class="mb-0 fw-bold">Caducidad: <span id="preview-expiry">-</span></p>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
-                    <div class="d-flex justify-content-between">
-                        <button type="button" class="btn btn-outline-secondary back-to-conservation">
-                            <i class="bi bi-arrow-left"></i> Volver
-                        </button>
-                        <button type="submit" class="btn btn-success">
-                            <i class="bi bi-printer"></i> Imprimir etiquetas
-                        </button>
-                    </div>
-                </form>
+                </div>
             </div>
         </div>
     {% endif %}
 </div>
-{% endblock %}
 
-{% block scripts %}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Variables para almacenar selecciones
-    let selectedProduct = null;
-    let selectedConservation = null;
-    const now = new Date();
+    const productSelect = document.getElementById('product_id');
+    const conservationSelect = document.getElementById('conservation_type');
+    const previewProductName = document.getElementById('preview-product-name');
+    const previewConservationType = document.getElementById('preview-conservation-type');
+    const previewExpiry = document.getElementById('preview-expiry');
     
-    // Producto seleccionado
-    document.querySelectorAll('.product-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            selectedProduct = {
-                id: this.dataset.productId,
-                name: this.dataset.productName
-            };
+    // Conservación a texto
+    const conservationTypeText = {
+        'descongelacion': 'Descongelación',
+        'refrigeracion': 'Refrigeración',
+        'gastro': 'Gastro',
+        'caliente': 'Caliente'
+    };
+    
+    // Actualizar vista previa de producto
+    productSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const productName = selectedOption.text;
+        previewProductName.textContent = productName.toUpperCase();
+        
+        // Filtrar los tipos de conservación según el producto
+        const conservationTypes = selectedOption.dataset.conservationTypes;
+        if (conservationTypes) {
+            try {
+                const types = JSON.parse(conservationTypes);
+                
+                // Resetear select de conservación
+                conservationSelect.value = '';
+                
+                // Habilitar/deshabilitar opciones según el producto
+                Array.from(conservationSelect.options).forEach(option => {
+                    if (option.value) { // Ignorar la opción vacía
+                        if (types.includes(option.value)) {
+                            option.disabled = false;
+                        } else {
+                            option.disabled = true;
+                        }
+                    }
+                });
+            } catch (e) {
+                console.error('Error parsing conservation types:', e);
+            }
+        }
+    });
+    
+    // Actualizar vista previa del tipo de conservación y fecha de caducidad
+    conservationSelect.addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const conservationType = this.value;
+        const daysValid = selectedOption.dataset.days;
+        
+        previewConservationType.textContent = conservationTypeText[conservationType] || 'Tipo de conservación';
+        
+        // Calcular fecha de caducidad
+        if (daysValid) {
+            const now = new Date();
+            let expiryDate;
             
-            // Actualizar UI
-            document.querySelectorAll('.selected-product-name').forEach(el => {
-                el.textContent = selectedProduct.name;
+            if (conservationType === 'caliente') {
+                // Calcular en horas (aproximadamente 2 horas)
+                expiryDate = new Date(now.getTime() + parseFloat(daysValid) * 24 * 60 * 60 * 1000);
+            } else {
+                // Calcular en días
+                expiryDate = new Date(now);
+                expiryDate.setDate(expiryDate.getDate() + parseInt(daysValid));
+            }
+            
+            // Formatear fecha
+            const formattedDate = expiryDate.toLocaleDateString('es-ES', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric'
             });
             
-            // Ocultar paso 1, mostrar paso 2
-            document.getElementById('product-selection').classList.add('d-none');
-            document.getElementById('conservation-selection').classList.remove('d-none');
-            
-            // Reset paso 3
-            document.getElementById('quantity-selection').classList.add('d-none');
-        });
-    });
-    
-    // Conservación seleccionada
-    document.querySelectorAll('.conservation-btn').forEach(btn => {
-        btn.addEventListener('click', function() {
-            selectedConservation = this.dataset.conservationType;
-            
-            // Actualizar UI
-            document.querySelectorAll('.selected-conservation-type').forEach(el => {
-                el.textContent = getConservationName(selectedConservation);
+            // Formatear hora
+            const formattedTime = expiryDate.toLocaleTimeString('es-ES', {
+                hour: '2-digit',
+                minute: '2-digit'
             });
             
-            // Ocultar paso 2, mostrar paso 3
-            document.getElementById('conservation-selection').classList.add('d-none');
-            document.getElementById('quantity-selection').classList.remove('d-none');
-            
-            // Llenar campos ocultos
-            document.getElementById('product_id').value = selectedProduct.id;
-            document.getElementById('conservation_type').value = selectedConservation;
-            
-            // Actualizar vista previa
-            updatePreview();
-        });
-    });
-    
-    // Botones de navegación
-    document.querySelectorAll('.back-to-products').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('conservation-selection').classList.add('d-none');
-            document.getElementById('product-selection').classList.remove('d-none');
-        });
-    });
-    
-    document.querySelectorAll('.back-to-conservation').forEach(btn => {
-        btn.addEventListener('click', function() {
-            document.getElementById('quantity-selection').classList.add('d-none');
-            document.getElementById('conservation-selection').classList.remove('d-none');
-        });
-    });
-    
-    // Botones para incrementar/decrementar cantidad
-    document.getElementById('decrease-quantity').addEventListener('click', function() {
-        const input = document.getElementById('quantity');
-        if (parseInt(input.value) > 1) {
-            input.value = parseInt(input.value) - 1;
+            previewExpiry.textContent = `Caducidad: ${formattedDate} ${formattedTime}`;
+        } else {
+            previewExpiry.textContent = 'Caducidad: DD/MM/AAAA HH:MM';
         }
     });
-    
-    document.getElementById('increase-quantity').addEventListener('click', function() {
-        const input = document.getElementById('quantity');
-        if (parseInt(input.value) < 100) {
-            input.value = parseInt(input.value) + 1;
-        }
-    });
-    
-    // Actualizar la vista previa
-    function updatePreview() {
-        document.getElementById('preview-product').textContent = selectedProduct.name;
-        
-        // Fecha actual formateada para la vista previa
-        const day = now.getDate().toString().padStart(2, '0');
-        const month = (now.getMonth() + 1).toString().padStart(2, '0');
-        const year = now.getFullYear();
-        const hours = now.getHours().toString().padStart(2, '0');
-        const minutes = now.getMinutes().toString().padStart(2, '0');
-        
-        document.getElementById('preview-date').textContent = `${day}/${month}/${year}`;
-        document.getElementById('preview-time').textContent = `${hours}:${minutes}`;
-        
-        // Fecha de caducidad basada en el tipo de conservación
-        let expiryDate = new Date(now);
-        switch(selectedConservation) {
-            case 'descongelacion':
-                expiryDate.setDate(expiryDate.getDate() + 1);
-                break;
-            case 'refrigeracion':
-                expiryDate.setDate(expiryDate.getDate() + 3);
-                break;
-            case 'gastro':
-                expiryDate.setDate(expiryDate.getDate() + 2);
-                break;
-            case 'caliente':
-                expiryDate.setHours(expiryDate.getHours() + 2);
-                break;
-        }
-        
-        const expiryDay = expiryDate.getDate().toString().padStart(2, '0');
-        const expiryMonth = (expiryDate.getMonth() + 1).toString().padStart(2, '0');
-        const expiryYear = expiryDate.getFullYear();
-        const expiryHours = expiryDate.getHours().toString().padStart(2, '0');
-        const expiryMinutes = expiryDate.getMinutes().toString().padStart(2, '0');
-        
-        document.getElementById('preview-expiry').textContent = `${expiryDay}/${expiryMonth}/${expiryYear} ${expiryHours}:${expiryMinutes}`;
-    }
-    
-    // Auxiliar para obtener nombres descriptivos
-    function getConservationName(type) {
-        const names = {
-            'descongelacion': 'Descongelación',
-            'refrigeracion': 'Refrigeración',
-            'gastro': 'Gastro',
-            'caliente': 'Caliente'
-        };
-        return names[type] || type;
-    }
 });
 </script>
+
+<style>
+.label-preview {
+    min-height: 200px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    background-color: white;
+    border-radius: 4px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+}
+
+#preview-expiry {
+    display: inline-block;
+    margin: 0 auto;
+    border-radius: 4px;
+}
+</style>
 {% endblock %}
