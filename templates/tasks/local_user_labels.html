@@ -582,13 +582,24 @@ document.addEventListener('DOMContentLoaded', function() {
             const printButton = document.getElementById('printLabelsBtn');
             if (printButton) {
                 printButton.addEventListener('click', function() {
-                    // Imprimir solo la sección de etiquetas usando la API de impresión del navegador
+                    // Imprimir directamente usando la API de impresión del navegador
                     const printContents = labelsContainer.innerHTML;
                     const originalContents = document.body.innerHTML;
                     
-                    // Crear una ventana con estilos específicos para impresión
-                    const printWindow = window.open('', '_blank');
-                    printWindow.document.write(`
+                    // Crear un iframe oculto para imprimir sin abrir nueva ventana
+                    const printFrame = document.createElement('iframe');
+                    printFrame.style.position = 'absolute';
+                    printFrame.style.top = '-9999px';
+                    printFrame.style.left = '-9999px';
+                    printFrame.style.width = '0';
+                    printFrame.style.height = '0';
+                    
+                    document.body.appendChild(printFrame);
+                    
+                    // Inicializar el dataset para seguimiento
+                    printFrame.dataset.printed = 'false';
+                    
+                    printFrame.contentDocument.write(`
                         <!DOCTYPE html>
                         <html>
                         <head>
@@ -643,18 +654,48 @@ document.addEventListener('DOMContentLoaded', function() {
                         </html>
                     `);
                     
-                    // Esperar a que se cargue la página antes de imprimir
-                    printWindow.document.close();
-                    printWindow.focus();
+                    // Cerrar el documento y esperar a que se cargue
+                    printFrame.contentDocument.close();
                     
-                    // Imprimir después de que la página esté lista
-                    printWindow.onload = function() {
-                        printWindow.print();
-                        // Cerrar la ventana después de imprimir (o cancelar)
-                        printWindow.onafterprint = function() {
-                            printWindow.close();
-                        };
-                    };
+                    // Añadir evento beforeprint para detectar cuando se abre el diálogo de impresión
+                    printFrame.contentWindow.addEventListener('beforeprint', function() {
+                        // Marcar como en proceso de impresión
+                        printFrame.dataset.printing = 'true';
+                    });
+                    
+                    // Añadir evento afterprint para detectar cuando se cierra el diálogo
+                    printFrame.contentWindow.addEventListener('afterprint', function() {
+                        // Marcar que ya se ha impreso
+                        printFrame.dataset.printed = 'true';
+                        
+                        // Eliminar el iframe después de la impresión
+                        setTimeout(function() {
+                            if (document.body.contains(printFrame)) {
+                                document.body.removeChild(printFrame);
+                            }
+                        }, 1000);
+                    });
+                    
+                    setTimeout(function() {
+                        try {
+                            // Abrir diálogo de impresión
+                            printFrame.contentWindow.focus();
+                            printFrame.contentWindow.print();
+                            
+                            // Si no se dispara el evento afterprint, eliminar el iframe después de un tiempo
+                            setTimeout(function() {
+                                if (document.body.contains(printFrame)) {
+                                    document.body.removeChild(printFrame);
+                                }
+                            }, 10000);
+                        } catch (error) {
+                            console.error('Error al imprimir:', error);
+                            if (document.body.contains(printFrame)) {
+                                document.body.removeChild(printFrame);
+                            }
+                            showNotification('Error al imprimir. Intente nuevamente.', 'error');
+                        }
+                    }, 500);
                 });
             }
         })
