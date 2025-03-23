@@ -42,16 +42,37 @@
                                 <div id="selected_product" class="mt-2 fw-bold"></div>
                             </div>
                             
-                            <div class="mb-3">
-                                <label for="conservation_type" class="form-label">Tipo de Conservación</label>
-                                <select id="conservation_type" name="conservation_type" class="form-select" required>
-                                    <option value="">Seleccionar tipo...</option>
-                                    <option value="descongelacion" data-days="1">Descongelación</option>
-                                    <option value="refrigeracion" data-days="3">Refrigeración</option>
-                                    <option value="gastro" data-days="2">Gastro</option>
-                                    <option value="caliente" data-days="0.08">Caliente</option>
-                                </select>
-                                <small class="form-text text-muted">El tipo de conservación determina el tiempo de validez del producto.</small>
+                            <div class="mb-4">
+                                <label class="form-label d-block">Tipo de Conservación</label>
+                                <div class="conservation-buttons">
+                                    <input type="hidden" id="conservation_type" name="conservation_type" required>
+                                    
+                                    <button type="button" class="btn-conservation" data-value="descongelacion" data-days="1">
+                                        <i class="bi bi-snow"></i>
+                                        <span>Descongelación</span>
+                                    </button>
+                                    
+                                    <button type="button" class="btn-conservation" data-value="refrigeracion" data-days="3">
+                                        <i class="bi bi-thermometer-low"></i>
+                                        <span>Refrigeración</span>
+                                    </button>
+                                    
+                                    <button type="button" class="btn-conservation" data-value="gastro" data-days="2">
+                                        <i class="bi bi-cup-hot"></i>
+                                        <span>Gastro</span>
+                                    </button>
+                                    
+                                    <button type="button" class="btn-conservation" data-value="caliente" data-days="0.08">
+                                        <i class="bi bi-fire"></i>
+                                        <span>Caliente</span>
+                                    </button>
+                                    
+                                    <button type="button" class="btn-conservation" data-value="seco" data-days="30">
+                                        <i class="bi bi-box2"></i>
+                                        <span>Seco</span>
+                                    </button>
+                                </div>
+                                <small class="form-text text-muted">Seleccione el tipo de conservación tocando uno de los botones.</small>
                             </div>
                             
                             <div class="mb-3">
@@ -194,63 +215,84 @@ document.addEventListener('DOMContentLoaded', function() {
         // Actualizar vista previa
         previewProductName.textContent = product.name.toUpperCase();
         
-        // Resetear el select de conservación
+        // Resetear la selección de conservación
         conservationSelect.value = '';
+        previewConservationType.textContent = 'Tipo de conservación';
         
-        // Filtrar tipos de conservación disponibles para este producto
-        Array.from(conservationSelect.options).forEach(option => {
-            if (option.value) { // Ignorar la opción vacía
-                if (product.conservationTypes.includes(option.value)) {
-                    option.disabled = false;
-                } else {
-                    option.disabled = true;
+        // Obtener todos los botones de conservación
+        const conservationButtons = document.querySelectorAll('.btn-conservation');
+        
+        // Resetear todos los botones
+        conservationButtons.forEach(button => {
+            button.classList.remove('selected');
+            button.classList.remove('disabled');
+            
+            // Deshabilitar los tipos de conservación que no están disponibles para este producto
+            if (product.conservationTypes.length > 0) {
+                const buttonValue = button.dataset.value;
+                if (!product.conservationTypes.includes(buttonValue)) {
+                    button.classList.add('disabled');
                 }
             }
         });
-        
-        // Enfocar siguiente campo
-        conservationSelect.focus();
     }
     
-    // Actualizar vista previa del tipo de conservación y fecha de caducidad
-    conservationSelect.addEventListener('change', function() {
-        const selectedOption = this.options[this.selectedIndex];
-        const conservationType = this.value;
-        const daysValid = selectedOption.dataset.days;
-        
-        previewConservationType.textContent = conservationTypeText[conservationType] || 'Tipo de conservación';
-        
-        // Calcular fecha de caducidad
-        if (daysValid) {
-            const now = new Date();
-            let expiryDate;
-            
-            if (conservationType === 'caliente') {
-                // Calcular en horas (aproximadamente 2 horas)
-                expiryDate = new Date(now.getTime() + parseFloat(daysValid) * 24 * 60 * 60 * 1000);
-            } else {
-                // Calcular en días
-                expiryDate = new Date(now);
-                expiryDate.setDate(expiryDate.getDate() + parseInt(daysValid));
+    // Configurar el manejo de eventos para los botones de conservación
+    document.querySelectorAll('.btn-conservation').forEach(button => {
+        button.addEventListener('click', function() {
+            // Si está deshabilitado, no hacer nada
+            if (this.classList.contains('disabled')) {
+                return;
             }
             
-            // Formatear fecha
-            const formattedDate = expiryDate.toLocaleDateString('es-ES', {
-                day: '2-digit',
-                month: '2-digit',
-                year: 'numeric'
-            });
+            // Obtener el valor y los días de validez
+            const conservationType = this.dataset.value;
+            const daysValid = this.dataset.days;
             
-            // Formatear hora
-            const formattedTime = expiryDate.toLocaleTimeString('es-ES', {
-                hour: '2-digit',
-                minute: '2-digit'
-            });
+            // Establecer el valor en el campo oculto
+            conservationSelect.value = conservationType;
             
-            previewExpiry.textContent = `Caducidad: ${formattedDate} ${formattedTime}`;
-        } else {
-            previewExpiry.textContent = 'Caducidad: DD/MM/AAAA HH:MM';
-        }
+            // Resaltar el botón seleccionado y desmarcar los demás
+            document.querySelectorAll('.btn-conservation').forEach(btn => {
+                btn.classList.remove('selected');
+            });
+            this.classList.add('selected');
+            
+            // Actualizar vista previa
+            previewConservationType.textContent = conservationTypeText[conservationType] || 'Tipo de conservación';
+            
+            // Calcular fecha de caducidad
+            if (daysValid) {
+                const now = new Date();
+                let expiryDate;
+                
+                if (conservationType === 'caliente') {
+                    // Calcular en horas (aproximadamente 2 horas)
+                    expiryDate = new Date(now.getTime() + parseFloat(daysValid) * 24 * 60 * 60 * 1000);
+                } else {
+                    // Calcular en días
+                    expiryDate = new Date(now);
+                    expiryDate.setDate(expiryDate.getDate() + parseInt(daysValid));
+                }
+                
+                // Formatear fecha
+                const formattedDate = expiryDate.toLocaleDateString('es-ES', {
+                    day: '2-digit',
+                    month: '2-digit',
+                    year: 'numeric'
+                });
+                
+                // Formatear hora
+                const formattedTime = expiryDate.toLocaleTimeString('es-ES', {
+                    hour: '2-digit',
+                    minute: '2-digit'
+                });
+                
+                previewExpiry.textContent = `Caducidad: ${formattedDate} ${formattedTime}`;
+            } else {
+                previewExpiry.textContent = 'Caducidad: DD/MM/AAAA HH:MM';
+            }
+        });
     });
     
     // Cerrar resultados al hacer clic fuera
@@ -260,12 +302,19 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     
-    // Validar que se ha seleccionado un producto antes de enviar
+    // Validar que se ha seleccionado un producto y un tipo de conservación antes de enviar
     document.getElementById('labelForm').addEventListener('submit', function(event) {
         if (productIdInput.value === '') {
             event.preventDefault();
             alert('Por favor, seleccione un producto');
             productSearchInput.focus();
+            return;
+        }
+        
+        if (conservationSelect.value === '') {
+            event.preventDefault();
+            alert('Por favor, seleccione un tipo de conservación');
+            return;
         }
     });
 });
@@ -315,6 +364,72 @@ document.addEventListener('DOMContentLoaded', function() {
     background-color: #f8f9fa;
     border-radius: 0.25rem;
     border: 1px solid #dee2e6;
+}
+
+/* Estilos para los botones de conservación */
+.conservation-buttons {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+    gap: 10px;
+    margin-bottom: 15px;
+}
+
+.btn-conservation {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 15px 10px;
+    border: 2px solid #dee2e6;
+    border-radius: 8px;
+    background-color: #f8f9fa;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    height: 100px;
+}
+
+.btn-conservation i {
+    font-size: 1.8rem;
+    margin-bottom: 8px;
+    opacity: 0.7;
+}
+
+.btn-conservation span {
+    font-size: 0.8rem;
+    text-align: center;
+    font-weight: bold;
+}
+
+.btn-conservation[data-value="descongelacion"] i {
+    color: #0d6efd; /* Azul */
+}
+
+.btn-conservation[data-value="refrigeracion"] i {
+    color: #0dcaf0; /* Celeste */
+}
+
+.btn-conservation[data-value="gastro"] i {
+    color: #198754; /* Verde */
+}
+
+.btn-conservation[data-value="caliente"] i {
+    color: #dc3545; /* Rojo */
+}
+
+.btn-conservation[data-value="seco"] i {
+    color: #ffc107; /* Amarillo */
+}
+
+.btn-conservation.selected {
+    border-color: #0d6efd;
+    background-color: #f0f7ff;
+    transform: scale(1.05);
+    box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+}
+
+.btn-conservation.disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
 }
 </style>
 {% endblock %}
