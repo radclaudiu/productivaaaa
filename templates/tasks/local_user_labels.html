@@ -38,7 +38,7 @@
                         <h5 class="mb-0">Crear Etiqueta</h5>
                     </div>
                     <div class="card-body">
-                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post">
+                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post" target="_blank">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
                             <div class="mb-3">
@@ -107,14 +107,6 @@
                                 </button>
                             </div>
                         </form>
-                        
-                        <!-- Notificación emergente -->
-                        <div id="labelNotification" class="label-notification" style="display: none;">
-                            <div class="notification-content">
-                                <i class="bi bi-check-circle-fill text-success me-2"></i>
-                                <span id="notification-message"></span>
-                            </div>
-                        </div>
                     </div>
                 </div>
             </div>
@@ -355,83 +347,20 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
-    // Elementos de la notificación
-    const labelNotification = document.getElementById('labelNotification');
-    const notificationMessage = document.getElementById('notification-message');
-    
-    // Función para mostrar la notificación
-    function showNotification(message, success = true) {
-        notificationMessage.textContent = message;
-        
-        // Aplicar clase de éxito o error
-        if (success) {
-            labelNotification.classList.add('success');
-            labelNotification.classList.remove('error');
-        } else {
-            labelNotification.classList.add('error');
-            labelNotification.classList.remove('success');
-        }
-        
-        // Mostrar notificación
-        labelNotification.style.display = 'flex';
-        
-        // Ocultar después de 2 segundos
-        setTimeout(() => {
-            labelNotification.style.display = 'none';
-        }, 2000);
-    }
-    
     // Validar que se ha seleccionado un producto y un tipo de conservación antes de enviar
     document.getElementById('labelForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Siempre prevenir el envío normal
-        
         if (productIdInput.value === '') {
+            event.preventDefault();
             alert('Por favor, seleccione un producto');
             productSearchInput.focus();
             return;
         }
 
         if (conservationSelect.value === '') {
+            event.preventDefault();
             alert('Por favor, seleccione un tipo de conservación');
             return;
         }
-        
-        // Preparar datos del formulario
-        const formData = new FormData(this);
-        
-        // Añadir cabecera para identificar petición AJAX
-        const headers = {
-            'X-Requested-With': 'XMLHttpRequest'
-        };
-        
-        // Realizar petición AJAX
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: headers
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                // Mostrar notificación de éxito
-                showNotification(data.message, true);
-                
-                // Abrir ventana de impresión con HTML devuelto
-                const printWindow = window.open('', '_blank');
-                printWindow.document.write(data.html);
-                printWindow.document.close();
-                
-                // Opcional: resetear formulario o campos específicos
-                // this.reset();
-            } else {
-                // Mostrar notificación de error
-                showNotification(data.message, false);
-            }
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showNotification('Error al generar etiquetas. Inténtelo de nuevo.', false);
-        });
     });
 });
 </script>
@@ -595,46 +524,6 @@ document.addEventListener('DOMContentLoaded', function() {
     border-radius: 8px;
     font-size: 2rem;
     font-weight: bold;
-}
-
-/* Estilo para la notificación emergente */
-.label-notification {
-    position: fixed;
-    top: 50px;
-    left: 0;
-    right: 0;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    z-index: 1050;
-    animation: fadeInOut 2s ease;
-}
-
-.notification-content {
-    background-color: #343a40;
-    color: white;
-    padding: 12px 25px;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.2);
-    font-size: 1.1rem;
-    font-weight: 500;
-    display: flex;
-    align-items: center;
-}
-
-.label-notification.success .notification-content {
-    background-color: #1e7e34;
-}
-
-.label-notification.error .notification-content {
-    background-color: #c82333;
-}
-
-@keyframes fadeInOut {
-    0% { opacity: 0; transform: translateY(-20px); }
-    10% { opacity: 1; transform: translateY(0); }
-    80% { opacity: 1; transform: translateY(0); }
-    100% { opacity: 0; transform: translateY(-20px); }
 }
 </style>
 {% endblock %}

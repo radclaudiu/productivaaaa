@@ -2099,14 +2099,10 @@ def generate_labels():
     conservation_type_str = request.form.get('conservation_type')
     quantity = request.form.get('quantity', type=int, default=1)
     
-    # Verificar si es una solicitud AJAX
-    is_ajax = request.headers.get('X-Requested-With') == 'XMLHttpRequest'
-    
     if not product_id or not conservation_type_str:
-        if is_ajax:
-            return jsonify({'success': False, 'message': 'Datos incompletos'})
-        flash('Datos incompletos', 'danger')
-        return redirect(url_for('tasks.local_user_labels'))
+        # No añadir flash message, usamos nuestro propio sistema de notificaciones
+        # Devolvemos JSON con error para manejo AJAX
+        return jsonify({'success': False, 'message': 'Datos incompletos'})
     
     # Validar producto y tipo de conservación
     product = Product.query.get_or_404(product_id)
@@ -2119,10 +2115,9 @@ def generate_labels():
             break
             
     if not conservation_type:
-        if is_ajax:
-            return jsonify({'success': False, 'message': 'Tipo de conservación no válido'})
-        flash('Tipo de conservación no válido', 'danger')
-        return redirect(url_for('tasks.local_user_labels'))
+        # No añadir flash message, usamos nuestro propio sistema de notificaciones
+        # Devolvemos JSON con error para manejo AJAX
+        return jsonify({'success': False, 'message': 'Tipo de conservación no válido'})
     
     # Obtener configuración de conservación específica para este producto
     conservation = ProductConservation.query.filter_by(
@@ -2142,10 +2137,6 @@ def generate_labels():
         hours_valid = 2   # 2 horas
     elif conservation_type == ConservationType.SECO:
         hours_valid = 168 # 7 días
-    
-    # Si hay una configuración específica, utilizar sus horas
-    if conservation:
-        hours_valid = conservation.hours_valid
     
     # Establecer la fecha/hora actual para todos los casos
     now = datetime.now()
@@ -2168,17 +2159,12 @@ def generate_labels():
         )
         db.session.add(label)
     
-    success = True
-    message = f'{quantity} etiqueta(s) generada(s) correctamente'
-    
     try:
         db.session.commit()
-        flash(message, 'success')
+        # No añadir flash message, usamos nuestro propio sistema de notificaciones
     except Exception as e:
         db.session.rollback()
-        success = False
-        message = f'Error al generar etiquetas: {str(e)}'
-        flash(message, 'danger')
+        # No añadir flash message, usamos nuestro propio sistema de notificaciones
     
     # Generar HTML para impresión
     labels_html = render_template(
@@ -2192,15 +2178,6 @@ def generate_labels():
         quantity=quantity
     )
     
-    # Si es una solicitud AJAX, devolver JSON con la URL para abrir en una nueva ventana
-    if is_ajax:
-        return jsonify({
-            'success': success,
-            'message': message,
-            'html': labels_html
-        })
-    
-    # Si no es AJAX, devolver el HTML directamente
     return labels_html
 
 @tasks_bp.route('/admin/products')
