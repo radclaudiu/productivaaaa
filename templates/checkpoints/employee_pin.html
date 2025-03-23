@@ -7,8 +7,14 @@
     <div class="row justify-content-center">
         <div class="col-md-6">
             <div class="card shadow-sm">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0 text-center">Introduzca su PIN</h4>
+                <div class="card-header {% if pending_record %}bg-danger{% else %}bg-success{% endif %} text-white">
+                    <h4 class="mb-0 text-center">
+                        {% if pending_record %}
+                        Terminar Jornada
+                        {% else %}
+                        Iniciar Jornada
+                        {% endif %}
+                    </h4>
                 </div>
                 <div class="card-body">
                     <div class="text-center mb-4">
@@ -90,7 +96,7 @@
                         </div>
                         
                         <div class="d-grid gap-2 mt-4">
-                            {{ form.submit(class="btn btn-primary btn-lg") }}
+                            {{ form.submit(class="btn {% if pending_record %}btn-danger{% else %}btn-success{% endif %} btn-lg", value=pending_record and 'Terminar Jornada' or 'Iniciar Jornada') }}
                             <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary">
                                 Cancelar
                             </a>

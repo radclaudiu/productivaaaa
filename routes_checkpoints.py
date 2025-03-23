@@ -859,6 +859,13 @@ def employee_pin(id):
     
     form = CheckPointEmployeePinForm()
     
+    # Comprobar si hay un registro de entrada sin salida para mostrar el botón correspondiente
+    pending_record = CheckPointRecord.query.filter_by(
+        employee_id=employee.id,
+        checkpoint_id=checkpoint_id,
+        check_out_time=None
+    ).first()
+    
     if form.validate_on_submit():
         # Aquí comprobaríamos el PIN del empleado
         # Como aún no tenemos PINs implementados, hacemos una verificación sencilla
@@ -902,7 +909,8 @@ def employee_pin(id):
     
     return render_template('checkpoints/employee_pin.html', 
                           form=form,
-                          employee=employee)
+                          employee=employee,
+                          pending_record=pending_record)
 
 
 @checkpoints_bp.route('/record/<int:id>')
