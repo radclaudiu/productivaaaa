@@ -1853,20 +1853,22 @@ def download_excel_template():
     # Añadir encabezados
     ws['A1'] = "Nombre"
     ws['B1'] = "Descripción"
-    ws['C1'] = "Descongelación (horas)"
-    ws['D1'] = "Refrigeración (horas)"
-    ws['E1'] = "Gastro (horas)"
-    ws['F1'] = "Caliente (horas)"
-    ws['G1'] = "Seco (horas)"
+    ws['C1'] = "Vida útil (días)"
+    ws['D1'] = "Descongelación (horas)"
+    ws['E1'] = "Refrigeración (horas)"
+    ws['F1'] = "Gastro (horas)"
+    ws['G1'] = "Caliente (horas)"
+    ws['H1'] = "Seco (horas)"
     
     # Añadir una fila de ejemplo
     ws['A2'] = "Ejemplo Producto"
     ws['B2'] = "Descripción de ejemplo"
-    ws['C2'] = 48  # Horas para descongelación (2 días)
-    ws['D2'] = 72  # Horas para refrigeración (3 días) 
-    ws['E2'] = 96  # Horas para gastro (4 días)
-    ws['F2'] = 2   # Horas para caliente
-    ws['G2'] = 168 # Horas para seco (7 días)
+    ws['C2'] = 12  # Vida útil secundaria en días
+    ws['D2'] = 48  # Horas para descongelación (2 días)
+    ws['E2'] = 72  # Horas para refrigeración (3 días) 
+    ws['F2'] = 96  # Horas para gastro (4 días)
+    ws['G2'] = 2   # Horas para caliente
+    ws['H2'] = 168 # Horas para seco (7 días)
     
     # Guardar a un objeto BytesIO
     output = io.BytesIO()
@@ -1905,11 +1907,12 @@ def export_labels_excel(location_id):
     # Añadir encabezados
     ws['A1'] = "Nombre"
     ws['B1'] = "Descripción"
-    ws['C1'] = "Descongelación (horas)"
-    ws['D1'] = "Refrigeración (horas)"
-    ws['E1'] = "Gastro (horas)"
-    ws['F1'] = "Caliente (horas)"
-    ws['G1'] = "Seco (horas)"
+    ws['C1'] = "Vida útil (días)"
+    ws['D1'] = "Descongelación (horas)"
+    ws['E1'] = "Refrigeración (horas)"
+    ws['F1'] = "Gastro (horas)"
+    ws['G1'] = "Caliente (horas)"
+    ws['H1'] = "Seco (horas)"
     
     # Obtener productos de este local
     products = Product.query.filter_by(location_id=location_id).order_by(Product.name).all()
@@ -2134,7 +2137,7 @@ def generate_labels():
         # Fecha y hora actual
         now = datetime.now()
         
-        # Calcular fecha de caducidad
+        # Calcular fecha de caducidad primaria (por conservación)
         if conservation:
             # Usar la configuración específica del producto
             expiry_datetime = now + timedelta(hours=conservation.hours_valid)
@@ -2149,6 +2152,11 @@ def generate_labels():
             }
             hours = hours_map.get(conservation_type, 24)  # 24h por defecto
             expiry_datetime = now + timedelta(hours=hours)
+            
+        # Calcular fecha de caducidad secundaria (por vida útil en días)
+        secondary_expiry_date = None
+        if product.shelf_life_days > 0:
+            secondary_expiry_date = product.get_shelf_life_expiry(now)
         
         # Registrar las etiquetas en la base de datos
         try:
@@ -2175,6 +2183,7 @@ def generate_labels():
             conservation_type=conservation_type,
             now=now,
             expiry_datetime=expiry_datetime,
+            secondary_expiry_date=secondary_expiry_date,
             quantity=quantity
         )
         
