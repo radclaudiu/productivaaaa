@@ -38,9 +38,12 @@
                         <h5 class="mb-0">Crear Etiqueta</h5>
                     </div>
                     <div class="card-body">
-                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post" target="_blank">
+                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
 
+                            <!-- Contenedor para notificaciones emergentes -->
+                            <div id="notificationContainer"></div>
+                            
                             <div class="mb-3">
                                 <label for="product_search" class="form-label">Buscar Producto</label>
                                 <input type="text" id="product_search" class="form-control" placeholder="Escriba para buscar..." autocomplete="off" autofocus>
@@ -347,20 +350,89 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
 
+    // Función para mostrar notificaciones temporales
+    function showNotification(message, type = 'success') {
+        const container = document.getElementById('notificationContainer');
+        
+        // Crear elemento de notificación
+        const notification = document.createElement('div');
+        notification.className = `label-notification ${type}`;
+        
+        const content = document.createElement('div');
+        content.className = 'notification-content';
+        
+        // Añadir icono según el tipo
+        const icon = document.createElement('i');
+        icon.className = type === 'success' 
+            ? 'bi bi-check-circle-fill me-2' 
+            : 'bi bi-exclamation-triangle-fill me-2';
+        
+        content.appendChild(icon);
+        content.appendChild(document.createTextNode(message));
+        notification.appendChild(content);
+        
+        // Añadir al contenedor
+        container.appendChild(notification);
+        
+        // Eliminar automáticamente después de la animación (2 segundos)
+        setTimeout(() => {
+            notification.remove();
+        }, 2000);
+    }
+    
     // Validar que se ha seleccionado un producto y un tipo de conservación antes de enviar
     document.getElementById('labelForm').addEventListener('submit', function(event) {
+        event.preventDefault(); // Siempre prevenir el envío tradicional
+        
         if (productIdInput.value === '') {
-            event.preventDefault();
-            alert('Por favor, seleccione un producto');
+            showNotification('Por favor, seleccione un producto', 'error');
             productSearchInput.focus();
             return;
         }
 
         if (conservationSelect.value === '') {
-            event.preventDefault();
-            alert('Por favor, seleccione un tipo de conservación');
+            showNotification('Por favor, seleccione un tipo de conservación', 'error');
             return;
         }
+        
+        // Obtener datos del formulario para envío AJAX
+        const formData = new FormData(this);
+        
+        // Realizar solicitud AJAX
+        fetch(this.action, {
+            method: 'POST',
+            body: formData,
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest'
+            }
+        })
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Error en la solicitud');
+            }
+            
+            // Se espera una respuesta HTML para la impresión
+            return response.text();
+        })
+        .then(html => {
+            // Mostrar notificación de éxito
+            const quantity = quantityInput.value;
+            const message = quantity > 1 
+                ? `${quantity} etiquetas generadas correctamente` 
+                : 'Etiqueta generada correctamente';
+            
+            showNotification(message, 'success');
+            
+            // Abrir ventana de impresión con las etiquetas
+            const printWindow = window.open('', '_blank');
+            printWindow.document.write(html);
+            printWindow.document.close();
+            printWindow.focus();
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            showNotification('Error al generar etiquetas', 'error');
+        });
     });
 });
 </script>
