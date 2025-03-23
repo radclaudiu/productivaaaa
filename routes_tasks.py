@@ -1840,6 +1840,51 @@ def manage_labels(location_id=None):
                           products=products,
                           recent_labels=recent_labels)
 
+@tasks_bp.route('/dashboard/labels/download-template')
+@login_required
+@manager_required
+def download_excel_template():
+    """Descargar plantilla vacía en Excel para importación de productos"""
+    # Crear un nuevo libro de Excel
+    wb = openpyxl.Workbook()
+    ws = wb.active
+    ws.title = "Productos"
+    
+    # Añadir encabezados
+    ws['A1'] = "ID"
+    ws['B1'] = "Nombre"
+    ws['C1'] = "Descripción"
+    ws['D1'] = "Descongelación (días)"
+    ws['E1'] = "Refrigeración (días)"
+    ws['F1'] = "Gastro (días)"
+    ws['G1'] = "Caliente (días)"
+    ws['H1'] = "Seco (días)"
+    
+    # Añadir una fila de ejemplo
+    ws['A2'] = ""  # Dejar ID vacío para nuevo producto
+    ws['B2'] = "Ejemplo Producto"
+    ws['C2'] = "Descripción de ejemplo"
+    ws['D2'] = 2  # Días para descongelación
+    ws['E2'] = 3  # Días para refrigeración
+    ws['F2'] = 4  # Días para gastro
+    ws['G2'] = 1  # Días para caliente
+    ws['H2'] = 7  # Días para seco
+    
+    # Guardar a un objeto BytesIO
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Crear nombre de archivo para la plantilla
+    filename = f"plantilla_productos_{datetime.now().strftime('%Y%m%d')}.xlsx"
+    
+    return send_file(
+        output,
+        download_name=filename,
+        as_attachment=True,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
 @tasks_bp.route('/dashboard/labels/export/<int:location_id>')
 @login_required
 @manager_required

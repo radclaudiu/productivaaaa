@@ -257,15 +257,9 @@
                 </form>
             </div>
             <div class="modal-footer">
-                {% if selected_location %}
-                <a href="{{ url_for('tasks.export_labels_excel', location_id=selected_location.id) }}" class="btn btn-info">
+                <a href="{{ url_for('tasks.download_excel_template') }}" class="btn btn-info">
                     <i class="bi bi-file-earmark-excel me-2"></i>Descargar Plantilla
                 </a>
-                {% else %}
-                <button type="button" class="btn btn-info" disabled title="Seleccione un local para descargar la plantilla">
-                    <i class="bi bi-file-earmark-excel me-2"></i>Descargar Plantilla
-                </button>
-                {% endif %}
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
