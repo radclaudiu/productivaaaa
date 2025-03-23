@@ -832,15 +832,9 @@ def checkpoint_dashboard():
         is_active=True
     ).order_by(Employee.first_name, Employee.last_name).all()
     
-    # Obtener registros recientes de este punto de fichaje
-    recent_records = CheckPointRecord.query.filter_by(
-        checkpoint_id=checkpoint_id
-    ).order_by(CheckPointRecord.check_in_time.desc()).limit(5).all()
-    
     return render_template('checkpoints/dashboard.html', 
                           checkpoint=checkpoint,
-                          employees=employees,
-                          recent_records=recent_records)
+                          employees=employees)
 
 
 @checkpoints_bp.route('/employee/<int:id>/pin', methods=['GET', 'POST'])

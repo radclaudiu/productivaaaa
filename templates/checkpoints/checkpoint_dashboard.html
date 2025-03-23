@@ -101,11 +101,6 @@
                             <div class="card-body">
                                 <h5 class="name">{{ employee.first_name }} {{ employee.last_name }}</h5>
                                 <p class="position mb-0">{{ employee.position or 'Empleado' }}</p>
-                                {% if employee.is_on_shift %}
-                                    <span class="badge bg-success mt-2">En jornada</span>
-                                {% else %}
-                                    <span class="badge bg-secondary mt-2">No en jornada</span>
-                                {% endif %}
                             </div>
                         </a>
                     </div>
@@ -118,61 +113,6 @@
                 </div>
                 {% endfor %}
             </div>
-        </div>
-    </div>
-    
-    <div class="card">
-        <div class="card-header bg-primary text-white">
-            <h4 class="mb-0">Últimos Fichajes</h4>
-        </div>
-        <div class="table-responsive">
-            <table class="table table-hover mb-0">
-                <thead>
-                    <tr>
-                        <th>Empleado</th>
-                        <th>Entrada</th>
-                        <th>Salida</th>
-                        <th>Duración</th>
-                        <th>Estado</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    {% for record in recent_records %}
-                    <tr>
-                        <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
-                        <td>{{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}</td>
-                        <td>
-                            {% if record.check_out_time %}
-                                {{ record.check_out_time.strftime('%d/%m/%Y %H:%M') }}
-                            {% else %}
-                                <span class="badge bg-warning">Pendiente</span>
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if record.check_out_time %}
-                                {% set duration = record.duration() %}
-                                {{ duration|round(2) }} horas
-                            {% else %}
-                                -
-                            {% endif %}
-                        </td>
-                        <td>
-                            {% if record.adjusted %}
-                                <span class="badge bg-warning">Ajustado</span>
-                            {% elif record.incidents %}
-                                <span class="badge bg-danger">Incidencia</span>
-                            {% else %}
-                                <span class="badge bg-success">OK</span>
-                            {% endif %}
-                        </td>
-                    </tr>
-                    {% else %}
-                    <tr>
-                        <td colspan="5" class="text-center">No hay fichajes recientes</td>
-                    </tr>
-                    {% endfor %}
-                </tbody>
-            </table>
         </div>
     </div>
 </div>
