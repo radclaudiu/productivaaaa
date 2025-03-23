@@ -457,9 +457,9 @@ def delete_company(id):
         for employee in company.employees:
             db.session.delete(employee)
         
-        # Delete all users related to this company
-        for user in company.users_relation:
-            db.session.delete(user)
+        # En lugar de eliminar los usuarios, solo eliminaremos la relación en la tabla asociativa
+        # La tabla asociativa user_companies se eliminará automáticamente cuando se elimine la empresa
+        # debido a que la relación tiene cascade="all, delete-orphan"
         
         # Finally delete the company
         db.session.delete(company)
