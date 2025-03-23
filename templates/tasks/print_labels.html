@@ -143,14 +143,23 @@
 <body>
     {% for i in range(quantity) %}
         <div class="etiqueta">
+            <!-- 1. El producto -->
             <div class="producto">{{ product.name|upper }}</div>
+            
+            <!-- 2. El estado (conservación) -->
             <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
-            <div class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
-            <div class="fecha">INICIO: {{ now.strftime('%d/%m/%Y %H:%M') }}</div>
-            <div class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
+            
+            <!-- 3. Caducidad primaria (si existe) -->
             {% if secondary_expiry_date %}
             <div class="caducidad caducidad-secundaria">Caducidad primaria: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
             {% endif %}
+            
+            <!-- 4. Fecha inicio -->
+            <div class="fecha">INICIO: {{ now.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
+            
+            <!-- 5. La caducidad -->
+            <div class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
         </div>
     {% endfor %}
     
