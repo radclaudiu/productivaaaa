@@ -1,0 +1,382 @@
+{% extends "layout.html" %}
+
+{% block title %}Herramienta de Vista Previa de Etiquetas{% endblock %}
+
+{% block head %}
+{{ super() }}
+<style>
+    .preview-container {
+        margin: 20px auto;
+        padding: 20px;
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    
+    .label-preview {
+        position: relative;
+        margin: 20px auto;
+        background-color: white;
+        border: 1px solid #ddd;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        overflow: hidden;
+    }
+    
+    .preview-controls {
+        margin-bottom: 20px;
+    }
+    
+    .form-group {
+        margin-bottom: 15px;
+    }
+    
+    .control-panel {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 15px;
+        margin-bottom: 20px;
+    }
+    
+    .control-panel .form-group {
+        flex: 1;
+        min-width: 150px;
+    }
+    
+    .preview-item {
+        padding: 2px;
+        margin: 2px 0;
+        font-family: Arial, sans-serif;
+    }
+    
+    .preview-product {
+        font-weight: bold;
+        font-size: 12pt;
+        text-align: center;
+        margin-bottom: 3mm;
+        text-transform: uppercase;
+    }
+    
+    .preview-conservation {
+        font-weight: bold;
+        font-size: 10pt;
+        text-align: center;
+        background-color: #f8f9fa;
+        border-radius: 2mm;
+        padding: 1mm;
+        margin: 2mm 0;
+    }
+    
+    .preview-employee {
+        font-size: 9pt;
+        text-align: left;
+    }
+    
+    .preview-date {
+        font-size: 9pt;
+        text-align: left;
+    }
+    
+    .preview-expiry {
+        font-size: 10pt;
+        text-align: center;
+        margin-top: 2mm;
+    }
+    
+    .preview-primary-expiry {
+        font-size: 9pt;
+        text-align: center;
+        margin-top: 1mm;
+    }
+    
+    #rulers {
+        position: absolute;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        pointer-events: none;
+    }
+    
+    .ruler-h, .ruler-v {
+        position: absolute;
+        background-color: rgba(255, 0, 0, 0.5);
+        z-index: 100;
+    }
+    
+    .ruler-h {
+        height: 1px;
+        width: 100%;
+    }
+    
+    .ruler-v {
+        width: 1px;
+        height: 100%;
+    }
+    
+    .ruler-label {
+        position: absolute;
+        color: red;
+        font-size: 8px;
+        background-color: rgba(255,255,255,0.7);
+        padding: 1px 2px;
+        border-radius: 2px;
+    }
+    
+    .actual-size-note {
+        margin: 10px 0;
+        font-style: italic;
+        color: #666;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>Herramienta de Vista Previa de Etiquetas</h2>
+    <p class="lead">Ajusta y previsualiza el tamaño de las etiquetas antes de imprimir</p>
+    
+    <div class="row">
+        <div class="col-md-5">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Ajustes de Etiqueta</h5>
+                </div>
+                <div class="card-body">
+                    <div class="control-panel">
+                        <div class="form-group">
+                            <label for="label-width">Ancho (mm):</label>
+                            <input type="number" id="label-width" class="form-control" value="35" min="20" max="100" step="1">
+                        </div>
+                        <div class="form-group">
+                            <label for="label-height">Alto (mm):</label>
+                            <input type="number" id="label-height" class="form-control" value="40" min="20" max="100" step="1">
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="product-name">Nombre del Producto:</label>
+                        <input type="text" id="product-name" class="form-control" value="PRODUCTO DE EJEMPLO">
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="conservation-type">Tipo de Conservación:</label>
+                        <select id="conservation-type" class="form-control">
+                            <option value="refrigeracion">REFRIGERACIÓN</option>
+                            <option value="descongelacion">DESCONGELACIÓN</option>
+                            <option value="gastro">GASTRO</option>
+                            <option value="caliente">CALIENTE</option>
+                            <option value="seco">SECO</option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="expiry-format">Mostrar Caducidad Secundaria:</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="show-secondary" checked>
+                            <label class="form-check-label" for="show-secondary">
+                                Mostrar caducidad primaria (secundaria)
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="element-spacing">Espaciado entre Caducidades (mm):</label>
+                        <input type="number" id="element-spacing" class="form-control" value="1" min="0" max="10" step="0.5">
+                    </div>
+                    
+                    <button id="apply-settings" class="btn btn-primary">Aplicar Cambios</button>
+                    <button id="save-settings" class="btn btn-success">Guardar Configuración</button>
+                    <button id="print-preview" class="btn btn-info">Imprimir Ejemplo</button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-md-7">
+            <div class="card">
+                <div class="card-header">
+                    <h5>Vista Previa</h5>
+                </div>
+                <div class="card-body text-center">
+                    <p class="actual-size-note">La etiqueta se muestra a escala real si es posible</p>
+                    <div class="preview-container">
+                        <div id="label-preview" class="label-preview">
+                            <div class="preview-item preview-product">PRODUCTO DE EJEMPLO</div>
+                            <div class="preview-item preview-conservation">REFRIGERACIÓN</div>
+                            <div class="preview-item preview-employee">EMP: Usuario Ejemplo</div>
+                            <div class="preview-item preview-date">INICIO: {% now 'short' %}</div>
+                            <div class="preview-item preview-expiry">Caducidad: {% now 'short' %}</div>
+                            <div class="preview-item preview-primary-expiry">Caducidad primaria: {% now 'short' %}</div>
+                            <div id="rulers"></div>
+                        </div>
+                    </div>
+                    <p>
+                        <small>Dimensiones actuales: <span id="current-dimensions">35mm × 40mm</span></small>
+                    </p>
+                    <div class="form-check">
+                        <input class="form-check-input" type="checkbox" id="show-rulers" checked>
+                        <label class="form-check-label" for="show-rulers">
+                            Mostrar reglas de medida
+                        </label>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <div class="alert alert-info" role="alert">
+                        <strong>Nota:</strong> Esta es una aproximación visual. El resultado final puede variar según la impresora y la configuración de impresión.
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const labelPreview = document.getElementById('label-preview');
+    const labelWidth = document.getElementById('label-width');
+    const labelHeight = document.getElementById('label-height');
+    const productName = document.getElementById('product-name');
+    const conservationType = document.getElementById('conservation-type');
+    const showSecondary = document.getElementById('show-secondary');
+    const elementSpacing = document.getElementById('element-spacing');
+    const applyButton = document.getElementById('apply-settings');
+    const saveButton = document.getElementById('save-settings');
+    const printButton = document.getElementById('print-preview');
+    const currentDimensions = document.getElementById('current-dimensions');
+    const showRulers = document.getElementById('show-rulers');
+    const rulersContainer = document.getElementById('rulers');
+    
+    // Función para actualizar las dimensiones de la etiqueta
+    function updateLabelSize() {
+        const width = parseInt(labelWidth.value);
+        const height = parseInt(labelHeight.value);
+        
+        labelPreview.style.width = `${width}mm`;
+        labelPreview.style.height = `${height}mm`;
+        currentDimensions.textContent = `${width}mm × ${height}mm`;
+        
+        updateRulers();
+    }
+    
+    // Función para actualizar el contenido de la etiqueta
+    function updateLabelContent() {
+        const productElement = labelPreview.querySelector('.preview-product');
+        const conservationElement = labelPreview.querySelector('.preview-conservation');
+        const secondaryExpiryElement = labelPreview.querySelector('.preview-primary-expiry');
+        
+        productElement.textContent = productName.value.toUpperCase();
+        conservationElement.textContent = document.querySelector(`#conservation-type option[value="${conservationType.value}"]`).textContent;
+        
+        // Mostrar/ocultar caducidad secundaria
+        secondaryExpiryElement.style.display = showSecondary.checked ? 'block' : 'none';
+        
+        // Aplicar espaciado entre caducidades
+        const spacing = parseFloat(elementSpacing.value);
+        secondaryExpiryElement.style.marginTop = `${spacing}mm`;
+    }
+    
+    // Función para crear y actualizar reglas de medida
+    function updateRulers() {
+        if (!showRulers.checked) {
+            rulersContainer.innerHTML = '';
+            return;
+        }
+        
+        rulersContainer.innerHTML = '';
+        
+        const width = parseInt(labelWidth.value);
+        const height = parseInt(labelHeight.value);
+        
+        // Crear reglas horizontales
+        for (let i = 0; i <= height; i += 5) {
+            if (i === 0) continue;
+            
+            const ruler = document.createElement('div');
+            ruler.className = 'ruler-h';
+            ruler.style.top = `${i}mm`;
+            
+            const label = document.createElement('span');
+            label.className = 'ruler-label';
+            label.textContent = `${i}mm`;
+            label.style.top = `${i}mm`;
+            label.style.left = '1mm';
+            
+            rulersContainer.appendChild(ruler);
+            rulersContainer.appendChild(label);
+        }
+        
+        // Crear reglas verticales
+        for (let i = 0; i <= width; i += 5) {
+            if (i === 0) continue;
+            
+            const ruler = document.createElement('div');
+            ruler.className = 'ruler-v';
+            ruler.style.left = `${i}mm`;
+            
+            const label = document.createElement('span');
+            label.className = 'ruler-label';
+            label.textContent = `${i}mm`;
+            label.style.left = `${i}mm`;
+            label.style.top = '1mm';
+            
+            rulersContainer.appendChild(ruler);
+            rulersContainer.appendChild(label);
+        }
+    }
+    
+    // Aplicar cambios
+    applyButton.addEventListener('click', function() {
+        updateLabelSize();
+        updateLabelContent();
+    });
+    
+    // Guardar configuración (envía al servidor)
+    saveButton.addEventListener('click', function() {
+        // Aquí se enviará la configuración al servidor
+        const config = {
+            width: parseInt(labelWidth.value),
+            height: parseInt(labelHeight.value),
+            showSecondary: showSecondary.checked,
+            spacing: parseFloat(elementSpacing.value)
+        };
+        
+        fetch('/tasks/save_label_config', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify(config)
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                alert('Configuración guardada con éxito');
+            } else {
+                alert('Error al guardar la configuración: ' + data.error);
+            }
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al guardar la configuración');
+        });
+    });
+    
+    // Imprimir vista previa
+    printButton.addEventListener('click', function() {
+        const width = parseInt(labelWidth.value);
+        const height = parseInt(labelHeight.value);
+        const hasSecondary = showSecondary.checked;
+        const spacing = parseFloat(elementSpacing.value);
+        
+        window.open(`/tasks/print_preview?width=${width}&height=${height}&secondary=${hasSecondary}&spacing=${spacing}`, '_blank');
+    });
+    
+    // Mostrar/ocultar reglas
+    showRulers.addEventListener('change', updateRulers);
+    
+    // Inicializar
+    updateLabelSize();
+    updateLabelContent();
+    updateRulers();
+});
+</script>
+{% endblock %}
