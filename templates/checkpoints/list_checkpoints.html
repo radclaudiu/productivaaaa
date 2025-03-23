@@ -4,129 +4,129 @@
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>Puntos de Fichaje</h1>
-                <div>
-                    <a href="{{ url_for('checkpoints.create_checkpoint') }}" class="btn btn-primary">
-                        <i class="fas fa-plus"></i> Nuevo Punto de Fichaje
-                    </a>
-                </div>
-            </div>
-            
-            {% with messages = get_flashed_messages(with_categories=true) %}
-                {% if messages %}
-                    {% for category, message in messages %}
-                        <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                            {{ message }}
-                            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                        </div>
-                    {% endfor %}
-                {% endif %}
-            {% endwith %}
-            
-            {% if checkpoints %}
-            <div class="card">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
-                    <h5 class="mb-0">Listado de Puntos de Fichaje</h5>
-                    
-                    <div class="d-flex">
-                        <input type="text" id="searchCheckpoints" class="form-control form-control-sm" placeholder="Buscar...">
-                    </div>
-                </div>
-                
-                <div class="table-responsive">
-                    <table class="table table-striped table-hover mb-0" id="checkpointsTable">
-                        <thead>
-                            <tr>
-                                <th>Nombre</th>
-                                <th>Empresa</th>
-                                <th>Ubicación</th>
-                                <th>Estado</th>
-                                <th>Usuario</th>
-                                <th>Checkout Auto</th>
-                                <th>Acciones</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            {% for checkpoint in checkpoints %}
-                            <tr>
-                                <td>{{ checkpoint.name }}</td>
-                                <td>{{ checkpoint.company.name }}</td>
-                                <td>{{ checkpoint.location or '-' }}</td>
-                                <td>
-                                    {% if checkpoint.status.value == 'active' %}
-                                    <span class="badge bg-success">Activo</span>
-                                    {% elif checkpoint.status.value == 'disabled' %}
-                                    <span class="badge bg-danger">Desactivado</span>
-                                    {% else %}
-                                    <span class="badge bg-warning">Mantenimiento</span>
-                                    {% endif %}
-                                </td>
-                                <td>{{ checkpoint.username }}</td>
-                                <td>
-                                    {% if checkpoint.auto_checkout_time %}
-                                    {{ checkpoint.auto_checkout_time.strftime('%H:%M') }}
-                                    {% else %}
-                                    -
-                                    {% endif %}
-                                </td>
-                                <td>
-                                    <div class="btn-group btn-group-sm">
-                                        <a href="{{ url_for('checkpoints.list_checkpoint_records', id=checkpoint.id) }}" class="btn btn-outline-primary">
-                                            <i class="fas fa-list"></i> Fichajes
-                                        </a>
-                                        <a href="{{ url_for('checkpoints.edit_checkpoint', id=checkpoint.id) }}" class="btn btn-outline-secondary">
-                                            <i class="fas fa-edit"></i> Editar
-                                        </a>
-                                        <button type="button" class="btn btn-outline-danger" data-bs-toggle="modal" data-bs-target="#deleteModal{{ checkpoint.id }}">
-                                            <i class="fas fa-trash"></i> Eliminar
-                                        </button>
-                                    </div>
-                                    
-                                    <!-- Modal de confirmación de eliminación -->
-                                    <div class="modal fade" id="deleteModal{{ checkpoint.id }}" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
-                                        <div class="modal-dialog">
-                                            <div class="modal-content">
-                                                <div class="modal-header">
-                                                    <h5 class="modal-title" id="deleteModalLabel">Confirmar Eliminación</h5>
-                                                    <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
-                                                </div>
-                                                <div class="modal-body">
-                                                    <p>¿Está seguro de que desea eliminar el punto de fichaje <strong>{{ checkpoint.name }}</strong>?</p>
-                                                    <div class="alert alert-warning">
-                                                        <i class="fas fa-exclamation-triangle"></i> Esta acción eliminará todos los registros de fichaje asociados y no se puede deshacer.
-                                                    </div>
-                                                </div>
-                                                <div class="modal-footer">
-                                                    <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                    <form action="{{ url_for('checkpoints.delete_checkpoint', id=checkpoint.id) }}" method="POST" style="display: inline;">
-                                                        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                                                        <button type="submit" class="btn btn-danger">Eliminar</button>
-                                                    </form>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </td>
-                            </tr>
-                            {% endfor %}
-                        </tbody>
-                    </table>
-                </div>
-            </div>
-            {% else %}
-            <div class="alert alert-info">
-                <i class="fas fa-info-circle"></i> No hay puntos de fichaje configurados.
-                <a href="{{ url_for('checkpoints.create_checkpoint') }}" class="alert-link">Crear el primero</a>.
-            </div>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>Puntos de Fichaje</h1>
+        <div>
+            <a href="{{ url_for('checkpoints.index') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+            {% if current_user.is_admin() %}
+            <a href="{{ url_for('checkpoints.create_checkpoint') }}" class="btn btn-success">
+                <i class="bi bi-plus-circle"></i> Nuevo Punto de Fichaje
+            </a>
             {% endif %}
-            
-            <div class="mt-4">
-                <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
-                    <i class="fas fa-arrow-left"></i> Volver al Dashboard
-                </a>
+        </div>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                </div>
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Puntos de Fichaje Disponibles</h5>
+        </div>
+        <div class="table-responsive">
+            <table class="table table-hover table-striped mb-0">
+                <thead>
+                    <tr>
+                        <th>Nombre</th>
+                        <th>Ubicación</th>
+                        <th>Empresa</th>
+                        <th>Estado</th>
+                        <th>Acciones</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% if checkpoints %}
+                        {% for checkpoint in checkpoints %}
+                        <tr>
+                            <td>
+                                <strong>{{ checkpoint.name }}</strong>
+                                {% if checkpoint.description %}
+                                <br><small class="text-muted">{{ checkpoint.description }}</small>
+                                {% endif %}
+                            </td>
+                            <td>{{ checkpoint.location }}</td>
+                            <td>{{ checkpoint.company.name }}</td>
+                            <td>
+                                {% if checkpoint.status.value == 'active' %}
+                                <span class="badge bg-success">Activo</span>
+                                {% elif checkpoint.status.value == 'maintenance' %}
+                                <span class="badge bg-warning">Mantenimiento</span>
+                                {% elif checkpoint.status.value == 'disabled' %}
+                                <span class="badge bg-danger">Desactivado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                <div class="btn-group">
+                                    <button type="button" class="btn btn-sm btn-primary dropdown-toggle" data-bs-toggle="dropdown" aria-expanded="false">
+                                        Acciones
+                                    </button>
+                                    <ul class="dropdown-menu">
+                                        <li>
+                                            <a href="{{ url_for('checkpoints.list_checkpoint_records', id=checkpoint.id) }}" class="dropdown-item">
+                                                <i class="bi bi-clock-history"></i> Ver Registros
+                                            </a>
+                                        </li>
+                                        <li>
+                                            <a href="{{ url_for('checkpoints.edit_checkpoint', id=checkpoint.id) }}" class="dropdown-item">
+                                                <i class="bi bi-pencil"></i> Editar
+                                            </a>
+                                        </li>
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li>
+                                            <button class="dropdown-item text-danger" 
+                                                    onclick="confirmDeleteCheckpoint({{ checkpoint.id }}, '{{ checkpoint.name }}')">
+                                                <i class="bi bi-trash"></i> Eliminar
+                                            </button>
+                                        </li>
+                                    </ul>
+                                </div>
+                            </td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td colspan="5" class="text-center">No hay puntos de fichaje configurados</td>
+                        </tr>
+                    {% endif %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    
+    <!-- Form para confirmar eliminación -->
+    <form id="delete-checkpoint-form" method="POST" style="display: none;">
+        <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+    </form>
+</div>
+
+<!-- Modal de confirmación para eliminar checkpoint -->
+<div class="modal fade" id="deleteCheckpointModal" tabindex="-1" aria-hidden="true">
+    <div class="modal-dialog">
+        <div class="modal-content">
+            <div class="modal-header bg-danger text-white">
+                <h5 class="modal-title">Confirmar Eliminación</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <p>¿Está seguro de que desea eliminar el punto de fichaje <strong id="checkpoint-name"></strong>?</p>
+                <p class="text-danger">
+                    <i class="bi bi-exclamation-triangle"></i>
+                    Esta acción también eliminará todos los registros de fichaje asociados y no se puede deshacer.
+                </p>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                <button type="button" class="btn btn-danger" id="confirm-delete-btn">Eliminar</button>
             </div>
         </div>
     </div>
@@ -135,25 +135,20 @@
 
 {% block scripts %}
 <script>
-    // Búsqueda en tabla de puntos de fichaje
-    document.getElementById('searchCheckpoints').addEventListener('keyup', function() {
-        const searchTerm = this.value.toLowerCase();
-        const table = document.getElementById('checkpointsTable');
-        const rows = table.getElementsByTagName('tbody')[0].getElementsByTagName('tr');
+    function confirmDeleteCheckpoint(id, name) {
+        // Configurar modal
+        document.getElementById('checkpoint-name').textContent = name;
         
-        for (let i = 0; i < rows.length; i++) {
-            let found = false;
-            const cells = rows[i].getElementsByTagName('td');
-            
-            for (let j = 0; j < cells.length - 1; j++) { // Ignorar la columna de acciones
-                if (cells[j].textContent.toLowerCase().indexOf(searchTerm) > -1) {
-                    found = true;
-                    break;
-                }
-            }
-            
-            rows[i].style.display = found ? '' : 'none';
-        }
-    });
+        // Configurar botón de confirmación
+        document.getElementById('confirm-delete-btn').onclick = function() {
+            const form = document.getElementById('delete-checkpoint-form');
+            form.action = "{{ url_for('checkpoints.delete_checkpoint', id=0) }}".replace('0', id);
+            form.submit();
+        };
+        
+        // Mostrar modal
+        const modal = new bootstrap.Modal(document.getElementById('deleteCheckpointModal'));
+        modal.show();
+    }
 </script>
 {% endblock %}

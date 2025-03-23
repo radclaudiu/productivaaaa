@@ -1,162 +1,198 @@
 {% extends 'layout.html' %}
 
-{% block title %}{{ title }}{% endblock %}
+{% block title %}
+    {% if checkpoint %}Editar Punto de Fichaje{% else %}Nuevo Punto de Fichaje{% endif %}
+{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <div class="row">
-        <div class="col-md-8 offset-md-2">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h1>{{ title }}</h1>
-            </div>
-            
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="mb-0">Información del Punto de Fichaje</h5>
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1>
+            {% if checkpoint %}Editar Punto de Fichaje{% else %}Nuevo Punto de Fichaje{% endif %}
+        </h1>
+        <div>
+            <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-secondary">
+                <i class="bi bi-arrow-left"></i> Volver
+            </a>
+        </div>
+    </div>
+    
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            {% for category, message in messages %}
+                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                    {{ message }}
+                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
-                <div class="card-body">
-                    <form method="POST">
-                        {{ form.csrf_token }}
+            {% endfor %}
+        {% endif %}
+    {% endwith %}
+    
+    <div class="card">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">
+                {% if checkpoint %}Editar "{{ checkpoint.name }}"{% else %}Información del Punto de Fichaje{% endif %}
+            </h5>
+        </div>
+        <div class="card-body">
+            <form method="POST" class="needs-validation" novalidate>
+                {{ form.csrf_token }}
+                
+                <div class="row">
+                    <!-- Información básica -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Información General</h4>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.name.id }}" class="form-label">Nombre</label>
-                                    {{ form.name(class="form-control") }}
+                        <div class="mb-3">
+                            {{ form.name.label(class="form-label") }}
+                            {{ form.name(class="form-control" + (" is-invalid" if form.name.errors else "")) }}
+                            {% if form.name.errors %}
+                                <div class="invalid-feedback">
                                     {% for error in form.name.errors %}
-                                    <div class="text-danger">{{ error }}</div>
+                                        {{ error }}
                                     {% endfor %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.company_id.id }}" class="form-label">Empresa</label>
-                                    {{ form.company_id(class="form-control") }}
-                                    {% for error in form.company_id.errors %}
-                                    <div class="text-danger">{{ error }}</div>
-                                    {% endfor %}
-                                </div>
-                            </div>
+                            {% endif %}
                         </div>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.location.id }}" class="form-label">Ubicación</label>
-                                    {{ form.location(class="form-control", placeholder="Ejemplo: Recepción") }}
+                        <div class="mb-3">
+                            {{ form.description.label(class="form-label") }}
+                            {{ form.description(class="form-control" + (" is-invalid" if form.description.errors else ""), rows=3) }}
+                            {% if form.description.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.description.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.location.label(class="form-label") }}
+                            {{ form.location(class="form-control" + (" is-invalid" if form.location.errors else "")) }}
+                            {% if form.location.errors %}
+                                <div class="invalid-feedback">
                                     {% for error in form.location.errors %}
-                                    <div class="text-danger">{{ error }}</div>
+                                        {{ error }}
                                     {% endfor %}
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.status.id }}" class="form-label">Estado</label>
-                                    {{ form.status(class="form-control") }}
+                            {% endif %}
+                            <div class="form-text">Ubicación física del dispositivo: dirección, planta, sala, etc.</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.company_id.label(class="form-label") }}
+                            {{ form.company_id(class="form-select" + (" is-invalid" if form.company_id.errors else "")) }}
+                            {% if form.company_id.errors %}
+                                <div class="invalid-feedback">
+                                    {% for error in form.company_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.status.label(class="form-label") }}
+                            {{ form.status(class="form-select" + (" is-invalid" if form.status.errors else "")) }}
+                            {% if form.status.errors %}
+                                <div class="invalid-feedback">
                                     {% for error in form.status.errors %}
-                                    <div class="text-danger">{{ error }}</div>
+                                        {{ error }}
                                     {% endfor %}
                                 </div>
-                            </div>
+                            {% endif %}
                         </div>
+                    </div>
+                    
+                    <!-- Configuración de autenticación -->
+                    <div class="col-md-6">
+                        <h4 class="mb-3">Configuración de Acceso</h4>
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.username.id }}" class="form-label">Usuario</label>
-                                    {{ form.username(class="form-control") }}
+                        <div class="mb-3">
+                            {{ form.username.label(class="form-label") }}
+                            {{ form.username(class="form-control" + (" is-invalid" if form.username.errors else "")) }}
+                            {% if form.username.errors %}
+                                <div class="invalid-feedback">
                                     {% for error in form.username.errors %}
-                                    <div class="text-danger">{{ error }}</div>
+                                        {{ error }}
                                     {% endfor %}
-                                    <small class="form-text text-muted">
-                                        Nombre de usuario para acceder al punto de fichaje.
-                                    </small>
                                 </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.password.id }}" class="form-label">Contraseña</label>
-                                    {{ form.password(class="form-control") }}
+                            {% endif %}
+                            <div class="form-text">Nombre de usuario para acceder al punto de fichaje</div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            {{ form.password.label(class="form-label") }}
+                            {{ form.password(class="form-control" + (" is-invalid" if form.password.errors else ""), autocomplete="new-password") }}
+                            {% if form.password.errors %}
+                                <div class="invalid-feedback">
                                     {% for error in form.password.errors %}
-                                    <div class="text-danger">{{ error }}</div>
+                                        {{ error }}
                                     {% endfor %}
-                                    {% if checkpoint %}
-                                    <small class="form-text text-muted">
-                                        Dejar en blanco para mantener la contraseña actual.
-                                    </small>
-                                    {% endif %}
                                 </div>
+                            {% endif %}
+                            <div class="form-text">
+                                {% if checkpoint %}
+                                    Dejar en blanco para mantener la contraseña actual.
+                                {% else %}
+                                    Contraseña para acceder al punto de fichaje (mínimo 6 caracteres).
+                                {% endif %}
                             </div>
                         </div>
                         
-                        {% if checkpoint %}
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.confirm_password.id }}" class="form-label">Confirmar Contraseña</label>
-                                    {{ form.confirm_password(class="form-control") }}
+                        <div class="mb-3">
+                            {{ form.confirm_password.label(class="form-label") }}
+                            {{ form.confirm_password(class="form-control" + (" is-invalid" if form.confirm_password.errors else ""), autocomplete="new-password") }}
+                            {% if form.confirm_password.errors %}
+                                <div class="invalid-feedback">
                                     {% for error in form.confirm_password.errors %}
-                                    <div class="text-danger">{{ error }}</div>
+                                        {{ error }}
                                     {% endfor %}
                                 </div>
-                            </div>
+                            {% endif %}
                         </div>
-                        {% endif %}
                         
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <div class="form-group">
-                                    <label for="{{ form.auto_checkout_time.id }}" class="form-label">Hora de checkout automático</label>
-                                    {{ form.auto_checkout_time(class="form-control") }}
+                        <h4 class="mb-3 mt-4">Opciones Avanzadas</h4>
+                        
+                        <div class="mb-3">
+                            {{ form.auto_checkout_time.label(class="form-label") }}
+                            {{ form.auto_checkout_time(class="form-control" + (" is-invalid" if form.auto_checkout_time.errors else ""), type="time") }}
+                            {% if form.auto_checkout_time.errors %}
+                                <div class="invalid-feedback">
                                     {% for error in form.auto_checkout_time.errors %}
-                                    <div class="text-danger">{{ error }}</div>
+                                        {{ error }}
                                     {% endfor %}
-                                    <small class="form-text text-muted">
-                                        Hora a la que se realizará el checkout automático para fichajes sin salida.
-                                    </small>
                                 </div>
+                            {% endif %}
+                            <div class="form-text">Hora a la que se realizarán automáticamente los fichajes de salida pendientes (opcional)</div>
+                        </div>
+                        
+                        <div class="form-check mb-3">
+                            {{ form.enforce_contract_hours(class="form-check-input") }}
+                            {{ form.enforce_contract_hours.label(class="form-check-label") }}
+                            <div class="form-text">
+                                Si está activado, los registros se ajustarán automáticamente para cumplir con las horas de contrato.
                             </div>
                         </div>
                         
-                        <div class="form-group mb-3">
-                            <label class="form-label">Ajustes adicionales</label>
-                            <div class="form-check form-switch mb-2">
-                                {{ form.enforce_contract_hours(class="form-check-input") }}
-                                <label class="form-check-label" for="{{ form.enforce_contract_hours.id }}">
-                                    Aplicar límite horas contrato
-                                </label>
-                                {% for error in form.enforce_contract_hours.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
-                            </div>
-                            <div class="form-check form-switch">
-                                {{ form.auto_adjust_overtime(class="form-check-input") }}
-                                <label class="form-check-label" for="{{ form.auto_adjust_overtime.id }}">
-                                    Ajustar automáticamente horas extra
-                                </label>
-                                {% for error in form.auto_adjust_overtime.errors %}
-                                <div class="text-danger">{{ error }}</div>
-                                {% endfor %}
+                        <div class="form-check mb-3">
+                            {{ form.auto_adjust_overtime(class="form-check-input") }}
+                            {{ form.auto_adjust_overtime.label(class="form-check-label") }}
+                            <div class="form-text">
+                                Si está activado, se ajustarán las horas extras según la configuración de cada empleado.
                             </div>
                         </div>
-                        
-                        <div class="form-group mb-4">
-                            <label for="{{ form.description.id }}" class="form-label">Descripción</label>
-                            {{ form.description(class="form-control", rows=3) }}
-                            {% for error in form.description.errors %}
-                            <div class="text-danger">{{ error }}</div>
-                            {% endfor %}
-                        </div>
-                        
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Cancelar
-                            </a>
-                            {{ form.submit(class="btn btn-primary") }}
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+                
+                <div class="mt-4 d-flex justify-content-end">
+                    <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-secondary me-2">
+                        Cancelar
+                    </a>
+                    {{ form.submit(class="btn btn-primary") }}
+                </div>
+            </form>
         </div>
     </div>
 </div>
