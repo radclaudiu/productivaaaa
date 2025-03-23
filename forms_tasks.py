@@ -216,3 +216,11 @@ class GenerateLabelForm(FlaskForm):
         super(GenerateLabelForm, self).__init__(*args, **kwargs)
         from models_tasks import ConservationType
         self.conservation_type.choices = [(ct.value, ct.name.capitalize()) for ct in ConservationType]
+        
+        
+class PrinterConfigForm(FlaskForm):
+    """Formulario para configurar impresoras"""
+    printer_name = StringField('Nombre de la Impresora', validators=[DataRequired(), Length(max=128)])
+    is_default = BooleanField('Predeterminada', default=False)
+    is_active = BooleanField('Activa', default=True)
+    submit = SubmitField('Guardar Configuración')

@@ -1263,6 +1263,109 @@ def portal_logout():
     
     flash('Has cerrado sesión del portal correctamente.', 'success')
     return redirect(url_for('tasks.index'))
+    
+    
+@tasks_bp.route('/local-user/config', methods=['GET', 'POST'])
+@local_user_required
+def local_user_config():
+    """Configuración de opciones del portal para el usuario local"""
+    from forms_tasks import PrinterConfigForm
+    from models_tasks import PrinterConfig
+    
+    # Obtener la ubicación actual
+    location_id = session.get('portal_location_id')
+    location = Location.query.get_or_404(location_id)
+    
+    # Obtener el usuario local actual
+    local_user_id = session.get('local_user_id')
+    local_user = LocalUser.query.get_or_404(local_user_id)
+    
+    # Obtener impresoras configuradas para esta ubicación
+    printers = PrinterConfig.query.filter_by(location_id=location_id).all()
+    
+    # Verificar si se está editando una impresora existente
+    printer_id = request.args.get('printer_id', type=int)
+    printer_to_edit = None
+    
+    if printer_id:
+        printer_to_edit = PrinterConfig.query.get_or_404(printer_id)
+        # Verificar permisos
+        if printer_to_edit.location_id != location_id:
+            flash('No tienes permisos para editar esta impresora', 'danger')
+            return redirect(url_for('tasks.local_user_config'))
+    
+    # Crear formulario
+    form = PrinterConfigForm(obj=printer_to_edit)
+    
+    if form.validate_on_submit():
+        # Si se está editando una impresora existente
+        if request.form.get('printer_id'):
+            printer_id = int(request.form.get('printer_id'))
+            printer = PrinterConfig.query.get_or_404(printer_id)
+            
+            # Verificar permisos
+            if printer.location_id != location_id:
+                flash('No tienes permisos para editar esta impresora', 'danger')
+                return redirect(url_for('tasks.local_user_config'))
+            
+            # Actualizar datos
+            printer.printer_name = form.printer_name.data
+            printer.is_active = form.is_active.data
+            
+            # Si se marca como predeterminada, desmarcar las demás
+            if form.is_default.data and not printer.is_default:
+                # Desmarcar otras impresoras predeterminadas
+                other_defaults = PrinterConfig.query.filter_by(
+                    location_id=location_id, 
+                    is_default=True
+                ).all()
+                
+                for other in other_defaults:
+                    other.is_default = False
+                
+                printer.is_default = True
+            
+            # Actualizar última vez que se editó
+            printer.updated_at = datetime.utcnow()
+            
+            db.session.commit()
+            flash(f'Impresora "{printer.printer_name}" actualizada correctamente', 'success')
+            
+        else:
+            # Crear nueva impresora
+            printer = PrinterConfig(
+                printer_name=form.printer_name.data,
+                is_active=form.is_active.data,
+                location_id=location_id,
+                local_user_id=local_user_id
+            )
+            
+            # Si se marca como predeterminada, desmarcar las demás
+            if form.is_default.data:
+                # Desmarcar otras impresoras predeterminadas
+                other_defaults = PrinterConfig.query.filter_by(
+                    location_id=location_id, 
+                    is_default=True
+                ).all()
+                
+                for other in other_defaults:
+                    other.is_default = False
+                
+                printer.is_default = True
+            
+            db.session.add(printer)
+            db.session.commit()
+            flash(f'Impresora "{printer.printer_name}" añadida correctamente', 'success')
+        
+        return redirect(url_for('tasks.local_user_config'))
+    
+    return render_template(
+        'tasks/local_user_config.html',
+        title='Configuración del Portal',
+        form=form,
+        printers=printers,
+        printer_to_edit=printer_to_edit
+    )
 
 @tasks_bp.route('/local-user/tasks')
 @tasks_bp.route('/local-user/tasks/<string:date_str>')
