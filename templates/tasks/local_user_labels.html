@@ -77,7 +77,7 @@
 
                             <div class="mb-4">
                                 <label class="form-label d-block">Cantidad</label>
-                                <div class="quantity-control" style="background-color: #f8f9fa;">
+                                <div class="quantity-control">
                                     <button type="button" class="btn-quantity" id="decrease-quantity">
                                         <i class="bi bi-dash-lg"></i>
                                     </button>
@@ -397,10 +397,9 @@ document.addEventListener('DOMContentLoaded', function() {
 
 #selected_product {
     padding: 0.5rem;
-    background-color: #212529;
-    color: white;
+    background-color: #f8f9fa;
     border-radius: 0.25rem;
-    border: 1px solid #495057;
+    border: 1px solid #dee2e6;
 }
 
 /* Estilos para los botones de conservación */
@@ -478,17 +477,14 @@ document.addEventListener('DOMContentLoaded', function() {
     justify-content: center;
     gap: 10px;
     margin-bottom: 10px;
-    background-color: #f0f0f0; /* Added gray background */
-    padding: 10px;
-    border-radius: 8px;
 }
 
 .btn-quantity {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 50px;
-    width: 50px;
+    height: 100px;
+    width: 100px;
     font-size: 1.8rem;
     border: 2px solid #ced4da;
     border-radius: 8px;
@@ -511,13 +507,13 @@ document.addEventListener('DOMContentLoaded', function() {
     display: flex;
     align-items: center;
     justify-content: center;
-    height: 50px;
-    min-width: 50px;
-    padding: 0 10px;
+    height: 100px;
+    min-width: 100px;
+    padding: 0 20px;
     background-color: #fff;
     border: 2px solid #dee2e6;
     border-radius: 8px;
-    font-size: 1.5rem;
+    font-size: 2rem;
     font-weight: bold;
 }
 </style>
