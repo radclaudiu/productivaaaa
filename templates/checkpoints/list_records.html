@@ -234,3 +234,38 @@
     </div>
 </div>
 {% endblock %}
+
+{% block scripts %}
+<script>
+function copyToClipboard(text) {
+    navigator.clipboard.writeText(text)
+        .then(() => {
+            // Crear un mensaje temporal
+            const toast = document.createElement('div');
+            toast.className = 'position-fixed bottom-0 end-0 p-3';
+            toast.style.zIndex = 1050;
+            toast.innerHTML = `
+                <div class="toast show" role="alert" aria-live="assertive" aria-atomic="true">
+                    <div class="toast-header bg-success text-white">
+                        <strong class="me-auto">Copiado</strong>
+                        <button type="button" class="btn-close btn-close-white" data-bs-dismiss="toast" aria-label="Close"></button>
+                    </div>
+                    <div class="toast-body">
+                        Enlace copiado al portapapeles
+                    </div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            
+            // Eliminar el mensaje después de 3 segundos
+            setTimeout(() => {
+                toast.remove();
+            }, 3000);
+        })
+        .catch(err => {
+            console.error('Error al copiar: ', err);
+            alert('No se pudo copiar el enlace. Por favor, cópielo manualmente.');
+        });
+}
+</script>
+{% endblock %}
