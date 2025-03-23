@@ -1931,10 +1931,11 @@ def generate_labels():
     return labels_html
 
 @tasks_bp.route('/admin/products')
+@tasks_bp.route('/admin/products/<int:location_id>')
 @login_required
 @manager_required
-def list_products():
-    """Lista de productos"""
+def list_products(location_id=None):
+    """Lista de productos, filtrada por ubicación si se especifica"""
     companies = []
     
     # Filtrar empresas según el rol del usuario
@@ -1945,7 +1946,22 @@ def list_products():
     
     # Obtener ubicaciones asociadas a las empresas que puede ver
     company_ids = [c.id for c in companies]
-    locations = Location.query.filter(Location.company_id.in_(company_ids)).all()
+    
+    # Si se especifica una ubicación, verificar permisos
+    location = None
+    if location_id:
+        location = Location.query.get_or_404(location_id)
+        if location.company_id not in company_ids and not current_user.is_admin():
+            flash('No tiene permisos para acceder a esta ubicación', 'danger')
+            return redirect(url_for('tasks.list_products'))
+        
+        # Filtrar sólo por la ubicación especificada
+        locations = [location]
+        location_ids = [location_id]
+    else:
+        # Sin filtro de ubicación, mostrar todas las ubicaciones permitidas
+        locations = Location.query.filter(Location.company_id.in_(company_ids)).all()
+        location_ids = [loc.id for loc in locations]
     
     # Si no hay ubicaciones, redireccionar a crear ubicación
     if not locations:
@@ -1953,14 +1969,16 @@ def list_products():
         return redirect(url_for('tasks.list_locations'))
     
     # Obtener productos de esas ubicaciones
-    location_ids = [loc.id for loc in locations]
     products = Product.query.filter(Product.location_id.in_(location_ids)).order_by(Product.name).all()
+    
+    título = f'Productos de {location.name}' if location else 'Productos'
     
     return render_template(
         'tasks/product_list.html',
-        title='Productos',
+        title=título,
         products=products,
-        locations=locations
+        locations=locations,
+        selected_location=location
     )
 
 @tasks_bp.route('/admin/products/create', methods=['GET', 'POST'])
