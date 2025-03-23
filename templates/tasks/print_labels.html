@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Etiquetas - {{ product.name }}</title>
+    <title>Etiquetas - {{ product.name }} - {{ product.location.name }}</title>
     <style>
         @media print {
             @page {
@@ -102,9 +102,12 @@
     <!-- Contenedor solo visible en navegador, no en impresión -->
     <div class="preview-container">
         <h2>Vista previa de la etiqueta</h2>
+        <p>Local: <strong>{{ product.location.name }}</strong> | Producto: <strong>{{ product.name }}</strong></p>
         <p>Tamaño real: 40mm x 45mm para etiquetadora. Al imprimir, solo aparecerá la etiqueta.</p>
-        <button onclick="window.print()">Imprimir Etiquetas</button>
-        <a href="{{ url_for('tasks.local_user_labels') }}">Volver</a>
+        <div class="mt-3">
+            <button onclick="window.print()" class="btn btn-primary">Imprimir Etiquetas</button>
+            <a href="{{ url_for('tasks.local_user_labels') }}" class="btn btn-outline-secondary ms-2">Volver</a>
+        </div>
     </div>
     
     {% for i in range(quantity) %}
