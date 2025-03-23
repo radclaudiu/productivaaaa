@@ -461,6 +461,12 @@ def delete_company(id):
         # La tabla asociativa user_companies se eliminará automáticamente cuando se elimine la empresa
         # debido a que la relación tiene cascade="all, delete-orphan"
         
+        # También necesitamos establecer el company_id en NULL para los usuarios referenciando esta empresa
+        db.session.execute(
+            db.text("UPDATE users SET company_id = NULL WHERE company_id = :company_id"),
+            {"company_id": company.id}
+        )
+        
         # Finally delete the company
         db.session.delete(company)
         db.session.commit()
