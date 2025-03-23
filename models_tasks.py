@@ -458,27 +458,43 @@ class ProductConservation(db.Model):
             'product_name': self.product.name if self.product else None,
             'conservation_type': self.conservation_type.value,
             'days_valid': self.days_valid,
-            'hours_valid': round(self.days_valid * 24)
+            'hours_valid': int(self.days_valid * 24) if self.days_valid else 0
         }
     
     def get_expiry_date(self, from_date=None):
-        """Calcula la fecha de caducidad basada en los días válidos (horas en realidad)"""
+        """Calcula la fecha de caducidad basada en horas"""
         if from_date is None:
             from_date = datetime.now()
         
-        # Convertir days_valid a horas
-        hours_valid = int(self.days_valid * 24)
+        # Usar el valor exacto en días (que internamente representa horas / 24)
+        # NO redondear para mantener la precisión exacta
+        days_valid_exact = self.days_valid
         
         # Calcular la fecha de caducidad incluyendo horas exactas
         if isinstance(from_date, date) and not isinstance(from_date, datetime):
             # Si se proporciona solo una fecha, convertir a datetime
             from_date = datetime.combine(from_date, datetime.min.time())
         
-        # Añadir las horas al datetime
-        expiry_datetime = from_date + timedelta(hours=hours_valid)
+        # Añadir los días (con la fracción exacta) al datetime
+        expiry_datetime = from_date + timedelta(days=days_valid_exact)
         
-        # Devolver solo la fecha si se solicita para compatibilidad
+        # Devolver solo la fecha para compatibilidad con el resto del sistema
         return expiry_datetime.date()
+        
+    def get_expiry_datetime(self, from_date=None):
+        """Calcula el datetime exacto de caducidad, incluyendo la hora"""
+        if from_date is None:
+            from_date = datetime.now()
+            
+        # Usar el valor exacto en días
+        days_valid_exact = self.days_valid
+        
+        # Asegurar que trabajamos con un datetime
+        if isinstance(from_date, date) and not isinstance(from_date, datetime):
+            from_date = datetime.combine(from_date, datetime.min.time())
+            
+        # Retornar el datetime completo con hora exacta
+        return from_date + timedelta(days=days_valid_exact)
 
 class ProductLabel(db.Model):
     """Modelo para registrar las etiquetas generadas"""

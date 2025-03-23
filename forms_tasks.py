@@ -204,10 +204,10 @@ class ProductConservationForm(FlaskForm):
         
         # Si se está editando un registro existente, convertir días a horas para mostrar
         if 'obj' in kwargs and kwargs['obj'] is not None and hasattr(kwargs['obj'], 'days_valid'):
-            # Convertir días a horas (multiplicar por 24)
+            # Convertir días a horas (multiplicar por 24) sin redondear, para mantener precisión
             obj = kwargs['obj']
             if obj.days_valid is not None:
-                self.days_valid.data = int(round(obj.days_valid * 24))
+                self.days_valid.data = int(obj.days_valid * 24)
 
 class GenerateLabelForm(FlaskForm):
     """Formulario para generar etiquetas de productos"""

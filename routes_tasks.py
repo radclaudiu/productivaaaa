@@ -2010,12 +2010,12 @@ def import_labels_excel(location_id):
                 hours_caliente = ws[f'F{row}'].value
                 hours_seco = ws[f'G{row}'].value
                 
-                # Convertir horas a días para almacenar en la base de datos (divide por 24 y redondea a 2 decimales)
-                days_descongelacion = round(hours_descongelacion / 24.0, 2) if hours_descongelacion is not None else None
-                days_refrigeracion = round(hours_refrigeracion / 24.0, 2) if hours_refrigeracion is not None else None
-                days_gastro = round(hours_gastro / 24.0, 2) if hours_gastro is not None else None
-                days_caliente = round(hours_caliente / 24.0, 2) if hours_caliente is not None else None
-                days_seco = round(hours_seco / 24.0, 2) if hours_seco is not None else None
+                # Convertir horas a días para almacenar en la base de datos (divide por 24 con precisión exacta)
+                days_descongelacion = float(hours_descongelacion) / 24.0 if hours_descongelacion is not None else None
+                days_refrigeracion = float(hours_refrigeracion) / 24.0 if hours_refrigeracion is not None else None
+                days_gastro = float(hours_gastro) / 24.0 if hours_gastro is not None else None
+                days_caliente = float(hours_caliente) / 24.0 if hours_caliente is not None else None
+                days_seco = float(hours_seco) / 24.0 if hours_seco is not None else None
                 
                 # Buscar producto existente por nombre en esta ubicación
                 product = Product.query.filter_by(name=product_name, location_id=location_id).first()

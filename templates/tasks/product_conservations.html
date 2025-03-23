@@ -55,7 +55,7 @@
                                                     {{ conservation.conservation_type.name }}
                                                 {% endif %}
                                             </td>
-                                            <td>{{ (conservation.days_valid * 24)|round|int }}</td>
+                                            <td>{{ (conservation.days_valid * 24)|int }}</td>
                                             <td>
                                                 {% set expiry_date = conservation.get_expiry_date() %}
                                                 {{ expiry_date.strftime('%d/%m/%Y') }}
