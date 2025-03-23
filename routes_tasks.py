@@ -2100,6 +2100,8 @@ def generate_labels():
         product_id = request.form.get('product_id', type=int)
         conservation_type_str = request.form.get('conservation_type')
         quantity = request.form.get('quantity', type=int, default=1)
+        package_expiry_date = request.form.get('package_expiry_date')
+        package_expiry_time = request.form.get('package_expiry_time')
         
         # Validaciones básicas
         if not product_id or not conservation_type_str:
@@ -2134,7 +2136,31 @@ def generate_labels():
         # Fecha y hora actual
         now = datetime.now()
         
-        # Calcular fecha de caducidad
+        # Procesar fecha de caducidad del paquete (si se proporcionó)
+        package_expiry_datetime = None
+        if package_expiry_date:
+            try:
+                # Si se proporcionó la hora, usarla; de lo contrario, usar 23:59:59
+                if package_expiry_time:
+                    time_parts = package_expiry_time.split(':')
+                    hour = int(time_parts[0])
+                    minute = int(time_parts[1])
+                    package_expiry_datetime = datetime.strptime(
+                        f"{package_expiry_date} {hour}:{minute}:00", 
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+                else:
+                    # Si no hay hora, usar final del día
+                    package_expiry_datetime = datetime.strptime(
+                        f"{package_expiry_date} 23:59:59", 
+                        "%Y-%m-%d %H:%M:%S"
+                    )
+            except (ValueError, IndexError) as e:
+                current_app.logger.warning(f"Error al procesar fecha de caducidad del paquete: {str(e)}")
+                # Si hay algún error, ignoramos la fecha del paquete
+                package_expiry_datetime = None
+        
+        # Calcular fecha de caducidad del producto
         if conservation:
             # Usar la configuración específica del producto
             expiry_datetime = now + timedelta(hours=conservation.hours_valid)
@@ -2175,6 +2201,7 @@ def generate_labels():
             conservation_type=conservation_type,
             now=now,
             expiry_datetime=expiry_datetime,
+            package_expiry_datetime=package_expiry_datetime,
             quantity=quantity
         )
         

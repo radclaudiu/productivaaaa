@@ -88,6 +88,26 @@
                                 </div>
                             </div>
 
+                            <!-- 2.5 Fecha de caducidad del paquete -->
+                            <div class="mb-4">
+                                <label class="form-label fw-bold">2.5 Fecha de Caducidad del Paquete</label>
+                                <div class="row">
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label">Fecha</label>
+                                        <input type="date" id="package_expiry_date" name="package_expiry_date" class="form-control form-control-lg" 
+                                               min="{{ now.strftime('%Y-%m-%d') }}">
+                                    </div>
+                                    <div class="col-md-6 mb-2">
+                                        <label class="form-label">Hora (opcional)</label>
+                                        <input type="time" id="package_expiry_time" name="package_expiry_time" class="form-control form-control-lg">
+                                    </div>
+                                </div>
+                                <div class="form-text">
+                                    <i class="bi bi-info-circle me-1"></i>
+                                    Si no se especifica, se calculará automáticamente según el tipo de conservación.
+                                </div>
+                            </div>
+
                             <!-- 3. Cantidad -->
                             <div class="mb-4">
                                 <label class="form-label fw-bold">3. Cantidad</label>
@@ -157,6 +177,15 @@ document.addEventListener('DOMContentLoaded', function() {
         'seco': 'Seco'
     };
 
+    // Inicializar campos de fecha con valores predeterminados
+    const packageExpiryDate = document.getElementById('package_expiry_date');
+    const packageExpiryTime = document.getElementById('package_expiry_time');
+    
+    // Establecer la fecha de hoy como mínima
+    const today = new Date();
+    const formattedDate = today.toISOString().split('T')[0];
+    packageExpiryDate.min = formattedDate;
+    
     // Función para verificar formulario completo
     function checkFormComplete() {
         const productSelected = productIdInput.value !== '';
@@ -368,6 +397,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 conservationSelect.value = '';
                 quantityInput.value = '1';
                 quantityValueSpan.textContent = '1';
+                packageExpiryDate.value = '';
+                packageExpiryTime.value = '';
                 
                 // Desmarcar botones de conservación
                 document.querySelectorAll('.btn-conservation').forEach(btn => {
