@@ -8,10 +8,13 @@ from wtforms.validators import Optional
 
 from app import db
 from models import User, Company
-from models_tasks import Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, TaskFrequency, TaskStatus, WeekDay, TaskGroup, TaskWeekday
+from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletion, TaskPriority, 
+                         TaskFrequency, TaskStatus, WeekDay, TaskGroup, TaskWeekday,
+                         Product, ProductConservation, ProductLabel, ConservationType)
 from forms_tasks import (LocationForm, LocalUserForm, TaskForm, DailyScheduleForm, WeeklyScheduleForm, 
                         MonthlyScheduleForm, BiweeklyScheduleForm, TaskCompletionForm, 
-                        LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm, PortalLoginForm)
+                        LocalUserPinForm, SearchForm, TaskGroupForm, CustomWeekdaysForm, PortalLoginForm,
+                        ProductForm, ProductConservationForm, GenerateLabelForm)
 from utils import log_activity, can_manage_company, save_file
 from utils_tasks import create_default_local_user, regenerate_portal_password
 
