@@ -148,9 +148,9 @@
             {% if secondary_expiry_date %}
             <div class="caducidad caducidad-secundaria">Caducidad primaria: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
             {% endif %}
-            <div class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
             <div class="fecha">INICIO: {{ now.strftime('%d/%m/%Y %H:%M') }}</div>
             <div class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
         </div>
     {% endfor %}
     
