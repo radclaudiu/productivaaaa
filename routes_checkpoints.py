@@ -1001,6 +1001,7 @@ def company_employees():
             'name': f"{employee.first_name} {employee.last_name}",
             'position': employee.position,
             'has_pending_record': pending_record is not None,
+            'is_on_shift': employee.is_on_shift,
             'dni_last_digits': employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
         })
     

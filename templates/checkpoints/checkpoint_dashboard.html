@@ -101,6 +101,11 @@
                             <div class="card-body">
                                 <h5 class="name">{{ employee.first_name }} {{ employee.last_name }}</h5>
                                 <p class="position mb-0">{{ employee.position or 'Empleado' }}</p>
+                                {% if employee.is_on_shift %}
+                                    <span class="badge bg-success mt-2">En jornada</span>
+                                {% else %}
+                                    <span class="badge bg-secondary mt-2">No en jornada</span>
+                                {% endif %}
                             </div>
                         </a>
                     </div>

@@ -140,6 +140,12 @@
                                 </div>
                                 <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
                                 <p class="text-muted mb-0">{{ employee.position or 'Sin cargo' }}</p>
+                                
+                                {% if employee.is_on_shift %}
+                                    <span class="badge bg-success mt-2">En jornada</span>
+                                {% else %}
+                                    <span class="badge bg-secondary mt-2">No en jornada</span>
+                                {% endif %}
                             </div>
                         </div>
                     </a>
