@@ -2123,31 +2123,28 @@ def generate_labels():
         conservation_type=conservation_type
     ).first()
     
-    # Si no hay configuración específica, usar valores predeterminados
-    days_valid = 1
+    # Si no hay configuración específica, usar valores predeterminados en horas
+    hours_valid = 24  # 1 día por defecto
     if conservation_type == ConservationType.DESCONGELACION:
-        days_valid = 1
+        hours_valid = 24  # 1 día
     elif conservation_type == ConservationType.REFRIGERACION:
-        days_valid = 3
+        hours_valid = 72  # 3 días
     elif conservation_type == ConservationType.GASTRO:
-        days_valid = 2
+        hours_valid = 48  # 2 días
     elif conservation_type == ConservationType.CALIENTE:
-        days_valid = 0.08  # ~2 horas
+        hours_valid = 2   # 2 horas
+    elif conservation_type == ConservationType.SECO:
+        hours_valid = 168 # 7 días
     
-    # Si hay configuración específica, usarla
+    # Si hay configuración específica, usarla (convertir de días a horas)
     if conservation:
-        days_valid = conservation.days_valid
+        hours_valid = conservation.days_valid * 24
     
-    # Calcular fecha de caducidad
+    # Calcular fecha de caducidad exacta
     now = datetime.now()
     
-    # Para tipos con días completos
-    if conservation_type != ConservationType.CALIENTE:
-        expiry_date = now.date() + timedelta(days=days_valid)
-        expiry_datetime = datetime.combine(expiry_date, now.time())
-    else:
-        # Para tipo "caliente" que usa horas
-        expiry_datetime = now + timedelta(days=days_valid)
+    # Calcular la fecha exacta añadiendo las horas correspondientes
+    expiry_datetime = now + timedelta(hours=hours_valid)
     
     # Registrar las etiquetas generadas
     for i in range(quantity):

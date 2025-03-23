@@ -462,10 +462,23 @@ class ProductConservation(db.Model):
         }
     
     def get_expiry_date(self, from_date=None):
-        """Calcula la fecha de caducidad basada en los días válidos"""
+        """Calcula la fecha de caducidad basada en los días válidos (horas en realidad)"""
         if from_date is None:
-            from_date = date.today()
-        return from_date + timedelta(days=self.days_valid)
+            from_date = datetime.now()
+        
+        # Convertir days_valid a horas
+        hours_valid = int(self.days_valid * 24)
+        
+        # Calcular la fecha de caducidad incluyendo horas exactas
+        if isinstance(from_date, date) and not isinstance(from_date, datetime):
+            # Si se proporciona solo una fecha, convertir a datetime
+            from_date = datetime.combine(from_date, datetime.min.time())
+        
+        # Añadir las horas al datetime
+        expiry_datetime = from_date + timedelta(hours=hours_valid)
+        
+        # Devolver solo la fecha si se solicita para compatibilidad
+        return expiry_datetime.date()
 
 class ProductLabel(db.Model):
     """Modelo para registrar las etiquetas generadas"""
