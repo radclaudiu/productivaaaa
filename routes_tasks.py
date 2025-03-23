@@ -2321,6 +2321,7 @@ def edit_product(id):
     if form.validate_on_submit():
         product.name = form.name.data
         product.description = form.description.data
+        product.shelf_life_days = form.shelf_life_days.data or 0
         product.is_active = form.is_active.data
         product.location_id = form.location_id.data
         
