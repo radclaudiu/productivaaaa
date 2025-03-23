@@ -14,9 +14,15 @@
                 <i class="bi bi-plus-circle me-2"></i>Nuevo Producto
             </a>
             {% endif %}
-            <a href="{{ url_for('tasks.list_products') }}" class="btn btn-primary">
+            <a href="{{ url_for('tasks.list_products') }}" class="btn btn-primary me-2">
                 <i class="bi bi-list me-2"></i>Gestionar Productos
             </a>
+            <a href="{{ url_for('tasks.download_excel_template') }}" class="btn btn-info me-2">
+                <i class="bi bi-file-earmark-excel me-2"></i>Descargar Plantilla Excel
+            </a>
+            <button type="button" class="btn btn-warning" data-bs-toggle="modal" data-bs-target="#uploadExcelModal">
+                <i class="bi bi-upload me-2"></i>Subida Masiva
+            </button>
         </div>
     </div>
     
@@ -182,6 +188,63 @@
                         </div>
                     </div>
                 </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal para subida masiva de etiquetas -->
+<div class="modal fade" id="uploadExcelModal" tabindex="-1" aria-labelledby="uploadExcelModalLabel" aria-hidden="true">
+    <div class="modal-dialog modal-lg">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="uploadExcelModalLabel">Subida Masiva de Productos</h5>
+                <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+            </div>
+            <div class="modal-body">
+                <div class="alert alert-info">
+                    <i class="bi bi-info-circle-fill me-2"></i>
+                    Suba un archivo Excel con la información de los productos a crear. Descargue la plantilla para asegurarse de que su archivo tiene el formato correcto.
+                </div>
+                
+                <form method="POST" action="{{ url_for('tasks.upload_excel_products') }}" enctype="multipart/form-data">
+                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
+                    
+                    <div class="mb-3">
+                        <label for="excelFile" class="form-label">Archivo Excel</label>
+                        <input type="file" class="form-control" id="excelFile" name="excel_file" accept=".xlsx, .xls" required>
+                        <div class="form-text">
+                            Solo se aceptan archivos Excel (.xlsx, .xls)
+                        </div>
+                    </div>
+                    
+                    {% if locations %}
+                    <div class="mb-3">
+                        <label for="locationId" class="form-label">Local por defecto</label>
+                        <select class="form-select" id="locationId" name="location_id">
+                            <option value="" selected>-- Usar local indicado en Excel --</option>
+                            {% for location in locations %}
+                            <option value="{{ location.id }}">{{ location.name }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="form-text">
+                            Si selecciona un local, se usará como valor por defecto para productos sin local especificado en el Excel.
+                        </div>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="d-grid gap-2">
+                        <button type="submit" class="btn btn-primary">
+                            <i class="bi bi-upload me-2"></i>Procesar Archivo
+                        </button>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <a href="{{ url_for('tasks.download_excel_template') }}" class="btn btn-info">
+                    <i class="bi bi-file-earmark-excel me-2"></i>Descargar Plantilla
+                </a>
+                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cerrar</button>
             </div>
         </div>
     </div>
