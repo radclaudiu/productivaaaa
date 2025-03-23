@@ -137,11 +137,42 @@ def index_company(company_id):
         order_by(CheckPointIncident.created_at.desc()).\
         limit(10).all()
     
+    # Obtener todos los puntos de fichaje para la empresa
+    checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
+    
+    # Obtener los empleados activos para la empresa
+    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
+    
+    # Obtener los tipos de incidencias para el filtrado
+    incident_types = [
+        {'value': incident_type.value, 'name': incident_type.name}
+        for incident_type in CheckPointIncidentType
+    ]
+    
+    # Obtener las estadísticas de la última semana para gráficos
+    week_stats = {}
+    today = date.today()
+    for i in range(7):
+        day = today - timedelta(days=i)
+        count = db.session.query(CheckPointRecord).\
+            join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id).\
+            filter(
+                CheckPoint.company_id == company_id,
+                extract('day', CheckPointRecord.check_in_time) == day.day,
+                extract('month', CheckPointRecord.check_in_time) == day.month,
+                extract('year', CheckPointRecord.check_in_time) == day.year
+            ).count()
+        week_stats[day.strftime('%d/%m')] = count
+    
     return render_template('checkpoints/index.html', 
                           stats=stats, 
                           latest_records=latest_records,
                           latest_incidents=latest_incidents,
-                          company=company)
+                          company=company,
+                          checkpoints=checkpoints,
+                          employees=employees,
+                          incident_types=incident_types,
+                          week_stats=week_stats)
 
 
 @checkpoints_bp.route('/checkpoints')
