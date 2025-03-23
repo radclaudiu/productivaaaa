@@ -119,9 +119,9 @@
     <footer class="footer bg-dark text-light text-center">
         <div class="container">
             <p class="mb-0">
-                <span>Punto de Fichaje: {{ checkpoint.name }}</span>
+                <span>Punto de Fichaje: {% if checkpoint %}{{ checkpoint.name }}{% else %}{{ session.checkpoint_name }}{% endif %}</span>
                 <span class="mx-2">|</span>
-                <span>{{ checkpoint.company.name }}</span>
+                <span>{% if checkpoint and checkpoint.company %}{{ checkpoint.company.name }}{% endif %}</span>
             </p>
         </div>
     </footer>
