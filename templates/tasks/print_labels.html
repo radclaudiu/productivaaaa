@@ -1,186 +1,67 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Etiqueta: {{ product.name }}</title>
+    <title>Imprimir Etiquetas</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            font-family: Arial, sans-serif;
-            background: white;
-        }
-        
-        /* Estilos para la etiqueta */
-        .etiqueta {
-            width: 44mm;   /* Ancho exacto para impresora de etiquetas - ACTUALIZADO */
-            height: 39mm;  /* Alto exacto para impresora de etiquetas - ACTUALIZADO */
-            padding: 2mm;
-            text-align: center;
-            box-sizing: border-box;
-            margin: 0;
-            page-break-inside: avoid;
-            display: block; /* Cambiado de inline-block a block para mejor impresión */
-            vertical-align: top;
-            border: 0.5pt dotted #ccc; /* Borde sutil para ayudar en el corte */
-            position: relative;
-            overflow: hidden; /* Evitar desbordamiento */
-        }
-        
-        /* Estilos dinámicos según la plantilla */
-        {% set t = template %}
-        
-        .producto {
-            font-weight: {{ 'bold' if t.titulo_bold else 'normal' }};
-            font-size: {{ t.titulo_size }}pt;
-            margin-bottom: 3mm;
-            text-transform: uppercase;
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 100%;
-            position: absolute;
-            top: {{ t.titulo_y }}%;
-            left: {{ t.titulo_x }}%;
-            transform: translate(-50%, -50%);
-            width: 95%;
-        }
-        
-        .conservacion {
-            font-weight: {{ 'bold' if t.conservacion_bold else 'normal' }};
-            font-size: {{ t.conservacion_size }}pt;
-            padding: 1mm;
-            background-color: #f8f9fa;
-            border-radius: 2mm;
-            position: absolute;
-            top: {{ t.conservacion_y }}%;
-            left: {{ t.conservacion_x }}%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-        }
-        
-        .preparado {
-            font-weight: {{ 'bold' if t.preparador_bold else 'normal' }};
-            font-size: {{ t.preparador_size }}pt;
-            position: absolute;
-            top: {{ t.preparador_y }}%;
-            left: {{ t.preparador_x }}%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-        }
-        
-        .fecha {
-            font-weight: {{ 'bold' if t.fecha_bold else 'normal' }};
-            font-size: {{ t.fecha_size }}pt;
-            position: absolute;
-            top: {{ t.fecha_y }}%;
-            left: {{ t.fecha_x }}%;
-            transform: translate(-50%, -50%);
-            width: 90%;
-        }
-        
-        .caducidad {
-            font-weight: bold; /* Siempre negrita para la caducidad principal */
-            font-size: {{ t.caducidad_size }}pt;
-            border: 1.5pt solid #000; /* Borde más grueso */
-            padding: 1.5mm;
-            display: inline-block;
-            background-color: #fff;
-            box-shadow: 0px 0px 2px rgba(0,0,0,0.2);
-            position: absolute;
-            top: {{ t.caducidad_y }}%;
-            left: {{ t.caducidad_x }}%;
-            transform: translate(-50%, -50%);
-            width: auto;
-            min-width: 80%;
-            z-index: 10; /* Para que siempre esté por encima */
-        }
-        
-        .caducidad-secundaria {
-            font-weight: normal; /* Normal para la caducidad secundaria */
-            font-size: {{ t.caducidad2_size }}pt; /* Usar tamaño original */
-            border: 1pt dashed #555; /* Borde punteado más fino */
-            background-color: #f8f9fa;
-            position: absolute;
-            top: 75%; /* Posición fija para evitar sobreposición */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: auto;
-            min-width: 60%; /* Reducir ancho para mejor ajuste */
-            padding: 1mm;
-            z-index: 5;
-        }
-        
-        /* Diferenciación por tipo de conservación */
-        .conservacion-descongelacion { color: #0d6efd; }
-        .conservacion-refrigeracion { color: #0dcaf0; }
-        .conservacion-gastro { color: #198754; }
-        .conservacion-caliente { color: #dc3545; }
-        .conservacion-seco { color: #fd7e14; }
-        
-        /* Para asegurar que la impresión sea correcta */
         @media print {
-            body {
-                margin: 0;
-                padding: 0;
+            .no-print {
+                display: none;
             }
-            @page {
-                margin: 0;
-                size: 44mm 39mm; /* Forzar el tamaño exacto de la etiqueta - ACTUALIZADO */
+            .label {
+                page-break-after: always;
             }
-            .etiqueta {
-                page-break-after: always; /* Forzar salto de página después de cada etiqueta */
-                width: 44mm;
-                height: 39mm;
-                /* Quitar bordes en la impresión */
-                border: none;
-            }
-            .nueva-pagina {
-                display: none; /* No necesitamos este elemento en la impresión */
-            }
+        }
+        .label {
+            width: 90mm;
+            height: 40mm;
+            padding: 5mm;
+            margin: 0 auto;
+            font-family: Arial, sans-serif;
+            position: relative;
+        }
+        .field {
+            position: absolute;
+            text-align: center;
+            width: 100%;
+            left: 0;
         }
     </style>
 </head>
 <body>
+    <div class="no-print" style="text-align: center; margin: 20px;">
+        <button onclick="window.print()">Imprimir Etiquetas</button>
+        <button onclick="window.close()">Cerrar</button>
+    </div>
+
     {% for i in range(quantity) %}
-        <div class="etiqueta">
-            <div class="producto">{{ product.name|upper }}</div>
-            <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
-            <div class="preparado">Prep: {{ user.name }} {{ user.last_name }}</div>
-            <div class="fecha">Inicio: {{ now.strftime('%d/%m/%Y %H:%M') }}</div>
-            <div class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
-            {% if secondary_expiry_date %}
-            <div class="caducidad caducidad-secundaria">Cad: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
-            {% endif %}
+    <div class="label">
+        <div class="field" style="top: {{ template.titulo_y }}px; font-size: {{ template.titulo_size }}pt; {% if template.titulo_bold %}font-weight: bold;{% endif %}">
+            {{ product.name }}
         </div>
+
+        <div class="field" style="top: {{ template.conservacion_y }}px; font-size: {{ template.conservacion_size }}pt; {% if template.conservacion_bold %}font-weight: bold;{% endif %}">
+            {{ conservation_type.value|upper }}
+        </div>
+
+        <div class="field" style="top: {{ template.preparador_y }}px; font-size: {{ template.preparador_size }}pt; {% if template.preparador_bold %}font-weight: bold;{% endif %}">
+            Preparado por: {{ user.name }} {{ user.last_name }}
+        </div>
+
+        <div class="field" style="top: {{ template.fecha_y }}px; font-size: {{ template.fecha_size }}pt; {% if template.fecha_bold %}font-weight: bold;{% endif %}">
+            Fecha: {{ now.strftime('%d/%m/%Y %H:%M') }}
+        </div>
+
+        <div class="field" style="top: {{ template.caducidad_y }}px; font-size: {{ template.caducidad_size }}pt; {% if template.caducidad_bold %}font-weight: bold;{% endif %}">
+            Consumir antes de: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}
+        </div>
+
+        {% if secondary_expiry_date %}
+        <div class="field" style="top: {{ template.caducidad2_y }}px; font-size: {{ template.caducidad2_size }}pt; {% if template.caducidad2_bold %}font-weight: bold;{% endif %}">
+            Vida util hasta: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}
+        </div>
+        {% endif %}
+    </div>
     {% endfor %}
-    
-    <script>
-        // Imprimir inmediatamente al cargar
-        window.onload = function() {
-            // Pequeño retardo para asegurar que todo está cargado
-            setTimeout(function() {
-                window.print();
-                
-                // Cerrar ventana después de imprimir en navegadores que lo permitan
-                window.onfocus = function() {
-                    setTimeout(function() {
-                        window.close();
-                    }, 300);
-                };
-                
-                // Intentar cerrar después de un tiempo razonable en caso de que
-                // el usuario cancele la impresión o haya un problema
-                setTimeout(function() {
-                    try {
-                        window.close();
-                    } catch (e) {
-                        console.log('No se pudo cerrar automáticamente');
-                    }
-                }, 60000); // 1 minuto
-            }, 300);
-        };
-    </script>
 </body>
 </html>
