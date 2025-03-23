@@ -203,8 +203,9 @@
 
 {% block scripts %}
 <script>
-    // Script para mostrar/ocultar las opciones de horas extra
+    // Script para mostrar/ocultar las opciones configurables
     document.addEventListener('DOMContentLoaded', function() {
+        // Horas extra
         const allowOvertimeCheckbox = document.getElementById('{{ form.allow_overtime.id }}');
         const overtimeSettings = document.getElementById('overtimeSettings');
         
@@ -216,11 +217,39 @@
             }
         }
         
+        // Horario normal
+        const useNormalScheduleCheckbox = document.getElementById('{{ form.use_normal_schedule.id }}');
+        const normalScheduleSettings = document.getElementById('normalScheduleSettings');
+        
+        function toggleNormalScheduleSettings() {
+            if (useNormalScheduleCheckbox.checked) {
+                normalScheduleSettings.style.display = 'flex';
+            } else {
+                normalScheduleSettings.style.display = 'none';
+            }
+        }
+        
+        // Flexibilidad
+        const useFlexibilityCheckbox = document.getElementById('{{ form.use_flexibility.id }}');
+        const flexibilitySettings = document.getElementById('flexibilitySettings');
+        
+        function toggleFlexibilitySettings() {
+            if (useFlexibilityCheckbox.checked) {
+                flexibilitySettings.style.display = 'flex';
+            } else {
+                flexibilitySettings.style.display = 'none';
+            }
+        }
+        
         // Inicializar
         toggleOvertimeSettings();
+        toggleNormalScheduleSettings();
+        toggleFlexibilitySettings();
         
         // Escuchar cambios
         allowOvertimeCheckbox.addEventListener('change', toggleOvertimeSettings);
+        useNormalScheduleCheckbox.addEventListener('change', toggleNormalScheduleSettings);
+        useFlexibilityCheckbox.addEventListener('change', toggleFlexibilitySettings);
     });
 </script>
 {% endblock %}
