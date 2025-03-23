@@ -99,7 +99,7 @@
         .caducidad-secundaria {
             font-weight: {{ 'bold' if t.caducidad2_bold else 'normal' }};
             font-size: {{ t.caducidad2_size }}pt;
-            border: 1.5pt dashed #555; /* Borde punteado para diferenciar */
+            /* Quitado el borde punteado */
             background-color: #f8f9fa;
             position: absolute;
             top: {{ t.caducidad2_y }}%;
@@ -146,8 +146,8 @@
         <div class="etiqueta">
             <div class="producto">{{ product.name|upper }}</div>
             <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
-            <div class="preparado">Prep: {{ user.name }} {{ user.last_name }}</div>
-            <div class="fecha">{{ now.strftime('%d/%m/%Y %H:%M') }}</div>
+            <div class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
+            <div class="fecha">INICIO: {{ now.strftime('%d/%m/%Y %H:%M') }}</div>
             <div class="caducidad">Caducidad: {{ expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
             {% if secondary_expiry_date %}
             <div class="caducidad caducidad-secundaria">Caducidad primaria: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
