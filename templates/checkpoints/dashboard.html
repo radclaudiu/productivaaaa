@@ -140,12 +140,6 @@
                                 </div>
                                 <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
                                 <p class="text-muted mb-0">{{ employee.position or 'Sin cargo' }}</p>
-                                
-                                {% if employee.is_on_shift %}
-                                    <span class="badge bg-success mt-2">En jornada</span>
-                                {% else %}
-                                    <span class="badge bg-secondary mt-2">No en jornada</span>
-                                {% endif %}
                             </div>
                         </div>
                     </a>
@@ -154,54 +148,7 @@
             </div>
         </div>
     </div>
-    
-    {% if recent_records %}
-    <div class="row mt-5 recent-records">
-        <div class="col-12">
-            <h3 class="mb-3">Registros Recientes</h3>
-            <div class="table-responsive">
-                <table class="table table-striped table-hover">
-                    <thead>
-                        <tr>
-                            <th>Empleado</th>
-                            <th>Acción</th>
-                            <th>Fecha</th>
-                            <th>Hora</th>
-                        </tr>
-                    </thead>
-                    <tbody>
-                        {% for record in recent_records %}
-                        <tr>
-                            <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
-                            <td>
-                                {% if record.check_out_time %}
-                                <span class="badge bg-danger">Salida</span>
-                                {% else %}
-                                <span class="badge bg-success">Entrada</span>
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if record.check_out_time %}
-                                {{ record.check_out_time.strftime('%d/%m/%Y') }}
-                                {% else %}
-                                {{ record.check_in_time.strftime('%d/%m/%Y') }}
-                                {% endif %}
-                            </td>
-                            <td>
-                                {% if record.check_out_time %}
-                                {{ record.check_out_time.strftime('%H:%M') }}
-                                {% else %}
-                                {{ record.check_in_time.strftime('%H:%M') }}
-                                {% endif %}
-                            </td>
-                        </tr>
-                        {% endfor %}
-                    </tbody>
-                </table>
-            </div>
-        </div>
-    </div>
-    {% endif %}
+
 </div>
 {% endblock %}
 
