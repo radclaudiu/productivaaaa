@@ -506,3 +506,40 @@ class ProductLabel(db.Model):
             'expiry_date': self.expiry_date.isoformat() if self.expiry_date else None,
             'conservation_type': self.conservation_type.value
         }
+        
+        
+class PrinterConfig(db.Model):
+    """Configuración de impresora para cada ubicación"""
+    __tablename__ = 'printer_configs'
+
+    id = db.Column(db.Integer, primary_key=True)
+    printer_name = db.Column(db.String(128))  # Nombre de la impresora
+    is_default = db.Column(db.Boolean, default=False)  # Indica si es la impresora predeterminada
+    is_active = db.Column(db.Boolean, default=True)  # Indica si la impresora está activa
+    last_check = db.Column(db.DateTime)  # Última vez que se verificó la impresora
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relación con la ubicación
+    location_id = db.Column(db.Integer, db.ForeignKey('locations.id'), nullable=False)
+    location = db.relationship('Location', backref=db.backref('printer_configs', lazy=True))
+    
+    # Usuario que añadió/actualizó la configuración
+    local_user_id = db.Column(db.Integer, db.ForeignKey('local_users.id'))
+    local_user = db.relationship('LocalUser', backref=db.backref('printer_configs', lazy=True))
+    
+    def __repr__(self):
+        return f'<PrinterConfig {self.id} - {self.printer_name} - {self.location.name}>'
+        
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'printer_name': self.printer_name,
+            'is_default': self.is_default,
+            'is_active': self.is_active,
+            'last_check': self.last_check.isoformat() if self.last_check else None,
+            'created_at': self.created_at.isoformat() if self.created_at else None,
+            'updated_at': self.updated_at.isoformat() if self.updated_at else None,
+            'location_id': self.location_id,
+            'location_name': self.location.name if self.location else None
+        }
