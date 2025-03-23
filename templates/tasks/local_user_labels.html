@@ -59,27 +59,27 @@
                                 <div class="conservation-buttons">
                                     <input type="hidden" id="conservation_type" name="conservation_type" required>
 
-                                    <button type="button" class="btn-conservation" data-value="descongelacion" data-days="1">
+                                    <button type="button" class="btn-conservation" data-value="DESCONGELACION" data-days="1">
                                         <i class="bi bi-snow"></i>
                                         <span>Descongelación</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="refrigeracion" data-days="3">
+                                    <button type="button" class="btn-conservation" data-value="REFRIGERACION" data-days="3">
                                         <i class="bi bi-thermometer-low"></i>
                                         <span>Refrigeración</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="gastro" data-days="2">
+                                    <button type="button" class="btn-conservation" data-value="GASTRO" data-days="2">
                                         <i class="bi bi-cup-hot"></i>
                                         <span>Gastro</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="caliente" data-days="0.08">
+                                    <button type="button" class="btn-conservation" data-value="CALIENTE" data-days="0.08">
                                         <i class="bi bi-fire"></i>
                                         <span>Caliente</span>
                                     </button>
 
-                                    <button type="button" class="btn-conservation" data-value="seco" data-days="30">
+                                    <button type="button" class="btn-conservation" data-value="SECO" data-days="30">
                                         <i class="bi bi-box2"></i>
                                         <span>Seco</span>
                                     </button>
@@ -284,11 +284,11 @@ document.addEventListener('DOMContentLoaded', function() {
 
     // Conservación a texto
     const conservationTypeText = {
-        'descongelacion': 'Descongelación',
-        'refrigeracion': 'Refrigeración',
-        'gastro': 'Gastro',
-        'caliente': 'Caliente',
-        'seco': 'Seco'
+        'DESCONGELACION': 'Descongelación',
+        'REFRIGERACION': 'Refrigeración',
+        'GASTRO': 'Gastro',
+        'CALIENTE': 'Caliente',
+        'SECO': 'Seco'
     };
 
     // Función para mostrar y enfocar el campo de búsqueda cuando se carga la página
@@ -410,7 +410,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const now = new Date();
                 let expiryDate;
 
-                if (conservationType === 'caliente') {
+                if (conservationType === 'CALIENTE') {
                     // Calcular en horas (aproximadamente 2 horas)
                     expiryDate = new Date(now.getTime() + parseFloat(daysValid) * 24 * 60 * 60 * 1000);
                 } else {
@@ -767,23 +767,23 @@ document.addEventListener('DOMContentLoaded', function() {
     font-weight: bold;
 }
 
-.btn-conservation[data-value="descongelacion"] i {
+.btn-conservation[data-value="DESCONGELACION"] i {
     color: #0d6efd; /* Azul */
 }
 
-.btn-conservation[data-value="refrigeracion"] i {
+.btn-conservation[data-value="REFRIGERACION"] i {
     color: #0dcaf0; /* Celeste */
 }
 
-.btn-conservation[data-value="gastro"] i {
+.btn-conservation[data-value="GASTRO"] i {
     color: #198754; /* Verde */
 }
 
-.btn-conservation[data-value="caliente"] i {
+.btn-conservation[data-value="CALIENTE"] i {
     color: #dc3545; /* Rojo */
 }
 
-.btn-conservation[data-value="seco"] i {
+.btn-conservation[data-value="SECO"] i {
     color: #ffc107; /* Amarillo */
 }
 
