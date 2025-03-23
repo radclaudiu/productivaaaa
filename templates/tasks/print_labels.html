@@ -14,8 +14,8 @@
         
         /* Estilos para la etiqueta */
         .etiqueta {
-            width: 40mm;
-            height: 40mm;
+            width: 45mm;   /* Ligeramente más ancho para mejor legibilidad */
+            height: 45mm;  /* Ligeramente más alto para mejor legibilidad */
             padding: 2mm;
             text-align: center;
             box-sizing: border-box;
@@ -23,19 +23,27 @@
             page-break-inside: avoid;
             display: inline-block;
             vertical-align: top;
+            border: 0.5pt dotted #ccc; /* Borde sutil para ayudar en el corte */
         }
         
         .producto {
             font-weight: bold;
-            font-size: 10pt;
-            margin-bottom: 2mm;
+            font-size: 11pt;     /* Incremento de tamaño */
+            margin-bottom: 3mm;
             text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 100%;
         }
         
         .conservacion {
-            font-style: italic;
-            margin-bottom: 1mm;
-            font-size: 8pt;
+            font-weight: bold;
+            margin-bottom: 2mm;
+            font-size: 9pt;      /* Incremento de tamaño */
+            padding: 1mm;
+            background-color: #f8f9fa;
+            border-radius: 2mm;
         }
         
         .local {
@@ -50,17 +58,26 @@
         
         .fecha {
             font-size: 7pt;
-            margin-bottom: 1mm;
+            margin-bottom: 2mm;
         }
         
         .caducidad {
-            margin-top: 2mm;
-            border: 1px solid #000;
-            padding: 1mm;
+            margin-top: 1mm;
+            border: 1.5pt solid #000; /* Borde más grueso */
+            padding: 1.5mm;
             display: inline-block;
             font-weight: bold;
-            font-size: 8pt;
+            font-size: 9pt;      /* Incremento de tamaño */
+            background-color: #fff;
+            box-shadow: 0px 0px 2px rgba(0,0,0,0.2);
         }
+        
+        /* Diferenciación por tipo de conservación */
+        .conservacion-descongelacion { color: #0d6efd; }
+        .conservacion-refrigeracion { color: #0dcaf0; }
+        .conservacion-gastro { color: #198754; }
+        .conservacion-caliente { color: #dc3545; }
+        .conservacion-seco { color: #fd7e14; }
         
         /* Para asegurar que la impresión sea correcta */
         @media print {
@@ -83,7 +100,7 @@
         {% if i > 0 and i % 1 == 0 %}<div class="nueva-pagina"></div>{% endif %}
         <div class="etiqueta">
             <div class="producto">{{ product.name|upper }}</div>
-            <div class="conservacion">{{ conservation_type.name }}</div>
+            <div class="conservacion conservacion-{{ conservation_type.value }}">{{ conservation_type.name }}</div>
             <div class="local">{{ location.name }}</div>
             <div class="preparado">Prep: {{ user.name }} {{ user.last_name }}</div>
             <div class="fecha">{{ now.strftime('%d/%m/%Y %H:%M') }}</div>
@@ -94,13 +111,27 @@
     <script>
         // Imprimir inmediatamente al cargar
         window.onload = function() {
-            window.print();
-            // Cerrar ventana después de imprimir en navegadores que lo permitan
-            window.onfocus = function() {
+            // Pequeño retardo para asegurar que todo está cargado
+            setTimeout(function() {
+                window.print();
+                
+                // Cerrar ventana después de imprimir en navegadores que lo permitan
+                window.onfocus = function() {
+                    setTimeout(function() {
+                        window.close();
+                    }, 300);
+                };
+                
+                // Intentar cerrar después de un tiempo razonable en caso de que
+                // el usuario cancele la impresión o haya un problema
                 setTimeout(function() {
-                    window.close();
-                }, 500);
-            };
+                    try {
+                        window.close();
+                    } catch (e) {
+                        console.log('No se pudo cerrar automáticamente');
+                    }
+                }, 60000); // 1 minuto
+            }, 300);
         };
     </script>
 </body>
