@@ -110,12 +110,15 @@
             padding: 1mm;
         }
         
-        /* Diferenciación por tipo de conservación */
-        .conservacion-descongelacion { color: #0d6efd; }
-        .conservacion-refrigeracion { color: #0dcaf0; }
-        .conservacion-gastro { color: #198754; }
-        .conservacion-caliente { color: #dc3545; }
-        .conservacion-seco { color: #fd7e14; }
+        /* Todos los tipos de conservación en negro para impresora térmica */
+        .conservacion-descongelacion, 
+        .conservacion-refrigeracion,
+        .conservacion-gastro,
+        .conservacion-caliente,
+        .conservacion-seco { 
+            color: #000000; /* Negro para impresora térmica */
+            font-weight: bold; /* Hacemos bold para mayor claridad */
+        }
         
         /* Para asegurar que la impresión sea correcta */
         @media print {
