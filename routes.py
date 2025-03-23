@@ -28,6 +28,7 @@ user_bp = Blueprint('user', __name__, url_prefix='/users')
 schedule_bp = Blueprint('schedule', __name__, url_prefix='/schedules')
 checkin_bp = Blueprint('checkin', __name__, url_prefix='/checkins')
 vacation_bp = Blueprint('vacation', __name__, url_prefix='/vacations')
+ui_bp = Blueprint('ui', __name__, url_prefix='/ui')
 
 # Decorator for admin-only routes
 def admin_required(f):

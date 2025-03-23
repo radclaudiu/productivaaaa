@@ -1,0 +1,520 @@
+{% extends 'layout.html' %}
+
+{% block title %}Demostración de Animaciones{% endblock %}
+
+{% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/animations.css') }}">
+<style>
+    .demo-section {
+        padding: 20px;
+        margin-bottom: 30px;
+        border-radius: 8px;
+        background-color: rgba(var(--bs-light-rgb), 0.7);
+    }
+    
+    .demo-box {
+        height: 100px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin: 15px 0;
+        border-radius: 8px;
+        background-color: rgba(var(--bs-primary-rgb), 0.1);
+    }
+    
+    .card-hover {
+        transition: all 0.3s ease;
+        cursor: pointer;
+    }
+    
+    .preview-section {
+        border: 1px solid var(--bs-border-color);
+        padding: 15px;
+        border-radius: 8px;
+        margin-bottom: 20px;
+    }
+    
+    .code-section {
+        background-color: #f8f9fa;
+        padding: 15px;
+        border-radius: 8px;
+        font-family: monospace;
+        white-space: pre-wrap;
+        overflow-x: auto;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container my-5">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="mb-3">Animaciones e Interacciones</h1>
+            <p class="lead">Ejemplos y demostración de las animaciones y microinteracciones disponibles para mejorar la experiencia de usuario.</p>
+        </div>
+    </div>
+    
+    <div class="row">
+        <div class="col-md-3 mb-4">
+            <div class="list-group sticky-top pt-3" style="top: 70px;">
+                <a class="list-group-item list-group-item-action" href="#spinners">Indicadores de carga</a>
+                <a class="list-group-item list-group-item-action" href="#feedback">Animaciones de feedback</a>
+                <a class="list-group-item list-group-item-action" href="#transitions">Transiciones y efectos</a>
+                <a class="list-group-item list-group-item-action" href="#hover">Interacciones al hover</a>
+                <a class="list-group-item list-group-item-action" href="#buttons">Botones animados</a>
+                <a class="list-group-item list-group-item-action" href="#overlays">Overlays de carga</a>
+                <a class="list-group-item list-group-item-action" href="#microinteractions">Microinteracciones</a>
+            </div>
+        </div>
+        
+        <div class="col-md-9">
+            <!-- Spinners -->
+            <div id="spinners" class="demo-section">
+                <h2>Indicadores de carga</h2>
+                <p>Diferentes spinners y animaciones para indicar estados de carga o procesamiento.</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <div class="spinner"></div>
+                        </div>
+                        <p class="text-center">Spinner básico</p>
+                        <div class="code-section">
+<div class="spinner"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <div class="loading-dots">
+                                <span></span><span></span><span></span>
+                            </div>
+                        </div>
+                        <p class="text-center">Puntos de carga</p>
+                        <div class="code-section">
+<div class="loading-dots">
+    <span></span><span></span><span></span>
+</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <div class="waiting">
+                                <div></div><div></div><div></div><div></div>
+                            </div>
+                        </div>
+                        <p class="text-center">Animación de espera</p>
+                        <div class="code-section">
+<div class="waiting">
+    <div></div><div></div><div></div><div></div>
+</div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-6">
+                        <div class="demo-box">
+                            <div class="progress-load w-75"></div>
+                        </div>
+                        <p class="text-center">Barra de progreso indeterminado</p>
+                        <div class="code-section">
+<div class="progress-load"></div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="demo-box shimmer">
+                            <span>Contenido en carga...</span>
+                        </div>
+                        <p class="text-center">Efecto shimmer</p>
+                        <div class="code-section">
+<div class="shimmer">Contenido en carga...</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Feedback Animations -->
+            <div id="feedback" class="demo-section">
+                <h2>Animaciones de feedback</h2>
+                <p>Animaciones para dar feedback visual al usuario sobre el resultado de una acción.</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="demo-box">
+                            <svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+                                <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+                            </svg>
+                        </div>
+                        <p class="text-center">Animación de éxito</p>
+                        <div class="code-section">
+<svg class="checkmark" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+    <circle class="checkmark-circle" cx="26" cy="26" r="25" fill="none"/>
+    <path class="checkmark-check" fill="none" d="M14.1 27.2l7.1 7.2 16.7-16.8"/>
+</svg>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="demo-box">
+                            <svg class="cross" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+                                <circle class="cross-circle" cx="26" cy="26" r="25" fill="none"/>
+                                <path class="cross-line" fill="none" d="M16 16 36 36"/>
+                                <path class="cross-line" fill="none" d="M36 16 16 36"/>
+                            </svg>
+                        </div>
+                        <p class="text-center">Animación de error</p>
+                        <div class="code-section">
+<svg class="cross" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 52 52">
+    <circle class="cross-circle" cx="26" cy="26" r="25" fill="none"/>
+    <path class="cross-line" fill="none" d="M16 16 36 36"/>
+    <path class="cross-line" fill="none" d="M36 16 16 36"/>
+</svg>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Transitions -->
+            <div id="transitions" class="demo-section">
+                <h2>Transiciones y efectos</h2>
+                <p>Diferentes transiciones y efectos para elementos de la interfaz.</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <button id="bounce-demo" class="btn btn-primary">Activar efecto</button>
+                        </div>
+                        <div id="bounce-target" class="demo-box d-none">
+                            <div class="bounce-in">¡Aparición con rebote!</div>
+                        </div>
+                        <p class="text-center">Efecto rebote</p>
+                        <div class="code-section">
+<div class="bounce-in">Contenido con rebote</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <button id="fade-demo" class="btn btn-primary">Activar efecto</button>
+                        </div>
+                        <div id="fade-target" class="demo-box d-none">
+                            <div class="fade-in-up">¡Desvanecimiento hacia arriba!</div>
+                        </div>
+                        <p class="text-center">Fade in up</p>
+                        <div class="code-section">
+<div class="fade-in-up">Contenido con fade</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <div class="pulse">Elemento pulsante</div>
+                        </div>
+                        <p class="text-center">Efecto pulso</p>
+                        <div class="code-section">
+<div class="pulse">Elemento pulsante</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Hover Interactions -->
+            <div id="hover" class="demo-section">
+                <h2>Interacciones al hover</h2>
+                <p>Efectos que se activan al pasar el ratón sobre los elementos.</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="card card-hover hover-float">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Efecto float</h5>
+                                <p class="card-text">Pasa el ratón para ver</p>
+                            </div>
+                        </div>
+                        <p class="text-center mt-3">Hover float</p>
+                        <div class="code-section">
+<div class="hover-float">Elemento con float</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card card-hover hover-grow">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Efecto grow</h5>
+                                <p class="card-text">Pasa el ratón para ver</p>
+                            </div>
+                        </div>
+                        <p class="text-center mt-3">Hover grow</p>
+                        <div class="code-section">
+<div class="hover-grow">Elemento con grow</div>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="card card-hover" data-hover="custom">
+                            <div class="card-body text-center">
+                                <h5 class="card-title">Efecto personalizado</h5>
+                                <p class="card-text">Pasa el ratón para ver</p>
+                            </div>
+                        </div>
+                        <p class="text-center mt-3">Hover personalizado</p>
+                        <div class="code-section">
+<div data-hover="custom">Elemento personalizado</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Animated Buttons -->
+            <div id="buttons" class="demo-section">
+                <h2>Botones animados</h2>
+                <p>Diferentes animaciones para botones.</p>
+                
+                <div class="row">
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <button class="btn btn-primary btn-animated">Botón con ripple</button>
+                        </div>
+                        <p class="text-center">Efecto ripple</p>
+                        <div class="code-section">
+<button class="btn btn-primary btn-animated">Botón con ripple</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <button id="loading-btn" class="btn btn-success">Cargar</button>
+                        </div>
+                        <p class="text-center">Botón con carga</p>
+                        <div class="code-section">
+<button class="btn btn-success">
+    <div class="loading-dots">
+        <span></span><span></span><span></span>
+    </div>
+</button>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-4">
+                        <div class="demo-box">
+                            <button class="btn btn-outline-primary hover-float">Botón flotante</button>
+                        </div>
+                        <p class="text-center">Botón con hover</p>
+                        <div class="code-section">
+<button class="btn btn-outline-primary hover-float">Botón flotante</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Loading Overlays -->
+            <div id="overlays" class="demo-section">
+                <h2>Overlays de carga</h2>
+                <p>Overlays para indicar carga o procesamiento en toda la página.</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="demo-box">
+                            <button id="show-overlay" class="btn btn-primary">Mostrar overlay</button>
+                        </div>
+                        <p class="text-center">Overlay básico</p>
+                        <div class="code-section">
+// Desde JavaScript:
+Animations.showLoadingOverlay('Cargando...');
+
+// Para ocultar:
+Animations.hideLoadingOverlay();
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="preview-section">
+                            <div class="loading-overlay show" style="position: relative; height: 200px;">
+                                <div class="loading-content">
+                                    <div class="spinner"></div>
+                                    <div class="mt-3">Cargando datos...</div>
+                                </div>
+                            </div>
+                        </div>
+                        <p class="text-center">Vista previa</p>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Microinteractions -->
+            <div id="microinteractions" class="demo-section">
+                <h2>Microinteracciones</h2>
+                <p>Pequeñas interacciones que mejoran la experiencia del usuario.</p>
+                
+                <div class="row">
+                    <div class="col-md-6">
+                        <div class="demo-box">
+                            <div id="success-container" class="text-center">
+                                <button id="show-success" class="btn btn-success">Mostrar éxito</button>
+                            </div>
+                        </div>
+                        <p class="text-center">Animación de éxito</p>
+                        <div class="code-section">
+// Desde JavaScript:
+Animations.showSuccess(container, 'Operación completada');
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="demo-box">
+                            <div id="error-container" class="text-center">
+                                <button id="show-error" class="btn btn-danger">Mostrar error</button>
+                            </div>
+                        </div>
+                        <p class="text-center">Animación de error</p>
+                        <div class="code-section">
+// Desde JavaScript:
+Animations.showError(container, 'Se ha producido un error');
+                        </div>
+                    </div>
+                </div>
+                
+                <div class="row mt-4">
+                    <div class="col-md-12">
+                        <div class="alert alert-info">
+                            <h5>Uso en formularios</h5>
+                            <p>Los formularios tienen integración automática. Al hacer clic en un botón de envío, se mostrará una animación de carga.</p>
+                            
+                            <form id="demo-form" class="mt-3">
+                                <div class="mb-3">
+                                    <input type="text" class="form-control" placeholder="Campo de ejemplo" required>
+                                </div>
+                                <button type="submit" class="btn btn-primary">Enviar formulario</button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/animations.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Demo efecto rebote
+        document.getElementById('bounce-demo').addEventListener('click', function() {
+            var target = document.getElementById('bounce-target');
+            target.classList.remove('d-none');
+            this.disabled = true;
+            
+            setTimeout(() => {
+                target.classList.add('d-none');
+                this.disabled = false;
+            }, 2000);
+        });
+        
+        // Demo fade in up
+        document.getElementById('fade-demo').addEventListener('click', function() {
+            var target = document.getElementById('fade-target');
+            target.classList.remove('d-none');
+            this.disabled = true;
+            
+            setTimeout(() => {
+                target.classList.add('d-none');
+                this.disabled = false;
+            }, 2000);
+        });
+        
+        // Demo botón con carga
+        document.getElementById('loading-btn').addEventListener('click', function() {
+            const originalText = this.textContent;
+            this.innerHTML = `
+                <div class="loading-dots">
+                    <span></span><span></span><span></span>
+                </div>
+            `;
+            this.disabled = true;
+            
+            setTimeout(() => {
+                this.innerHTML = originalText;
+                this.disabled = false;
+            }, 2000);
+        });
+        
+        // Demo overlay
+        document.getElementById('show-overlay').addEventListener('click', function() {
+            Animations.showLoadingOverlay('Procesando datos...');
+            
+            setTimeout(() => {
+                Animations.hideLoadingOverlay();
+            }, 3000);
+        });
+        
+        // Demo animación éxito
+        document.getElementById('show-success').addEventListener('click', function() {
+            const container = document.getElementById('success-container');
+            Animations.showSuccess(container, 'Operación completada con éxito');
+            
+            setTimeout(() => {
+                container.innerHTML = `<button id="show-success" class="btn btn-success">Mostrar éxito</button>`;
+                
+                // Reactivar el evento
+                document.getElementById('show-success').addEventListener('click', arguments.callee);
+            }, 3000);
+        });
+        
+        // Demo animación error
+        document.getElementById('show-error').addEventListener('click', function() {
+            const container = document.getElementById('error-container');
+            Animations.showError(container, 'Se ha producido un error');
+            
+            setTimeout(() => {
+                container.innerHTML = `<button id="show-error" class="btn btn-danger">Mostrar error</button>`;
+                
+                // Reactivar el evento
+                document.getElementById('show-error').addEventListener('click', arguments.callee);
+            }, 3000);
+        });
+        
+        // Demo formulario
+        document.getElementById('demo-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            // Simular envío
+            setTimeout(() => {
+                const submitButton = this.querySelector('button[type="submit"]');
+                submitButton.innerHTML = 'Enviar formulario';
+                submitButton.disabled = false;
+                
+                Animations.showSuccess(this, 'Formulario enviado correctamente');
+                
+                setTimeout(() => {
+                    this.reset();
+                    this.innerHTML = `
+                        <div class="mb-3">
+                            <input type="text" class="form-control" placeholder="Campo de ejemplo" required>
+                        </div>
+                        <button type="submit" class="btn btn-primary">Enviar formulario</button>
+                    `;
+                }, 2000);
+            }, 2000);
+        });
+        
+        // Personalización de hover
+        document.querySelectorAll('[data-hover="custom"]').forEach(elem => {
+            elem.addEventListener('mouseenter', function() {
+                this.style.transform = 'perspective(500px) rotateY(15deg)';
+                this.style.transition = 'all 0.3s ease';
+                this.style.boxShadow = '0 10px 20px rgba(0,0,0,0.2)';
+            });
+            
+            elem.addEventListener('mouseleave', function() {
+                this.style.transform = 'perspective(500px) rotateY(0)';
+                this.style.boxShadow = '0 0 0 rgba(0,0,0,0)';
+            });
+        });
+    });
+</script>
+{% endblock %}
