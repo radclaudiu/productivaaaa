@@ -1283,6 +1283,9 @@ def local_user_config():
     # Obtener impresoras configuradas para esta ubicación
     printers = PrinterConfig.query.filter_by(location_id=location_id).all()
     
+    # Obtener impresoras del sistema
+    system_printers = get_system_printers()
+    
     # Verificar si se está editando una impresora existente
     printer_id = request.args.get('printer_id', type=int)
     printer_to_edit = None
@@ -1296,6 +1299,20 @@ def local_user_config():
     
     # Crear formulario
     form = PrinterConfigForm(obj=printer_to_edit)
+    
+    # Si hay impresoras disponibles en el sistema y no estamos editando, mostrar como un select
+    if system_printers and not printer_to_edit:
+        # Preparar lista de impresoras del sistema como opciones para el select
+        printer_choices = [(p['name'], p['name']) for p in system_printers]
+        
+        # Filtrar las impresoras que ya están configuradas
+        configured_printer_names = [p.printer_name for p in printers]
+        available_printers = [(name, name) for name, _ in printer_choices if name not in configured_printer_names]
+        
+        # Si hay impresoras disponibles después de filtrar, usar un select
+        if available_printers:
+            form.printer_name.choices = available_printers
+            form.printer_name.render_kw = {'class': 'form-select form-select-lg'}
     
     if form.validate_on_submit():
         # Si se está editando una impresora existente
@@ -1364,7 +1381,10 @@ def local_user_config():
         title='Configuración del Portal',
         form=form,
         printers=printers,
-        printer_to_edit=printer_to_edit
+        printer_to_edit=printer_to_edit,
+        system_printers=system_printers,
+        location=location,
+        local_user=local_user
     )
 
 @tasks_bp.route('/local-user/tasks')

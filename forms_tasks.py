@@ -219,7 +219,11 @@ class GenerateLabelForm(FlaskForm):
         
         
 class PrinterConfigForm(FlaskForm):
-    """Formulario para configurar impresoras"""
+    """Formulario para configurar impresoras
+    
+    Este formulario permite tanto un StringField como un SelectField para el nombre
+    de la impresora, dependiendo de si hay impresoras del sistema disponibles.
+    """
     printer_name = StringField('Nombre de la Impresora', validators=[DataRequired(), Length(max=128)])
     is_default = BooleanField('Predeterminada', default=False)
     is_active = BooleanField('Activa', default=True)
