@@ -18,10 +18,22 @@
                 <i class="bi bi-list me-2"></i>Gestionar Productos
             </a>
             {% if selected_location %}
+            <a href="{{ url_for('tasks.label_editor', location_id=selected_location.id) }}" class="btn btn-primary me-2">
+                <i class="bi bi-brush me-2"></i>Editor de Etiquetas
+            </a>
+            <a href="{{ url_for('tasks.list_label_templates', location_id=selected_location.id) }}" class="btn btn-secondary me-2">
+                <i class="bi bi-collection me-2"></i>Plantillas
+            </a>
             <a href="{{ url_for('tasks.export_labels_excel', location_id=selected_location.id) }}" class="btn btn-info me-2">
                 <i class="bi bi-file-earmark-excel me-2"></i>Exportar a Excel
             </a>
             {% else %}
+            <button type="button" class="btn btn-primary me-2" disabled title="Seleccione un local para acceder al editor">
+                <i class="bi bi-brush me-2"></i>Editor de Etiquetas
+            </button>
+            <button type="button" class="btn btn-secondary me-2" disabled title="Seleccione un local para ver plantillas">
+                <i class="bi bi-collection me-2"></i>Plantillas
+            </button>
             <button type="button" class="btn btn-info me-2" disabled title="Seleccione un local para exportar">
                 <i class="bi bi-file-earmark-excel me-2"></i>Exportar a Excel
             </button>
@@ -172,27 +184,34 @@
                             
                             <h6 class="fw-bold mt-3"><i class="bi bi-2-circle-fill me-2"></i>Configurar Conservación</h6>
                             <p>
-                                Configure los tipos de conservación disponibles para cada producto y los días
+                                Configure los tipos de conservación disponibles para cada producto y las horas
                                 que el producto es válido para ese tipo de conservación.
+                            </p>
+                            
+                            <h6 class="fw-bold mt-3"><i class="bi bi-3-circle-fill me-2"></i>Editor de Etiquetas</h6>
+                            <p>
+                                Utilice el editor para personalizar el diseño de las etiquetas, ajustando la
+                                posición y tamaño de los diferentes elementos.
                             </p>
                         </div>
                         
                         <div class="col-md-6">
-                            <h6 class="fw-bold"><i class="bi bi-3-circle-fill me-2"></i>Tipos de Conservación</h6>
+                            <h6 class="fw-bold"><i class="bi bi-4-circle-fill me-2"></i>Tipos de Conservación</h6>
                             <ul class="list-unstyled">
                                 <li><span class="badge bg-secondary">Descongelación</span> - Para productos que han sido descongelados</li>
                                 <li><span class="badge bg-info">Refrigeración</span> - Para productos refrigerados (0-4°C)</li>
                                 <li><span class="badge bg-warning">Gastro</span> - Para productos en contenedores gastronorm</li>
                                 <li><span class="badge bg-danger">Caliente</span> - Para productos mantenidos en caliente (>65°C)</li>
+                                <li><span class="badge bg-success">Seco</span> - Para productos almacenados en seco</li>
                             </ul>
                             
-                            <h6 class="fw-bold mt-3"><i class="bi bi-4-circle-fill me-2"></i>Importación/Exportación</h6>
+                            <h6 class="fw-bold mt-3"><i class="bi bi-5-circle-fill me-2"></i>Importación/Exportación</h6>
                             <p>
                                 Utilice los botones de "Exportar a Excel" para descargar los productos y sus configuraciones,
                                 y "Subida Masiva" para importar productos y configuraciones desde un archivo Excel.
                             </p>
                             
-                            <h6 class="fw-bold mt-3"><i class="bi bi-5-circle-fill me-2"></i>Acceso Portal</h6>
+                            <h6 class="fw-bold mt-3"><i class="bi bi-6-circle-fill me-2"></i>Acceso Portal</h6>
                             <p>
                                 Los usuarios del local accederán a la generación de etiquetas a través del portal
                                 destinado a cada local.
