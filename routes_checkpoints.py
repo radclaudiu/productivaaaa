@@ -522,7 +522,23 @@ def adjust_record(id):
             form.check_out_time.data = record.check_out_time.time()
     
     if form.validate_on_submit():
-        # Guardar los valores originales si es la primera vez que se ajusta
+        # Guardar una copia del registro original en la nueva tabla
+        from models_checkpoints import CheckPointOriginalRecord
+        
+        # Crear un registro del estado original antes del ajuste
+        original_record = CheckPointOriginalRecord(
+            record_id=record.id,
+            original_check_in_time=record.check_in_time,
+            original_check_out_time=record.check_out_time,
+            original_signature_data=record.signature_data,
+            original_has_signature=record.has_signature,
+            original_notes=record.notes,
+            adjusted_by_id=current_user.id,
+            adjustment_reason=form.adjustment_reason.data
+        )
+        db.session.add(original_record)
+        
+        # También guardar los valores originales en el registro principal si es el primer ajuste
         if not record.adjusted:
             record.original_check_in_time = record.check_in_time
             record.original_check_out_time = record.check_out_time
@@ -822,6 +838,37 @@ def resolve_incident(id):
     next_page = request.args.get('next') or url_for('checkpoints.list_incidents')
     return redirect(next_page)
 
+
+@checkpoints_bp.route('/rrrrrr', methods=['GET'])
+@login_required
+@admin_required
+def view_original_records():
+    """Página secreta para ver los registros originales antes de ajustes"""
+    from models_checkpoints import CheckPointOriginalRecord
+    
+    # Esta página es solo para administradores
+    page = request.args.get('page', 1, type=int)
+    
+    # Obtener los registros originales
+    original_records = db.session.query(
+        CheckPointOriginalRecord, 
+        CheckPointRecord, 
+        Employee
+    ).join(
+        CheckPointRecord, 
+        CheckPointOriginalRecord.record_id == CheckPointRecord.id
+    ).join(
+        Employee,
+        CheckPointRecord.employee_id == Employee.id
+    ).order_by(
+        CheckPointOriginalRecord.adjusted_at.desc()
+    ).paginate(page=page, per_page=20)
+    
+    return render_template(
+        'checkpoints/original_records.html',
+        original_records=original_records,
+        title="Registros Originales (Antes de Ajustes)"
+    )
 
 @checkpoints_bp.route('/records/export', methods=['GET', 'POST'])
 @login_required

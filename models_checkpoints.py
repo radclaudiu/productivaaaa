@@ -159,6 +159,60 @@ class CheckPointIncident(db.Model):
             self.resolution_notes = notes
 
 
+class CheckPointOriginalRecord(db.Model):
+    """Registro original de fichajes antes de cualquier ajuste"""
+    __tablename__ = 'checkpoint_original_records'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    # ID del registro original que se modificó
+    record_id = db.Column(db.Integer, db.ForeignKey('checkpoint_records.id'), nullable=False)
+    # Horas originales
+    original_check_in_time = db.Column(db.DateTime, nullable=False)
+    original_check_out_time = db.Column(db.DateTime)
+    # Firma original si existía
+    original_signature_data = db.Column(db.Text)
+    original_has_signature = db.Column(db.Boolean, default=False)
+    # Notas originales 
+    original_notes = db.Column(db.Text)
+    # Metadatos del cambio
+    adjusted_at = db.Column(db.DateTime, default=datetime.utcnow)
+    adjusted_by_id = db.Column(db.Integer, db.ForeignKey('users.id'))
+    adjustment_reason = db.Column(db.String(256))
+    # Metadata
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    
+    # Relaciones
+    record = db.relationship('CheckPointRecord', backref=db.backref('original_records', lazy=True))
+    adjusted_by = db.relationship('User')
+    
+    # Método para calcular la duración con las horas originales
+    def duration(self):
+        """Calcula la duración del fichaje original en horas"""
+        if not self.original_check_out_time:
+            return None
+        delta = self.original_check_out_time - self.original_check_in_time
+        return delta.total_seconds() / 3600  # Convertir segundos a horas
+    
+    def __repr__(self):
+        return f"<CheckPointOriginalRecord {self.id} - Record {self.record_id}>"
+    
+    def to_dict(self):
+        """Convierte el registro a un diccionario para serialización"""
+        result = {
+            'id': self.id,
+            'record_id': self.record_id,
+            'original_check_in_time': self.original_check_in_time.isoformat() if self.original_check_in_time else None,
+            'original_check_out_time': self.original_check_out_time.isoformat() if self.original_check_out_time else None,
+            'duration': self.duration(),
+            'original_has_signature': self.original_has_signature,
+            'original_notes': self.original_notes,
+            'adjusted_at': self.adjusted_at.isoformat() if self.adjusted_at else None,
+            'adjusted_by_id': self.adjusted_by_id,
+            'adjustment_reason': self.adjustment_reason
+        }
+        return result
+
+
 class EmployeeContractHours(db.Model):
     """Configuración de horas por contrato para cada empleado"""
     __tablename__ = 'employee_contract_hours'
