@@ -164,12 +164,15 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         
         pdf.ln(20)  # Espacio entre empleados
     
-    # Crear un archivo en memoria
-    pdf_file = BytesIO()
-    pdf.output(pdf_file)
-    pdf_file.seek(0)
+    # Crear un archivo temporal en disco
+    temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+    temp_filename = temp_file.name
+    temp_file.close()
     
-    return pdf_file
+    # Guardar el PDF en el archivo temporal
+    pdf.output(temp_filename)
+    
+    return temp_filename
 
 
 def process_auto_checkouts():
@@ -179,6 +182,9 @@ def process_auto_checkouts():
     
     # Obtener todos los puntos de fichaje activos
     checkpoints = CheckPoint.query.filter_by(status='active').all()
+    
+    # Contador total de registros procesados
+    total_processed = 0
     
     for checkpoint in checkpoints:
         # Solo procesar si tiene hora de checkout automático configurada
@@ -204,6 +210,9 @@ def process_auto_checkouts():
                 now
             )
         ).all()
+        
+        # Contar registros procesados para este checkpoint
+        checkpoint_processed = 0
         
         for record in pending_records:
             # Registrar el checkout automático
@@ -231,26 +240,16 @@ def process_auto_checkouts():
                         original_checkin, original_checkout
                     )
                     
-                    # Si hay cambios, aplicarlos y crear incidencias
+                    # Si hay cambios, aplicarlos y marcar con R
                     if adjusted_checkin and adjusted_checkin != original_checkin:
                         record.check_in_time = adjusted_checkin
-                        # Crear incidencia por ajuste de entrada
-                        adjustment_incident = CheckPointIncident(
-                            record_id=record.id,
-                            incident_type=CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
-                            description=f"Hora de entrada ajustada automáticamente de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')} para cumplir con configuración de horario"
-                        )
-                        db.session.add(adjustment_incident)
+                        # Marcar con R en lugar de crear incidencia
+                        record.notes = (record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
                         
                     if adjusted_checkout and adjusted_checkout != original_checkout:
                         record.check_out_time = adjusted_checkout
-                        # Crear incidencia por ajuste de salida
-                        adjustment_incident = CheckPointIncident(
-                            record_id=record.id,
-                            incident_type=CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
-                            description=f"Hora de salida ajustada automáticamente de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')} para cumplir con configuración de horario"
-                        )
-                        db.session.add(adjustment_incident)
+                        # Marcar con R en lugar de crear incidencia
+                        record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
                     
                     # Verificar si hay horas extra
                     duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
@@ -268,9 +267,15 @@ def process_auto_checkouts():
             if employee.is_on_shift:
                 employee.is_on_shift = False
                 db.session.add(employee)
+                
+            # Incrementar contador de este checkpoint
+            checkpoint_processed += 1
         
-        # Guardar cambios
-        if pending_records:
+        # Guardar cambios si se procesaron registros
+        if checkpoint_processed > 0:
             db.session.commit()
-    
-    return len(pending_records) if 'pending_records' in locals() else 0
+            
+        # Añadir al contador total
+        total_processed += checkpoint_processed
+            
+    return total_processed
