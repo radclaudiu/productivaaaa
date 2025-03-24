@@ -7,18 +7,18 @@ from models import Employee, Company
 
 
 class CheckPointStatus(enum.Enum):
-    ACTIVE = "active"
-    DISABLED = "disabled"
-    MAINTENANCE = "maintenance"
+    ACTIVE = "ACTIVE"
+    DISABLED = "DISABLED"
+    MAINTENANCE = "MAINTENANCE"
 
 
 class CheckPointIncidentType(enum.Enum):
-    MISSED_CHECKOUT = "missed_checkout"
-    LATE_CHECKIN = "late_checkin"
-    EARLY_CHECKOUT = "early_checkout"
-    OVERTIME = "overtime"
-    MANUAL_ADJUSTMENT = "manual_adjustment"
-    CONTRACT_HOURS_ADJUSTMENT = "contract_hours_adjustment"
+    MISSED_CHECKOUT = "MISSED_CHECKOUT"
+    LATE_CHECKIN = "LATE_CHECKIN"
+    EARLY_CHECKOUT = "EARLY_CHECKOUT"
+    OVERTIME = "OVERTIME"
+    MANUAL_ADJUSTMENT = "MANUAL_ADJUSTMENT"
+    CONTRACT_HOURS_ADJUSTMENT = "CONTRACT_HOURS_ADJUSTMENT"
 
 
 class CheckPoint(db.Model):

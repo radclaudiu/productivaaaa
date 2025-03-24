@@ -352,12 +352,20 @@
                                             </div>
                                             <div class="mb-3">
                                                 <small class="text-muted d-block">Estado:</small>
-                                                {% if checkpoint.status.value == 'active' %}
+                                                {% if checkpoint.status.value == 'ACTIVE' %}
                                                     <span class="badge bg-success">Activo</span>
-                                                {% elif checkpoint.status.value == 'maintenance' %}
+                                                {% elif checkpoint.status.value == 'MAINTENANCE' %}
                                                     <span class="badge bg-warning text-dark">Mantenimiento</span>
-                                                {% else %}
+                                                {% elif checkpoint.status.value == 'DISABLED' %}
                                                     <span class="badge bg-danger">Desactivado</span>
+                                                {% elif checkpoint.status == 'ACTIVE' %}
+                                                    <span class="badge bg-success">Activo</span>
+                                                {% elif checkpoint.status == 'MAINTENANCE' %}
+                                                    <span class="badge bg-warning text-dark">Mantenimiento</span>
+                                                {% elif checkpoint.status == 'DISABLED' %}
+                                                    <span class="badge bg-danger">Desactivado</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary">{{ checkpoint.status }}</span>
                                                 {% endif %}
                                             </div>
                                             <div class="mb-3">
@@ -624,18 +632,32 @@
                                         {% for incident in latest_incidents %}
                                         <tr>
                                             <td>
-                                                {% if incident.incident_type.value == 'missed_checkout' %}
+                                                {% if incident.incident_type is defined and incident.incident_type.value == 'MISSED_CHECKOUT' %}
                                                     <span class="badge bg-danger incident-badge">Salida Olvidada</span>
-                                                {% elif incident.incident_type.value == 'late_checkin' %}
+                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'LATE_CHECKIN' %}
                                                     <span class="badge bg-warning text-dark incident-badge">Entrada Tardía</span>
-                                                {% elif incident.incident_type.value == 'early_checkout' %}
+                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'EARLY_CHECKOUT' %}
                                                     <span class="badge bg-warning text-dark incident-badge">Salida Temprana</span>
-                                                {% elif incident.incident_type.value == 'overtime' %}
+                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'OVERTIME' %}
                                                     <span class="badge bg-info incident-badge">Horas Extra</span>
-                                                {% elif incident.incident_type.value == 'manual_adjustment' %}
+                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'MANUAL_ADJUSTMENT' %}
                                                     <span class="badge bg-secondary incident-badge">Ajuste Manual</span>
-                                                {% elif incident.incident_type.value == 'contract_hours_adjustment' %}
+                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'CONTRACT_HOURS_ADJUSTMENT' %}
                                                     <span class="badge bg-primary incident-badge">Ajuste Contrato</span>
+                                                {% elif incident.incident_type == 'MISSED_CHECKOUT' %}
+                                                    <span class="badge bg-danger incident-badge">Salida Olvidada</span>
+                                                {% elif incident.incident_type == 'LATE_CHECKIN' %}
+                                                    <span class="badge bg-warning text-dark incident-badge">Entrada Tardía</span>
+                                                {% elif incident.incident_type == 'EARLY_CHECKOUT' %}
+                                                    <span class="badge bg-warning text-dark incident-badge">Salida Temprana</span>
+                                                {% elif incident.incident_type == 'OVERTIME' %}
+                                                    <span class="badge bg-info incident-badge">Horas Extra</span>
+                                                {% elif incident.incident_type == 'MANUAL_ADJUSTMENT' %}
+                                                    <span class="badge bg-secondary incident-badge">Ajuste Manual</span>
+                                                {% elif incident.incident_type == 'CONTRACT_HOURS_ADJUSTMENT' %}
+                                                    <span class="badge bg-primary incident-badge">Ajuste Contrato</span>
+                                                {% else %}
+                                                    <span class="badge bg-secondary incident-badge">{{ incident.incident_type }}</span>
                                                 {% endif %}
                                             </td>
                                             <td>
