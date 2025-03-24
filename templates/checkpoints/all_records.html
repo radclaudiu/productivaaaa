@@ -143,12 +143,12 @@
                                 </td>
                                 <td>
                                     <div class="btn-group btn-group-sm">
-                                        <a href="{{ url_for('checkpoints.adjust_record', id=record.id) }}" class="btn btn-outline-secondary">
-                                            <i class="fas fa-edit"></i>
+                                        <a href="{{ url_for('checkpoints.adjust_record', id=record.id) }}" class="btn btn-outline-secondary" title="Ajustar registro">
+                                            <i class="bi bi-gear"></i> <span class="d-none d-md-inline">Ajustar</span>
                                         </a>
                                         {% if not record.has_signature %}
-                                        <a href="{{ url_for('checkpoints.record_signature', id=record.id) }}" class="btn btn-outline-info">
-                                            <i class="fas fa-signature"></i>
+                                        <a href="{{ url_for('checkpoints.record_signature', id=record.id) }}" class="btn btn-outline-info" title="Firmar registro">
+                                            <i class="bi bi-pen"></i> <span class="d-none d-md-inline">Firmar</span>
                                         </a>
                                         {% endif %}
                                     </div>
