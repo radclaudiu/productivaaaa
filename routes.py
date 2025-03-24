@@ -1004,6 +1004,11 @@ def edit_user(id):
 def reset_password(id):
     user = User.query.get_or_404(id)
     
+    # No permitir restablecer la contraseña del usuario "admin" a menos que el usuario actual sea "admin"
+    if user.username == 'admin' and current_user.username != 'admin':
+        flash('No tienes permiso para restablecer la contraseña del usuario "admin".', 'danger')
+        return redirect(url_for('user.list_users'))
+    
     # Generate a temporary password
     temp_password = f"temp{id}pwd{int(datetime.utcnow().timestamp())}"[:12]
     user.set_password(temp_password)
@@ -1023,6 +1028,11 @@ def toggle_activation(id):
         flash('No puedes desactivar tu propia cuenta.', 'danger')
         return redirect(url_for('user.list_users'))
     
+    # No permitir desactivar al usuario "admin"
+    if user.username == 'admin':
+        flash('No se puede desactivar al usuario "admin".', 'danger')
+        return redirect(url_for('user.list_users'))
+    
     user.is_active = not user.is_active
     db.session.commit()
     
@@ -1039,6 +1049,11 @@ def delete_user(id):
     # Don't allow deleting own account
     if user.id == current_user.id:
         flash('No puedes eliminar tu propia cuenta.', 'danger')
+        return redirect(url_for('user.list_users'))
+    
+    # No permitir eliminar al usuario "admin"
+    if user.username == 'admin':
+        flash('No se puede eliminar al usuario "admin".', 'danger')
         return redirect(url_for('user.list_users'))
     
     username = user.username
