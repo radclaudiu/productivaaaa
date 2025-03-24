@@ -2077,26 +2077,41 @@ def validate_pin():
         
         current_app.logger.info(f"PIN empleado: {pin_from_dni}, PIN ingresado: {pin}")
         
+        # Validar formato del PIN
+        if not pin.isdigit() or len(pin) != 4:
+            current_app.logger.warning(f"Formato de PIN incorrecto para empleado {employee_id}: {pin}")
+            return jsonify({"success": False, "message": "El PIN debe tener 4 dígitos numéricos"}), 400
+            
         if pin == pin_from_dni:
-            # Verificar si hay un registro pendiente
-            pending_record = CheckPointRecord.query.filter_by(
-                employee_id=employee.id,
-                checkpoint_id=checkpoint_id,
-                check_out_time=None
-            ).order_by(CheckPointRecord.check_in_time.desc()).first()
-            
-            action = "checkout" if pending_record else "checkin"
-            
-            current_app.logger.info(f"PIN validado correctamente para empleado {employee_id}. Acción: {action}")
-            
-            return jsonify({
-                "success": True, 
-                "action": action,
-                "is_on_shift": employee.is_on_shift
-            })
+            try:
+                # Verificar si hay un registro pendiente
+                pending_record = CheckPointRecord.query.filter_by(
+                    employee_id=employee.id,
+                    checkpoint_id=checkpoint_id,
+                    check_out_time=None
+                ).order_by(CheckPointRecord.check_in_time.desc()).first()
+                
+                action = "checkout" if pending_record else "checkin"
+                
+                # Verificar estado del empleado
+                if not employee.is_active:
+                    current_app.logger.warning(f"Empleado {employee_id} no está activo")
+                    return jsonify({"success": False, "message": "Este empleado no está activo en el sistema"}), 403
+                
+                current_app.logger.info(f"PIN validado correctamente para empleado {employee_id}. Acción: {action}")
+                
+                return jsonify({
+                    "success": True, 
+                    "action": action,
+                    "is_on_shift": employee.is_on_shift,
+                    "name": f"{employee.first_name} {employee.last_name}"
+                })
+            except Exception as e:
+                current_app.logger.error(f"Error al validar PIN: {str(e)}")
+                return jsonify({"success": False, "message": "Error del sistema. Inténtelo de nuevo."}), 500
         else:
             current_app.logger.warning(f"PIN incorrecto para empleado {employee_id}")
-            return jsonify({"success": False, "message": "PIN incorrecto"}), 401
+            return jsonify({"success": False, "message": "PIN incorrecto. Recuerde que el PIN son los últimos 4 dígitos de su DNI/NIE."}), 401
     except Exception as e:
         current_app.logger.error(f"Error en validate_pin: {str(e)}")
         return jsonify({"success": False, "message": f"Error en el servidor: {str(e)}"}), 500
