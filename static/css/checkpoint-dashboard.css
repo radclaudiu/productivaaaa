@@ -1,0 +1,23 @@
+
+.employee-avatar img {
+    box-shadow: 0 0 15px rgba(255, 255, 255, 0.2);
+    transition: transform 0.2s;
+}
+
+.card:hover .employee-avatar img {
+    transform: scale(1.05);
+}
+
+.card {
+    cursor: pointer;
+    transition: all 0.3s ease;
+}
+
+.card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 5px 15px rgba(255, 255, 255, 0.1);
+}
+
+.card-footer {
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
