@@ -315,6 +315,8 @@
                 // Limpiar mensajes de error anteriores
                 clearErrorMessage();
                 
+                console.log('Verificando PIN:', pinInput.value); // Depuración
+                
                 // Hacer una verificación AJAX del PIN
                 fetch('{{ url_for("checkpoints.validate_pin") }}', {
                     method: 'POST',
@@ -327,13 +329,23 @@
                         pin: pinInput.value
                     })
                 })
-                .then(response => response.json())
+                .then(response => {
+                    console.log('Respuesta recibida:', response.status); // Depuración
+                    return response.json();
+                })
                 .then(data => {
+                    console.log('Datos recibidos:', data); // Depuración
+                    
                     // Restablecer el botón
                     validationButton.innerHTML = 'Verificar PIN';
                     validationButton.disabled = false;
                     
+                    // Quitar la animación
+                    pinDisplay.classList.remove('sending');
+                    
                     if (data.success) {
+                        console.log('PIN verificado correctamente'); // Depuración
+                        
                         // PIN correcto, ocultar el teclado PIN y los botones de entrada
                         document.querySelector('.pin-container').style.display = 'none';
                         document.getElementById('pin-entry-buttons').style.display = 'none';
@@ -344,6 +356,8 @@
                         // Mostrar los botones de acción
                         document.getElementById('action-buttons').classList.remove('d-none');
                     } else {
+                        console.log('PIN incorrecto'); // Depuración
+                        
                         // PIN incorrecto, mostrar mensaje de error
                         showErrorMessage(data.message || 'PIN incorrecto. Inténtelo de nuevo.');
                         
@@ -354,11 +368,15 @@
                 })
                 .catch(error => {
                     // Error de red o del servidor
+                    console.error('Error en la petición:', error); // Depuración
+                    
                     validationButton.innerHTML = 'Verificar PIN';
                     validationButton.disabled = false;
                     
+                    // Quitar la animación
+                    pinDisplay.classList.remove('sending');
+                    
                     showErrorMessage('Error al verificar el PIN. Inténtelo de nuevo.');
-                    console.error('Error:', error);
                 });
             }
         }
