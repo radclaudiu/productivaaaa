@@ -15,45 +15,52 @@
                     <h3>{{ record.employee.first_name }} {{ record.employee.last_name }}</h3>
                     <p class="text-muted">{{ record.employee.position or 'Empleado' }}</p>
                     
-                    <div class="row mt-4">
-                        <div class="col-md-6">
-                            <div class="card bg-light mb-3">
-                                <div class="card-body">
-                                    <h5 class="card-title">Entrada</h5>
-                                    <p class="lead">{{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
-                                    <p class="display-6">{{ record.check_in_time.strftime('%H:%M') }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        <div class="col-md-6">
-                            <div class="card {% if record.check_out_time %}bg-light{% else %}bg-light text-muted{% endif %} mb-3">
-                                <div class="card-body">
-                                    <h5 class="card-title">Salida</h5>
-                                    {% if record.check_out_time %}
-                                        <p class="lead">{{ record.check_out_time.strftime('%d/%m/%Y') }}</p>
-                                        <p class="display-6">{{ record.check_out_time.strftime('%H:%M') }}</p>
-                                    {% else %}
-                                        <p class="lead">Pendiente</p>
-                                        <p class="display-6">--:--</p>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    
                     {% if record.check_out_time %}
-                        <div class="alert alert-info mt-3">
+                        <!-- Solo mostramos la hora de salida si ya se ha registrado la salida -->
+                        <div class="col-md-8 mx-auto mt-4">
+                            <div class="card bg-light mb-3">
+                                <div class="card-body text-center">
+                                    <h5 class="card-title">Hora de Salida Registrada</h5>
+                                    <p class="lead">{{ record.check_out_time.strftime('%d/%m/%Y') }}</p>
+                                    <p class="display-6">{{ record.check_out_time.strftime('%H:%M') }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="alert alert-success mt-3">
                             <div class="d-flex align-items-center">
                                 <div>
-                                    <i class="bi bi-clock-history fs-1 me-3"></i>
+                                    <i class="bi bi-check-circle fs-1 me-3"></i>
                                 </div>
                                 <div>
-                                    <h5 class="alert-heading">Tiempo Total</h5>
-                                    <p class="mb-0 fs-5">{{ record.duration()|round(2) }} horas</p>
+                                    <h5 class="alert-heading">¡Fichaje Completado!</h5>
+                                    <p class="mb-0">Su salida ha sido registrada correctamente.</p>
                                 </div>
                             </div>
                         </div>
                     {% else %}
+                        <!-- Si no se ha registrado la salida, mostramos tanto entrada como la opción de registrar salida -->
+                        <div class="row mt-4">
+                            <div class="col-md-6">
+                                <div class="card bg-light mb-3">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Entrada</h5>
+                                        <p class="lead">{{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
+                                        <p class="display-6">{{ record.check_in_time.strftime('%H:%M') }}</p>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="card bg-light text-muted mb-3">
+                                    <div class="card-body">
+                                        <h5 class="card-title">Salida</h5>
+                                        <p class="lead">Pendiente</p>
+                                        <p class="display-6">--:--</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
                         <div class="alert alert-warning mt-3">
                             <div class="d-flex align-items-center">
                                 <div>
