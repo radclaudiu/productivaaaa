@@ -848,9 +848,12 @@ def view_original_records():
     
     # Esta página es solo para administradores
     page = request.args.get('page', 1, type=int)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    employee_id = request.args.get('employee_id', type=int)
     
-    # Obtener los registros originales
-    original_records = db.session.query(
+    # Construir la consulta base
+    query = db.session.query(
         CheckPointOriginalRecord, 
         CheckPointRecord, 
         Employee
@@ -860,14 +863,242 @@ def view_original_records():
     ).join(
         Employee,
         CheckPointRecord.employee_id == Employee.id
-    ).order_by(
+    )
+    
+    # Aplicar filtros si los hay
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) >= start_date)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) <= end_date)
+        except ValueError:
+            pass
+    
+    if employee_id:
+        query = query.filter(Employee.id == employee_id)
+    
+    # Ordenar y paginar
+    original_records = query.order_by(
         CheckPointOriginalRecord.adjusted_at.desc()
     ).paginate(page=page, per_page=20)
+    
+    # Obtener la lista de empleados para el filtro
+    employees = Employee.query.filter_by(is_active=True).order_by(Employee.first_name).all()
+    
+    # Si se solicita exportación
+    export_format = request.args.get('export')
+    if export_format == 'pdf':
+        return export_original_records_pdf(query.all(), start_date, end_date)
     
     return render_template(
         'checkpoints/original_records.html',
         original_records=original_records,
+        employees=employees,
+        filters={
+            'start_date': start_date.strftime('%Y-%m-%d') if isinstance(start_date, date) else None,
+            'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
+            'employee_id': employee_id
+        },
         title="Registros Originales (Antes de Ajustes)"
+    )
+
+@checkpoints_bp.route('/rrrrrr/export', methods=['GET'])
+@login_required
+@admin_required
+def export_original_records():
+    """Exporta los registros originales a PDF"""
+    from models_checkpoints import CheckPointOriginalRecord
+    
+    # Obtener parámetros de filtro
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    employee_id = request.args.get('employee_id', type=int)
+    
+    # Construir la consulta
+    query = db.session.query(
+        CheckPointOriginalRecord, 
+        CheckPointRecord, 
+        Employee
+    ).join(
+        CheckPointRecord, 
+        CheckPointOriginalRecord.record_id == CheckPointRecord.id
+    ).join(
+        Employee,
+        CheckPointRecord.employee_id == Employee.id
+    )
+    
+    # Aplicar filtros
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) >= start_date)
+        except ValueError:
+            start_date = None
+    
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) <= end_date)
+        except ValueError:
+            end_date = None
+    
+    if employee_id:
+        query = query.filter(Employee.id == employee_id)
+    
+    # Ordenar por empleado y fecha
+    records = query.order_by(
+        Employee.last_name,
+        Employee.first_name,
+        CheckPointOriginalRecord.original_check_in_time
+    ).all()
+    
+    if not records:
+        flash('No se encontraron registros para los filtros seleccionados', 'warning')
+        return redirect(url_for('checkpoints.view_original_records'))
+    
+    # Generar PDF
+    return export_original_records_pdf(records, start_date, end_date)
+
+def export_original_records_pdf(records, start_date=None, end_date=None):
+    """Genera un PDF con los registros originales"""
+    from fpdf import FPDF
+    from tempfile import NamedTemporaryFile
+    import os
+    
+    # Crear un archivo temporal para guardar el PDF
+    pdf_file = NamedTemporaryFile(delete=False, suffix='.pdf')
+    pdf_file.close()
+    
+    # Crear un PDF personalizado
+    class OriginalRecordsPDF(FPDF):
+        def header(self):
+            # Logo y título
+            self.set_font('Arial', 'B', 15)
+            self.cell(0, 10, 'Registro de Ajustes de Fichajes', 0, 1, 'C')
+            
+            # Período
+            if start_date and end_date:
+                period = f"{start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
+            elif start_date:
+                period = f"Desde {start_date.strftime('%d/%m/%Y')}"
+            elif end_date:
+                period = f"Hasta {end_date.strftime('%d/%m/%Y')}"
+            else:
+                period = "Todos los registros"
+                
+            self.set_font('Arial', '', 10)
+            self.cell(0, 10, f'Período: {period}', 0, 1, 'C')
+            
+            # Encabezados de la tabla
+            self.set_fill_color(200, 220, 255)
+            self.set_font('Arial', 'B', 8)
+            self.cell(40, 7, 'Empleado', 1, 0, 'C', 1)
+            self.cell(20, 7, 'Fecha', 1, 0, 'C', 1)
+            self.cell(15, 7, 'Ent. Orig.', 1, 0, 'C', 1)
+            self.cell(15, 7, 'Sal. Orig.', 1, 0, 'C', 1)
+            self.cell(15, 7, 'Ent. Mod.', 1, 0, 'C', 1)
+            self.cell(15, 7, 'Sal. Mod.', 1, 0, 'C', 1)
+            self.cell(20, 7, 'Ajustado Por', 1, 0, 'C', 1)
+            self.cell(50, 7, 'Motivo', 1, 1, 'C', 1)
+            
+        def footer(self):
+            # Posición a 1.5 cm del final
+            self.set_y(-15)
+            # Número de página
+            self.set_font('Arial', 'I', 8)
+            self.cell(0, 10, f'Página {self.page_no()}/{{nb}}', 0, 0, 'C')
+    
+    # Crear PDF
+    pdf = OriginalRecordsPDF()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # Llenar el PDF con los datos
+    pdf.set_font('Arial', '', 8)
+    
+    current_employee = None
+    total_hours_original = 0
+    total_hours_adjusted = 0
+    
+    for original, record, employee in records:
+        # Si cambia el empleado, agregar totales y reiniciar
+        if current_employee and current_employee != employee.id:
+            # Agregar fila de totales
+            pdf.set_font('Arial', 'B', 8)
+            pdf.cell(90, 7, f'Total horas originales: {total_hours_original:.2f}', 1, 0, 'R')
+            pdf.cell(90, 7, f'Total horas ajustadas: {total_hours_adjusted:.2f}', 1, 1, 'R')
+            pdf.ln(5)
+            
+            # Reiniciar totales
+            total_hours_original = 0
+            total_hours_adjusted = 0
+            
+            # Nueva página para cada empleado
+            pdf.add_page()
+            
+        # Actualizar empleado actual
+        current_employee = employee.id
+        
+        # Calcular horas trabajadas (original y ajustado)
+        if original.original_check_out_time and original.original_check_in_time:
+            hours_original = (original.original_check_out_time - original.original_check_in_time).total_seconds() / 3600
+            total_hours_original += hours_original
+        
+        if record.check_out_time and record.check_in_time:
+            hours_adjusted = (record.check_out_time - record.check_in_time).total_seconds() / 3600
+            total_hours_adjusted += hours_adjusted
+        
+        # Formatear datos
+        employee_name = f"{employee.first_name} {employee.last_name}"
+        date_str = original.original_check_in_time.strftime('%d/%m/%Y')
+        
+        in_time_orig = original.original_check_in_time.strftime('%H:%M')
+        out_time_orig = original.original_check_out_time.strftime('%H:%M') if original.original_check_out_time else '-'
+        
+        in_time_mod = record.check_in_time.strftime('%H:%M')
+        out_time_mod = record.check_out_time.strftime('%H:%M') if record.check_out_time else '-'
+        
+        adjusted_by = original.adjusted_by.username if original.adjusted_by else 'Sistema'
+        
+        # Imprimir fila
+        pdf.set_font('Arial', '', 8)
+        pdf.cell(40, 7, employee_name, 1, 0, 'L')
+        pdf.cell(20, 7, date_str, 1, 0, 'C')
+        pdf.cell(15, 7, in_time_orig, 1, 0, 'C')
+        pdf.cell(15, 7, out_time_orig, 1, 0, 'C')
+        pdf.cell(15, 7, in_time_mod, 1, 0, 'C')
+        pdf.cell(15, 7, out_time_mod, 1, 0, 'C')
+        pdf.cell(20, 7, adjusted_by, 1, 0, 'C')
+        
+        # Ajustar motivo para que quepa en una fila
+        motivo = original.adjustment_reason
+        if motivo and len(motivo) > 30:
+            motivo = motivo[:27] + '...'
+        pdf.cell(50, 7, motivo or '', 1, 1, 'L')
+    
+    # Agregar totales del último empleado
+    if current_employee:
+        pdf.set_font('Arial', 'B', 8)
+        pdf.cell(90, 7, f'Total horas originales: {total_hours_original:.2f}', 1, 0, 'R')
+        pdf.cell(90, 7, f'Total horas ajustadas: {total_hours_adjusted:.2f}', 1, 1, 'R')
+    
+    # Guardar PDF
+    pdf.output(pdf_file.name)
+    
+    # Enviar el archivo
+    filename = f"registros_originales.pdf"
+    return send_file(
+        pdf_file.name,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/pdf'
     )
 
 @checkpoints_bp.route('/records/export', methods=['GET', 'POST'])
@@ -1122,16 +1353,39 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                     original_checkin, original_checkout
                 )
                 
-                # Si hay cambios, aplicarlos y crear incidencias
-                if adjusted_checkin and adjusted_checkin != original_checkin:
-                    pending_record.check_in_time = adjusted_checkin
-                    # Marcar con R en lugar de crear incidencia
-                    pending_record.notes = (pending_record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
+                # Verificar si hay ajustes a realizar
+                needs_adjustment = (adjusted_checkin and adjusted_checkin != original_checkin) or \
+                                  (adjusted_checkout and adjusted_checkout != original_checkout)
+                
+                # Si hay ajustes, guardar el registro original primero
+                if needs_adjustment:
+                    from models_checkpoints import CheckPointOriginalRecord
                     
-                if adjusted_checkout and adjusted_checkout != original_checkout:
-                    pending_record.check_out_time = adjusted_checkout
-                    # Marcar con R en lugar de crear incidencia
-                    pending_record.notes = (pending_record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
+                    # Crear un registro del estado original antes del ajuste automático
+                    original_record = CheckPointOriginalRecord(
+                        record_id=pending_record.id,
+                        original_check_in_time=original_checkin,
+                        original_check_out_time=original_checkout,
+                        original_signature_data=pending_record.signature_data,
+                        original_has_signature=pending_record.has_signature,
+                        original_notes=pending_record.notes,
+                        adjustment_reason="Ajuste automático por límite de horas de contrato"
+                    )
+                    db.session.add(original_record)
+                    
+                    # Actualizar el registro con los valores ajustados
+                    if adjusted_checkin and adjusted_checkin != original_checkin:
+                        pending_record.check_in_time = adjusted_checkin
+                        # Marcar con R en lugar de crear incidencia
+                        pending_record.notes = (pending_record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
+                    
+                    if adjusted_checkout and adjusted_checkout != original_checkout:
+                        pending_record.check_out_time = adjusted_checkout
+                        # Marcar con R en lugar de crear incidencia
+                        pending_record.notes = (pending_record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
+                    
+                    # Marcar como ajustado
+                    pending_record.adjusted = True
                 
                 # Verificar si hay horas extra
                 duration = (pending_record.check_out_time - pending_record.check_in_time).total_seconds() / 3600
@@ -1318,16 +1572,39 @@ def record_checkout(id):
                 original_checkin, original_checkout
             )
             
-            # Si hay cambios, aplicarlos y crear incidencias
-            if adjusted_checkin and adjusted_checkin != original_checkin:
-                record.check_in_time = adjusted_checkin
-                # Marcar con R en lugar de crear incidencia
-                record.notes = (record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
+            # Verificar si hay ajustes a realizar
+            needs_adjustment = (adjusted_checkin and adjusted_checkin != original_checkin) or \
+                              (adjusted_checkout and adjusted_checkout != original_checkout)
+            
+            # Si hay ajustes, guardar el registro original primero
+            if needs_adjustment:
+                from models_checkpoints import CheckPointOriginalRecord
                 
-            if adjusted_checkout and adjusted_checkout != original_checkout:
-                record.check_out_time = adjusted_checkout
-                # Marcar con R en lugar de crear incidencia
-                record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
+                # Crear un registro del estado original antes del ajuste automático
+                original_record = CheckPointOriginalRecord(
+                    record_id=record.id,
+                    original_check_in_time=original_checkin,
+                    original_check_out_time=original_checkout,
+                    original_signature_data=record.signature_data,
+                    original_has_signature=record.has_signature,
+                    original_notes=record.notes,
+                    adjustment_reason="Ajuste automático por límite de horas de contrato"
+                )
+                db.session.add(original_record)
+                
+                # Actualizar el registro con los valores ajustados
+                if adjusted_checkin and adjusted_checkin != original_checkin:
+                    record.check_in_time = adjusted_checkin
+                    # Marcar con R en lugar de crear incidencia
+                    record.notes = (record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
+                
+                if adjusted_checkout and adjusted_checkout != original_checkout:
+                    record.check_out_time = adjusted_checkout
+                    # Marcar con R en lugar de crear incidencia
+                    record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
+                
+                # Marcar como ajustado
+                record.adjusted = True
             
             # Verificar si hay horas extra
             duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
