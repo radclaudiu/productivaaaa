@@ -197,8 +197,9 @@
             refreshButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
         }
         
-        // Realizar la petición AJAX
-        fetch('{{ url_for("checkpoints.get_company_employees") }}')
+        // Realizar la petición AJAX con parámetro para evitar caché
+        const timestamp = new Date().getTime();
+        fetch(`{{ url_for("checkpoints.get_company_employees") }}?_=${timestamp}`)
             .then(response => response.json())
             .then(employees => {
                 // Limpiar la lista actual
