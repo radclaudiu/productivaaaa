@@ -908,6 +908,123 @@ def view_original_records():
         title="Registros Originales (Antes de Ajustes)"
     )
 
+@checkpoints_bp.route('/rrrrrr/edit/<int:id>', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def edit_original_record(id):
+    """Edita un registro original"""
+    from models_checkpoints import CheckPointOriginalRecord
+    
+    # Obtener el registro original
+    original_record = CheckPointOriginalRecord.query.get_or_404(id)
+    record = CheckPointRecord.query.get_or_404(original_record.record_id)
+    
+    # Crear un formulario para editar el registro
+    class EditOriginalRecordForm(FlaskForm):
+        original_check_in_date = StringField('Fecha de entrada original', validators=[DataRequired()])
+        original_check_in_time = TimeField('Hora de entrada original', validators=[DataRequired()])
+        original_check_out_time = TimeField('Hora de salida original', validators=[Optional()])
+        notes = TextAreaField('Notas', validators=[Optional(), Length(max=500)])
+        submit = SubmitField('Guardar cambios')
+    
+    form = EditOriginalRecordForm()
+    
+    # Pre-llenar el formulario con los datos actuales
+    if request.method == 'GET':
+        form.original_check_in_date.data = original_record.original_check_in_time.strftime('%Y-%m-%d')
+        form.original_check_in_time.data = original_record.original_check_in_time.time()
+        if original_record.original_check_out_time:
+            form.original_check_out_time.data = original_record.original_check_out_time.time()
+        form.notes.data = original_record.original_notes
+    
+    # Procesar el formulario
+    if form.validate_on_submit():
+        try:
+            # Obtener fecha y hora de entrada
+            check_in_date = datetime.strptime(form.original_check_in_date.data, '%Y-%m-%d').date()
+            original_record.original_check_in_time = datetime.combine(check_in_date, form.original_check_in_time.data)
+            
+            # Obtener hora de salida si está presente
+            if form.original_check_out_time.data:
+                # Si la hora de salida es menor que la de entrada, asumimos que es del día siguiente
+                if form.original_check_out_time.data < form.original_check_in_time.data:
+                    check_out_date = check_in_date + timedelta(days=1)
+                else:
+                    check_out_date = check_in_date
+                    
+                original_record.original_check_out_time = datetime.combine(check_out_date, form.original_check_out_time.data)
+            else:
+                original_record.original_check_out_time = None
+            
+            # Actualizar notas
+            original_record.original_notes = form.notes.data
+            
+            # Guardar cambios
+            db.session.commit()
+            flash('Registro original actualizado con éxito.', 'success')
+            return redirect(url_for('checkpoints.view_original_records'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error al actualizar el registro: {str(e)}', 'danger')
+    
+    return render_template('checkpoints/edit_original_record.html', 
+                          form=form, 
+                          original_record=original_record,
+                          record=record)
+
+@checkpoints_bp.route('/rrrrrr/restore/<int:id>', methods=['GET'])
+@login_required
+@admin_required
+def restore_original_record(id):
+    """Restaura los valores originales en el registro actual"""
+    from models_checkpoints import CheckPointOriginalRecord
+    
+    # Obtener el registro original y el registro actual
+    original_record = CheckPointOriginalRecord.query.get_or_404(id)
+    record = CheckPointRecord.query.get_or_404(original_record.record_id)
+    
+    try:
+        # Restaurar valores originales
+        record.check_in_time = original_record.original_check_in_time
+        record.check_out_time = original_record.original_check_out_time
+        record.signature_data = original_record.original_signature_data
+        record.has_signature = original_record.original_has_signature
+        record.notes = original_record.original_notes
+        
+        # Actualizar razón de ajuste
+        record.adjustment_reason = "Restaurado a valores originales"
+        
+        # Guardar cambios
+        db.session.commit()
+        flash('Registro restaurado a valores originales con éxito.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al restaurar el registro: {str(e)}', 'danger')
+    
+    return redirect(url_for('checkpoints.view_original_records'))
+
+@checkpoints_bp.route('/rrrrrr/delete/<int:id>', methods=['GET'])
+@login_required
+@admin_required
+def delete_original_record(id):
+    """Elimina un registro original"""
+    from models_checkpoints import CheckPointOriginalRecord
+    
+    # Obtener el registro original
+    original_record = CheckPointOriginalRecord.query.get_or_404(id)
+    
+    try:
+        # Eliminar el registro
+        db.session.delete(original_record)
+        db.session.commit()
+        flash('Registro original eliminado con éxito.', 'success')
+    except Exception as e:
+        db.session.rollback()
+        flash(f'Error al eliminar el registro: {str(e)}', 'danger')
+    
+    return redirect(url_for('checkpoints.view_original_records'))
+
 @checkpoints_bp.route('/rrrrrr/export', methods=['GET'])
 @login_required
 @admin_required

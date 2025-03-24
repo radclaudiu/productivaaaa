@@ -1,0 +1,128 @@
+{% extends 'layout.html' %}
+
+{% block title %}Editar Registro Original{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0">
+                    <div class="d-flex justify-content-between">
+                        <div>
+                            <h3 class="mb-0">Editar Registro Original</h3>
+                            <p class="text-muted">Modifique los datos del registro original</p>
+                        </div>
+                        <div>
+                            <a href="{{ url_for('checkpoints.view_original_records') }}" class="btn btn-secondary">
+                                <i class="fas fa-arrow-left me-2"></i>Volver
+                            </a>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Información del Empleado</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>Empleado:</strong> {{ record.employee.first_name }} {{ record.employee.last_name }}</p>
+                                    <p><strong>DNI:</strong> {{ record.employee.dni }}</p>
+                                    <p><strong>Empresa:</strong> {{ record.employee.company.name }}</p>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="col-md-6">
+                            <div class="card">
+                                <div class="card-header">
+                                    <h5 class="mb-0">Información del Registro</h5>
+                                </div>
+                                <div class="card-body">
+                                    <p><strong>ID del Registro:</strong> {{ record.id }}</p>
+                                    <p><strong>Punto de Fichaje:</strong> {{ record.checkpoint.name }}</p>
+                                    <p><strong>Fecha de Ajuste:</strong> {{ original_record.adjusted_at.strftime('%d/%m/%Y %H:%M') }}</p>
+                                    <p><strong>Motivo del Ajuste:</strong> {{ original_record.adjustment_reason }}</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <form method="post" class="needs-validation">
+                        {{ form.hidden_tag() }}
+                        
+                        <div class="row">
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="{{ form.original_check_in_date.id }}" class="form-control-label">{{ form.original_check_in_date.label.text }}</label>
+                                    {{ form.original_check_in_date(class="form-control", type="date") }}
+                                    {% if form.original_check_in_date.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.original_check_in_date.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="{{ form.original_check_in_time.id }}" class="form-control-label">{{ form.original_check_in_time.label.text }}</label>
+                                    {{ form.original_check_in_time(class="form-control", type="time") }}
+                                    {% if form.original_check_in_time.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.original_check_in_time.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4 mb-3">
+                                <div class="form-group">
+                                    <label for="{{ form.original_check_out_time.id }}" class="form-control-label">{{ form.original_check_out_time.label.text }}</label>
+                                    {{ form.original_check_out_time(class="form-control", type="time") }}
+                                    {% if form.original_check_out_time.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.original_check_out_time.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                    <small class="form-text text-muted">Dejar en blanco si no había salida registrada</small>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 mb-3">
+                                <div class="form-group">
+                                    <label for="{{ form.notes.id }}" class="form-control-label">{{ form.notes.label.text }}</label>
+                                    {{ form.notes(class="form-control", rows=3) }}
+                                    {% if form.notes.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.notes.errors %}
+                                        <span>{{ error }}</span>
+                                        {% endfor %}
+                                    </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-12 d-flex justify-content-between">
+                                <a href="{{ url_for('checkpoints.view_original_records') }}" class="btn btn-secondary">Cancelar</a>
+                                <button type="submit" class="btn btn-primary">{{ form.submit.label.text }}</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
