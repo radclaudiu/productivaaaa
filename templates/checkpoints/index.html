@@ -465,9 +465,27 @@
                                     <tbody>
                                         {% for record in latest_records %}
                                         <tr>
-                                            <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
-                                            <td>{{ record.checkpoint.name }}</td>
-                                            <td>{{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}</td>
+                                            <td>
+                                                {% if record.employee_name is defined %}
+                                                    {{ record.employee_name }}
+                                                {% else %}
+                                                    {{ record.employee.first_name }} {{ record.employee.last_name }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if record.checkpoint_name is defined %}
+                                                    {{ record.checkpoint_name }}
+                                                {% else %}
+                                                    {{ record.checkpoint.name }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if record.check_in_time is string %}
+                                                    {{ record.check_in_time }}
+                                                {% else %}
+                                                    {{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}
+                                                {% endif %}
+                                            </td>
                                             <td>
                                                 {% if record.check_out_time %}
                                                     {{ record.check_out_time.strftime('%d/%m/%Y %H:%M') }}
@@ -477,8 +495,14 @@
                                             </td>
                                             <td>
                                                 {% if record.check_out_time %}
-                                                    {% set duration = record.duration() %}
-                                                    {{ duration|round(2) }} h
+                                                    {% if record.duration is defined %}
+                                                        {{ record.duration|round(2) }} h
+                                                    {% elif record.duration is callable %}
+                                                        {% set duration = record.duration() %}
+                                                        {{ duration|round(2) }} h
+                                                    {% else %}
+                                                        Completado
+                                                    {% endif %}
                                                 {% else %}
                                                     -
                                                 {% endif %}
@@ -608,8 +632,20 @@
                                                     <span class="badge bg-primary incident-badge">Ajuste Contrato</span>
                                                 {% endif %}
                                             </td>
-                                            <td>{{ incident.record.employee.first_name }} {{ incident.record.employee.last_name }}</td>
-                                            <td>{{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
+                                            <td>
+                                                {% if incident.employee_name is defined %}
+                                                    {{ incident.employee_name }}
+                                                {% else %}
+                                                    {{ incident.record.employee.first_name }} {{ incident.record.employee.last_name }}
+                                                {% endif %}
+                                            </td>
+                                            <td>
+                                                {% if incident.created_at is string %}
+                                                    {{ incident.created_at }}
+                                                {% else %}
+                                                    {{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}
+                                                {% endif %}
+                                            </td>
                                             <td>{{ incident.description }}</td>
                                             <td>
                                                 {% if incident.resolved %}

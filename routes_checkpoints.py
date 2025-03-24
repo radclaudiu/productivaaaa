@@ -86,12 +86,37 @@ def select_company():
 def index_company(company_id):
     """Página principal del sistema de fichajes para una empresa específica"""
     try:
-        # Verificar permiso para acceder a esta empresa
-        company = Company.query.get_or_404(company_id)
+        # Verificar permiso para acceder a esta empresa - Usar una sesión nueva
+        with db.engine.begin() as conn:
+            # Usamos consulta SQL nativa para obtener la empresa
+            company_result = conn.execute(text("""
+                SELECT id, name FROM companies WHERE id = :company_id
+            """), {"company_id": company_id}).fetchone()
+            
+            if not company_result:
+                flash('Empresa no encontrada.', 'danger')
+                return redirect(url_for('main.dashboard'))
+                
+            company = {
+                'id': company_result[0],
+                'name': company_result[1]
+            }
         
-        if not current_user.is_admin() and company not in current_user.companies:
-            flash('No tiene permiso para gestionar esta empresa.', 'danger')
-            return redirect(url_for('main.dashboard'))
+        # Verificar permiso para el usuario actual
+        if not current_user.is_admin():
+            # Verificar si el usuario tiene acceso a esta empresa
+            with db.engine.begin() as conn:
+                company_access = conn.execute(text("""
+                    SELECT COUNT(*) FROM user_companies 
+                    WHERE user_id = :user_id AND company_id = :company_id
+                """), {
+                    "user_id": current_user.id,
+                    "company_id": company_id
+                }).scalar()
+                
+                if company_access == 0:
+                    flash('No tiene permiso para gestionar esta empresa.', 'danger')
+                    return redirect(url_for('main.dashboard'))
         
         # Guardar la empresa seleccionada en la sesión
         session['selected_company_id'] = company_id
@@ -108,113 +133,216 @@ def index_company(company_id):
             'active_incidents': 0
         }
         
-        # Obtener estadísticas para el dashboard en bloques separados con manejo de excepciones
-        try:
-            stats['active_checkpoints'] = CheckPoint.query.filter_by(
-                status=CheckPointStatus.ACTIVE, company_id=company_id).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener checkpoints activos: {e}")
-            
-        try:
-            stats['maintenance_checkpoints'] = CheckPoint.query.filter_by(
-                status=CheckPointStatus.MAINTENANCE, company_id=company_id).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener checkpoints en mantenimiento: {e}")
-            
-        try:
-            stats['disabled_checkpoints'] = CheckPoint.query.filter_by(
-                status=CheckPointStatus.DISABLED, company_id=company_id).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener checkpoints deshabilitados: {e}")
-            
-        try:
-            stats['employees_with_hours'] = db.session.query(EmployeeContractHours)\
-                .join(Employee, EmployeeContractHours.employee_id == Employee.id)\
-                .filter(Employee.company_id == company_id).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener empleados con horas: {e}")
-            
-        try:
-            stats['employees_with_overtime'] = db.session.query(EmployeeContractHours)\
-                .join(Employee, EmployeeContractHours.employee_id == Employee.id)\
-                .filter(Employee.company_id == company_id, 
-                      EmployeeContractHours.allow_overtime == True).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener empleados con horas extra: {e}")
-            
-        try:
-            stats['today_records'] = db.session.query(CheckPointRecord)\
-                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                .filter(
-                    CheckPoint.company_id == company_id,
-                    CheckPointRecord.check_in_time >= datetime.combine(date.today(), time.min)
-                ).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener registros de hoy: {e}")
-            
-        try:
-            stats['pending_checkout'] = db.session.query(CheckPointRecord)\
-                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                .filter(
-                    CheckPoint.company_id == company_id,
-                    CheckPointRecord.check_out_time.is_(None)
-                ).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener registros pendientes de salida: {e}")
-            
-        try:
-            stats['active_incidents'] = db.session.query(CheckPointIncident)\
-                .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)\
-                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                .filter(
-                    CheckPoint.company_id == company_id,
-                    CheckPointIncident.resolved == False
-                ).count()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener incidencias activas: {e}")
+        # Obtener estadísticas para el dashboard en conexiones separadas
+        with db.engine.begin() as conn:
+            try:
+                stats['active_checkpoints'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM checkpoints
+                    WHERE status = 'active' AND company_id = :company_id
+                """), {"company_id": company_id}).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener checkpoints activos: {e}")
         
-        # Inicializar variables con valores vacíos para evitar errores
+        with db.engine.begin() as conn:
+            try:
+                stats['maintenance_checkpoints'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM checkpoints
+                    WHERE status = 'maintenance' AND company_id = :company_id
+                """), {"company_id": company_id}).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener checkpoints en mantenimiento: {e}")
+        
+        with db.engine.begin() as conn:
+            try:
+                stats['disabled_checkpoints'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM checkpoints
+                    WHERE status = 'disabled' AND company_id = :company_id
+                """), {"company_id": company_id}).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener checkpoints deshabilitados: {e}")
+        
+        with db.engine.begin() as conn:
+            try:
+                stats['employees_with_hours'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM employee_contract_hours ech
+                    JOIN employees e ON ech.employee_id = e.id
+                    WHERE e.company_id = :company_id
+                """), {"company_id": company_id}).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener empleados con horas: {e}")
+        
+        with db.engine.begin() as conn:
+            try:
+                stats['employees_with_overtime'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM employee_contract_hours ech
+                    JOIN employees e ON ech.employee_id = e.id
+                    WHERE e.company_id = :company_id AND ech.allow_overtime = true
+                """), {"company_id": company_id}).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener empleados con horas extra: {e}")
+        
+        with db.engine.begin() as conn:
+            try:
+                today_start = datetime.combine(date.today(), time.min).strftime('%Y-%m-%d %H:%M:%S')
+                stats['today_records'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM checkpoint_records cr
+                    JOIN checkpoints c ON cr.checkpoint_id = c.id
+                    WHERE c.company_id = :company_id
+                    AND cr.check_in_time >= :today_start
+                """), {
+                    "company_id": company_id,
+                    "today_start": today_start
+                }).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener registros de hoy: {e}")
+        
+        with db.engine.begin() as conn:
+            try:
+                stats['pending_checkout'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM checkpoint_records cr
+                    JOIN checkpoints c ON cr.checkpoint_id = c.id
+                    WHERE c.company_id = :company_id
+                    AND cr.check_out_time IS NULL
+                """), {"company_id": company_id}).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener registros pendientes de salida: {e}")
+        
+        with db.engine.begin() as conn:
+            try:
+                stats['active_incidents'] = conn.execute(text("""
+                    SELECT COUNT(*) FROM checkpoint_incidents ci
+                    JOIN checkpoint_records cr ON ci.record_id = cr.id
+                    JOIN checkpoints c ON cr.checkpoint_id = c.id
+                    WHERE c.company_id = :company_id
+                    AND ci.resolved = false
+                """), {"company_id": company_id}).scalar() or 0
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener incidencias activas: {e}")
+        
+        # Variables para almacenar resultados
         latest_records = []
         latest_incidents = []
         checkpoints = []
         employees = []
+        incident_types = []
         week_stats = {}
         
-        # Obtener los últimos registros filtrados por empresa
-        try:
-            latest_records = db.session.query(CheckPointRecord)\
-                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                .filter(CheckPoint.company_id == company_id)\
-                .order_by(CheckPointRecord.check_in_time.desc())\
-                .limit(10).all()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener últimos registros: {e}")
+        # Obtener los últimos registros de la empresa
+        with db.engine.begin() as conn:
+            try:
+                # Obtener solo los campos necesarios para la vista
+                records_result = conn.execute(text("""
+                    SELECT cr.id, cr.check_in_time, cr.check_out_time, cr.employee_id,
+                           e.first_name, e.last_name, c.name as checkpoint_name
+                    FROM checkpoint_records cr
+                    JOIN checkpoints c ON cr.checkpoint_id = c.id
+                    JOIN employees e ON cr.employee_id = e.id
+                    WHERE c.company_id = :company_id
+                    ORDER BY cr.check_in_time DESC
+                    LIMIT 10
+                """), {"company_id": company_id}).fetchall()
+                
+                # Transformar resultados a diccionarios para la plantilla
+                latest_records = [
+                    {
+                        'id': r[0],
+                        'check_in_time': r[1],
+                        'check_out_time': r[2],
+                        'employee_id': r[3],
+                        'employee_name': f"{r[4]} {r[5]}",
+                        'checkpoint_name': r[6]
+                    }
+                    for r in records_result
+                ]
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener últimos registros: {e}")
         
-        # Obtener las últimas incidencias filtradas por empresa
-        try:
-            latest_incidents = db.session.query(CheckPointIncident)\
-                .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)\
-                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                .filter(CheckPoint.company_id == company_id)\
-                .order_by(CheckPointIncident.created_at.desc())\
-                .limit(10).all()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener últimas incidencias: {e}")
+        # Obtener las últimas incidencias de la empresa
+        with db.engine.begin() as conn:
+            try:
+                incidents_result = conn.execute(text("""
+                    SELECT ci.id, ci.incident_type, ci.created_at, ci.resolved,
+                           e.first_name, e.last_name, cr.id as record_id
+                    FROM checkpoint_incidents ci
+                    JOIN checkpoint_records cr ON ci.record_id = cr.id
+                    JOIN checkpoints c ON cr.checkpoint_id = c.id
+                    JOIN employees e ON cr.employee_id = e.id
+                    WHERE c.company_id = :company_id
+                    ORDER BY ci.created_at DESC
+                    LIMIT 10
+                """), {"company_id": company_id}).fetchall()
+                
+                # Transformar resultados a diccionarios
+                latest_incidents = [
+                    {
+                        'id': r[0],
+                        'incident_type': r[1],
+                        'created_at': r[2],
+                        'resolved': r[3],
+                        'employee_name': f"{r[4]} {r[5]}",
+                        'record_id': r[6]
+                    }
+                    for r in incidents_result
+                ]
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener últimas incidencias: {e}")
         
         # Obtener todos los puntos de fichaje para la empresa
-        try:
-            checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener puntos de fichaje: {e}")
+        with db.engine.begin() as conn:
+            try:
+                checkpoints_result = conn.execute(text("""
+                    SELECT id, name, location, status, username, auto_checkout_time, created_at,
+                           updated_at, require_signature
+                    FROM checkpoints
+                    WHERE company_id = :company_id
+                """), {"company_id": company_id}).fetchall()
+                
+                # Transformar resultados a diccionarios
+                checkpoints = [
+                    {
+                        'id': r[0],
+                        'name': r[1],
+                        'location': r[2],
+                        'status': r[3],
+                        'username': r[4],
+                        'auto_checkout_time': r[5],
+                        'created_at': r[6],
+                        'updated_at': r[7],
+                        'require_signature': r[8]
+                    }
+                    for r in checkpoints_result
+                ]
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener puntos de fichaje: {e}")
         
-        # Obtener los empleados activos para la empresa (sin filtrar por is_active para evitar problemas)
-        try:
-            employees = Employee.query.filter_by(company_id=company_id).order_by(Employee.first_name).all()
-        except Exception as e:
-            current_app.logger.error(f"Error al obtener empleados: {e}")
+        # Obtener todos los empleados de la empresa
+        with db.engine.begin() as conn:
+            try:
+                employees_result = conn.execute(text("""
+                    SELECT id, first_name, last_name, dni, position, is_active, is_on_shift
+                    FROM employees
+                    WHERE company_id = :company_id
+                    ORDER BY first_name, last_name
+                """), {"company_id": company_id}).fetchall()
+                
+                # Transformar resultados a diccionarios
+                employees = [
+                    {
+                        'id': r[0],
+                        'first_name': r[1],
+                        'last_name': r[2],
+                        'dni': r[3],
+                        'position': r[4],
+                        'is_active': r[5],
+                        'is_on_shift': r[6],
+                        'full_name': f"{r[1]} {r[2]}"
+                    }
+                    for r in employees_result
+                ]
+            except Exception as e:
+                current_app.logger.error(f"Error al obtener empleados: {e}")
         
-        # Obtener los tipos de incidencias para el filtrado
-        incident_types = []
+        # Obtener tipos de incidencias
         try:
             incident_types = [
                 {'value': incident_type.value, 'name': incident_type.name}
@@ -223,39 +351,44 @@ def index_company(company_id):
         except Exception as e:
             current_app.logger.error(f"Error al obtener tipos de incidencias: {e}")
         
-        # Obtener las estadísticas de la última semana para gráficos
+        # Obtener estadísticas semanales
         try:
             week_stats = {}
             today = date.today()
             for i in range(7):
                 day = today - timedelta(days=i)
                 formatted_date = day.strftime('%d/%m')
-                # Usamos una sesión separada para cada consulta para evitar que errores afecten consultas posteriores
+                
                 with db.engine.begin() as conn:
                     try:
-                        # Usamos text() para evitar problemas con extract()
-                        count = conn.execute(
-                            text("""
-                                SELECT COUNT(*) FROM checkpoint_records
-                                JOIN checkpoints ON checkpoint_records.checkpoint_id = checkpoints.id
-                                WHERE checkpoints.company_id = :company_id
-                                AND EXTRACT(DAY FROM checkpoint_records.check_in_time) = :day
-                                AND EXTRACT(MONTH FROM checkpoint_records.check_in_time) = :month
-                                AND EXTRACT(YEAR FROM checkpoint_records.check_in_time) = :year
-                            """),
-                            {
-                                "company_id": company_id,
-                                "day": day.day,
-                                "month": day.month,
-                                "year": day.year
-                            }
-                        ).scalar()
+                        count = conn.execute(text("""
+                            SELECT COUNT(*) FROM checkpoint_records cr
+                            JOIN checkpoints c ON cr.checkpoint_id = c.id
+                            WHERE c.company_id = :company_id
+                            AND EXTRACT(DAY FROM cr.check_in_time) = :day
+                            AND EXTRACT(MONTH FROM cr.check_in_time) = :month
+                            AND EXTRACT(YEAR FROM cr.check_in_time) = :year
+                        """), {
+                            "company_id": company_id,
+                            "day": day.day,
+                            "month": day.month,
+                            "year": day.year
+                        }).scalar() or 0
+                        
                         week_stats[formatted_date] = count
                     except Exception as e:
                         current_app.logger.error(f"Error al obtener estadísticas del día {formatted_date}: {e}")
                         week_stats[formatted_date] = 0
         except Exception as e:
             current_app.logger.error(f"Error al obtener estadísticas semanales: {e}")
+            
+        # Cargar instancia real de la empresa al final para tener acceso a métodos y propiedades
+        try:
+            company_obj = Company.query.get(company_id)
+            if company_obj:
+                company = company_obj
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener modelo completo de empresa: {e}")
         
         return render_template('checkpoints/index.html', 
                               stats=stats, 
