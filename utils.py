@@ -516,7 +516,9 @@ def get_dashboard_stats():
     from flask_login import current_user
     from app import db
     from models import Employee, ActivityLog, User, Company
+    from models_tasks import TaskInstance, Task, TaskStatus
     from sqlalchemy import func, case, text
+    from datetime import datetime, timedelta
     
     # Iniciar temporizador para medir rendimiento
     start_time = time.time()
@@ -529,7 +531,13 @@ def get_dashboard_stats():
         'active_employees': 0,
         'employees_by_contract': {},
         'employees_by_status': {},
-        'recent_activities': []
+        'recent_activities': [],
+        'employees_on_shift': 0,
+        'today_tasks_total': 0,
+        'today_tasks_completed': 0,
+        'today_tasks_percentage': 0,
+        'yesterday_tasks_percentage': 0,
+        'week_tasks_percentage': 0
     }
     
     try:
@@ -613,9 +621,84 @@ def get_dashboard_stats():
             stats['recent_activities'] = ActivityLog.query.filter_by(
                 user_id=current_user.id
             ).order_by(ActivityLog.timestamp.desc()).limit(5).all()
-    
     except Exception as e:
         logger.error(f"Error al obtener estadísticas del dashboard: {str(e)}")
+        
+    # Obtener estadísticas de empleados en jornada (on shift)
+    try:
+        # Contar empleados que están actualmente en jornada
+        employees_on_shift_query = db.session.query(func.count(Employee.id))
+        
+        if current_user.is_admin():
+            # Para admin, contar todos los empleados en jornada
+            stats['employees_on_shift'] = employees_on_shift_query.filter(
+                Employee.is_on_shift == True
+            ).scalar() or 0
+        elif current_user.is_gerente() and current_user.company_id:
+            # Para gerente, solo contar empleados de su empresa
+            stats['employees_on_shift'] = employees_on_shift_query.filter(
+                Employee.is_on_shift == True,
+                Employee.company_id == current_user.company_id
+            ).scalar() or 0
+        
+        # Obtener estadísticas de tareas
+        today = datetime.now().date()
+        yesterday = today - timedelta(days=1)
+        week_start = today - timedelta(days=7)
+        
+        # Definir funciones de filtrado para reutilizar código
+        def get_task_stats(start_date, end_date=None):
+            # Si no se especifica fecha fin, usar solo el día de inicio
+            if end_date is None:
+                end_date = start_date
+            
+            # Obtener total de tareas para el período
+            task_query = db.session.query(TaskInstance)
+            
+            # Filtrar por compañía si es gerente
+            if not current_user.is_admin() and current_user.company_id:
+                task_query = task_query.join(Task).join(
+                    Task.location
+                ).filter(
+                    Task.location.has(company_id=current_user.company_id)
+                )
+            
+            # Filtrar por fecha
+            total_tasks = task_query.filter(
+                TaskInstance.scheduled_date >= start_date,
+                TaskInstance.scheduled_date <= end_date
+            ).count()
+            
+            # Obtener tareas completadas
+            completed_tasks = task_query.filter(
+                TaskInstance.scheduled_date >= start_date,
+                TaskInstance.scheduled_date <= end_date,
+                TaskInstance.status == TaskStatus.COMPLETADA
+            ).count()
+            
+            # Calcular porcentaje
+            percentage = 0
+            if total_tasks > 0:
+                percentage = round((completed_tasks / total_tasks) * 100, 1)
+                
+            return total_tasks, completed_tasks, percentage
+        
+        # Obtener estadísticas para hoy
+        today_total, today_completed, today_percentage = get_task_stats(today)
+        stats['today_tasks_total'] = today_total
+        stats['today_tasks_completed'] = today_completed
+        stats['today_tasks_percentage'] = today_percentage
+        
+        # Obtener estadísticas para ayer
+        _, _, yesterday_percentage = get_task_stats(yesterday)
+        stats['yesterday_tasks_percentage'] = yesterday_percentage
+        
+        # Obtener estadísticas para la semana
+        _, _, week_percentage = get_task_stats(week_start, today)
+        stats['week_tasks_percentage'] = week_percentage
+        
+    except Exception as e:
+        logger.error(f"Error al obtener estadísticas adicionales del dashboard: {str(e)}")
     
     # Registrar tiempo de ejecución para diagnóstico
     elapsed = time.time() - start_time
