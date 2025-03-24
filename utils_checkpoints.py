@@ -122,18 +122,31 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         # Añadir una nueva página para cada empleado
         pdf.add_page()
         
+        # Calcular posiciones centradas (el ancho de la página es 210mm)
+        # Usaremos un margen de 20mm a cada lado
+        left_margin = 20
+        right_margin = 20
+        usable_width = 210 - left_margin - right_margin
+        block_width = 85  # Cada bloque tendrá 85mm de ancho
+        gap = 10          # 10mm de separación entre bloques
+        
+        # Posición X del primer bloque
+        block1_x = left_margin
+        # Posición X del segundo bloque
+        block2_x = block1_x + block_width + gap
+        
         # Crear fondos de color para los bloques de información
         # Bloque empleado (izquierda)
         pdf.set_fill_color(*pdf.accent_color)
-        pdf.rect(10, pdf.get_y(), 90, 30, 'F')
+        pdf.rect(block1_x, pdf.get_y(), block_width, 30, 'F')
         
         # Bloque empresa (derecha)
-        pdf.rect(110, pdf.get_y(), 90, 30, 'F')
+        pdf.rect(block2_x, pdf.get_y(), block_width, 30, 'F')
         
         # Líneas de contorno con color corporativo
         pdf.set_draw_color(*pdf.secondary_color)
-        pdf.rect(10, pdf.get_y(), 90, 30, 'D')
-        pdf.rect(110, pdf.get_y(), 90, 30, 'D')
+        pdf.rect(block1_x, pdf.get_y(), block_width, 30, 'D')
+        pdf.rect(block2_x, pdf.get_y(), block_width, 30, 'D')
         
         initial_y = pdf.get_y()
         
@@ -143,68 +156,76 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         pdf.set_font('Arial', 'B', 10)
         
         # Título empleado
-        pdf.rect(10, pdf.get_y(), 90, 6, 'F')
-        pdf.set_xy(10, pdf.get_y())
-        pdf.cell(90, 6, 'DATOS DEL EMPLEADO', 0, 0, 'C')
+        pdf.rect(block1_x, pdf.get_y(), block_width, 6, 'F')
+        pdf.set_xy(block1_x, pdf.get_y())
+        pdf.cell(block_width, 6, 'DATOS DEL EMPLEADO', 0, 0, 'C')
         
         # Título empresa
-        pdf.rect(110, pdf.get_y(), 90, 6, 'F')
-        pdf.set_xy(110, pdf.get_y())
-        pdf.cell(90, 6, 'DATOS DE LA EMPRESA', 0, 1, 'C')
+        pdf.rect(block2_x, pdf.get_y(), block_width, 6, 'F')
+        pdf.set_xy(block2_x, pdf.get_y())
+        pdf.cell(block_width, 6, 'DATOS DE LA EMPRESA', 0, 1, 'C')
         
         # Restaurar color de texto
         pdf.set_text_color(0, 0, 0)
         
+        # Espacio para etiquetas y valores
+        label_width = 25
+        value_width = block_width - label_width - 5  # 5mm de margen interno
+        label_x1 = block1_x + 2  # 2mm de margen interno
+        value_x1 = label_x1 + label_width
+        label_x2 = block2_x + 2
+        value_x2 = label_x2 + label_width
+        
         # Etiquetas en negrita
         pdf.set_font('Arial', 'B', 9)
-        pdf.set_xy(12, pdf.get_y() + 2)
-        pdf.cell(25, 5, 'Nombre:', 0, 0)
+        pdf.set_xy(label_x1, pdf.get_y() + 2)
+        pdf.cell(label_width, 5, 'Nombre:', 0, 0)
         
-        pdf.set_xy(112, pdf.get_y())
-        pdf.cell(25, 5, 'Nombre:', 0, 1)
+        pdf.set_xy(label_x2, pdf.get_y())
+        pdf.cell(label_width, 5, 'Nombre:', 0, 1)
         
         # Datos en texto normal
         pdf.set_font('Arial', '', 9)
-        pdf.set_xy(37, pdf.get_y() - 5)
-        pdf.cell(60, 5, f"{employee.first_name} {employee.last_name}", 0, 0)
+        pdf.set_xy(value_x1, pdf.get_y() - 5)
+        pdf.cell(value_width, 5, f"{employee.first_name} {employee.last_name}", 0, 0)
         
-        pdf.set_xy(137, pdf.get_y())
-        pdf.cell(60, 5, f"{company.name}", 0, 1)
+        pdf.set_xy(value_x2, pdf.get_y())
+        pdf.cell(value_width, 5, f"{company.name}", 0, 1)
         
         # DNI
         pdf.set_font('Arial', 'B', 9)
-        pdf.set_xy(12, pdf.get_y() + 2)
-        pdf.cell(25, 5, 'DNI/NIE:', 0, 0)
+        pdf.set_xy(label_x1, pdf.get_y() + 2)
+        pdf.cell(label_width, 5, 'DNI/NIE:', 0, 0)
         
         # CIF
-        pdf.set_xy(112, pdf.get_y())
-        pdf.cell(25, 5, 'CIF:', 0, 1)
+        pdf.set_xy(label_x2, pdf.get_y())
+        pdf.cell(label_width, 5, 'CIF:', 0, 1)
         
         pdf.set_font('Arial', '', 9)
-        pdf.set_xy(37, pdf.get_y() - 5)
-        pdf.cell(60, 5, f"{employee.dni}", 0, 0)
+        pdf.set_xy(value_x1, pdf.get_y() - 5)
+        pdf.cell(value_width, 5, f"{employee.dni}", 0, 0)
         
-        pdf.set_xy(137, pdf.get_y())
-        pdf.cell(60, 5, f"{company.tax_id}", 0, 1)
+        pdf.set_xy(value_x2, pdf.get_y())
+        pdf.cell(value_width, 5, f"{company.tax_id}", 0, 1)
         
         # Puesto
         pdf.set_font('Arial', 'B', 9)
-        pdf.set_xy(12, pdf.get_y() + 2)
-        pdf.cell(25, 5, 'Puesto:', 0, 0)
+        pdf.set_xy(label_x1, pdf.get_y() + 2)
+        pdf.cell(label_width, 5, 'Puesto:', 0, 0)
         
         # Dirección
-        pdf.set_xy(112, pdf.get_y())
-        pdf.cell(25, 5, 'Dirección:', 0, 1)
+        pdf.set_xy(label_x2, pdf.get_y())
+        pdf.cell(label_width, 5, 'Dirección:', 0, 1)
         
         pdf.set_font('Arial', '', 9)
-        pdf.set_xy(37, pdf.get_y() - 5)
-        pdf.cell(60, 5, f"{employee.position or '-'}", 0, 0)
+        pdf.set_xy(value_x1, pdf.get_y() - 5)
+        pdf.cell(value_width, 5, f"{employee.position or '-'}", 0, 0)
         
         empresa_direccion = f"{company.address or ''}, {company.city or ''}"
         if empresa_direccion.strip() == ',':
             empresa_direccion = '-'
-        pdf.set_xy(137, pdf.get_y())
-        pdf.cell(60, 5, empresa_direccion, 0, 1)
+        pdf.set_xy(value_x2, pdf.get_y())
+        pdf.cell(value_width, 5, empresa_direccion, 0, 1)
         
         # Asegurar que avanzamos correctamente después de los bloques
         pdf.set_y(initial_y + 35)  # Espacio antes de la tabla
@@ -213,7 +234,11 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         pdf.set_fill_color(*pdf.primary_color)
         pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', 12)
-        pdf.rect(10, pdf.get_y(), 190, 10, 'F')
+        
+        # Centrar el título de la tabla usando los mismos márgenes
+        title_width = 170  # Ancho del título
+        title_x = (210 - title_width) / 2  # Centrado en la página
+        pdf.rect(title_x, pdf.get_y(), title_width, 10, 'F')
         pdf.cell(0, 10, 'REGISTROS DE FICHAJE', 0, 1, 'C')
         
         # Restaurar color de texto
@@ -225,6 +250,11 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         # Cabecera de tabla
         col_widths = [35, 30, 30, 30, 40]
         header = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Firma']
+        table_width = sum(col_widths)
+        
+        # Calcular posición X para centrar la tabla
+        table_x = (210 - table_width) / 2
+        pdf.set_x(table_x)
         
         # Dibujar cabecera con color corporativo
         pdf.set_fill_color(*pdf.secondary_color)
@@ -244,6 +274,9 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         row_count = 0
         
         for record in records:
+            # Posicionar al inicio de la fila, centrado
+            pdf.set_x(table_x)
+            
             # Cambiar color de fondo según fila par/impar
             if row_count % 2 == 0:
                 pdf.set_fill_color(255, 255, 255)  # Blanco
