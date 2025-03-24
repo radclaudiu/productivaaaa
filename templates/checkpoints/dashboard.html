@@ -214,8 +214,11 @@
                 employees.forEach(employee => {
                     const employeeCard = document.createElement('div');
                     employeeCard.className = 'col';
+                    // Construir la URL manualmente ya que el ID es dinámico
+                    const pinUrl = '{{ url_for("checkpoints.checkpoint_dashboard") }}'.replace('/dashboard', `/employee/${employee.id}/pin`);
+                    
                     employeeCard.innerHTML = `
-                        <a href="{{ url_for('checkpoints.employee_pin', id='') }}${employee.id}" class="text-decoration-none">
+                        <a href="${pinUrl}" class="text-decoration-none">
                             <div class="card employee-card">
                                 <div class="card-body">
                                     <div class="employee-avatar">
