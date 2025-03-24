@@ -273,7 +273,8 @@ def edit_company(id):
         flash('No tienes permiso para editar esta empresa.', 'danger')
         return redirect(url_for('company.list_companies'))
     
-    form = CompanyForm(obj=company)
+    # Pasamos el tax_id original para poder validar correctamente
+    form = CompanyForm(original_tax_id=company.tax_id, obj=company)
     
     if form.validate_on_submit():
         company.name = form.name.data

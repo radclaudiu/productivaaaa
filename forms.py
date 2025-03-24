@@ -5,6 +5,7 @@ from wtforms import BooleanField, DateField, HiddenField, EmailField, TelField, 
 from wtforms import SelectMultipleField
 from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional
 from datetime import date, datetime
+from sqlalchemy import func
 
 from models import User, ContractType, UserRole, EmployeeStatus, WeekDay, VacationStatus
 
@@ -92,6 +93,21 @@ class CompanyForm(FlaskForm):
     website = URLField('Sitio Web', validators=[Length(max=128)])
     is_active = BooleanField('Empresa Activa')
     submit = SubmitField('Guardar')
+    
+    def __init__(self, original_tax_id=None, *args, **kwargs):
+        super(CompanyForm, self).__init__(*args, **kwargs)
+        self.original_tax_id = original_tax_id
+        
+    def validate_tax_id(self, tax_id):
+        from models import Company
+        # Si estamos editando y el CIF/NIF no ha cambiado, no hacemos validación adicional
+        if self.original_tax_id and tax_id.data.lower() == self.original_tax_id.lower():
+            return
+            
+        # Buscamos si existe alguna empresa con el mismo CIF/NIF (sin distinguir mayúsculas/minúsculas)
+        company = Company.query.filter(func.lower(Company.tax_id) == func.lower(tax_id.data)).first()
+        if company is not None:
+            raise ValidationError('Ya existe una empresa con este CIF/NIF. Por favor, verifica los datos.')
 
 class EmployeeForm(FlaskForm):
     first_name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
