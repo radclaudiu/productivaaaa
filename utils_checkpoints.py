@@ -124,6 +124,9 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         # Añadir una nueva página para cada empleado
         pdf.add_page()
         
+        # Añadir espacio adicional después del encabezado para evitar solapamiento con la barra
+        pdf.ln(8)  # 8mm de espacio adicional
+        
         # Calcular posiciones centradas (el ancho de la página es 210mm)
         # Usaremos un margen de 20mm a cada lado
         left_margin = 20
