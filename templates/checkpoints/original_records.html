@@ -14,7 +14,7 @@
                     </div>
                     <div>
                         <a href="{{ url_for('checkpoints.export_original_records', 
-                                company_id=company_id,
+                                slug=company.get_slug(),
                                 start_date=filters.start_date, 
                                 end_date=filters.end_date, 
                                 employee_id=filters.employee_id) }}" 
@@ -26,7 +26,7 @@
                 
                 <!-- Filtros -->
                 <div class="card-header">
-                    <form method="get" action="{{ url_for('checkpoints.view_original_records', company_id=company_id) }}" class="row g-3">
+                    <form method="get" action="{{ url_for('checkpoints.view_original_records', slug=company.get_slug()) }}" class="row g-3">
                         <div class="col-md-3">
                             <label class="form-label">Fecha inicio</label>
                             <input type="date" name="start_date" class="form-control" 
@@ -52,7 +52,7 @@
                         <div class="col-md-2 d-flex align-items-end">
                             <button type="submit" class="btn btn-primary mb-3">Filtrar</button>
                             {% if filters.start_date or filters.end_date or filters.employee_id %}
-                            <a href="{{ url_for('checkpoints.view_original_records', company_id=company_id) }}" 
+                            <a href="{{ url_for('checkpoints.view_original_records', slug=company.get_slug()) }}" 
                                class="btn btn-outline-secondary mb-3 ms-2">Limpiar</a>
                             {% endif %}
                         </div>
@@ -131,10 +131,10 @@
                                     </td>
                                     <td>
                                         <div class="d-flex">
-                                            <a href="{{ url_for('checkpoints.edit_original_record', company_id=company_id, id=original.id) }}" class="btn btn-link text-info px-1 mb-0" title="Editar registro original">
+                                            <a href="{{ url_for('checkpoints.edit_original_record', slug=company.get_slug(), id=original.id) }}" class="btn btn-link text-info px-1 mb-0" title="Editar registro original">
                                                 <i class="fas fa-edit"></i>
                                             </a>
-                                            <a href="{{ url_for('checkpoints.restore_original_record', company_id=company_id, id=original.id) }}" class="btn btn-link text-warning px-1 mb-0" title="Restaurar valores originales">
+                                            <a href="{{ url_for('checkpoints.restore_original_record', slug=company.get_slug(), id=original.id) }}" class="btn btn-link text-warning px-1 mb-0" title="Restaurar valores originales">
                                                 <i class="fas fa-sync"></i>
                                             </a>
                                             <button type="button" class="btn btn-link text-danger px-1 mb-0" data-bs-toggle="modal" data-bs-target="#deleteModal{{ original.id }}" title="Eliminar registro">
@@ -166,7 +166,7 @@
                                                     </div>
                                                     <div class="modal-footer">
                                                         <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
-                                                        <a href="{{ url_for('checkpoints.delete_original_record', company_id=company_id, id=original.id) }}" class="btn btn-danger">Eliminar</a>
+                                                        <a href="{{ url_for('checkpoints.delete_original_record', slug=company.get_slug(), id=original.id) }}" class="btn btn-danger">Eliminar</a>
                                                     </div>
                                                 </div>
                                             </div>
@@ -186,7 +186,7 @@
                             {% if original_records.has_prev %}
                             <li class="page-item">
                                 <a class="page-link" href="{{ url_for('checkpoints.view_original_records', 
-                                                                        company_id=company_id,
+                                                                        slug=company.get_slug(),
                                                                         page=original_records.prev_num,
                                                                         start_date=filters.start_date,
                                                                         end_date=filters.end_date,
@@ -209,7 +209,7 @@
                             {% else %}
                             <li class="page-item">
                                 <a class="page-link" href="{{ url_for('checkpoints.view_original_records', 
-                                                                         company_id=company_id,
+                                                                         slug=company.get_slug(),
                                                                          page=num,
                                                                          start_date=filters.start_date,
                                                                          end_date=filters.end_date,
@@ -221,7 +221,7 @@
                             {% if original_records.has_next %}
                             <li class="page-item">
                                 <a class="page-link" href="{{ url_for('checkpoints.view_original_records', 
-                                                                        company_id=company_id,
+                                                                        slug=company.get_slug(),
                                                                         page=original_records.next_num,
                                                                         start_date=filters.start_date,
                                                                         end_date=filters.end_date,
