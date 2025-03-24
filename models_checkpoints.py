@@ -7,18 +7,18 @@ from models import Employee, Company
 
 
 class CheckPointStatus(enum.Enum):
-    ACTIVE = "ACTIVE"
-    DISABLED = "DISABLED"
-    MAINTENANCE = "MAINTENANCE"
+    ACTIVE = "active"
+    DISABLED = "disabled"
+    MAINTENANCE = "maintenance"
 
 
 class CheckPointIncidentType(enum.Enum):
-    MISSED_CHECKOUT = "MISSED_CHECKOUT"
-    LATE_CHECKIN = "LATE_CHECKIN"
-    EARLY_CHECKOUT = "EARLY_CHECKOUT"
-    OVERTIME = "OVERTIME"
-    MANUAL_ADJUSTMENT = "MANUAL_ADJUSTMENT"
-    CONTRACT_HOURS_ADJUSTMENT = "CONTRACT_HOURS_ADJUSTMENT"
+    MISSED_CHECKOUT = "missed_checkout"
+    LATE_CHECKIN = "late_checkin"
+    EARLY_CHECKOUT = "early_checkout"
+    OVERTIME = "overtime"
+    MANUAL_ADJUSTMENT = "manual_adjustment"
+    CONTRACT_HOURS_ADJUSTMENT = "contract_hours_adjustment"
 
 
 class CheckPoint(db.Model):
@@ -47,7 +47,6 @@ class CheckPoint(db.Model):
     # Configuración de los ajustes automáticos
     enforce_contract_hours = db.Column(db.Boolean, default=False)
     auto_adjust_overtime = db.Column(db.Boolean, default=False)
-    require_signature = db.Column(db.Boolean, default=True)  # Por defecto, se requiere firma
     
     # Fichajes realizados desde este punto
     check_ins = db.relationship('CheckPointRecord', back_populates='checkpoint', cascade='all, delete-orphan')

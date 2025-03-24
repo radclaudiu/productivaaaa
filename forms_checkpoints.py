@@ -22,7 +22,6 @@ class CheckPointForm(FlaskForm):
     auto_checkout_time = TimeField('Hora de fichaje automático de salida', validators=[Optional()])
     enforce_contract_hours = BooleanField('Aplicar límite horas contrato', default=False)
     auto_adjust_overtime = BooleanField('Ajustar automáticamente horas extra', default=False)
-    require_signature = BooleanField('Requerir firma de fichajes', default=True)
     
     company_id = SelectField('Empresa', coerce=int, validators=[DataRequired()])
     

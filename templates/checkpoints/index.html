@@ -352,20 +352,12 @@
                                             </div>
                                             <div class="mb-3">
                                                 <small class="text-muted d-block">Estado:</small>
-                                                {% if checkpoint.status.value == 'ACTIVE' %}
+                                                {% if checkpoint.status.value == 'active' %}
                                                     <span class="badge bg-success">Activo</span>
-                                                {% elif checkpoint.status.value == 'MAINTENANCE' %}
+                                                {% elif checkpoint.status.value == 'maintenance' %}
                                                     <span class="badge bg-warning text-dark">Mantenimiento</span>
-                                                {% elif checkpoint.status.value == 'DISABLED' %}
-                                                    <span class="badge bg-danger">Desactivado</span>
-                                                {% elif checkpoint.status == 'ACTIVE' %}
-                                                    <span class="badge bg-success">Activo</span>
-                                                {% elif checkpoint.status == 'MAINTENANCE' %}
-                                                    <span class="badge bg-warning text-dark">Mantenimiento</span>
-                                                {% elif checkpoint.status == 'DISABLED' %}
-                                                    <span class="badge bg-danger">Desactivado</span>
                                                 {% else %}
-                                                    <span class="badge bg-secondary">{{ checkpoint.status }}</span>
+                                                    <span class="badge bg-danger">Desactivado</span>
                                                 {% endif %}
                                             </div>
                                             <div class="mb-3">
@@ -473,27 +465,9 @@
                                     <tbody>
                                         {% for record in latest_records %}
                                         <tr>
-                                            <td>
-                                                {% if record.employee_name is defined %}
-                                                    {{ record.employee_name }}
-                                                {% else %}
-                                                    {{ record.employee.first_name }} {{ record.employee.last_name }}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if record.checkpoint_name is defined %}
-                                                    {{ record.checkpoint_name }}
-                                                {% else %}
-                                                    {{ record.checkpoint.name }}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if record.check_in_time is string %}
-                                                    {{ record.check_in_time }}
-                                                {% else %}
-                                                    {{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}
-                                                {% endif %}
-                                            </td>
+                                            <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
+                                            <td>{{ record.checkpoint.name }}</td>
+                                            <td>{{ record.check_in_time.strftime('%d/%m/%Y %H:%M') }}</td>
                                             <td>
                                                 {% if record.check_out_time %}
                                                     {{ record.check_out_time.strftime('%d/%m/%Y %H:%M') }}
@@ -503,20 +477,8 @@
                                             </td>
                                             <td>
                                                 {% if record.check_out_time %}
-                                                    {% if record.duration is defined and record.duration is not none %}
-                                                        {{ record.duration|round(2) }} h
-                                                    {% elif record.duration is callable %}
-                                                        {% set duration = record.duration() %}
-                                                        {{ duration|round(2) }} h
-                                                    {% else %}
-                                                        {% if record.check_in_time and record.check_out_time %}
-                                                            {% set seconds = (record.check_out_time - record.check_in_time).total_seconds() %}
-                                                            {% set hours = seconds / 3600 %}
-                                                            {{ hours|round(2) }} h
-                                                        {% else %}
-                                                            Completado
-                                                        {% endif %}
-                                                    {% endif %}
+                                                    {% set duration = record.duration() %}
+                                                    {{ duration|round(2) }} h
                                                 {% else %}
                                                     -
                                                 {% endif %}
@@ -632,48 +594,22 @@
                                         {% for incident in latest_incidents %}
                                         <tr>
                                             <td>
-                                                {% if incident.incident_type is defined and incident.incident_type.value == 'MISSED_CHECKOUT' %}
+                                                {% if incident.incident_type.value == 'missed_checkout' %}
                                                     <span class="badge bg-danger incident-badge">Salida Olvidada</span>
-                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'LATE_CHECKIN' %}
+                                                {% elif incident.incident_type.value == 'late_checkin' %}
                                                     <span class="badge bg-warning text-dark incident-badge">Entrada Tardía</span>
-                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'EARLY_CHECKOUT' %}
+                                                {% elif incident.incident_type.value == 'early_checkout' %}
                                                     <span class="badge bg-warning text-dark incident-badge">Salida Temprana</span>
-                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'OVERTIME' %}
+                                                {% elif incident.incident_type.value == 'overtime' %}
                                                     <span class="badge bg-info incident-badge">Horas Extra</span>
-                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'MANUAL_ADJUSTMENT' %}
+                                                {% elif incident.incident_type.value == 'manual_adjustment' %}
                                                     <span class="badge bg-secondary incident-badge">Ajuste Manual</span>
-                                                {% elif incident.incident_type is defined and incident.incident_type.value == 'CONTRACT_HOURS_ADJUSTMENT' %}
+                                                {% elif incident.incident_type.value == 'contract_hours_adjustment' %}
                                                     <span class="badge bg-primary incident-badge">Ajuste Contrato</span>
-                                                {% elif incident.incident_type == 'MISSED_CHECKOUT' %}
-                                                    <span class="badge bg-danger incident-badge">Salida Olvidada</span>
-                                                {% elif incident.incident_type == 'LATE_CHECKIN' %}
-                                                    <span class="badge bg-warning text-dark incident-badge">Entrada Tardía</span>
-                                                {% elif incident.incident_type == 'EARLY_CHECKOUT' %}
-                                                    <span class="badge bg-warning text-dark incident-badge">Salida Temprana</span>
-                                                {% elif incident.incident_type == 'OVERTIME' %}
-                                                    <span class="badge bg-info incident-badge">Horas Extra</span>
-                                                {% elif incident.incident_type == 'MANUAL_ADJUSTMENT' %}
-                                                    <span class="badge bg-secondary incident-badge">Ajuste Manual</span>
-                                                {% elif incident.incident_type == 'CONTRACT_HOURS_ADJUSTMENT' %}
-                                                    <span class="badge bg-primary incident-badge">Ajuste Contrato</span>
-                                                {% else %}
-                                                    <span class="badge bg-secondary incident-badge">{{ incident.incident_type }}</span>
                                                 {% endif %}
                                             </td>
-                                            <td>
-                                                {% if incident.employee_name is defined %}
-                                                    {{ incident.employee_name }}
-                                                {% else %}
-                                                    {{ incident.record.employee.first_name }} {{ incident.record.employee.last_name }}
-                                                {% endif %}
-                                            </td>
-                                            <td>
-                                                {% if incident.created_at is string %}
-                                                    {{ incident.created_at }}
-                                                {% else %}
-                                                    {{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}
-                                                {% endif %}
-                                            </td>
+                                            <td>{{ incident.record.employee.first_name }} {{ incident.record.employee.last_name }}</td>
+                                            <td>{{ incident.created_at.strftime('%d/%m/%Y %H:%M') }}</td>
                                             <td>{{ incident.description }}</td>
                                             <td>
                                                 {% if incident.resolved %}
