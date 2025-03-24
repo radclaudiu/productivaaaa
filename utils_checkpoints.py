@@ -175,7 +175,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
 def process_auto_checkouts():
     """Procesa los checkouts automáticos para fichajes pendientes"""
     from app import db
-    from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, CheckPointIncidentType
+    from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, CheckPointIncidentType, EmployeeContractHours
     
     # Obtener todos los puntos de fichaje activos
     checkpoints = CheckPoint.query.filter_by(status='active').all()
@@ -209,14 +209,65 @@ def process_auto_checkouts():
             # Registrar el checkout automático
             record.check_out_time = checkout_datetime
             
-            # Crear incidencia
+            # Crear incidencia por el checkout automático
             incident = CheckPointIncident(
                 record_id=record.id,
                 incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
                 description=f"Checkout automático realizado a las {checkout_datetime.strftime('%H:%M')} por falta de registro de salida."
             )
-            
             db.session.add(incident)
+            
+            # Aplicar restricciones de horario de contrato si corresponde
+            if checkpoint.enforce_contract_hours:
+                # Buscar configuración de horas de contrato del empleado
+                contract_hours = EmployeeContractHours.query.filter_by(employee_id=record.employee_id).first()
+                if contract_hours:
+                    # Guardar los valores originales para reporte
+                    original_checkin = record.check_in_time
+                    original_checkout = record.check_out_time
+                    
+                    # Aplicar ajustes según configuración
+                    adjusted_checkin, adjusted_checkout = contract_hours.calculate_adjusted_hours(
+                        original_checkin, original_checkout
+                    )
+                    
+                    # Si hay cambios, aplicarlos y crear incidencias
+                    if adjusted_checkin and adjusted_checkin != original_checkin:
+                        record.check_in_time = adjusted_checkin
+                        # Crear incidencia por ajuste de entrada
+                        adjustment_incident = CheckPointIncident(
+                            record_id=record.id,
+                            incident_type=CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
+                            description=f"Hora de entrada ajustada automáticamente de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')} para cumplir con configuración de horario"
+                        )
+                        db.session.add(adjustment_incident)
+                        
+                    if adjusted_checkout and adjusted_checkout != original_checkout:
+                        record.check_out_time = adjusted_checkout
+                        # Crear incidencia por ajuste de salida
+                        adjustment_incident = CheckPointIncident(
+                            record_id=record.id,
+                            incident_type=CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
+                            description=f"Hora de salida ajustada automáticamente de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')} para cumplir con configuración de horario"
+                        )
+                        db.session.add(adjustment_incident)
+                    
+                    # Verificar si hay horas extra
+                    duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
+                    if contract_hours.is_overtime(duration):
+                        overtime_hours = duration - contract_hours.daily_hours
+                        overtime_incident = CheckPointIncident(
+                            record_id=record.id,
+                            incident_type=CheckPointIncidentType.OVERTIME,
+                            description=f"Jornada con {overtime_hours:.2f} horas extra sobre el límite diario de {contract_hours.daily_hours} horas"
+                        )
+                        db.session.add(overtime_incident)
+            
+            # Actualizar el estado del empleado
+            employee = record.employee
+            if employee.is_on_shift:
+                employee.is_on_shift = False
+                db.session.add(employee)
         
         # Guardar cambios
         if pending_records:
