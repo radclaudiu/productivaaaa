@@ -35,7 +35,7 @@
                         </thead>
                         <tbody>
                             {% for company in companies %}
-                            <tr data-href="{{ url_for('company.view_company', id=company.id) }}">
+                            <tr data-href="{{ url_for('company.view_company', slug=company.get_slug()) }}">
                                 <td>{{ company.id }}</td>
                                 <td>{{ company.name }}</td>
                                 <td>{{ company.tax_id }}</td>
@@ -48,18 +48,18 @@
                                     </span>
                                 </td>
                                 <td class="table-action-buttons">
-                                    <a href="{{ url_for('company.view_company', id=company.id) }}" class="btn btn-sm btn-info">
+                                    <a href="{{ url_for('company.view_company', slug=company.get_slug()) }}" class="btn btn-sm btn-info">
                                         <i class="bi bi-eye"></i>
                                     </a>
                                     
                                     {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == company.id) %}
-                                    <a href="{{ url_for('company.edit_company', id=company.id) }}" class="btn btn-sm btn-warning">
+                                    <a href="{{ url_for('company.edit_company', slug=company.get_slug()) }}" class="btn btn-sm btn-warning">
                                         <i class="bi bi-pencil"></i>
                                     </a>
                                     {% endif %}
                                     
                                     {% if current_user.is_admin() %}
-                                    <form action="{{ url_for('company.delete_company', id=company.id) }}" method="post" class="d-inline">
+                                    <form action="{{ url_for('company.delete_company', slug=company.get_slug()) }}" method="post" class="d-inline">
                                         <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
                                         <button type="submit" class="btn btn-sm btn-danger confirm-action"
                                                 data-confirm-message="¿Estás seguro de querer eliminar esta empresa? Esta acción no se puede deshacer.">
