@@ -134,32 +134,27 @@ def index_company(company_id):
         }
         
         # Obtener estadísticas para el dashboard en conexiones separadas
-        with db.engine.begin() as conn:
-            try:
-                stats['active_checkpoints'] = conn.execute(text("""
-                    SELECT COUNT(*) FROM checkpoints
-                    WHERE status = 'active' AND company_id = :company_id
-                """), {"company_id": company_id}).scalar() or 0
-            except Exception as e:
-                current_app.logger.error(f"Error al obtener checkpoints activos: {e}")
+        # Usamos SQLAlchemy ORM para obtener los contadores, ya que maneja automáticamente los enums
+        try:
+            stats['active_checkpoints'] = db.session.query(CheckPoint).filter_by(
+                status=CheckPointStatus.ACTIVE, company_id=company_id).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener checkpoints activos: {e}")
+            stats['active_checkpoints'] = 0
         
-        with db.engine.begin() as conn:
-            try:
-                stats['maintenance_checkpoints'] = conn.execute(text("""
-                    SELECT COUNT(*) FROM checkpoints
-                    WHERE status = 'maintenance' AND company_id = :company_id
-                """), {"company_id": company_id}).scalar() or 0
-            except Exception as e:
-                current_app.logger.error(f"Error al obtener checkpoints en mantenimiento: {e}")
+        try:
+            stats['maintenance_checkpoints'] = db.session.query(CheckPoint).filter_by(
+                status=CheckPointStatus.MAINTENANCE, company_id=company_id).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener checkpoints en mantenimiento: {e}")
+            stats['maintenance_checkpoints'] = 0
         
-        with db.engine.begin() as conn:
-            try:
-                stats['disabled_checkpoints'] = conn.execute(text("""
-                    SELECT COUNT(*) FROM checkpoints
-                    WHERE status = 'disabled' AND company_id = :company_id
-                """), {"company_id": company_id}).scalar() or 0
-            except Exception as e:
-                current_app.logger.error(f"Error al obtener checkpoints deshabilitados: {e}")
+        try:
+            stats['disabled_checkpoints'] = db.session.query(CheckPoint).filter_by(
+                status=CheckPointStatus.DISABLED, company_id=company_id).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener checkpoints deshabilitados: {e}")
+            stats['disabled_checkpoints'] = 0
         
         with db.engine.begin() as conn:
             try:
@@ -287,33 +282,28 @@ def index_company(company_id):
             except Exception as e:
                 current_app.logger.error(f"Error al obtener últimas incidencias: {e}")
         
-        # Obtener todos los puntos de fichaje para la empresa
-        with db.engine.begin() as conn:
-            try:
-                checkpoints_result = conn.execute(text("""
-                    SELECT id, name, location, status, username, auto_checkout_time, created_at,
-                           updated_at, require_signature
-                    FROM checkpoints
-                    WHERE company_id = :company_id
-                """), {"company_id": company_id}).fetchall()
-                
-                # Transformar resultados a diccionarios
-                checkpoints = [
-                    {
-                        'id': r[0],
-                        'name': r[1],
-                        'location': r[2],
-                        'status': r[3],
-                        'username': r[4],
-                        'auto_checkout_time': r[5],
-                        'created_at': r[6],
-                        'updated_at': r[7],
-                        'require_signature': r[8]
-                    }
-                    for r in checkpoints_result
-                ]
-            except Exception as e:
-                current_app.logger.error(f"Error al obtener puntos de fichaje: {e}")
+        # En lugar de SQL nativo, usar ORM que maneja mejor los enums y atributos
+        try:
+            # Obtener checkpoints usando SQLAlchemy ORM
+            checkpoint_objects = CheckPoint.query.filter_by(company_id=company_id).all()
+            
+            # Convertir a diccionarios para la plantilla
+            checkpoints = []
+            for c in checkpoint_objects:
+                checkpoint_dict = {
+                    'id': c.id,
+                    'name': c.name,
+                    'location': c.location,
+                    'status': c.status,
+                    'username': c.username,
+                    'auto_checkout_time': c.auto_checkout_time,
+                    'created_at': c.created_at,
+                    'updated_at': c.updated_at,
+                    'require_signature': getattr(c, 'require_signature', True)  # Valor por defecto en caso de no existir
+                }
+                checkpoints.append(checkpoint_dict)
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener puntos de fichaje: {e}")
         
         # Obtener todos los empleados de la empresa
         with db.engine.begin() as conn:

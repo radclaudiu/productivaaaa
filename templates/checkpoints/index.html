@@ -495,13 +495,19 @@
                                             </td>
                                             <td>
                                                 {% if record.check_out_time %}
-                                                    {% if record.duration is defined %}
+                                                    {% if record.duration is defined and record.duration is not none %}
                                                         {{ record.duration|round(2) }} h
                                                     {% elif record.duration is callable %}
                                                         {% set duration = record.duration() %}
                                                         {{ duration|round(2) }} h
                                                     {% else %}
-                                                        Completado
+                                                        {% if record.check_in_time and record.check_out_time %}
+                                                            {% set seconds = (record.check_out_time - record.check_in_time).total_seconds() %}
+                                                            {% set hours = seconds / 3600 %}
+                                                            {{ hours|round(2) }} h
+                                                        {% else %}
+                                                            Completado
+                                                        {% endif %}
                                                     {% endif %}
                                                 {% else %}
                                                     -
