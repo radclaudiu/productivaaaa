@@ -6,6 +6,7 @@ from flask import Blueprint, render_template, redirect, url_for, flash, request,
 from flask_login import login_user, logout_user, login_required, current_user
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
+from sqlalchemy import func
 
 from app import db
 from models import (User, Company, Employee, EmployeeDocument, EmployeeNote, UserRole, 
@@ -223,10 +224,11 @@ def list_companies():
     
     return render_template('company_list.html', title='Empresas', companies=companies)
 
-@company_bp.route('/<int:id>')
+@company_bp.route('/<string:slug>')
 @login_required
-def view_company(id):
-    company = Company.query.get_or_404(id)
+def view_company(slug):
+    # Buscar la empresa por su slug
+    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
     
     # Check if user has permission to view this company
     if not current_user.is_admin() and company not in current_user.companies:
@@ -259,7 +261,7 @@ def create_company():
         
         log_activity(f'Empresa creada: {company.name}')
         flash(f'Empresa "{company.name}" creada correctamente.', 'success')
-        return redirect(url_for('company.view_company', id=company.id))
+        return redirect(url_for('company.view_company', slug=company.get_slug()))
     
     return render_template('company_form.html', title='Nueva Empresa', form=form)
 
