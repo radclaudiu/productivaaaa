@@ -64,115 +64,201 @@ def checkpoint_required(f):
 @login_required
 def select_company():
     """Página de selección de empresa para el sistema de fichajes"""
-    # Obtener empresas según los permisos del usuario
-    if current_user.is_admin():
-        companies = Company.query.filter_by(is_active=True).all()
-    else:
-        companies = current_user.companies
-    
-    # Si solo hay una empresa o el usuario solo gestiona una, redirigir directamente
-    if len(companies) == 1:
-        return redirect(url_for('checkpoints.index_company', company_id=companies[0].id))
-    
-    return render_template('checkpoints/select_company.html', companies=companies)
+    try:
+        # Obtener empresas según los permisos del usuario
+        if current_user.is_admin():
+            companies = Company.query.filter_by(is_active=True).all()
+        else:
+            companies = current_user.companies
+        
+        # Si solo hay una empresa o el usuario solo gestiona una, redirigir directamente
+        if len(companies) == 1:
+            return redirect(url_for('checkpoints.index_company', company_id=companies[0].id))
+        
+        return render_template('checkpoints/select_company.html', companies=companies)
+    except Exception as e:
+        current_app.logger.error(f"Error en select_company: {e}")
+        flash("Error al cargar la selección de empresas. Por favor, inténtelo de nuevo.", "danger")
+        return redirect(url_for('main.dashboard'))
 
 @checkpoints_bp.route('/company/<int:company_id>')
 @login_required
 def index_company(company_id):
     """Página principal del sistema de fichajes para una empresa específica"""
-    # Verificar permiso para acceder a esta empresa
-    company = Company.query.get_or_404(company_id)
-    
-    if not current_user.is_admin() and company not in current_user.companies:
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
+    try:
+        # Verificar permiso para acceder a esta empresa
+        company = Company.query.get_or_404(company_id)
+        
+        if not current_user.is_admin() and company not in current_user.companies:
+            flash('No tiene permiso para gestionar esta empresa.', 'danger')
+            return redirect(url_for('main.dashboard'))
+        
+        # Guardar la empresa seleccionada en la sesión
+        session['selected_company_id'] = company_id
+        
+        # Inicializar estadísticas con valores por defecto
+        stats = {
+            'active_checkpoints': 0,
+            'maintenance_checkpoints': 0,
+            'disabled_checkpoints': 0,
+            'employees_with_hours': 0,
+            'employees_with_overtime': 0,
+            'today_records': 0,
+            'pending_checkout': 0,
+            'active_incidents': 0
+        }
+        
+        # Obtener estadísticas para el dashboard en bloques separados con manejo de excepciones
+        try:
+            stats['active_checkpoints'] = CheckPoint.query.filter_by(
+                status=CheckPointStatus.ACTIVE, company_id=company_id).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener checkpoints activos: {e}")
+            
+        try:
+            stats['maintenance_checkpoints'] = CheckPoint.query.filter_by(
+                status=CheckPointStatus.MAINTENANCE, company_id=company_id).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener checkpoints en mantenimiento: {e}")
+            
+        try:
+            stats['disabled_checkpoints'] = CheckPoint.query.filter_by(
+                status=CheckPointStatus.DISABLED, company_id=company_id).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener checkpoints deshabilitados: {e}")
+            
+        try:
+            stats['employees_with_hours'] = db.session.query(EmployeeContractHours)\
+                .join(Employee, EmployeeContractHours.employee_id == Employee.id)\
+                .filter(Employee.company_id == company_id).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener empleados con horas: {e}")
+            
+        try:
+            stats['employees_with_overtime'] = db.session.query(EmployeeContractHours)\
+                .join(Employee, EmployeeContractHours.employee_id == Employee.id)\
+                .filter(Employee.company_id == company_id, 
+                      EmployeeContractHours.allow_overtime == True).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener empleados con horas extra: {e}")
+            
+        try:
+            stats['today_records'] = db.session.query(CheckPointRecord)\
+                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
+                .filter(
+                    CheckPoint.company_id == company_id,
+                    CheckPointRecord.check_in_time >= datetime.combine(date.today(), time.min)
+                ).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener registros de hoy: {e}")
+            
+        try:
+            stats['pending_checkout'] = db.session.query(CheckPointRecord)\
+                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
+                .filter(
+                    CheckPoint.company_id == company_id,
+                    CheckPointRecord.check_out_time.is_(None)
+                ).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener registros pendientes de salida: {e}")
+            
+        try:
+            stats['active_incidents'] = db.session.query(CheckPointIncident)\
+                .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)\
+                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
+                .filter(
+                    CheckPoint.company_id == company_id,
+                    CheckPointIncident.resolved == False
+                ).count()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener incidencias activas: {e}")
+        
+        # Inicializar variables con valores vacíos para evitar errores
+        latest_records = []
+        latest_incidents = []
+        checkpoints = []
+        employees = []
+        week_stats = {}
+        
+        # Obtener los últimos registros filtrados por empresa
+        try:
+            latest_records = db.session.query(CheckPointRecord)\
+                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
+                .filter(CheckPoint.company_id == company_id)\
+                .order_by(CheckPointRecord.check_in_time.desc())\
+                .limit(10).all()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener últimos registros: {e}")
+        
+        # Obtener las últimas incidencias filtradas por empresa
+        try:
+            latest_incidents = db.session.query(CheckPointIncident)\
+                .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)\
+                .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
+                .filter(CheckPoint.company_id == company_id)\
+                .order_by(CheckPointIncident.created_at.desc())\
+                .limit(10).all()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener últimas incidencias: {e}")
+        
+        # Obtener todos los puntos de fichaje para la empresa
+        try:
+            checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener puntos de fichaje: {e}")
+        
+        # Obtener los empleados activos para la empresa (sin filtrar por is_active para evitar problemas)
+        try:
+            employees = Employee.query.filter_by(company_id=company_id).order_by(Employee.first_name).all()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener empleados: {e}")
+        
+        # Obtener los tipos de incidencias para el filtrado
+        incident_types = []
+        try:
+            incident_types = [
+                {'value': incident_type.value, 'name': incident_type.name}
+                for incident_type in CheckPointIncidentType
+            ]
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener tipos de incidencias: {e}")
+        
+        # Obtener las estadísticas de la última semana para gráficos
+        try:
+            week_stats = {}
+            today = date.today()
+            for i in range(7):
+                try:
+                    day = today - timedelta(days=i)
+                    count = db.session.query(CheckPointRecord)\
+                        .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
+                        .filter(
+                            CheckPoint.company_id == company_id,
+                            extract('day', CheckPointRecord.check_in_time) == day.day,
+                            extract('month', CheckPointRecord.check_in_time) == day.month,
+                            extract('year', CheckPointRecord.check_in_time) == day.year
+                        ).count()
+                    week_stats[day.strftime('%d/%m')] = count
+                except Exception as e:
+                    current_app.logger.error(f"Error al obtener estadísticas del día {day}: {e}")
+                    week_stats[day.strftime('%d/%m')] = 0
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener estadísticas semanales: {e}")
+        
+        return render_template('checkpoints/index.html', 
+                              stats=stats, 
+                              latest_records=latest_records,
+                              latest_incidents=latest_incidents,
+                              company=company,
+                              checkpoints=checkpoints,
+                              employees=employees,
+                              incident_types=incident_types,
+                              week_stats=week_stats)
+                              
+    except Exception as e:
+        current_app.logger.error(f"Error general en index_company: {e}")
+        flash('Se produjo un error al cargar la página. Por favor, inténtelo de nuevo.', 'danger')
         return redirect(url_for('main.dashboard'))
-    
-    # Guardar la empresa seleccionada en la sesión
-    session['selected_company_id'] = company_id
-    
-    # Obtener estadísticas para el dashboard filtradas por la empresa
-    stats = {
-        'active_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.ACTIVE, company_id=company_id).count(),
-        'maintenance_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.MAINTENANCE, company_id=company_id).count(),
-        'disabled_checkpoints': CheckPoint.query.filter_by(status=CheckPointStatus.DISABLED, company_id=company_id).count(),
-        'employees_with_hours': db.session.query(EmployeeContractHours)
-            .join(Employee, EmployeeContractHours.employee_id == Employee.id)
-            .filter(Employee.company_id == company_id).count(),
-        'employees_with_overtime': db.session.query(EmployeeContractHours)
-            .join(Employee, EmployeeContractHours.employee_id == Employee.id)
-            .filter(Employee.company_id == company_id, EmployeeContractHours.allow_overtime == True).count(),
-        'today_records': db.session.query(CheckPointRecord)
-            .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)
-            .filter(
-                CheckPoint.company_id == company_id,
-                CheckPointRecord.check_in_time >= datetime.combine(date.today(), time.min)
-            ).count(),
-        'pending_checkout': db.session.query(CheckPointRecord)
-            .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)
-            .filter(
-                CheckPoint.company_id == company_id,
-                CheckPointRecord.check_out_time.is_(None)
-            ).count(),
-        'active_incidents': db.session.query(CheckPointIncident)
-            .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)
-            .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)
-            .filter(
-                CheckPoint.company_id == company_id,
-                CheckPointIncident.resolved == False
-            ).count()
-    }
-    
-    # Obtener los últimos registros filtrados por empresa
-    latest_records = db.session.query(CheckPointRecord).\
-        join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id).\
-        filter(CheckPoint.company_id == company_id).\
-        order_by(CheckPointRecord.check_in_time.desc()).\
-        limit(10).all()
-    
-    # Obtener las últimas incidencias filtradas por empresa
-    latest_incidents = db.session.query(CheckPointIncident).\
-        join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id).\
-        join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id).\
-        filter(CheckPoint.company_id == company_id).\
-        order_by(CheckPointIncident.created_at.desc()).\
-        limit(10).all()
-    
-    # Obtener todos los puntos de fichaje para la empresa
-    checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
-    
-    # Obtener los empleados activos para la empresa
-    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
-    
-    # Obtener los tipos de incidencias para el filtrado
-    incident_types = [
-        {'value': incident_type.value, 'name': incident_type.name}
-        for incident_type in CheckPointIncidentType
-    ]
-    
-    # Obtener las estadísticas de la última semana para gráficos
-    week_stats = {}
-    today = date.today()
-    for i in range(7):
-        day = today - timedelta(days=i)
-        count = db.session.query(CheckPointRecord).\
-            join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id).\
-            filter(
-                CheckPoint.company_id == company_id,
-                extract('day', CheckPointRecord.check_in_time) == day.day,
-                extract('month', CheckPointRecord.check_in_time) == day.month,
-                extract('year', CheckPointRecord.check_in_time) == day.year
-            ).count()
-        week_stats[day.strftime('%d/%m')] = count
-    
-    return render_template('checkpoints/index.html', 
-                          stats=stats, 
-                          latest_records=latest_records,
-                          latest_incidents=latest_incidents,
-                          company=company,
-                          checkpoints=checkpoints,
-                          employees=employees,
-                          incident_types=incident_types,
-                          week_stats=week_stats)
 
 
 @checkpoints_bp.route('/checkpoints')
@@ -180,21 +266,31 @@ def index_company(company_id):
 @manager_required
 def list_checkpoints():
     """Lista todos los puntos de fichaje disponibles"""
-    # Verificar si hay una empresa seleccionada
-    company_id = session.get('selected_company_id')
-    if not company_id:
-        return redirect(url_for('checkpoints.select_company'))
-    
-    # Verificar permiso para acceder a esta empresa
-    company = Company.query.get_or_404(company_id)
-    if not current_user.is_admin() and company not in current_user.companies:
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('checkpoints.select_company'))
-    
-    # Filtrar por la empresa seleccionada
-    checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
-    
-    return render_template('checkpoints/list_checkpoints.html', checkpoints=checkpoints, company=company)
+    try:
+        # Verificar si hay una empresa seleccionada
+        company_id = session.get('selected_company_id')
+        if not company_id:
+            return redirect(url_for('checkpoints.select_company'))
+        
+        # Verificar permiso para acceder a esta empresa
+        company = Company.query.get_or_404(company_id)
+        if not current_user.is_admin() and company not in current_user.companies:
+            flash('No tiene permiso para gestionar esta empresa.', 'danger')
+            return redirect(url_for('checkpoints.select_company'))
+        
+        # Filtrar por la empresa seleccionada
+        try:
+            checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
+        except Exception as e:
+            current_app.logger.error(f"Error al obtener puntos de fichaje: {e}")
+            checkpoints = []
+            flash("Hubo un problema al cargar los puntos de fichaje. Se muestra una lista parcial.", "warning")
+        
+        return render_template('checkpoints/list_checkpoints.html', checkpoints=checkpoints, company=company)
+    except Exception as e:
+        current_app.logger.error(f"Error general en list_checkpoints: {e}")
+        flash('Se produjo un error al cargar la página. Por favor, inténtelo de nuevo.', 'danger')
+        return redirect(url_for('main.dashboard'))
 
 
 @checkpoints_bp.route('/checkpoints/new', methods=['GET', 'POST'])
