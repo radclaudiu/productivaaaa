@@ -89,16 +89,50 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
     # Crear PDF
     pdf = CheckPointPDF(title='Informe de Fichajes')
     pdf.set_auto_page_break(auto=True, margin=15)
-    pdf.add_page()
     
     # Para cada empleado
     for employee_id, data in employees_records.items():
         employee = data['employee']
         records = data['records']
+        company = employee.company
         
-        # Título empleado
+        # Añadir una nueva página para cada empleado
+        pdf.add_page()
+        
+        # Información del empleado (izquierda)
+        pdf.set_font('Arial', 'B', 10)
+        pdf.cell(95, 6, 'DATOS DEL EMPLEADO:', 0, 0)
+        
+        # Información de la empresa (derecha)
+        pdf.cell(95, 6, 'DATOS DE LA EMPRESA:', 0, 1, 'R')
+        
+        # Datos del empleado
+        pdf.set_font('Arial', '', 10)
+        pdf.cell(95, 6, f"Nombre: {employee.first_name} {employee.last_name}", 0, 0)
+        
+        # Datos de la empresa
+        pdf.cell(95, 6, f"Nombre: {company.name}", 0, 1, 'R')
+        
+        # DNI empleado
+        pdf.cell(95, 6, f"DNI/NIE: {employee.dni}", 0, 0)
+        
+        # CIF empresa
+        pdf.cell(95, 6, f"CIF: {company.tax_id}", 0, 1, 'R')
+        
+        # Puesto empleado (para completar info)
+        pdf.cell(95, 6, f"Puesto: {employee.position or '-'}", 0, 0)
+        
+        # Dirección empresa
+        empresa_direccion = f"{company.address or ''}, {company.city or ''}"
+        if empresa_direccion.strip() == ',':
+            empresa_direccion = '-'
+        pdf.cell(95, 6, f"Dirección: {empresa_direccion}", 0, 1, 'R')
+        
+        pdf.ln(5)  # Espacio antes de la tabla
+        
+        # Título de la tabla
         pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, f"{employee.first_name} {employee.last_name} - {employee.position}", 0, 1)
+        pdf.cell(0, 10, 'REGISTROS DE FICHAJE', 0, 1, 'C')
         
         # Tabla de registros
         pdf.set_font('Arial', 'B', 10)
@@ -115,8 +149,6 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         
         # Dibujar filas
         pdf.set_font('Arial', '', 10)
-        
-        total_hours = 0
         
         for record in records:
             # Fecha
@@ -135,7 +167,6 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
             duration = record.duration()
             if duration is not None:
                 hours_str = f"{duration:.2f}h"
-                total_hours += duration
             else:
                 hours_str = '-'
             pdf.cell(col_widths[3], 10, hours_str, 1, 0, 'C')
@@ -152,14 +183,6 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
                 draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
             
             pdf.ln()
-        
-        # Total de horas
-        pdf.set_font('Arial', 'B', 10)
-        pdf.cell(sum(col_widths[0:3]), 10, 'Total Horas:', 1, 0, 'R')
-        pdf.cell(col_widths[3], 10, f"{total_hours:.2f}h", 1, 0, 'C')
-        pdf.cell(sum(col_widths[4:]), 10, '', 1, 0)
-        
-        pdf.ln(20)  # Espacio entre empleados
     
     # Crear un archivo temporal en disco
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
