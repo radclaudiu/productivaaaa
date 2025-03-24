@@ -130,14 +130,14 @@ def index_company(slug):
         try:
             stats['employees_with_hours'] = db.session.query(EmployeeContractHours)\
                 .join(Employee, EmployeeContractHours.employee_id == Employee.id)\
-                .filter(Employee.company_id == company_id).count()
+                .filter(Employee.company_id == company.id).count()
         except Exception as e:
             current_app.logger.error(f"Error al obtener empleados con horas: {e}")
             
         try:
             stats['employees_with_overtime'] = db.session.query(EmployeeContractHours)\
                 .join(Employee, EmployeeContractHours.employee_id == Employee.id)\
-                .filter(Employee.company_id == company_id, 
+                .filter(Employee.company_id == company.id, 
                       EmployeeContractHours.allow_overtime == True).count()
         except Exception as e:
             current_app.logger.error(f"Error al obtener empleados con horas extra: {e}")
@@ -146,7 +146,7 @@ def index_company(slug):
             stats['today_records'] = db.session.query(CheckPointRecord)\
                 .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
                 .filter(
-                    CheckPoint.company_id == company_id,
+                    CheckPoint.company_id == company.id,
                     CheckPointRecord.check_in_time >= datetime.combine(date.today(), time.min)
                 ).count()
         except Exception as e:
@@ -156,7 +156,7 @@ def index_company(slug):
             stats['pending_checkout'] = db.session.query(CheckPointRecord)\
                 .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
                 .filter(
-                    CheckPoint.company_id == company_id,
+                    CheckPoint.company_id == company.id,
                     CheckPointRecord.check_out_time.is_(None)
                 ).count()
         except Exception as e:
@@ -167,7 +167,7 @@ def index_company(slug):
                 .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)\
                 .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
                 .filter(
-                    CheckPoint.company_id == company_id,
+                    CheckPoint.company_id == company.id,
                     CheckPointIncident.resolved == False
                 ).count()
         except Exception as e:
@@ -184,7 +184,7 @@ def index_company(slug):
         try:
             latest_records = db.session.query(CheckPointRecord)\
                 .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                .filter(CheckPoint.company_id == company_id)\
+                .filter(CheckPoint.company_id == company.id)\
                 .order_by(CheckPointRecord.check_in_time.desc())\
                 .limit(10).all()
         except Exception as e:
@@ -195,7 +195,7 @@ def index_company(slug):
             latest_incidents = db.session.query(CheckPointIncident)\
                 .join(CheckPointRecord, CheckPointIncident.record_id == CheckPointRecord.id)\
                 .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                .filter(CheckPoint.company_id == company_id)\
+                .filter(CheckPoint.company_id == company.id)\
                 .order_by(CheckPointIncident.created_at.desc())\
                 .limit(10).all()
         except Exception as e:
@@ -203,13 +203,13 @@ def index_company(slug):
         
         # Obtener todos los puntos de fichaje para la empresa
         try:
-            checkpoints = CheckPoint.query.filter_by(company_id=company_id).all()
+            checkpoints = CheckPoint.query.filter_by(company_id=company.id).all()
         except Exception as e:
             current_app.logger.error(f"Error al obtener puntos de fichaje: {e}")
         
         # Obtener los empleados activos para la empresa (sin filtrar por is_active para evitar problemas)
         try:
-            employees = Employee.query.filter_by(company_id=company_id).order_by(Employee.first_name).all()
+            employees = Employee.query.filter_by(company_id=company.id).order_by(Employee.first_name).all()
         except Exception as e:
             current_app.logger.error(f"Error al obtener empleados: {e}")
         
@@ -233,7 +233,7 @@ def index_company(slug):
                     count = db.session.query(CheckPointRecord)\
                         .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
                         .filter(
-                            CheckPoint.company_id == company_id,
+                            CheckPoint.company_id == company.id,
                             extract('day', CheckPointRecord.check_in_time) == day.day,
                             extract('month', CheckPointRecord.check_in_time) == day.month,
                             extract('year', CheckPointRecord.check_in_time) == day.year

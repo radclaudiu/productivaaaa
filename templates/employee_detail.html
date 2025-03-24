@@ -41,7 +41,7 @@
                             
                             <dt class="col-sm-4">Empresa:</dt>
                             <dd class="col-sm-8">
-                                <a href="{{ url_for('company.view_company', id=employee.company_id) }}">
+                                <a href="{{ url_for('company.view_company', slug=employee.company.get_slug()) }}">
                                     {{ employee.company.name }}
                                 </a>
                             </dd>

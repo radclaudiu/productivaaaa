@@ -30,7 +30,7 @@
     <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4">
         {% for company in companies %}
         <div class="col">
-            <a href="{{ url_for('checkpoints.index_company', company_id=company.id) }}" class="text-decoration-none">
+            <a href="{{ url_for('checkpoints.index_company', slug=company.get_slug()) }}" class="text-decoration-none">
                 <div class="card h-100 company-card">
                     <div class="card-body text-center">
                         <h3 class="card-title mb-3">{{ company.name }}</h3>
