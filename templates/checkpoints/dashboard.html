@@ -184,5 +184,71 @@
     // Actualizar cada segundo
     updateTime();
     setInterval(updateTime, 1000);
+
+    // Función para cargar empleados a través de AJAX
+    function loadEmployees() {
+        // Mostrar indicador de carga
+        const employeesList = document.getElementById('employeesList');
+        const refreshButton = document.getElementById('refreshEmployees');
+        
+        if (refreshButton) {
+            // Deshabilitar el botón durante la carga y mostrar un spinner
+            refreshButton.disabled = true;
+            refreshButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+        }
+        
+        // Realizar la petición AJAX
+        fetch('{{ url_for("checkpoints.company_employees") }}')
+            .then(response => response.json())
+            .then(employees => {
+                // Limpiar la lista actual
+                employeesList.innerHTML = '';
+                
+                // Si no hay empleados, mostrar mensaje
+                if (employees.length === 0) {
+                    employeesList.innerHTML = '<div class="col-12"><div class="alert alert-info">No hay empleados disponibles</div></div>';
+                    return;
+                }
+                
+                // Crear las tarjetas de empleados
+                employees.forEach(employee => {
+                    const employeeCard = document.createElement('div');
+                    employeeCard.className = 'col';
+                    employeeCard.innerHTML = `
+                        <a href="{{ url_for('checkpoints.employee_pin', id='') }}${employee.id}" class="text-decoration-none">
+                            <div class="card employee-card">
+                                <div class="card-body">
+                                    <div class="employee-avatar">
+                                        <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
+                                    </div>
+                                    <h5 class="employee-name">${employee.name}</h5>
+                                    <p class="text-muted mb-0">${employee.position || 'Sin cargo'}</p>
+                                </div>
+                            </div>
+                        </a>
+                    `;
+                    employeesList.appendChild(employeeCard);
+                });
+            })
+            .catch(error => {
+                console.error('Error al cargar empleados:', error);
+                employeesList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error al cargar empleados</div></div>';
+            })
+            .finally(() => {
+                // Restaurar el botón
+                if (refreshButton) {
+                    refreshButton.disabled = false;
+                    refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Actualizar';
+                }
+            });
+    }
+
+    // Asociar el evento click al botón de actualizar
+    document.addEventListener('DOMContentLoaded', function() {
+        const refreshButton = document.getElementById('refreshEmployees');
+        if (refreshButton) {
+            refreshButton.addEventListener('click', loadEmployees);
+        }
+    });
 </script>
 {% endblock %}
