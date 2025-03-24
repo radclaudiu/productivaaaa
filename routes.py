@@ -595,6 +595,23 @@ def create_employee():
         db.session.add(employee)
         db.session.commit()
         
+        # Asignar automáticamente el empleado a todos los puntos de fichaje de su empresa
+        try:
+            # Obtener todos los puntos de fichaje de la empresa
+            checkpoints = CheckPoint.query.filter_by(company_id=employee.company_id).all()
+            if checkpoints:
+                log_activity(f'Asignando empleado a {len(checkpoints)} puntos de fichaje')
+                # No se necesita hacer ninguna asignación explícita, ya que los puntos de fichaje
+                # acceden a los empleados a través de su relación con la empresa
+                
+                # Podríamos usar este espacio para configuración adicional si fuera necesario en el futuro
+                # Por ejemplo, inicializar ContractHours para cada empleado
+                pass
+        except Exception as e:
+            # No detenemos la creación del empleado si hay algún error en esta parte
+            print(f"Error al asignar empleado a puntos de fichaje: {str(e)}")
+            log_activity(f'Error al asignar empleado a puntos de fichaje: {str(e)}')
+        
         log_activity(f'Empleado creado: {employee.first_name} {employee.last_name}')
         flash(f'Empleado "{employee.first_name} {employee.last_name}" creado correctamente.', 'success')
         return redirect(url_for('employee.view_employee', id=employee.id))
