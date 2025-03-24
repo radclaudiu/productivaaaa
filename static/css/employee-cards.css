@@ -1,0 +1,210 @@
+/* employee-cards.css - Estilos modernos para tarjetas de empleados */
+
+/* Variables CSS para facilitar personalización */
+:root {
+  --card-primary: #2563eb;
+  --card-secondary: #1e40af;
+  --card-bg: #111827;
+  --card-text: #ffffff;
+  --card-border: rgba(255, 255, 255, 0.15);
+  --card-highlight: rgba(255, 255, 255, 0.1);
+  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+  --transition-speed: 0.3s;
+}
+
+/* Contenedor para las tarjetas */
+.employee-cards-container {
+  padding: 1rem 0;
+}
+
+/* Tarjeta base */
+.employee-card {
+  position: relative;
+  height: 200px;
+  border-radius: 10px;
+  background-color: var(--card-bg);
+  border: 1px solid var(--card-border);
+  overflow: hidden;
+  transition: all var(--transition-speed) ease-in-out;
+  box-shadow: var(--card-shadow);
+  margin-bottom: 1.5rem;
+}
+
+.employee-card:hover, .employee-card:focus {
+  transform: translateY(-5px);
+  box-shadow: var(--card-hover-shadow);
+  border-color: var(--card-primary);
+}
+
+/* Capa de gradiente para mejorar legibilidad del texto */
+.employee-card::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 50%;
+  background: linear-gradient(to top, var(--card-bg), transparent);
+  z-index: 1;
+}
+
+/* Cuerpo de la tarjeta */
+.employee-card .card-body {
+  height: 100%;
+  padding: 0;
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-end;
+  align-items: center;
+}
+
+/* Avatar del empleado */
+.employee-avatar {
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  overflow: hidden;
+  margin-bottom: 0.5rem;
+  border: 3px solid white;
+  box-shadow: var(--card-shadow);
+  background-color: var(--card-secondary);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  position: relative;
+  z-index: 2;
+  margin-top: 1.5rem;
+}
+
+.employee-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.avatar-text {
+  font-size: 2rem;
+  font-weight: 700;
+  color: var(--card-text);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+}
+
+/* Nombre del empleado */
+.employee-name {
+  color: var(--card-text);
+  font-size: 1.2rem;
+  font-weight: 600;
+  text-align: center;
+  margin: 0.25rem 0 1rem;
+  padding: 0 0.5rem;
+  width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  position: relative;
+  z-index: 2;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Indicador de estado activo */
+.employee-card .status-indicator {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background-color: #10b981; /* Verde para activo */
+  border: 2px solid white;
+  z-index: 3;
+}
+
+.employee-card .status-indicator.inactive {
+  background-color: #d1d5db; /* Gris para inactivo */
+}
+
+/* Diseño responsivo */
+@media (max-width: 1199.98px) {
+  .employee-card {
+    height: 180px;
+  }
+  
+  .employee-avatar {
+    width: 85px;
+    height: 85px;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .employee-card {
+    height: 170px;
+  }
+  
+  .employee-avatar {
+    width: 80px;
+    height: 80px;
+  }
+  
+  .avatar-text {
+    font-size: 1.8rem;
+  }
+}
+
+@media (max-width: 767.98px) {
+  .employee-card {
+    height: 160px;
+  }
+  
+  .employee-avatar {
+    width: 75px;
+    height: 75px;
+    margin-top: 1.2rem;
+  }
+  
+  .employee-name {
+    font-size: 1rem;
+  }
+}
+
+@media (max-width: 575.98px) {
+  .employee-card {
+    height: 150px;
+  }
+  
+  .employee-avatar {
+    width: 70px;
+    height: 70px;
+    margin-top: 1rem;
+  }
+  
+  .avatar-text {
+    font-size: 1.5rem;
+  }
+}
+
+/* Animación de carga */
+@keyframes pulse {
+  0% {
+    opacity: 0.6;
+  }
+  50% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0.6;
+  }
+}
+
+.employee-card-loading {
+  animation: pulse 1.5s infinite;
+}
+
+/* Efectos de interacción táctil */
+@media (hover: none) {
+  .employee-card:active {
+    transform: scale(0.98);
+    background-color: var(--card-highlight);
+  }
+}

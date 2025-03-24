@@ -4,66 +4,8 @@
 
 {% block head %}
 {{ super() }}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/employee-cards.css') }}">
 <style>
-    .employee-card {
-        transition: all 0.3s ease;
-        border: 2px solid white;
-        border-radius: 8px;
-        margin: 0 auto;
-        height: 220px;
-        width: 220px;
-        aspect-ratio: 1;
-        background-color: #343a40;
-    }
-    
-    .employee-card:hover {
-        transform: translateY(-5px);
-        box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
-        border-color: var(--bs-primary);
-    }
-    
-    .employee-card .card-body {
-        display: flex;
-        flex-direction: column;
-        justify-content: center;
-        align-items: center;
-        padding: 1.5rem;
-        text-align: center;
-        height: 100%;
-    }
-    
-    .employee-card .employee-name {
-        font-size: 1.2rem;
-        margin-top: 0.8rem;
-        margin-bottom: 0;
-        font-weight: 500;
-        color: white;
-    }
-    
-    .employee-avatar {
-        width: 120px;
-        height: 120px;
-        border-radius: 50%;
-        background-color: #e9ecef;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border: 3px solid white;
-    }
-    
-    .employee-avatar .avatar-text {
-        font-size: 2.5rem;
-        font-weight: 500;
-        color: var(--bs-primary);
-    }
-    
-    .employee-avatar img {
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-        border-radius: 50%;
-    }
-    
     .time-display {
         font-size: 2rem;
         font-weight: 600;
@@ -81,21 +23,58 @@
         margin-top: 2rem;
     }
     
+    .dashboard-header {
+        background: linear-gradient(135deg, #0f172a, #1e40af);
+        border-radius: 10px;
+        margin-bottom: 2rem;
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        overflow: hidden;
+        border: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .refresh-button {
+        border-radius: 50%;
+        width: 48px;
+        height: 48px;
+        padding: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: all 0.3s ease;
+        box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+    }
+    
+    .refresh-button:hover {
+        transform: rotate(30deg);
+    }
+    
+    .selection-header {
+        margin-bottom: 1.5rem;
+        padding-bottom: 1rem;
+        border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    
+    .selection-title {
+        font-weight: 600;
+        color: #f8fafc;
+        margin: 0;
+    }
+    
     @media (max-width: 768px) {
-        .employee-card {
-            height: 180px;
-            width: 180px;
+        .dashboard-header {
             margin-bottom: 1rem;
         }
         
-        .employee-avatar {
-            width: 90px;
-            height: 90px;
+        .time-display {
+            font-size: 1.5rem;
         }
         
-        .employee-name {
+        .date-display {
             font-size: 1rem;
-            margin-top: 0.5rem;
+        }
+        
+        .selection-title {
+            font-size: 1.2rem;
         }
     }
 </style>
@@ -103,25 +82,27 @@
 
 {% block content %}
 <div class="container mt-4">
+    <!-- Cabecera del dashboard con hora y fecha -->
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card bg-primary text-white">
+            <div class="card dashboard-header">
                 <div class="card-body p-4">
-                    <h1 class="text-center mb-0">{{ checkpoint.name }}</h1>
-                    <p class="text-center mb-0">{{ checkpoint.location }}</p>
+                    <h1 class="text-center mb-0 text-white">{{ checkpoint.name }}</h1>
+                    <p class="text-center mb-0 text-white-50">{{ checkpoint.location }}</p>
                     <div class="text-center mt-3">
-                        <div class="date-display" id="currentDate"></div>
-                        <div class="time-display" id="currentTime"></div>
+                        <div class="date-display text-white-50" id="currentDate"></div>
+                        <div class="time-display text-white" id="currentTime"></div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
     
+    <!-- Mensajes de alerta -->
     {% with messages = get_flashed_messages(with_categories=true) %}
         {% if messages %}
             {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                <div class="alert alert-{{ category }} alert-dismissible fade show shadow-sm" role="alert">
                     {{ message }}
                     <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
                 </div>
@@ -129,38 +110,46 @@
         {% endif %}
     {% endwith %}
     
+    <!-- Sección de selección de empleados -->
     <div class="row">
         <div class="col-12">
-            <div class="d-flex justify-content-between align-items-center mb-4">
-                <h2 class="mb-0 text-center flex-grow-1">Seleccione su Nombre</h2>
-                <button type="button" id="refreshEmployees" class="btn btn-outline-primary">
-                    <i class="bi bi-arrow-clockwise"></i> Actualizar
+            <div class="selection-header d-flex justify-content-between align-items-center">
+                <h2 class="selection-title">Seleccione su Nombre</h2>
+                <button type="button" id="refreshEmployees" class="btn btn-outline-primary refresh-button">
+                    <i class="bi bi-arrow-clockwise"></i>
                 </button>
             </div>
             
-            <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3" id="employeesList">
-                {% for employee in employees %}
-                <div class="col">
-                    <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none">
-                        <div class="card employee-card">
-                            <div class="card-body">
-                                <div class="employee-avatar">
-                                    {% if employee.photo_path %}
-                                    <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="{{ employee.first_name }}">
-                                    {% else %}
-                                    <div class="avatar-text">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</div>
-                                    {% endif %}
+            <!-- Contenedor de tarjetas de empleados -->
+            <div class="employee-cards-container">
+                <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3" id="employeesList">
+                    {% for employee in employees %}
+                    <div class="col">
+                        <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none">
+                            <div class="employee-card">
+                                {% if employee.is_active %}
+                                <div class="status-indicator"></div>
+                                {% else %}
+                                <div class="status-indicator inactive"></div>
+                                {% endif %}
+                                <div class="card-body">
+                                    <div class="employee-avatar">
+                                        {% if employee.photo_path %}
+                                        <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="{{ employee.first_name }}">
+                                        {% else %}
+                                        <div class="avatar-text">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
                                 </div>
-                                <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
                             </div>
-                        </div>
-                    </a>
+                        </a>
+                    </div>
+                    {% endfor %}
                 </div>
-                {% endfor %}
             </div>
         </div>
     </div>
-
 </div>
 {% endblock %}
 
@@ -201,7 +190,7 @@
         if (refreshButton) {
             // Deshabilitar el botón durante la carga y mostrar un spinner
             refreshButton.disabled = true;
-            refreshButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Actualizando...';
+            refreshButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
         }
         
         // Realizar la petición AJAX con parámetro para evitar caché
@@ -227,7 +216,8 @@
                     
                     employeeCard.innerHTML = `
                         <a href="${pinUrl}" class="text-decoration-none">
-                            <div class="card employee-card">
+                            <div class="employee-card">
+                                <div class="status-indicator ${employee.is_active ? '' : 'inactive'}"></div>
                                 <div class="card-body">
                                     <div class="employee-avatar">
                                         <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
@@ -248,7 +238,7 @@
                 // Restaurar el botón
                 if (refreshButton) {
                     refreshButton.disabled = false;
-                    refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i> Actualizar';
+                    refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
                 }
             });
     }
