@@ -1078,19 +1078,13 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                 # Si hay cambios, aplicarlos y crear incidencias
                 if adjusted_checkin and adjusted_checkin != original_checkin:
                     pending_record.check_in_time = adjusted_checkin
-                    create_schedule_incident(
-                        pending_record, 
-                        CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
-                        f"Hora de entrada ajustada automáticamente de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')} para cumplir con configuración de horario"
-                    )
+                    # Marcar con R en lugar de crear incidencia
+                    pending_record.notes = (pending_record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
                     
                 if adjusted_checkout and adjusted_checkout != original_checkout:
                     pending_record.check_out_time = adjusted_checkout
-                    create_schedule_incident(
-                        pending_record, 
-                        CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
-                        f"Hora de salida ajustada automáticamente de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')} para cumplir con configuración de horario"
-                    )
+                    # Marcar con R en lugar de crear incidencia
+                    pending_record.notes = (pending_record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
                 
                 # Verificar si hay horas extra
                 duration = (pending_record.check_out_time - pending_record.check_in_time).total_seconds() / 3600
@@ -1280,19 +1274,13 @@ def record_checkout(id):
             # Si hay cambios, aplicarlos y crear incidencias
             if adjusted_checkin and adjusted_checkin != original_checkin:
                 record.check_in_time = adjusted_checkin
-                create_schedule_incident(
-                    record, 
-                    CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
-                    f"Hora de entrada ajustada automáticamente de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')} para cumplir con configuración de horario"
-                )
+                # Marcar con R en lugar de crear incidencia
+                record.notes = (record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
                 
             if adjusted_checkout and adjusted_checkout != original_checkout:
                 record.check_out_time = adjusted_checkout
-                create_schedule_incident(
-                    record, 
-                    CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
-                    f"Hora de salida ajustada automáticamente de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')} para cumplir con configuración de horario"
-                )
+                # Marcar con R en lugar de crear incidencia
+                record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
             
             # Verificar si hay horas extra
             duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
