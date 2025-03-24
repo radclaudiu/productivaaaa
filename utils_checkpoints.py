@@ -38,19 +38,14 @@ class CheckPointPDF(FPDF):
         # Restablecer color de texto
         self.set_text_color(0, 0, 0)
         
-        # Fecha de generación con color de texto corporativo
-        self.set_font('Arial', '', 9)
-        self.set_text_color(*self.primary_color)
-        self.cell(0, 10, f'Generado: {datetime.now().strftime("%d/%m/%Y")}', 0, 1, 'R')
-        
         # Línea de separación con color corporativo
         self.set_draw_color(*self.secondary_color)
         self.set_line_width(0.5)
-        self.line(10, 35, 200, 35)
+        self.line(10, 25, 200, 25)
         
         # Restablecer color de texto
         self.set_text_color(0, 0, 0)
-        self.ln(10)
+        self.ln(5)
         
     def footer(self):
         # Posición a 2 cm desde el final
@@ -115,7 +110,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         employees_records[employee_id]['records'].append(record)
     
     # Crear PDF
-    pdf = CheckPointPDF(title='Informe de Fichajes')
+    pdf = CheckPointPDF(title=f'Informe de Fichajes: {start_date.strftime("%d/%m/%Y")} - {end_date.strftime("%d/%m/%Y")}')
     pdf.set_auto_page_break(auto=True, margin=15)
     
     # Para cada empleado
@@ -288,11 +283,6 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
             
             pdf.ln()
             row_count += 1
-            
-        # Pie de página de la tabla con fecha del informe
-        pdf.set_font('Arial', 'I', 8)
-        pdf.set_text_color(*pdf.secondary_color)
-        pdf.cell(0, 6, f'Período del informe: {start_date.strftime("%d/%m/%Y")} al {end_date.strftime("%d/%m/%Y")}', 0, 1, 'R')
     
     # Crear un archivo temporal en disco
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
