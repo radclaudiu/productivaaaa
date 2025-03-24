@@ -190,6 +190,14 @@
                                 Si está activado, se ajustarán las horas extras según la configuración de cada empleado.
                             </div>
                         </div>
+                        
+                        <div class="form-check mb-3">
+                            {{ form.require_signature(class="form-check-input") }}
+                            {{ form.require_signature.label(class="form-check-label") }}
+                            <div class="form-text">
+                                Si está activado, se solicitará al empleado que firme digitalmente sus registros de fichaje.
+                            </div>
+                        </div>
                     </div>
                 </div>
                 

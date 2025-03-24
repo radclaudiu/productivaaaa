@@ -47,6 +47,7 @@ class CheckPoint(db.Model):
     # Configuración de los ajustes automáticos
     enforce_contract_hours = db.Column(db.Boolean, default=False)
     auto_adjust_overtime = db.Column(db.Boolean, default=False)
+    require_signature = db.Column(db.Boolean, default=True)  # Por defecto, se requiere firma
     
     # Fichajes realizados desde este punto
     check_ins = db.relationship('CheckPointRecord', back_populates='checkpoint', cascade='all, delete-orphan')
