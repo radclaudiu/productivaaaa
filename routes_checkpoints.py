@@ -6,7 +6,7 @@ from functools import wraps
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask import current_app, abort, send_file
 from flask_login import login_required, current_user
-from sqlalchemy import extract, func
+from sqlalchemy import extract, func, text
 from werkzeug.security import generate_password_hash, check_password_hash
 from werkzeug.utils import secure_filename
 
@@ -228,20 +228,32 @@ def index_company(company_id):
             week_stats = {}
             today = date.today()
             for i in range(7):
-                try:
-                    day = today - timedelta(days=i)
-                    count = db.session.query(CheckPointRecord)\
-                        .join(CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id)\
-                        .filter(
-                            CheckPoint.company_id == company_id,
-                            extract('day', CheckPointRecord.check_in_time) == day.day,
-                            extract('month', CheckPointRecord.check_in_time) == day.month,
-                            extract('year', CheckPointRecord.check_in_time) == day.year
-                        ).count()
-                    week_stats[day.strftime('%d/%m')] = count
-                except Exception as e:
-                    current_app.logger.error(f"Error al obtener estadísticas del día {day}: {e}")
-                    week_stats[day.strftime('%d/%m')] = 0
+                day = today - timedelta(days=i)
+                formatted_date = day.strftime('%d/%m')
+                # Usamos una sesión separada para cada consulta para evitar que errores afecten consultas posteriores
+                with db.engine.begin() as conn:
+                    try:
+                        # Usamos text() para evitar problemas con extract()
+                        count = conn.execute(
+                            text("""
+                                SELECT COUNT(*) FROM checkpoint_records
+                                JOIN checkpoints ON checkpoint_records.checkpoint_id = checkpoints.id
+                                WHERE checkpoints.company_id = :company_id
+                                AND EXTRACT(DAY FROM checkpoint_records.check_in_time) = :day
+                                AND EXTRACT(MONTH FROM checkpoint_records.check_in_time) = :month
+                                AND EXTRACT(YEAR FROM checkpoint_records.check_in_time) = :year
+                            """),
+                            {
+                                "company_id": company_id,
+                                "day": day.day,
+                                "month": day.month,
+                                "year": day.year
+                            }
+                        ).scalar()
+                        week_stats[formatted_date] = count
+                    except Exception as e:
+                        current_app.logger.error(f"Error al obtener estadísticas del día {formatted_date}: {e}")
+                        week_stats[formatted_date] = 0
         except Exception as e:
             current_app.logger.error(f"Error al obtener estadísticas semanales: {e}")
         
