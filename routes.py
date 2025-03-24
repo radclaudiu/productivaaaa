@@ -95,6 +95,11 @@ def register():
     form.companies.choices = [(c.id, c.name) for c in companies]
     
     if form.validate_on_submit():
+        # Validación adicional: solo el usuario "admin" puede crear usuarios con rol de administrador
+        if form.role.data == UserRole.ADMIN.value and current_user.username != 'admin':
+            flash('Solo el usuario "admin" puede crear usuarios con rol de administrador.', 'danger')
+            return render_template('register.html', title='Registrar Usuario', form=form)
+        
         user = User(
             username=form.username.data,
             email=form.email.data,
@@ -960,6 +965,18 @@ def edit_user(id):
         form.companies.data = [company.id for company in user.companies]
     
     if form.validate_on_submit():
+        # Validación adicional: solo el usuario "admin" puede asignar el rol de administrador
+        # o cambiar el rol del usuario "admin"
+        if (form.role.data == UserRole.ADMIN.value and current_user.username != 'admin') or \
+           (user.username == 'admin' and current_user.username != 'admin'):
+            flash('Solo el usuario "admin" puede asignar el rol de administrador o modificar al usuario "admin".', 'danger')
+            return render_template('user_form.html', title=f'Editar Usuario {user.username}', form=form, user=user)
+        
+        # Protección adicional: Si el usuario a editar es "admin", no permitir cambios en su rol
+        if user.username == 'admin' and form.role.data != UserRole.ADMIN.value:
+            flash('No se puede cambiar el rol del usuario "admin".', 'danger')
+            return render_template('user_form.html', title=f'Editar Usuario {user.username}', form=form, user=user)
+        
         user.username = form.username.data
         user.email = form.email.data
         user.first_name = form.first_name.data

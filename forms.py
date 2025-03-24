@@ -27,12 +27,26 @@ class RegistrationForm(FlaskForm):
     password2 = PasswordField('Repetir Contraseña', validators=[DataRequired(), EqualTo('password')])
     first_name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
     last_name = StringField('Apellidos', validators=[DataRequired(), Length(max=64)])
-    role = SelectField('Rol', choices=[(role.value, role.name.capitalize()) for role in UserRole])
+    role = SelectField('Rol', choices=[])  # Se llenará dinámicamente en __init__
     # Nuevo campo para selección múltiple de empresas
     companies = MultiCheckboxField('Empresas', coerce=int, 
                                  description='Selecciona una o más empresas para este usuario')
     submit = SubmitField('Registrar')
     
+    def __init__(self, *args, **kwargs):
+        super(RegistrationForm, self).__init__(*args, **kwargs)
+        # Solo permitimos asignar el rol ADMIN si el usuario actual es "admin"
+        from flask_login import current_user
+        
+        # Configurar las opciones de rol disponibles
+        if current_user.is_authenticated and current_user.username == 'admin':
+            # El usuario admin puede asignar cualquier rol
+            self.role.choices = [(role.value, role.name.capitalize()) for role in UserRole]
+        else:
+            # Otros usuarios solo pueden asignar roles que no sean ADMIN
+            self.role.choices = [(role.value, role.name.capitalize()) 
+                                for role in UserRole if role != UserRole.ADMIN]
+        
     def validate_username(self, username):
         user = User.query.filter_by(username=username.data).first()
         if user is not None:
@@ -42,13 +56,20 @@ class RegistrationForm(FlaskForm):
         user = User.query.filter_by(email=email.data).first()
         if user is not None:
             raise ValidationError('Por favor, usa un email diferente.')
+            
+    def validate_role(self, role):
+        from flask_login import current_user
+        
+        # Validar que solo el usuario "admin" pueda asignar el rol ADMIN
+        if role.data == UserRole.ADMIN.value and (not current_user.is_authenticated or current_user.username != 'admin'):
+            raise ValidationError('Solo el usuario "admin" puede asignar el rol de administrador.')
 
 class UserUpdateForm(FlaskForm):
     username = StringField('Usuario', validators=[DataRequired(), Length(min=3, max=64)])
     email = EmailField('Email', validators=[DataRequired(), Email()])
     first_name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
     last_name = StringField('Apellidos', validators=[DataRequired(), Length(max=64)])
-    role = SelectField('Rol', choices=[(role.value, role.name.capitalize()) for role in UserRole])
+    role = SelectField('Rol', choices=[])  # Se llenará dinámicamente en __init__
     # Actualizado para usar selección múltiple de empresas
     companies = MultiCheckboxField('Empresas', coerce=int, 
                                  description='Selecciona una o más empresas para este usuario')
@@ -59,6 +80,18 @@ class UserUpdateForm(FlaskForm):
         super(UserUpdateForm, self).__init__(*args, **kwargs)
         self.original_username = original_username
         self.original_email = original_email
+        
+        # Solo permitimos asignar el rol ADMIN si el usuario actual es "admin"
+        from flask_login import current_user
+        
+        # Configurar las opciones de rol disponibles
+        if current_user.is_authenticated and current_user.username == 'admin':
+            # El usuario admin puede asignar cualquier rol
+            self.role.choices = [(role.value, role.name.capitalize()) for role in UserRole]
+        else:
+            # Otros usuarios solo pueden asignar roles que no sean ADMIN
+            self.role.choices = [(role.value, role.name.capitalize()) 
+                               for role in UserRole if role != UserRole.ADMIN]
         
     def validate_username(self, username):
         if username.data != self.original_username:
@@ -71,6 +104,13 @@ class UserUpdateForm(FlaskForm):
             user = User.query.filter_by(email=email.data).first()
             if user is not None:
                 raise ValidationError('Por favor, usa un email diferente.')
+                
+    def validate_role(self, role):
+        from flask_login import current_user
+        
+        # Validar que solo el usuario "admin" pueda asignar el rol ADMIN
+        if role.data == UserRole.ADMIN.value and (not current_user.is_authenticated or current_user.username != 'admin'):
+            raise ValidationError('Solo el usuario "admin" puede asignar el rol de administrador.')
 
 class PasswordChangeForm(FlaskForm):
     current_password = PasswordField('Contraseña Actual', validators=[DataRequired()])
