@@ -839,12 +839,15 @@ def resolve_incident(id):
     return redirect(next_page)
 
 
-@checkpoints_bp.route('/rrrrrr', methods=['GET'])
+@checkpoints_bp.route('/company/<int:company_id>/rrrrrr', methods=['GET'])
 @login_required
 @admin_required
-def view_original_records():
-    """Página secreta para ver los registros originales antes de ajustes"""
+def view_original_records(company_id):
+    """Página secreta para ver los registros originales antes de ajustes de una empresa específica"""
     from models_checkpoints import CheckPointOriginalRecord
+    
+    # Verificar que la empresa existe
+    company = Company.query.get_or_404(company_id)
     
     # Esta página es solo para administradores
     page = request.args.get('page', 1, type=int)
@@ -852,7 +855,11 @@ def view_original_records():
     end_date = request.args.get('end_date')
     employee_id = request.args.get('employee_id', type=int)
     
-    # Construir la consulta base
+    # Obtener los IDs de los empleados de esta empresa
+    employee_ids = db.session.query(Employee.id).filter_by(company_id=company_id).all()
+    employee_ids = [e[0] for e in employee_ids]
+    
+    # Construir la consulta base con filtro de empresa
     query = db.session.query(
         CheckPointOriginalRecord, 
         CheckPointRecord, 
@@ -863,6 +870,8 @@ def view_original_records():
     ).join(
         Employee,
         CheckPointRecord.employee_id == Employee.id
+    ).filter(
+        Employee.company_id == company_id
     )
     
     # Aplicar filtros si los hay
@@ -888,36 +897,49 @@ def view_original_records():
         CheckPointOriginalRecord.adjusted_at.desc()
     ).paginate(page=page, per_page=20)
     
-    # Obtener la lista de empleados para el filtro
-    employees = Employee.query.filter_by(is_active=True).order_by(Employee.first_name).all()
+    # Obtener la lista de empleados para el filtro (solo de esta empresa)
+    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
     
     # Si se solicita exportación
     export_format = request.args.get('export')
     if export_format == 'pdf':
-        return export_original_records_pdf(query.all(), start_date, end_date)
+        return export_original_records_pdf(query.all(), start_date, end_date, company)
     
     return render_template(
         'checkpoints/original_records.html',
         original_records=original_records,
         employees=employees,
+        company=company,
+        company_id=company_id,
         filters={
             'start_date': start_date.strftime('%Y-%m-%d') if isinstance(start_date, date) else None,
             'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
             'employee_id': employee_id
         },
-        title="Registros Originales (Antes de Ajustes)"
+        title=f"Registros Originales de {company.name} (Antes de Ajustes)"
     )
 
-@checkpoints_bp.route('/rrrrrr/edit/<int:id>', methods=['GET', 'POST'])
+@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def edit_original_record(id):
+def edit_original_record(company_id, id):
     """Edita un registro original"""
     from models_checkpoints import CheckPointOriginalRecord
+    from flask_wtf import FlaskForm
+    from wtforms import StringField, TimeField, TextAreaField, SubmitField
+    from wtforms.validators import DataRequired, Optional, Length
+    
+    # Verificar que la empresa existe
+    company = Company.query.get_or_404(company_id)
     
     # Obtener el registro original
     original_record = CheckPointOriginalRecord.query.get_or_404(id)
     record = CheckPointRecord.query.get_or_404(original_record.record_id)
+    
+    # Verificar que el registro pertenece a esta empresa
+    if record.employee.company_id != company_id:
+        flash('Registro no encontrado para esta empresa.', 'warning')
+        return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
     
     # Crear un formulario para editar el registro
     class EditOriginalRecordForm(FlaskForm):
@@ -962,7 +984,7 @@ def edit_original_record(id):
             # Guardar cambios
             db.session.commit()
             flash('Registro original actualizado con éxito.', 'success')
-            return redirect(url_for('checkpoints.view_original_records'))
+            return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
             
         except Exception as e:
             db.session.rollback()
@@ -971,18 +993,28 @@ def edit_original_record(id):
     return render_template('checkpoints/edit_original_record.html', 
                           form=form, 
                           original_record=original_record,
-                          record=record)
+                          record=record,
+                          company=company,
+                          company_id=company_id)
 
-@checkpoints_bp.route('/rrrrrr/restore/<int:id>', methods=['GET'])
+@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/restore/<int:id>', methods=['GET'])
 @login_required
 @admin_required
-def restore_original_record(id):
+def restore_original_record(company_id, id):
     """Restaura los valores originales en el registro actual"""
     from models_checkpoints import CheckPointOriginalRecord
+    
+    # Verificar que la empresa existe
+    company = Company.query.get_or_404(company_id)
     
     # Obtener el registro original y el registro actual
     original_record = CheckPointOriginalRecord.query.get_or_404(id)
     record = CheckPointRecord.query.get_or_404(original_record.record_id)
+    
+    # Verificar que el registro pertenece a esta empresa
+    if record.employee.company_id != company_id:
+        flash('Registro no encontrado para esta empresa.', 'warning')
+        return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
     
     try:
         # Restaurar valores originales
@@ -1002,17 +1034,26 @@ def restore_original_record(id):
         db.session.rollback()
         flash(f'Error al restaurar el registro: {str(e)}', 'danger')
     
-    return redirect(url_for('checkpoints.view_original_records'))
+    return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
 
-@checkpoints_bp.route('/rrrrrr/delete/<int:id>', methods=['GET'])
+@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/delete/<int:id>', methods=['GET'])
 @login_required
 @admin_required
-def delete_original_record(id):
+def delete_original_record(company_id, id):
     """Elimina un registro original"""
     from models_checkpoints import CheckPointOriginalRecord
     
+    # Verificar que la empresa existe
+    company = Company.query.get_or_404(company_id)
+    
     # Obtener el registro original
     original_record = CheckPointOriginalRecord.query.get_or_404(id)
+    record = CheckPointRecord.query.get_or_404(original_record.record_id)
+    
+    # Verificar que el registro pertenece a esta empresa
+    if record.employee.company_id != company_id:
+        flash('Registro no encontrado para esta empresa.', 'warning')
+        return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
     
     try:
         # Eliminar el registro
@@ -1023,21 +1064,24 @@ def delete_original_record(id):
         db.session.rollback()
         flash(f'Error al eliminar el registro: {str(e)}', 'danger')
     
-    return redirect(url_for('checkpoints.view_original_records'))
+    return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
 
-@checkpoints_bp.route('/rrrrrr/export', methods=['GET'])
+@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/export', methods=['GET'])
 @login_required
 @admin_required
-def export_original_records():
+def export_original_records(company_id):
     """Exporta los registros originales a PDF"""
     from models_checkpoints import CheckPointOriginalRecord
+    
+    # Verificar que la empresa existe
+    company = Company.query.get_or_404(company_id)
     
     # Obtener parámetros de filtro
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     employee_id = request.args.get('employee_id', type=int)
     
-    # Construir la consulta
+    # Construir la consulta con filtro de empresa
     query = db.session.query(
         CheckPointOriginalRecord, 
         CheckPointRecord, 
@@ -1048,6 +1092,8 @@ def export_original_records():
     ).join(
         Employee,
         CheckPointRecord.employee_id == Employee.id
+    ).filter(
+        Employee.company_id == company_id
     )
     
     # Aplicar filtros
@@ -1077,12 +1123,12 @@ def export_original_records():
     
     if not records:
         flash('No se encontraron registros para los filtros seleccionados', 'warning')
-        return redirect(url_for('checkpoints.view_original_records'))
+        return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
     
     # Generar PDF
-    return export_original_records_pdf(records, start_date, end_date)
+    return export_original_records_pdf(records, start_date, end_date, company)
 
-def export_original_records_pdf(records, start_date=None, end_date=None):
+def export_original_records_pdf(records, start_date=None, end_date=None, company=None):
     """Genera un PDF con los registros originales"""
     from fpdf import FPDF
     from tempfile import NamedTemporaryFile
@@ -1097,7 +1143,10 @@ def export_original_records_pdf(records, start_date=None, end_date=None):
         def header(self):
             # Logo y título
             self.set_font('Arial', 'B', 15)
-            self.cell(0, 10, 'Registro de Ajustes de Fichajes', 0, 1, 'C')
+            title = 'Registro de Ajustes de Fichajes'
+            if company:
+                title = f'Registro de Ajustes de Fichajes - {company.name}'
+            self.cell(0, 10, title, 0, 1, 'C')
             
             # Período
             if start_date and end_date:
