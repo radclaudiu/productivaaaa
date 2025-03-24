@@ -860,10 +860,10 @@ def checkpoint_dashboard():
     checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
     
     # Obtener todos los empleados de la empresa asociada al punto de fichaje
-    # Esto obtendrá siempre los datos más actualizados de la base de datos
+    # Mostramos todos los empleados sin filtrar por is_active para mantener consistencia
+    # con la vista de empleados en la sección de gestión de empresas
     employees = Employee.query.filter_by(
-        company_id=checkpoint.company_id,
-        is_active=True
+        company_id=checkpoint.company_id
     ).order_by(Employee.first_name, Employee.last_name).all()
     
     return render_template('checkpoints/dashboard.html', 
@@ -1369,9 +1369,10 @@ def get_company_employees():
     if not company_id:
         return jsonify([])
     
+    # Obtenemos todos los empleados de la empresa, sin filtrar por is_active
+    # para asegurar que coincida con la vista de empleados
     employees = Employee.query.filter_by(
-        company_id=company_id,
-        is_active=True
+        company_id=company_id
     ).order_by(Employee.first_name, Employee.last_name).all()
     
     employees_data = []
