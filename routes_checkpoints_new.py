@@ -21,8 +21,8 @@ from utils import log_activity, slugify
 from utils_checkpoints import generate_pdf_report, draw_signature
 
 
-# Crear un Blueprint para las rutas de checkpoints
-checkpoints_bp = Blueprint('checkpoints', __name__, url_prefix='/fichajes')
+# Crear un Blueprint para las rutas de checkpoints con nombres slugificados
+checkpoints_bp = Blueprint('checkpoints_slug', __name__, url_prefix='/fichajes')
 
 
 # Decoradores personalizados
@@ -54,7 +54,7 @@ def checkpoint_required(f):
     def decorated_function(*args, **kwargs):
         if 'checkpoint_id' not in session:
             flash('Debe iniciar sesión como punto de fichaje.', 'warning')
-            return redirect(url_for('checkpoints.login'))
+            return redirect(url_for('checkpoints_slug.login'))
         return f(*args, **kwargs)
     return decorated_function
 
@@ -182,7 +182,7 @@ def edit_original_record(slug, id):
     # Verificar que el registro pertenece a esta empresa
     if record.employee.company_id != company_id:
         flash('Registro no encontrado para esta empresa.', 'warning')
-        return redirect(url_for('checkpoints.view_original_records', slug=slug))
+        return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
     
     # Crear un formulario para editar el registro
     class EditOriginalRecordForm(FlaskForm):
@@ -227,7 +227,7 @@ def edit_original_record(slug, id):
             # Guardar cambios
             db.session.commit()
             flash('Registro original actualizado con éxito.', 'success')
-            return redirect(url_for('checkpoints.view_original_records', slug=slug))
+            return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
             
         except Exception as e:
             db.session.rollback()
@@ -268,7 +268,7 @@ def restore_original_record(slug, id):
     # Verificar que el registro pertenece a esta empresa
     if record.employee.company_id != company_id:
         flash('Registro no encontrado para esta empresa.', 'warning')
-        return redirect(url_for('checkpoints.view_original_records', slug=slug))
+        return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
     
     try:
         # Restaurar valores originales
@@ -288,7 +288,7 @@ def restore_original_record(slug, id):
         db.session.rollback()
         flash(f'Error al restaurar el registro: {str(e)}', 'danger')
     
-    return redirect(url_for('checkpoints.view_original_records', slug=slug))
+    return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
 
 @checkpoints_bp.route('/company/<slug>/rrrrrr/delete/<int:id>', methods=['GET'])
 @login_required
@@ -318,7 +318,7 @@ def delete_original_record(slug, id):
     # Verificar que el registro pertenece a esta empresa
     if record.employee.company_id != company_id:
         flash('Registro no encontrado para esta empresa.', 'warning')
-        return redirect(url_for('checkpoints.view_original_records', slug=slug))
+        return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
     
     try:
         # Eliminar el registro
@@ -329,7 +329,7 @@ def delete_original_record(slug, id):
         db.session.rollback()
         flash(f'Error al eliminar el registro: {str(e)}', 'danger')
     
-    return redirect(url_for('checkpoints.view_original_records', slug=slug))
+    return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
 
 @checkpoints_bp.route('/company/<slug>/rrrrrr/export', methods=['GET'])
 @login_required
@@ -399,7 +399,7 @@ def export_original_records(slug):
     
     if not records:
         flash('No se encontraron registros para los filtros seleccionados', 'warning')
-        return redirect(url_for('checkpoints.view_original_records', slug=slug))
+        return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
     
     # Generar PDF
     return export_original_records_pdf(records, start_date, end_date, company)
