@@ -49,7 +49,7 @@
                             
                             <!-- Hidden real input -->
                             <div class="pin-input-container d-none">
-                                {{ form.pin(class="form-control", id="pinInput", autocomplete="off") }}
+                                {{ form.pin(class="form-control", id="pinInput", autocomplete="off", readonly="readonly") }}
                                 
                                 {% for error in form.pin.errors %}
                                 <div class="invalid-feedback d-block mb-3">{{ error }}</div>
@@ -270,6 +270,11 @@
             } else if (e.key === 'Enter' && pinInput.value.length === 4) {
                 submitBtn.form.submit();
             }
+        });
+        
+        // Prevenir el enfoque de input cuando se hace clic en el input
+        pinInput.addEventListener('focus', function(e) {
+            this.blur();
         });
         
         // Inicializar

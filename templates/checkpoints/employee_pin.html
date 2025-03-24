@@ -51,7 +51,7 @@
                                     <div id="pin-display" class="pin-display">****</div>
                                 </div>
                                 
-                                {{ form.pin(class="form-control visually-hidden", id="pin-input", maxlength="4", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
+                                {{ form.pin(class="form-control visually-hidden", id="pin-input", maxlength="4", autocomplete="off", readonly="readonly") }}
                                 
                                 <div class="pin-pad">
                                     <div class="row g-2 mb-2">
@@ -134,6 +134,23 @@
 
 {% block styles %}
 <style>
+    /* Evitar que aparezca el teclado en dispositivos móviles */
+    body {
+        touch-action: manipulation;
+        overscroll-behavior: none;
+    }
+
+    /* Deshabilitar zoom en elementos de entrada (iPhone) */
+    input[type="text"],
+    input[type="number"],
+    input[type="password"] {
+        -webkit-text-size-adjust: 100%;
+        -webkit-touch-callout: none;
+        -webkit-user-select: none;
+        user-select: none;
+        font-size: 16px; /* Esto evita que iOS haga zoom */
+    }
+    
     .pin-display {
         font-size: 2rem;
         letter-spacing: 10px;
@@ -152,6 +169,7 @@
         font-size: 1.5rem;
         padding: 15px;
         border-radius: 10px;
+        touch-action: manipulation;
     }
 </style>
 {% endblock %}
@@ -216,8 +234,13 @@
         // También permitir entrada por teclado
         pinInput.addEventListener('input', updatePinDisplay);
         
-        // Enfocar automáticamente el campo de PIN
-        pinInput.focus();
+        // No enfocar automáticamente el campo de PIN para evitar teclado virtual
+        // pinInput.focus();
+        
+        // Prevenir el enfoque de input cuando se hace clic en el input
+        pinInput.addEventListener('focus', function(e) {
+            this.blur();
+        });
         
         // Al inicio, desactivar el botón de verificar hasta que se tenga un PIN completo
         document.getElementById('validate-pin').disabled = true;
