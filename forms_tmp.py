@@ -60,7 +60,7 @@ class RegistrationForm(FlaskForm):
     def validate_role(self, role):
         from flask_login import current_user
         
-        # No permitir crear usuarios con rol "admin" excepto por el propio admin
+        # Validar que solo el usuario "admin" pueda asignar el rol ADMIN
         if role.data == UserRole.ADMIN.value and (not current_user.is_authenticated or current_user.username != 'admin'):
             raise ValidationError('Solo el usuario "admin" puede asignar el rol de administrador.')
 
@@ -108,16 +108,10 @@ class UserUpdateForm(FlaskForm):
     def validate_role(self, role):
         from flask_login import current_user
         
-        # Proteger cambio de rol para el usuario "admin"
-        if self.original_username == 'admin':
-            # No permitir cambiar el rol del usuario "admin" bajo ninguna circunstancia
-            if role.data != UserRole.ADMIN.value:
-                raise ValidationError('No se puede cambiar el rol del usuario "admin".')
-            return
-
-        # Validar que solo el usuario "admin" pueda asignar el rol ADMIN a otros usuarios
+        # Validar que solo el usuario "admin" pueda asignar el rol ADMIN
         if role.data == UserRole.ADMIN.value and (not current_user.is_authenticated or current_user.username != 'admin'):
             raise ValidationError('Solo el usuario "admin" puede asignar el rol de administrador.')
+
 class PasswordChangeForm(FlaskForm):
     current_password = PasswordField('Contraseña Actual', validators=[DataRequired()])
     new_password = PasswordField('Nueva Contraseña', validators=[DataRequired(), Length(min=8)])
