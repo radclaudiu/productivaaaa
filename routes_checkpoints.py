@@ -341,7 +341,8 @@ def create_checkpoint():
             company_id=form.company_id.data,
             auto_checkout_time=form.auto_checkout_time.data,
             enforce_contract_hours=form.enforce_contract_hours.data,
-            auto_adjust_overtime=form.auto_adjust_overtime.data
+            auto_adjust_overtime=form.auto_adjust_overtime.data,
+            require_signature=form.require_signature.data
         )
         
         if form.password.data:
@@ -400,6 +401,7 @@ def edit_checkpoint(id):
         checkpoint.auto_checkout_time = form.auto_checkout_time.data
         checkpoint.enforce_contract_hours = form.enforce_contract_hours.data
         checkpoint.auto_adjust_overtime = form.auto_adjust_overtime.data
+        checkpoint.require_signature = form.require_signature.data
         
         if form.password.data:
             checkpoint.set_password(form.password.data)

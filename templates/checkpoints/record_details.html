@@ -81,7 +81,7 @@
                         </form>
                     {% endif %}
                     
-                    {% if record.check_out_time and not record.has_signature %}
+                    {% if record.check_out_time and not record.has_signature and checkpoint.require_signature %}
                         <div class="d-grid gap-2 mt-4">
                             <a href="{{ url_for('checkpoints.checkpoint_record_signature', id=record.id) }}" class="btn btn-primary btn-lg">
                                 <i class="bi bi-pen"></i> Firmar Registro

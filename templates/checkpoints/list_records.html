@@ -165,7 +165,7 @@
                                         <a href="{{ url_for('checkpoints.adjust_record', id=record.id) }}" class="btn btn-outline-secondary">
                                             <i class="fas fa-edit"></i>
                                         </a>
-                                        {% if not record.has_signature %}
+                                        {% if not record.has_signature and checkpoint.require_signature %}
                                         <a href="{{ url_for('checkpoints.record_signature', id=record.id) }}" class="btn btn-outline-info">
                                             <i class="fas fa-signature"></i>
                                         </a>
