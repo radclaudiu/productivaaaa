@@ -4,6 +4,8 @@ import io
 import tempfile
 import zipfile
 import json
+import re
+import unicodedata
 from datetime import datetime
 from werkzeug.utils import secure_filename
 from flask import current_app, flash, request, send_file
@@ -493,6 +495,19 @@ def create_employee_summary_pdf(employee):
         print(f"Error creating employee PDF: {str(e)}")
         return None
 
+
+def slugify(text):
+    """
+    Convierte un texto a formato slug (URL amigable)
+    Elimina caracteres especiales, espacios y acentos
+    """
+    # Normalizar texto (eliminar acentos)
+    text = unicodedata.normalize('NFKD', text).encode('ASCII', 'ignore').decode('utf-8')
+    # Convertir a minúsculas y eliminar caracteres no alfanuméricos
+    text = re.sub(r'[^\w\s-]', '', text.lower())
+    # Reemplazar espacios con guiones
+    text = re.sub(r'[-\s]+', '-', text).strip('-_')
+    return text
 
 def get_dashboard_stats():
     """Get statistics for dashboard (optimizado)."""

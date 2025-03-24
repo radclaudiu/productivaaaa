@@ -113,10 +113,16 @@ class Company(db.Model):
     def __repr__(self):
         return f'<Company {self.name}>'
         
+    def get_slug(self):
+        """Obtiene el slug (URL amigable) del nombre de la empresa"""
+        from utils import slugify
+        return slugify(self.name)
+        
     def to_dict(self):
         return {
             'id': self.id,
             'name': self.name,
+            'slug': self.get_slug(),
             'address': self.address,
             'city': self.city,
             'postal_code': self.postal_code,
