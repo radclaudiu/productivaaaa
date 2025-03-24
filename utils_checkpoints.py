@@ -15,30 +15,58 @@ class CheckPointPDF(FPDF):
         self.set_title(title)
         self.set_author('Sistema de Fichajes')
         
+        # Colores corporativos
+        self.primary_color = (31, 79, 121)  # Azul corporativo oscuro
+        self.secondary_color = (82, 125, 162)  # Azul corporativo medio
+        self.accent_color = (236, 240, 245)  # Azul muy claro para fondos
+        
     def header(self):
+        # Rectángulo superior de color
+        self.set_fill_color(*self.primary_color)
+        self.rect(0, 0, 210, 20, 'F')
+        
         # Logo (si existe)
         logo_path = os.path.join(os.getcwd(), 'static', 'img', 'logo.png')
         if os.path.exists(logo_path):
-            self.image(logo_path, 10, 8, 33)
-            
-        # Título
+            self.image(logo_path, 10, 3, 15)
+        
+        # Título con texto blanco
         self.set_font('Arial', 'B', 16)
-        self.cell(0, 10, self.title, 0, 1, 'C')
+        self.set_text_color(255, 255, 255)
+        self.cell(0, 15, self.title, 0, 1, 'C')
         
-        # Fecha de generación
-        self.set_font('Arial', '', 10)
-        self.cell(0, 10, f'Generado: {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 1, 'R')
+        # Restablecer color de texto
+        self.set_text_color(0, 0, 0)
         
-        # Línea de separación
-        self.line(10, 30, 200, 30)
+        # Fecha de generación con color de texto corporativo
+        self.set_font('Arial', '', 9)
+        self.set_text_color(*self.primary_color)
+        self.cell(0, 10, f'Generado: {datetime.now().strftime("%d/%m/%Y")}', 0, 1, 'R')
+        
+        # Línea de separación con color corporativo
+        self.set_draw_color(*self.secondary_color)
+        self.set_line_width(0.5)
+        self.line(10, 35, 200, 35)
+        
+        # Restablecer color de texto
+        self.set_text_color(0, 0, 0)
         self.ln(10)
         
     def footer(self):
-        # Posición a 1.5 cm desde el final
-        self.set_y(-15)
-        # Fuente Arial italic 8
-        self.set_font('Arial', 'I', 8)
-        # Número de página centrado
+        # Posición a 2 cm desde el final
+        self.set_y(-20)
+        
+        # Línea de separación con color corporativo
+        self.set_draw_color(*self.secondary_color)
+        self.line(10, self.get_y(), 200, self.get_y())
+        
+        # Rectángulo inferior de color
+        self.set_fill_color(*self.primary_color)
+        self.rect(0, self.h - 12, 210, 12, 'F')
+        
+        # Número de página con texto blanco
+        self.set_font('Arial', 'B', 9)
+        self.set_text_color(255, 255, 255)
         self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
 
 
@@ -99,40 +127,102 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         # Añadir una nueva página para cada empleado
         pdf.add_page()
         
-        # Información del empleado (izquierda)
+        # Crear fondos de color para los bloques de información
+        # Bloque empleado (izquierda)
+        pdf.set_fill_color(*pdf.accent_color)
+        pdf.rect(10, pdf.get_y(), 90, 30, 'F')
+        
+        # Bloque empresa (derecha)
+        pdf.rect(110, pdf.get_y(), 90, 30, 'F')
+        
+        # Líneas de contorno con color corporativo
+        pdf.set_draw_color(*pdf.secondary_color)
+        pdf.rect(10, pdf.get_y(), 90, 30, 'D')
+        pdf.rect(110, pdf.get_y(), 90, 30, 'D')
+        
+        initial_y = pdf.get_y()
+        
+        # Títulos con fondo de color primario
+        pdf.set_fill_color(*pdf.secondary_color)
+        pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', 10)
-        pdf.cell(95, 6, 'DATOS DEL EMPLEADO:', 0, 0)
         
-        # Información de la empresa (derecha)
-        pdf.cell(95, 6, 'DATOS DE LA EMPRESA:', 0, 1, 'R')
+        # Título empleado
+        pdf.rect(10, pdf.get_y(), 90, 6, 'F')
+        pdf.set_xy(10, pdf.get_y())
+        pdf.cell(90, 6, 'DATOS DEL EMPLEADO', 0, 0, 'C')
         
-        # Datos del empleado
-        pdf.set_font('Arial', '', 10)
-        pdf.cell(95, 6, f"Nombre: {employee.first_name} {employee.last_name}", 0, 0)
+        # Título empresa
+        pdf.rect(110, pdf.get_y(), 90, 6, 'F')
+        pdf.set_xy(110, pdf.get_y())
+        pdf.cell(90, 6, 'DATOS DE LA EMPRESA', 0, 1, 'C')
         
-        # Datos de la empresa
-        pdf.cell(95, 6, f"Nombre: {company.name}", 0, 1, 'R')
+        # Restaurar color de texto
+        pdf.set_text_color(0, 0, 0)
         
-        # DNI empleado
-        pdf.cell(95, 6, f"DNI/NIE: {employee.dni}", 0, 0)
+        # Etiquetas en negrita
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_xy(12, pdf.get_y() + 2)
+        pdf.cell(25, 5, 'Nombre:', 0, 0)
         
-        # CIF empresa
-        pdf.cell(95, 6, f"CIF: {company.tax_id}", 0, 1, 'R')
+        pdf.set_xy(112, pdf.get_y())
+        pdf.cell(25, 5, 'Nombre:', 0, 1)
         
-        # Puesto empleado (para completar info)
-        pdf.cell(95, 6, f"Puesto: {employee.position or '-'}", 0, 0)
+        # Datos en texto normal
+        pdf.set_font('Arial', '', 9)
+        pdf.set_xy(37, pdf.get_y() - 5)
+        pdf.cell(60, 5, f"{employee.first_name} {employee.last_name}", 0, 0)
         
-        # Dirección empresa
+        pdf.set_xy(137, pdf.get_y())
+        pdf.cell(60, 5, f"{company.name}", 0, 1)
+        
+        # DNI
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_xy(12, pdf.get_y() + 2)
+        pdf.cell(25, 5, 'DNI/NIE:', 0, 0)
+        
+        # CIF
+        pdf.set_xy(112, pdf.get_y())
+        pdf.cell(25, 5, 'CIF:', 0, 1)
+        
+        pdf.set_font('Arial', '', 9)
+        pdf.set_xy(37, pdf.get_y() - 5)
+        pdf.cell(60, 5, f"{employee.dni}", 0, 0)
+        
+        pdf.set_xy(137, pdf.get_y())
+        pdf.cell(60, 5, f"{company.tax_id}", 0, 1)
+        
+        # Puesto
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_xy(12, pdf.get_y() + 2)
+        pdf.cell(25, 5, 'Puesto:', 0, 0)
+        
+        # Dirección
+        pdf.set_xy(112, pdf.get_y())
+        pdf.cell(25, 5, 'Dirección:', 0, 1)
+        
+        pdf.set_font('Arial', '', 9)
+        pdf.set_xy(37, pdf.get_y() - 5)
+        pdf.cell(60, 5, f"{employee.position or '-'}", 0, 0)
+        
         empresa_direccion = f"{company.address or ''}, {company.city or ''}"
         if empresa_direccion.strip() == ',':
             empresa_direccion = '-'
-        pdf.cell(95, 6, f"Dirección: {empresa_direccion}", 0, 1, 'R')
+        pdf.set_xy(137, pdf.get_y())
+        pdf.cell(60, 5, empresa_direccion, 0, 1)
         
-        pdf.ln(5)  # Espacio antes de la tabla
+        # Asegurar que avanzamos correctamente después de los bloques
+        pdf.set_y(initial_y + 35)  # Espacio antes de la tabla
         
-        # Título de la tabla
+        # Título de la tabla con fondo corporativo
+        pdf.set_fill_color(*pdf.primary_color)
+        pdf.set_text_color(255, 255, 255)
         pdf.set_font('Arial', 'B', 12)
+        pdf.rect(10, pdf.get_y(), 190, 10, 'F')
         pdf.cell(0, 10, 'REGISTROS DE FICHAJE', 0, 1, 'C')
+        
+        # Restaurar color de texto
+        pdf.set_text_color(0, 0, 0)
         
         # Tabla de registros
         pdf.set_font('Arial', 'B', 10)
@@ -141,27 +231,41 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         col_widths = [35, 30, 30, 30, 40]
         header = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Firma']
         
-        # Dibujar cabecera
-        pdf.set_fill_color(200, 200, 200)
+        # Dibujar cabecera con color corporativo
+        pdf.set_fill_color(*pdf.secondary_color)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_draw_color(*pdf.primary_color)
+        pdf.set_line_width(0.3)
+        
         for i, col in enumerate(header):
             pdf.cell(col_widths[i], 10, col, 1, 0, 'C', True)
         pdf.ln()
         
-        # Dibujar filas
+        # Restaurar color de texto para las filas
+        pdf.set_text_color(0, 0, 0)
         pdf.set_font('Arial', '', 10)
         
+        # Color alternado para las filas (efecto cebra)
+        row_count = 0
+        
         for record in records:
+            # Cambiar color de fondo según fila par/impar
+            if row_count % 2 == 0:
+                pdf.set_fill_color(255, 255, 255)  # Blanco
+            else:
+                pdf.set_fill_color(*pdf.accent_color)  # Color claro
+            
             # Fecha
-            pdf.cell(col_widths[0], 10, record.check_in_time.strftime('%d/%m/%Y'), 1, 0, 'C')
+            pdf.cell(col_widths[0], 10, record.check_in_time.strftime('%d/%m/%Y'), 1, 0, 'C', True)
             
             # Hora entrada
-            pdf.cell(col_widths[1], 10, record.check_in_time.strftime('%H:%M'), 1, 0, 'C')
+            pdf.cell(col_widths[1], 10, record.check_in_time.strftime('%H:%M'), 1, 0, 'C', True)
             
             # Hora salida
             if record.check_out_time:
-                pdf.cell(col_widths[2], 10, record.check_out_time.strftime('%H:%M'), 1, 0, 'C')
+                pdf.cell(col_widths[2], 10, record.check_out_time.strftime('%H:%M'), 1, 0, 'C', True)
             else:
-                pdf.cell(col_widths[2], 10, '-', 1, 0, 'C')
+                pdf.cell(col_widths[2], 10, '-', 1, 0, 'C', True)
             
             # Horas trabajadas
             duration = record.duration()
@@ -169,11 +273,11 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
                 hours_str = f"{duration:.2f}h"
             else:
                 hours_str = '-'
-            pdf.cell(col_widths[3], 10, hours_str, 1, 0, 'C')
+            pdf.cell(col_widths[3], 10, hours_str, 1, 0, 'C', True)
             
             # Celda para firma
             y_pos_before = pdf.get_y()
-            pdf.cell(col_widths[4], 10, '', 1, 0, 'C')
+            pdf.cell(col_widths[4], 10, '', 1, 0, 'C', True)
             
             # Dibujar firma en la celda si existe
             if include_signature and record.has_signature and record.signature_data:
@@ -183,6 +287,12 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
                 draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
             
             pdf.ln()
+            row_count += 1
+            
+        # Pie de página de la tabla con fecha del informe
+        pdf.set_font('Arial', 'I', 8)
+        pdf.set_text_color(*pdf.secondary_color)
+        pdf.cell(0, 6, f'Período del informe: {start_date.strftime("%d/%m/%Y")} al {end_date.strftime("%d/%m/%Y")}', 0, 1, 'R')
     
     # Crear un archivo temporal en disco
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
