@@ -73,7 +73,7 @@ def select_company():
         
         # Si solo hay una empresa o el usuario solo gestiona una, redirigir directamente
         if len(companies) == 1:
-            return redirect(url_for('checkpoints.index_company', company_id=companies[0].id))
+            return redirect(url_for('checkpoints.index_company', slug=companies[0].get_slug()))
         
         return render_template('checkpoints/select_company.html', companies=companies)
     except Exception as e:
@@ -81,20 +81,20 @@ def select_company():
         flash("Error al cargar la selección de empresas. Por favor, inténtelo de nuevo.", "danger")
         return redirect(url_for('main.dashboard'))
 
-@checkpoints_bp.route('/company/<int:company_id>')
+@checkpoints_bp.route('/company/<string:slug>')
 @login_required
-def index_company(company_id):
+def index_company(slug):
     """Página principal del sistema de fichajes para una empresa específica"""
     try:
         # Verificar permiso para acceder a esta empresa
-        company = Company.query.get_or_404(company_id)
+        company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
         
         if not current_user.is_admin() and company not in current_user.companies:
             flash('No tiene permiso para gestionar esta empresa.', 'danger')
             return redirect(url_for('main.dashboard'))
         
         # Guardar la empresa seleccionada en la sesión
-        session['selected_company_id'] = company_id
+        session['selected_company_id'] = company.id
         
         # Inicializar estadísticas con valores por defecto
         stats = {
@@ -111,19 +111,19 @@ def index_company(company_id):
         # Obtener estadísticas para el dashboard en bloques separados con manejo de excepciones
         try:
             stats['active_checkpoints'] = CheckPoint.query.filter_by(
-                status=CheckPointStatus.ACTIVE, company_id=company_id).count()
+                status=CheckPointStatus.ACTIVE, company_id=company.id).count()
         except Exception as e:
             current_app.logger.error(f"Error al obtener checkpoints activos: {e}")
             
         try:
             stats['maintenance_checkpoints'] = CheckPoint.query.filter_by(
-                status=CheckPointStatus.MAINTENANCE, company_id=company_id).count()
+                status=CheckPointStatus.MAINTENANCE, company_id=company.id).count()
         except Exception as e:
             current_app.logger.error(f"Error al obtener checkpoints en mantenimiento: {e}")
             
         try:
             stats['disabled_checkpoints'] = CheckPoint.query.filter_by(
-                status=CheckPointStatus.DISABLED, company_id=company_id).count()
+                status=CheckPointStatus.DISABLED, company_id=company.id).count()
         except Exception as e:
             current_app.logger.error(f"Error al obtener checkpoints deshabilitados: {e}")
             
