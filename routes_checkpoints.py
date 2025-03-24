@@ -839,15 +839,27 @@ def resolve_incident(id):
     return redirect(next_page)
 
 
-@checkpoints_bp.route('/company/<int:company_id>/rrrrrr', methods=['GET'])
+@checkpoints_bp.route('/company/<slug>/rrrrrr', methods=['GET'])
 @login_required
 @admin_required
-def view_original_records(company_id):
+def view_original_records(slug):
     """Página secreta para ver los registros originales antes de ajustes de una empresa específica"""
     from models_checkpoints import CheckPointOriginalRecord
+    from utils import slugify
     
-    # Verificar que la empresa existe
-    company = Company.query.get_or_404(company_id)
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
     
     # Esta página es solo para administradores
     page = request.args.get('page', 1, type=int)
@@ -916,21 +928,33 @@ def view_original_records(company_id):
             'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
             'employee_id': employee_id
         },
-        title=f"Registros Originales de {company.name} (Antes de Ajustes)"
+        title=f"Registros Originales de {company.name if company else ''} (Antes de Ajustes)"
     )
 
-@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/edit/<int:id>', methods=['GET', 'POST'])
+@checkpoints_bp.route('/company/<slug>/rrrrrr/edit/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
-def edit_original_record(company_id, id):
+def edit_original_record(slug, id):
     """Edita un registro original"""
     from models_checkpoints import CheckPointOriginalRecord
     from flask_wtf import FlaskForm
     from wtforms import StringField, TimeField, TextAreaField, SubmitField
     from wtforms.validators import DataRequired, Optional, Length
+    from utils import slugify
     
-    # Verificar que la empresa existe
-    company = Company.query.get_or_404(company_id)
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
     
     # Obtener el registro original
     original_record = CheckPointOriginalRecord.query.get_or_404(id)
@@ -984,7 +1008,7 @@ def edit_original_record(company_id, id):
             # Guardar cambios
             db.session.commit()
             flash('Registro original actualizado con éxito.', 'success')
-            return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
+            return redirect(url_for('checkpoints.view_original_records', slug=slug))
             
         except Exception as e:
             db.session.rollback()
@@ -997,15 +1021,27 @@ def edit_original_record(company_id, id):
                           company=company,
                           company_id=company_id)
 
-@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/restore/<int:id>', methods=['GET'])
+@checkpoints_bp.route('/company/<slug>/rrrrrr/restore/<int:id>', methods=['GET'])
 @login_required
 @admin_required
-def restore_original_record(company_id, id):
+def restore_original_record(slug, id):
     """Restaura los valores originales en el registro actual"""
     from models_checkpoints import CheckPointOriginalRecord
+    from utils import slugify
     
-    # Verificar que la empresa existe
-    company = Company.query.get_or_404(company_id)
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
     
     # Obtener el registro original y el registro actual
     original_record = CheckPointOriginalRecord.query.get_or_404(id)
@@ -1036,15 +1072,27 @@ def restore_original_record(company_id, id):
     
     return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
 
-@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/delete/<int:id>', methods=['GET'])
+@checkpoints_bp.route('/company/<slug>/rrrrrr/delete/<int:id>', methods=['GET'])
 @login_required
 @admin_required
-def delete_original_record(company_id, id):
+def delete_original_record(slug, id):
     """Elimina un registro original"""
     from models_checkpoints import CheckPointOriginalRecord
+    from utils import slugify
     
-    # Verificar que la empresa existe
-    company = Company.query.get_or_404(company_id)
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
     
     # Obtener el registro original
     original_record = CheckPointOriginalRecord.query.get_or_404(id)
@@ -1066,15 +1114,27 @@ def delete_original_record(company_id, id):
     
     return redirect(url_for('checkpoints.view_original_records', company_id=company_id))
 
-@checkpoints_bp.route('/company/<int:company_id>/rrrrrr/export', methods=['GET'])
+@checkpoints_bp.route('/company/<slug>/rrrrrr/export', methods=['GET'])
 @login_required
 @admin_required
-def export_original_records(company_id):
+def export_original_records(slug):
     """Exporta los registros originales a PDF"""
     from models_checkpoints import CheckPointOriginalRecord
+    from utils import slugify
     
-    # Verificar que la empresa existe
-    company = Company.query.get_or_404(company_id)
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
     
     # Obtener parámetros de filtro
     start_date = request.args.get('start_date')
