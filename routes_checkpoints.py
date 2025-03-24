@@ -587,6 +587,12 @@ def adjust_record(id):
 def record_signature(id):
     """Permite al empleado firmar un registro de fichaje"""
     record = CheckPointRecord.query.get_or_404(id)
+    checkpoint = record.checkpoint
+    
+    # Verificar si el punto de fichaje requiere firma
+    if not checkpoint.require_signature:
+        flash('Este punto de fichaje no requiere firma.', 'info')
+        return redirect(url_for('checkpoints.list_checkpoint_records', id=checkpoint.id))
     
     # Solo el empleado o un administrador pueden firmar
     is_admin_or_manager = current_user.is_admin() or current_user.is_gerente()
