@@ -559,13 +559,8 @@ def adjust_record(id):
                 if new_check_in and new_check_in != record.check_in_time:
                     record.check_in_time = new_check_in
                     
-                    # Crear incidencia por ajuste de contrato
-                    incident = CheckPointIncident(
-                        record_id=record.id,
-                        incident_type=CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
-                        description=f"Fichaje ajustado automáticamente para cumplir con el límite de {contract_hours.daily_hours} horas diarias."
-                    )
-                    db.session.add(incident)
+                    # Marcar con R en lugar de crear incidencia por ajuste de contrato
+                    record.notes = (record.notes or "") + " [R] Ajustado para cumplir límite de horas."
         
         try:
             db.session.commit()
