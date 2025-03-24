@@ -345,6 +345,7 @@
                     
                     if (data.success) {
                         console.log('PIN verificado correctamente'); // Depuración
+                        console.log('Acción a realizar:', data.action); // Depuración
                         
                         // PIN correcto, ocultar el teclado PIN y los botones de entrada
                         document.querySelector('.pin-container').style.display = 'none';
@@ -354,7 +355,28 @@
                         document.getElementById('pin-verified').value = '1';
                         
                         // Mostrar los botones de acción
-                        document.getElementById('action-buttons').classList.remove('d-none');
+                        const actionButtons = document.getElementById('action-buttons');
+                        actionButtons.classList.remove('d-none');
+                        
+                        // Mostrar animación de éxito
+                        const form = document.querySelector('form');
+                        form.classList.add('was-validated');
+                        
+                        // Agregar mensaje de éxito
+                        const successMsg = document.createElement('div');
+                        successMsg.className = 'alert alert-success mt-3';
+                        successMsg.textContent = 'PIN verificado correctamente.';
+                        document.querySelector('.form-group').appendChild(successMsg);
+                        
+                        // Resaltar el botón de acción adecuado
+                        const checkinBtn = document.getElementById('btn-checkin');
+                        const checkoutBtn = document.getElementById('btn-checkout');
+                        
+                        if (data.action === 'checkin' && checkinBtn) {
+                            checkinBtn.classList.add('btn-pulse');
+                        } else if (data.action === 'checkout' && checkoutBtn) {
+                            checkoutBtn.classList.add('btn-pulse');
+                        }
                     } else {
                         console.log('PIN incorrecto'); // Depuración
                         
@@ -364,6 +386,12 @@
                         // Limpiar el campo PIN
                         pinInput.value = '';
                         updatePinDisplay();
+                        
+                        // Agregar vibración al display del PIN para indicar error
+                        pinDisplay.classList.add('error-shake');
+                        setTimeout(() => {
+                            pinDisplay.classList.remove('error-shake');
+                        }, 500);
                     }
                 })
                 .catch(error => {

@@ -239,9 +239,16 @@
                     dot.classList.add('sending');
                 });
                 
-                // Enviar formulario inmediatamente sin mostrar el botón
-                submitBtn.style.display = 'none';
-                submitBtn.form.submit();
+                console.log('PIN completo, enviando formulario...');
+                
+                // Mostrar el botón momentáneamente para propósitos de depuración
+                submitBtn.style.display = 'block';
+                
+                // Pequeño retraso para evitar problemas de sincronización
+                setTimeout(() => {
+                    console.log('Enviando formulario...');
+                    submitBtn.form.submit();
+                }, 100);
             } else {
                 submitBtn.style.display = 'none';
             }
