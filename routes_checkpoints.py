@@ -471,7 +471,7 @@ def manage_contract_hours(id):
     # Verificar permiso (solo admin o gerente de la empresa)
     if not current_user.is_admin() and employee.company_id not in [c.id for c in current_user.companies]:
         flash('No tiene permiso para gestionar las horas de contrato de este empleado.', 'danger')
-        return redirect(url_for('checkpoints.index_company', company_id=employee.company_id))
+        return redirect(url_for('checkpoints.index_company', slug=employee.company.get_slug()))
     
     # Buscar o crear configuración de horas de contrato
     contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
@@ -489,7 +489,7 @@ def manage_contract_hours(id):
         try:
             db.session.commit()
             flash('Configuración de horas de contrato actualizada con éxito.', 'success')
-            return redirect(url_for('checkpoints.index_company', company_id=employee.company_id))
+            return redirect(url_for('checkpoints.index_company', slug=employee.company.get_slug()))
         except Exception as e:
             db.session.rollback()
             flash(f'Error al actualizar la configuración: {str(e)}', 'danger')

@@ -20,7 +20,7 @@
             <a href="{{ url_for('checkpoints.login') }}" class="btn btn-info me-2" target="_blank">
                 <i class="bi bi-box-arrow-in-right"></i> Acceder a Fichaje
             </a>
-            <a href="{{ url_for('checkpoints.index_company', company_id=company.id) }}" class="btn btn-secondary">
+            <a href="{{ url_for('checkpoints.index_company', slug=company.get_slug()) }}" class="btn btn-secondary">
                 <i class="bi bi-arrow-left"></i> Volver
             </a>
             <a href="{{ url_for('checkpoints.create_checkpoint') }}" class="btn btn-success">
