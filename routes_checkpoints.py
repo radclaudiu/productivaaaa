@@ -938,6 +938,18 @@ def employee_pin(id):
     )
 
 
+def create_schedule_incident(record, incident_type, description):
+    """
+    Crea una incidencia relacionada con horarios
+    """
+    incident = CheckPointIncident(
+        record_id=record.id,
+        incident_type=incident_type,
+        description=description
+    )
+    db.session.add(incident)
+    return incident
+
 def process_employee_action(employee, checkpoint_id, action, pending_record):
     """
     Función auxiliar para procesar las acciones de entrada/salida
@@ -954,10 +966,49 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             db.session.begin_nested()
             
             # 1. Registrar hora de salida
-            pending_record.check_out_time = datetime.now()
+            checkout_time = datetime.now()
+            pending_record.check_out_time = checkout_time
             db.session.add(pending_record)
             
-            # 2. Actualizar estado del empleado
+            # 2. Verificar configuración de horas de contrato
+            contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
+            if contract_hours:
+                # Verificar si se debe ajustar el horario según configuración
+                original_checkin = pending_record.check_in_time
+                original_checkout = pending_record.check_out_time
+                
+                adjusted_checkin, adjusted_checkout = contract_hours.calculate_adjusted_hours(
+                    original_checkin, original_checkout
+                )
+                
+                # Si hay cambios, aplicarlos y crear incidencias
+                if adjusted_checkin and adjusted_checkin != original_checkin:
+                    pending_record.check_in_time = adjusted_checkin
+                    create_schedule_incident(
+                        pending_record, 
+                        CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
+                        f"Hora de entrada ajustada automáticamente de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')} para cumplir con configuración de horario"
+                    )
+                    
+                if adjusted_checkout and adjusted_checkout != original_checkout:
+                    pending_record.check_out_time = adjusted_checkout
+                    create_schedule_incident(
+                        pending_record, 
+                        CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
+                        f"Hora de salida ajustada automáticamente de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')} para cumplir con configuración de horario"
+                    )
+                
+                # Verificar si hay horas extra
+                duration = (pending_record.check_out_time - pending_record.check_in_time).total_seconds() / 3600
+                if contract_hours.is_overtime(duration):
+                    overtime_hours = duration - contract_hours.daily_hours
+                    create_schedule_incident(
+                        pending_record, 
+                        CheckPointIncidentType.OVERTIME,
+                        f"Jornada con {overtime_hours:.2f} horas extra sobre el límite diario de {contract_hours.daily_hours} horas"
+                    )
+            
+            # 3. Actualizar estado del empleado
             employee.is_on_shift = False
             db.session.add(employee)
             
@@ -1121,7 +1172,45 @@ def record_checkout(id):
         record.check_out_time = current_time
         db.session.add(record)
         
-        # 2. Actualizar el estado del empleado
+        # 2. Verificar configuración de horas de contrato
+        contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
+        if contract_hours:
+            # Verificar si se debe ajustar el horario según configuración
+            original_checkin = record.check_in_time
+            original_checkout = record.check_out_time
+            
+            adjusted_checkin, adjusted_checkout = contract_hours.calculate_adjusted_hours(
+                original_checkin, original_checkout
+            )
+            
+            # Si hay cambios, aplicarlos y crear incidencias
+            if adjusted_checkin and adjusted_checkin != original_checkin:
+                record.check_in_time = adjusted_checkin
+                create_schedule_incident(
+                    record, 
+                    CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
+                    f"Hora de entrada ajustada automáticamente de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')} para cumplir con configuración de horario"
+                )
+                
+            if adjusted_checkout and adjusted_checkout != original_checkout:
+                record.check_out_time = adjusted_checkout
+                create_schedule_incident(
+                    record, 
+                    CheckPointIncidentType.CONTRACT_HOURS_ADJUSTMENT,
+                    f"Hora de salida ajustada automáticamente de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')} para cumplir con configuración de horario"
+                )
+            
+            # Verificar si hay horas extra
+            duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
+            if contract_hours.is_overtime(duration):
+                overtime_hours = duration - contract_hours.daily_hours
+                create_schedule_incident(
+                    record, 
+                    CheckPointIncidentType.OVERTIME,
+                    f"Jornada con {overtime_hours:.2f} horas extra sobre el límite diario de {contract_hours.daily_hours} horas"
+                )
+        
+        # 3. Actualizar el estado del empleado
         employee.is_on_shift = False
         db.session.add(employee)
         

@@ -198,21 +198,64 @@ class EmployeeContractHours(db.Model):
         return duration_hours > self.daily_hours
     
     def calculate_adjusted_hours(self, check_in_time, check_out_time):
-        """Calcula el tiempo ajustado según el contrato"""
+        """Calcula el tiempo ajustado según el contrato y configuración"""
         if not check_out_time:
             return None, None
             
-        # Calcular duración original
-        duration = (check_out_time - check_in_time).total_seconds() / 3600
+        adjusted_in = check_in_time
+        adjusted_out = check_out_time
         
-        # Si no excede las horas máximas, no se ajusta
+        # 1. Verificar si se debe aplicar horario normal
+        if self.use_normal_schedule and self.normal_start_time and self.normal_end_time:
+            # Si la hora de entrada está fuera del horario normal (demasiado temprano), ajustar
+            normal_start_datetime = datetime.combine(check_in_time.date(), self.normal_start_time)
+            
+            # Permitimos margen de flexibilidad si está configurado
+            if self.use_flexibility and self.checkin_flexibility:
+                early_limit = normal_start_datetime - timedelta(minutes=self.checkin_flexibility)
+                # Si la entrada es antes del límite de flexibilidad, ajustamos
+                if check_in_time < early_limit:
+                    adjusted_in = normal_start_datetime
+            else:
+                # Sin flexibilidad, ajustamos al horario normal exacto
+                if check_in_time < normal_start_datetime:
+                    adjusted_in = normal_start_datetime
+            
+            # Si la hora de salida es después del horario normal, ajustar (solo si no se permiten horas extra)
+            if not self.allow_overtime and self.normal_end_time:
+                normal_end_datetime = datetime.combine(check_out_time.date(), self.normal_end_time)
+                
+                # Considerar si la salida es al día siguiente
+                if normal_end_datetime < normal_start_datetime:
+                    normal_end_datetime = datetime.combine(check_out_time.date() + timedelta(days=1), self.normal_end_time)
+                
+                # Permitimos margen de flexibilidad si está configurado
+                if self.use_flexibility and self.checkout_flexibility:
+                    late_limit = normal_end_datetime + timedelta(minutes=self.checkout_flexibility)
+                    # Si la salida es después del límite de flexibilidad, ajustamos
+                    if check_out_time > late_limit:
+                        adjusted_out = normal_end_datetime
+                else:
+                    # Sin flexibilidad, ajustamos al horario normal exacto
+                    if check_out_time > normal_end_datetime:
+                        adjusted_out = normal_end_datetime
+        
+        # 2. Calcular duración ajustada con los posibles cambios anteriores
+        duration = (adjusted_out - adjusted_in).total_seconds() / 3600
+        
+        # 3. Verificar límite de horas diarias
         if duration <= self.daily_hours:
-            return check_in_time, check_out_time
+            return adjusted_in, adjusted_out
             
-        # Si excede y no se permiten horas extra, ajustamos
+        # 4. Si excede las horas y no se permiten horas extra (o excede el límite de horas extra), ajustamos
         if not self.allow_overtime or (self.allow_overtime and duration > (self.daily_hours + self.max_overtime_daily)):
-            # Ajustamos la hora de entrada para que la duración sea igual a las horas contratadas
-            new_check_in_time = check_out_time - timedelta(hours=self.daily_hours)
-            return new_check_in_time, check_out_time
+            # Determinamos cuál es el límite máximo
+            max_hours = self.daily_hours
+            if self.allow_overtime:
+                max_hours = self.daily_hours + self.max_overtime_daily
+                
+            # Ajustamos la hora de entrada para que la duración sea igual a las horas permitidas
+            new_check_in_time = adjusted_out - timedelta(hours=max_hours)
+            return new_check_in_time, adjusted_out
             
-        return check_in_time, check_out_time
+        return adjusted_in, adjusted_out
