@@ -278,13 +278,14 @@
             }
         }
         
-        // Al hacer clic en el botón de verificar PIN
-        document.getElementById('validate-pin').addEventListener('click', function() {
+        // Función para verificar el PIN automáticamente
+        function verifyPin() {
             // Verificar que el PIN tiene 4 dígitos
             if (pinInput.value.length === 4) {
                 // Mostrar indicador de carga
-                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verificando...';
-                this.disabled = true;
+                let validationButton = document.getElementById('validate-pin');
+                validationButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verificando...';
+                validationButton.disabled = true;
                 
                 // Limpiar mensajes de error anteriores
                 clearErrorMessage();
@@ -304,8 +305,8 @@
                 .then(response => response.json())
                 .then(data => {
                     // Restablecer el botón
-                    document.getElementById('validate-pin').innerHTML = 'Verificar PIN';
-                    document.getElementById('validate-pin').disabled = false;
+                    validationButton.innerHTML = 'Verificar PIN';
+                    validationButton.disabled = false;
                     
                     if (data.success) {
                         // PIN correcto, ocultar el teclado PIN y los botones de entrada
@@ -328,14 +329,24 @@
                 })
                 .catch(error => {
                     // Error de red o del servidor
-                    document.getElementById('validate-pin').innerHTML = 'Verificar PIN';
-                    document.getElementById('validate-pin').disabled = false;
+                    validationButton.innerHTML = 'Verificar PIN';
+                    validationButton.disabled = false;
                     
                     showErrorMessage('Error al verificar el PIN. Inténtelo de nuevo.');
                     console.error('Error:', error);
                 });
             }
+        }
+        
+        // Verificar PIN automáticamente cuando se introduzcan 4 dígitos
+        pinInput.addEventListener('input', function() {
+            if (this.value.length === 4) {
+                verifyPin();
+            }
         });
+        
+        // Mantener el botón de verificar para compatibilidad
+        document.getElementById('validate-pin').addEventListener('click', verifyPin);
     });
 </script>
 {% endblock %}
