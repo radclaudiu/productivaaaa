@@ -105,7 +105,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         
         # Cabecera de tabla
         col_widths = [30, 30, 30, 25, 40, 25]
-        header = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Punto de Fichaje', 'Ajustado']
+        header = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Punto de Fichaje', 'Firma']
         
         # Dibujar cabecera
         pdf.set_fill_color(200, 200, 200)
@@ -143,18 +143,18 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
             # Punto de fichaje
             pdf.cell(col_widths[4], 10, record.checkpoint.name, 1, 0, 'C')
             
-            # Ajustado
-            pdf.cell(col_widths[5], 10, 'Sí' if record.adjusted else 'No', 1, 0, 'C')
+            # Celda para firma
+            y_pos_before = pdf.get_y()
+            pdf.cell(col_widths[5], 10, '', 1, 0, 'C')
+            
+            # Dibujar firma en la celda si existe
+            if include_signature and record.has_signature and record.signature_data:
+                # Guardar posición actual
+                x_pos = pdf.get_x() - col_widths[5]
+                # Dibujar la firma dentro de la celda
+                draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[5] - 4, 8)
             
             pdf.ln()
-            
-            # Si hay firma y se debe incluir, añadirla
-            if include_signature and record.has_signature and record.signature_data:
-                pdf.ln(5)
-                pdf.set_font('Arial', 'I', 8)
-                pdf.cell(0, 5, f"Firma del {record.check_in_time.strftime('%d/%m/%Y')}:", 0, 1)
-                draw_signature(pdf, record.signature_data, 30, pdf.get_y(), 50, 20)
-                pdf.ln(25)  # Espacio para la firma
         
         # Total de horas
         pdf.set_font('Arial', 'B', 10)
