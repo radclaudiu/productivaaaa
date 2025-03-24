@@ -30,10 +30,11 @@ class CheckPointPDF(FPDF):
         if os.path.exists(logo_path):
             self.image(logo_path, 10, 3, 15)
         
-        # Título con texto blanco
+        # Título con texto blanco (centrado verticalmente)
         self.set_font('Arial', 'B', 16)
         self.set_text_color(255, 255, 255)
-        self.cell(0, 15, self.title, 0, 1, 'C')
+        self.set_y(7)  # Centrar verticalmente el texto en la barra de 20mm
+        self.cell(0, 6, self.title, 0, 1, 'C')
         
         # Restablecer color de texto
         self.set_text_color(0, 0, 0)
@@ -59,10 +60,11 @@ class CheckPointPDF(FPDF):
         self.set_fill_color(*self.primary_color)
         self.rect(0, self.h - 12, 210, 12, 'F')
         
-        # Número de página con texto blanco
+        # Número de página con texto blanco (centrado verticalmente)
         self.set_font('Arial', 'B', 9)
         self.set_text_color(255, 255, 255)
-        self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
+        self.set_y(self.h - 8)  # Centrar verticalmente en la barra de 12mm
+        self.cell(0, 4, f'Página {self.page_no()}', 0, 0, 'C')
 
 
 def draw_signature(pdf, signature_data, x, y, width=50, height=20):
@@ -238,8 +240,19 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         # Centrar el título de la tabla usando los mismos márgenes
         title_width = 170  # Ancho del título
         title_x = (210 - title_width) / 2  # Centrado en la página
+        
+        # Dibujar el rectángulo para el título
         pdf.rect(title_x, pdf.get_y(), title_width, 10, 'F')
-        pdf.cell(0, 10, 'REGISTROS DE FICHAJE', 0, 1, 'C')
+        
+        # Guardar la posición Y actual
+        current_y = pdf.get_y()
+        
+        # Posicionar el texto verticalmente centrado dentro de la barra (subir un poco)
+        pdf.set_y(current_y + 2.5)  # 2.5mm para centrar el texto en la barra de 10mm de alto
+        pdf.cell(0, 5, 'REGISTROS DE FICHAJE', 0, 1, 'C')
+        
+        # Volver a la posición después del rectángulo y añadir espacio
+        pdf.set_y(current_y + 10 + 5)  # 5mm de espacio adicional entre la barra y la tabla
         
         # Restaurar color de texto
         pdf.set_text_color(0, 0, 0)
