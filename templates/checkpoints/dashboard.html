@@ -7,10 +7,13 @@
 <style>
     .employee-card {
         transition: all 0.3s ease;
-        border: 2px solid #dee2e6;
-        border-radius: 0.5rem;
-        margin-bottom: 1.5rem;
-        height: 100%;
+        border: 2px solid white;
+        border-radius: 8px;
+        margin: 0 auto;
+        height: 220px;
+        width: 220px;
+        aspect-ratio: 1;
+        background-color: #343a40;
     }
     
     .employee-card:hover {
@@ -26,24 +29,26 @@
         align-items: center;
         padding: 1.5rem;
         text-align: center;
+        height: 100%;
     }
     
     .employee-card .employee-name {
         font-size: 1.2rem;
-        margin-top: 0.5rem;
-        margin-bottom: 0.5rem;
+        margin-top: 0.8rem;
+        margin-bottom: 0;
         font-weight: 500;
+        color: white;
     }
     
     .employee-avatar {
-        width: 100px;
-        height: 100px;
+        width: 120px;
+        height: 120px;
         border-radius: 50%;
         background-color: #e9ecef;
         display: flex;
         justify-content: center;
         align-items: center;
-        margin-bottom: 0.5rem;
+        border: 3px solid white;
     }
     
     .employee-avatar .avatar-text {
@@ -78,16 +83,19 @@
     
     @media (max-width: 768px) {
         .employee-card {
+            height: 180px;
+            width: 180px;
             margin-bottom: 1rem;
         }
         
         .employee-avatar {
-            width: 80px;
-            height: 80px;
+            width: 90px;
+            height: 90px;
         }
         
         .employee-name {
             font-size: 1rem;
+            margin-top: 0.5rem;
         }
     }
 </style>
@@ -130,7 +138,7 @@
                 </button>
             </div>
             
-            <div class="row row-cols-1 row-cols-md-3 row-cols-lg-4 g-4" id="employeesList">
+            <div class="row row-cols-2 row-cols-sm-3 row-cols-md-4 row-cols-lg-5 g-3" id="employeesList">
                 {% for employee in employees %}
                 <div class="col">
                     <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none">
@@ -225,7 +233,6 @@
                                         <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
                                     </div>
                                     <h5 class="employee-name">${employee.name}</h5>
-                                    <p class="text-muted mb-0">${employee.position || 'Sin cargo'}</p>
                                 </div>
                             </div>
                         </a>
