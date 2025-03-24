@@ -265,10 +265,10 @@ def create_company():
     
     return render_template('company_form.html', title='Nueva Empresa', form=form)
 
-@company_bp.route('/<int:id>/edit', methods=['GET', 'POST'])
+@company_bp.route('/<string:slug>/edit', methods=['GET', 'POST'])
 @login_required
-def edit_company(id):
-    company = Company.query.get_or_404(id)
+def edit_company(slug):
+    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
     
     # Check if user has permission to edit this company
     if not can_manage_company(company.id):
@@ -296,20 +296,20 @@ def edit_company(id):
         
         log_activity(f'Empresa actualizada: {company.name}')
         flash(f'Empresa "{company.name}" actualizada correctamente.', 'success')
-        return redirect(url_for('company.view_company', id=company.id))
+        return redirect(url_for('company.view_company', slug=company.get_slug()))
     
     return render_template('company_form.html', title=f'Editar {company.name}', form=form, company=company)
 
-@company_bp.route('/<int:id>/export', methods=['GET'])
+@company_bp.route('/<string:slug>/export', methods=['GET'])
 @admin_required
-def export_company_data(id):
-    company = Company.query.get_or_404(id)
+def export_company_data(slug):
+    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
     
     # Export company data as ZIP
     export_data = export_company_employees_zip(company.id)
     if not export_data:
         flash('Error al exportar los datos de la empresa.', 'danger')
-        return redirect(url_for('company.view_company', id=company.id))
+        return redirect(url_for('company.view_company', slug=company.get_slug()))
     
     log_activity(f'Datos de empresa exportados: {company.name}')
     return send_file(
@@ -319,10 +319,10 @@ def export_company_data(id):
         mimetype='application/zip'
     )
 
-@company_bp.route('/<int:id>/delete', methods=['POST'])
+@company_bp.route('/<string:slug>/delete', methods=['POST'])
 @admin_required
-def delete_company(id):
-    company = Company.query.get_or_404(id)
+def delete_company(slug):
+    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
     
     # Proceed with deletion
     company_name = company.name
