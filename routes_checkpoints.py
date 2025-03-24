@@ -1357,11 +1357,14 @@ def daily_report():
                          missing_employees=missing_employees)
 
 
-@checkpoints_bp.route('/company-employees')
+@checkpoints_bp.route('/api/company-employees', methods=['GET'])
 @checkpoint_required
-def company_employees():
+def get_company_employees():
     """Devuelve la lista de empleados de la empresa en formato JSON"""
-    company_id = session.get('company_id')
+    # Obtenemos la compañía del checkpoint actual en lugar de usar session['company_id']
+    checkpoint_id = session.get('checkpoint_id')
+    checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
+    company_id = checkpoint.company_id
     
     if not company_id:
         return jsonify([])

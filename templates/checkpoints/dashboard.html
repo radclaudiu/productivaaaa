@@ -198,7 +198,7 @@
         }
         
         // Realizar la petición AJAX
-        fetch('{{ url_for("checkpoints.company_employees") }}')
+        fetch('{{ url_for("checkpoints.get_company_employees") }}')
             .then(response => response.json())
             .then(employees => {
                 // Limpiar la lista actual
