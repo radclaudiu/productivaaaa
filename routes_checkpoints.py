@@ -1351,6 +1351,12 @@ def record_checkout(id):
 def checkpoint_record_signature(id):
     """Permite al empleado firmar un registro de fichaje desde el punto de fichaje"""
     record = CheckPointRecord.query.get_or_404(id)
+    checkpoint = CheckPoint.query.get_or_404(record.checkpoint_id)
+    
+    # Verificar si el punto de fichaje requiere firma
+    if not checkpoint.require_signature:
+        flash('Este punto de fichaje no requiere firma.', 'info')
+        return redirect(url_for('checkpoints.record_details', id=record.id))
     
     # Verificaciones de seguridad
     checkpoint_id = session.get('checkpoint_id')
