@@ -11,6 +11,7 @@ from app import db
 from models import (User, Company, Employee, EmployeeDocument, EmployeeNote, UserRole, 
                    ContractType, EmployeeStatus, EmployeeSchedule, EmployeeCheckIn, 
                    EmployeeVacation, VacationStatus, WeekDay)
+from models_checkpoints import CheckPoint
 from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeForm, 
                   CompanyForm, EmployeeForm, EmployeeDocumentForm, EmployeeNoteForm, SearchForm,
                   EmployeeStatusForm, EmployeeScheduleForm, EmployeeWeeklyScheduleForm, EmployeeCheckInForm, 

@@ -1326,10 +1326,32 @@ def daily_report():
         func.date(CheckPointRecord.check_in_time) == today
     ).order_by(CheckPointRecord.check_in_time).all()
     
+    # Obtener empleados de la empresa
+    company_id = checkpoint.company_id
+    all_employees = Employee.query.filter_by(company_id=company_id, is_active=True).all()
+    
+    # Obtener IDs de empleados que han fichado hoy
+    checked_in_ids = [record.employee_id for record in records]
+    
+    # Obtener empleados que no han fichado hoy
+    missing_employees = [emp for emp in all_employees if emp.id not in checked_in_ids]
+    
+    # Contar registros pendientes de checkout
+    pending_checkout = sum(1 for record in records if record.check_out_time is None)
+    
+    # Preparar estadísticas
+    stats = {
+        'total_employees': len(all_employees),
+        'checked_in': len(checked_in_ids),
+        'pending_checkout': pending_checkout
+    }
+    
     return render_template('checkpoints/daily_report.html', 
                          checkpoint=checkpoint,
                          records=records,
-                         today=today)
+                         today=today,
+                         stats=stats,
+                         missing_employees=missing_employees)
 
 
 @checkpoints_bp.route('/company-employees')
