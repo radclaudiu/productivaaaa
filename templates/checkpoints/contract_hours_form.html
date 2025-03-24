@@ -188,7 +188,7 @@
                         </div>
                         
                         <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('checkpoints.index_company', company_id=employee.company_id) }}" class="btn btn-secondary">
+                            <a href="{{ url_for('checkpoints.index_company', slug=employee.company.get_slug()) }}" class="btn btn-secondary">
                                 <i class="bi bi-arrow-left"></i> Volver al Dashboard
                             </a>
                             {{ form.submit(class="btn btn-primary") }}
