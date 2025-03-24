@@ -160,6 +160,21 @@
         text-align: center;
     }
     
+    .pin-display.sending {
+        animation: pulse 0.5s infinite alternate;
+    }
+    
+    @keyframes pulse {
+        0% {
+            transform: scale(1);
+            opacity: 0.5;
+        }
+        100% {
+            transform: scale(1.1);
+            opacity: 1;
+        }
+    }
+    
     .pin-pad {
         max-width: 300px;
         margin: 0 auto;
@@ -210,6 +225,16 @@
                 if (pinInput.value.length < 4) {
                     pinInput.value += digit;
                     updatePinDisplay();
+                    
+                    // Verificar automáticamente si se completó el PIN
+                    if (pinInput.value.length === 4) {
+                        // Agregar animación al display
+                        pinDisplay.classList.add('sending');
+                        // Verificar PIN
+                        setTimeout(() => {
+                            verifyPin();
+                        }, 100);
+                    }
                 }
             });
         });
