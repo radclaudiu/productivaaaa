@@ -364,6 +364,37 @@ class TaskWeekday(db.Model):
         }
         return date.today().weekday() == day_map[weekday]
 
+class TaskInstance(db.Model):
+    """Instancia de tarea programada para una fecha específica."""
+    __tablename__ = 'task_instances'
+    
+    id = db.Column(db.Integer, primary_key=True)
+    scheduled_date = db.Column(db.Date, nullable=False)
+    status = db.Column(Enum(TaskStatus), default=TaskStatus.PENDIENTE)
+    notes = db.Column(db.Text)
+    created_at = db.Column(db.DateTime, default=datetime.utcnow)
+    updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
+    
+    # Relaciones
+    task_id = db.Column(db.Integer, db.ForeignKey('tasks.id'), nullable=False)
+    task = db.relationship('Task')
+    completed_by_id = db.Column(db.Integer, db.ForeignKey('local_users.id'), nullable=True)
+    completed_by = db.relationship('LocalUser')
+    
+    def __repr__(self):
+        return f'<TaskInstance {self.task.title} on {self.scheduled_date}>'
+    
+    def to_dict(self):
+        return {
+            'id': self.id,
+            'task_id': self.task_id,
+            'task_title': self.task.title if self.task else None,
+            'scheduled_date': self.scheduled_date.isoformat() if self.scheduled_date else None,
+            'status': self.status.value if self.status else None,
+            'notes': self.notes,
+            'completed_by': self.completed_by.name if self.completed_by else None
+        }
+
 class TaskCompletion(db.Model):
     __tablename__ = 'task_completions'
     
