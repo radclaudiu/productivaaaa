@@ -855,9 +855,12 @@ def logout():
 def checkpoint_dashboard():
     """Dashboard principal del punto de fichaje"""
     checkpoint_id = session.get('checkpoint_id')
+    # Usamos refresh=True para asegurarnos de obtener los datos más actualizados
+    db.session.expire_all()  # Asegurarse de que todas las entidades se refresquen
     checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
     
     # Obtener todos los empleados de la empresa asociada al punto de fichaje
+    # Esto obtendrá siempre los datos más actualizados de la base de datos
     employees = Employee.query.filter_by(
         company_id=checkpoint.company_id,
         is_active=True
