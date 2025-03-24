@@ -87,7 +87,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         employees_records[employee_id]['records'].append(record)
     
     # Crear PDF
-    pdf = CheckPointPDF(title=f'Informe de Fichajes: {start_date.strftime("%d/%m/%Y")} - {end_date.strftime("%d/%m/%Y")}')
+    pdf = CheckPointPDF(title='Informe de Fichajes')
     pdf.set_auto_page_break(auto=True, margin=15)
     pdf.add_page()
     
@@ -104,8 +104,8 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         pdf.set_font('Arial', 'B', 10)
         
         # Cabecera de tabla
-        col_widths = [30, 30, 30, 25, 40, 25]
-        header = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Punto de Fichaje', 'Firma']
+        col_widths = [35, 30, 30, 30, 40]
+        header = ['Fecha', 'Entrada', 'Salida', 'Horas', 'Firma']
         
         # Dibujar cabecera
         pdf.set_fill_color(200, 200, 200)
@@ -140,19 +140,16 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
                 hours_str = '-'
             pdf.cell(col_widths[3], 10, hours_str, 1, 0, 'C')
             
-            # Punto de fichaje
-            pdf.cell(col_widths[4], 10, record.checkpoint.name, 1, 0, 'C')
-            
             # Celda para firma
             y_pos_before = pdf.get_y()
-            pdf.cell(col_widths[5], 10, '', 1, 0, 'C')
+            pdf.cell(col_widths[4], 10, '', 1, 0, 'C')
             
             # Dibujar firma en la celda si existe
             if include_signature and record.has_signature and record.signature_data:
                 # Guardar posición actual
-                x_pos = pdf.get_x() - col_widths[5]
+                x_pos = pdf.get_x() - col_widths[4]
                 # Dibujar la firma dentro de la celda
-                draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[5] - 4, 8)
+                draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
             
             pdf.ln()
         
