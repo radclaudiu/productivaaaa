@@ -1526,9 +1526,9 @@ def employee_pin(id):
         else:
             flash('PIN incorrecto. Inténtelo de nuevo.', 'danger')
     
-    # Renderizar la plantilla con los datos necesarios
+    # Renderizar la plantilla con los datos necesarios (usando la versión simplificada)
     return render_template(
-        'checkpoints/employee_pin.html', 
+        'checkpoints/employee_pin_simple.html', 
         form=form,
         employee=employee,
         pending_record=pending_record,
