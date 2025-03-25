@@ -27,9 +27,6 @@
                         <li><a class="dropdown-item" href="#" onclick="filterEmployees('all')">Todos</a></li>
                         <li><a class="dropdown-item" href="#" onclick="filterEmployees('active')">Activos</a></li>
                         <li><a class="dropdown-item" href="#" onclick="filterEmployees('inactive')">Inactivos</a></li>
-                        <li><hr class="dropdown-divider"></li>
-                        <li><a class="dropdown-item" href="#" onclick="filterEmployees('onshift')">En turno</a></li>
-                        <li><a class="dropdown-item" href="#" onclick="filterEmployees('offshift')">Fuera de turno</a></li>
                     </ul>
                 </div>
                 
@@ -103,11 +100,6 @@
                                                         <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
                                                             {{ 'Activo' if employee.is_active else 'Inactivo' }}
                                                         </span>
-                                                        {% if employee.is_active %}
-                                                            <span class="badge ms-1 {% if employee.is_on_shift %}bg-primary{% else %}bg-secondary{% endif %}">
-                                                                {{ 'En turno' if employee.is_on_shift else 'Fuera de turno' }}
-                                                            </span>
-                                                        {% endif %}
                                                     </td>
                                                     <td class="table-action-buttons">
                                                         <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-info">
@@ -169,11 +161,6 @@
                                         <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
                                             {{ 'Activo' if employee.is_active else 'Inactivo' }}
                                         </span>
-                                        {% if employee.is_active %}
-                                            <span class="badge ms-1 {% if employee.is_on_shift %}bg-primary{% else %}bg-secondary{% endif %}">
-                                                {{ 'En turno' if employee.is_on_shift else 'Fuera de turno' }}
-                                            </span>
-                                        {% endif %}
                                     </td>
                                     <td class="table-action-buttons">
                                         <a href="{{ url_for('employee.view_employee', id=employee.id) }}" class="btn btn-sm btn-info">
@@ -259,14 +246,6 @@
         rows.forEach(row => {
             if (status === 'all') {
                 row.style.display = '';
-            } else if (status === 'onshift') {
-                // Buscar si el empleado está en turno (tiene el badge de "En turno")
-                const isOnShift = row.querySelector('td:nth-child(8) .badge.bg-primary') !== null;
-                row.style.display = isOnShift ? '' : 'none';
-            } else if (status === 'offshift') {
-                // Buscar si el empleado está fuera de turno (no tiene el badge de "En turno")
-                const isOnShift = row.querySelector('td:nth-child(8) .badge.bg-primary') !== null;
-                row.style.display = !isOnShift ? '' : 'none';
             } else {
                 const rowStatus = row.getAttribute('data-status');
                 row.style.display = (rowStatus === status) ? '' : 'none';
