@@ -13,35 +13,12 @@
                 <div class="card-body">
                     <div class="text-center mb-4">
                         <h3>{{ record.employee.first_name }} {{ record.employee.last_name }}</h3>
-                        <p class="text-muted">{{ record.employee.position or 'Empleado' }}</p>
+                        <p class="text-muted">{{ record.employee.dni }}</p>
                         
-                        <div class="row">
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <span class="text-muted">Fecha de entrada:</span>
-                                    <p class="mb-0 fs-5">{{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <span class="text-muted">Hora de entrada:</span>
-                                    <p class="mb-0 fs-5">{{ record.check_in_time.strftime('%H:%M') }}</p>
-                                </div>
-                            </div>
-                            <div class="col-md-6">
-                                <div class="mb-3">
-                                    <span class="text-muted">Fecha de salida:</span>
-                                    <p class="mb-0 fs-5">{{ record.check_out_time.strftime('%d/%m/%Y') }}</p>
-                                </div>
-                                <div class="mb-3">
-                                    <span class="text-muted">Hora de salida:</span>
-                                    <p class="mb-0 fs-5">{{ record.check_out_time.strftime('%H:%M') }}</p>
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="alert alert-info mt-3">
-                            <p class="mb-0">
-                                <i class="bi bi-clock"></i> 
-                                Total horas: <strong>{{ record.duration()|round(2) }}</strong>
+                        <div class="alert alert-primary mt-3">
+                            <p class="mb-0 fw-bold">
+                                <i class="bi bi-info-circle me-2"></i> 
+                                Al firmar este documento, usted confirma y verifica la autenticidad de su registro de fichaje del día de hoy.
                             </p>
                         </div>
                     </div>
