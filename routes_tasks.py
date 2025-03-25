@@ -2664,10 +2664,9 @@ def manage_product_conservations(id):
     selected_conservation = None
     selected_type = request.args.get('type')
     if request.method == 'GET' and selected_type:
-        for cons in conservations:
-            if cons.conservation_type.value == selected_type:
-                selected_conservation = cons
-                break
+        # Buscar el tipo de conservación en el diccionario
+        if selected_type in conservation_dict:
+            selected_conservation = conservation_dict[selected_type]
     
     # Crear formulario con o sin objeto preexistente
     form = ProductConservationForm(obj=selected_conservation)
@@ -2690,23 +2689,30 @@ def manage_product_conservations(id):
             flash('Tipo de conservación no válido', 'danger')
             return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         
-        # Buscar si ya existe esta configuración
-        conservation = ProductConservation.query.filter_by(
-            product_id=product.id,
-            conservation_type=conservation_type
-        ).first()
+        # Buscar si ya existe esta configuración usando el diccionario
+        conservation = conservation_dict.get(conservation_type.value)
+        
+        # Si no está en el diccionario, buscar en la base de datos para estar seguros
+        if not conservation:
+            # Usar .scalar() para asegurar que solo obtenemos un resultado
+            conservation = db.session.query(ProductConservation).filter_by(
+                product_id=product.id,
+                conservation_type=conservation_type
+            ).scalar()
         
         # Obtener horas directamente del formulario
         hours_valid = form.hours_valid.data
         
         # Debug logging
-        current_app.logger.debug(f"Horas recibidas: {hours_valid}")
+        current_app.logger.debug(f"Tipo de conservación: {conservation_type.value}, Horas recibidas: {hours_valid}")
         
         if conservation:
             # Actualizar existente
+            current_app.logger.debug(f"Actualizando conservación existente ID: {conservation.id}")
             conservation.hours_valid = hours_valid
         else:
             # Crear nueva
+            current_app.logger.debug(f"Creando nueva conservación para {conservation_type.value}")
             conservation = ProductConservation(
                 product_id=product.id,
                 conservation_type=conservation_type,
@@ -2718,12 +2724,13 @@ def manage_product_conservations(id):
             db.session.commit()
             # Verificar que se guardó correctamente
             db.session.refresh(conservation)
-            current_app.logger.debug(f"Guardado en BD: {conservation.hours_valid} horas")
+            current_app.logger.debug(f"Guardado en BD: {conservation.id}, Tipo: {conservation.conservation_type.value}, Horas: {conservation.hours_valid}")
             
             flash('Configuración de conservación guardada correctamente', 'success')
             return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         except Exception as e:
             db.session.rollback()
+            current_app.logger.error(f"Error al guardar configuración: {str(e)}")
             flash(f'Error al guardar configuración: {str(e)}', 'danger')
     
     return render_template(
