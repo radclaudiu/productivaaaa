@@ -2358,11 +2358,12 @@ def generate_labels():
         else:
             # Valores predeterminados por tipo
             hours_map = {
-                ConservationType.DESCONGELACION: 24,  # 1 día
-                ConservationType.REFRIGERACION: 72,   # 3 días
-                ConservationType.GASTRO: 48,          # 2 días
-                ConservationType.CALIENTE: 2,         # 2 horas
-                ConservationType.SECO: 720            # 30 días
+                ConservationType.DESCONGELACION: 24,     # 1 día
+                ConservationType.REFRIGERACION: 72,      # 3 días
+                ConservationType.REFRIGERADO_ABIERTO: 48, # 2 días
+                ConservationType.GASTRO: 48,             # 2 días
+                ConservationType.CALIENTE: 2,            # 2 horas
+                ConservationType.SECO: 720               # 30 días
             }
             hours = hours_map.get(conservation_type, 24)  # 24h por defecto
             expiry_datetime = now + timedelta(hours=hours)

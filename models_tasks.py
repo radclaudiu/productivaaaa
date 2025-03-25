@@ -427,6 +427,7 @@ class TaskCompletion(db.Model):
 class ConservationType(enum.Enum):
     DESCONGELACION = "descongelacion"
     REFRIGERACION = "refrigeracion"
+    REFRIGERADO_ABIERTO = "refrigerado_abierto"
     GASTRO = "gastro"
     CALIENTE = "caliente"
     SECO = "seco"
