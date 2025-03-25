@@ -70,6 +70,11 @@
                                         <i class="bi bi-thermometer-low"></i>
                                         <span>Refrigeración</span>
                                     </button>
+                                    
+                                    <button type="button" class="btn-conservation" data-value="refrigerado_abierto">
+                                        <i class="bi bi-thermometer-half"></i>
+                                        <span>Refrigerado Abierto</span>
+                                    </button>
 
                                     <button type="button" class="btn-conservation" data-value="gastro">
                                         <i class="bi bi-cup-hot"></i>
@@ -152,6 +157,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const conservationTypeText = {
         'descongelacion': 'Descongelación',
         'refrigeracion': 'Refrigeración',
+        'refrigerado_abierto': 'Refrigerado Abierto',
         'gastro': 'Gastro',
         'caliente': 'Caliente',
         'seco': 'Seco'
@@ -456,6 +462,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
 .btn-conservation[data-value="descongelacion"] i { color: #0d6efd; }
 .btn-conservation[data-value="refrigeracion"] i { color: #0dcaf0; }
+.btn-conservation[data-value="refrigerado_abierto"] i { color: #20c997; }
 .btn-conservation[data-value="gastro"] i { color: #198754; }
 .btn-conservation[data-value="caliente"] i { color: #dc3545; }
 .btn-conservation[data-value="seco"] i { color: #ffc107; }
