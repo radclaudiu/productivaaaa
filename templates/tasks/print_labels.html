@@ -195,6 +195,22 @@
         </div>
     {% endfor %}
     
+    <!-- Etiquetas de refrigeración automáticas (cuando se genera una etiqueta de descongelación) -->
+    {% if auto_generate_refrigeration and refrigeration_conservation_type %}
+        {% for i in range(quantity) %}
+            <div class="etiqueta">
+                <div id="product-name" class="producto">{{ product.name|upper }}</div>
+                <div id="conservation-type" class="conservacion conservacion-{{ refrigeration_conservation_type.value }}">{{ refrigeration_conservation_type.name }}</div>
+                <div id="prepared-by" class="preparado">EMP: {{ user.name }} {{ user.last_name }}</div>
+                <div id="start-date" class="fecha">INICIO: {{ refrigeration_start_time.strftime('%d/%m/%Y %H:%M') }}</div>
+                <div id="expiry-date" class="caducidad">Caducidad: {{ refrigeration_expiry_datetime.strftime('%d/%m/%Y %H:%M') }}</div>
+                {% if secondary_expiry_date %}
+                <div id="secondary-expiry-date" class="caducidad caducidad-secundaria">Caducidad primaria: {{ secondary_expiry_date.strftime('%d/%m/%Y') }}</div>
+                {% endif %}
+            </div>
+        {% endfor %}
+    {% endif %}
+    
     <!-- Datos ocultos para la impresión con Brother -->
     <input type="hidden" id="quantity" value="{{ quantity }}">
     

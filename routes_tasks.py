@@ -2401,7 +2401,53 @@ def generate_labels():
             current_app.logger.error(f"Error al registrar etiquetas: {str(e)}")
             # Continuar generando etiquetas aunque falle el registro
         
-        # Generar HTML para impresión directa
+        # Verificar si necesitamos generar automáticamente una etiqueta de refrigeración después de descongelación
+        auto_generate_refrigeration = False
+        refrigeration_conservation_type = None
+        refrigeration_expiry_datetime = None
+        
+        if conservation_type == ConservationType.DESCONGELACION:
+            auto_generate_refrigeration = True
+            
+            # Obtener el tipo de conservación de refrigeración
+            for ct in ConservationType:
+                if ct.value == "refrigeracion":
+                    refrigeration_conservation_type = ct
+                    break
+            
+            # Obtener la configuración de refrigeración (si existe)
+            ref_conservation = None
+            if refrigeration_conservation_type:
+                ref_conservation = ProductConservation.query.filter_by(
+                    product_id=product.id, 
+                    conservation_type=refrigeration_conservation_type
+                ).first()
+            
+            # Calcular fecha de caducidad para refrigeración a partir de la fecha de caducidad de descongelación
+            if ref_conservation:
+                # La hora de inicio de refrigeración es la hora de finalización de descongelación
+                refrigeration_expiry_datetime = expiry_datetime + timedelta(hours=ref_conservation.hours_valid)
+            else:
+                # Usar valor predeterminado si no hay configuración específica (3 días)
+                refrigeration_expiry_datetime = expiry_datetime + timedelta(hours=72)
+                
+            # Registrar etiquetas de refrigeración
+            try:
+                for _ in range(quantity):
+                    label = ProductLabel(
+                        product_id=product.id,
+                        local_user_id=user.id,
+                        conservation_type=refrigeration_conservation_type,
+                        expiry_date=refrigeration_expiry_datetime.date()
+                    )
+                    db.session.add(label)
+                db.session.commit()
+            except Exception as e:
+                db.session.rollback()
+                current_app.logger.error(f"Error al registrar etiquetas de refrigeración: {str(e)}")
+                # Continuar de todos modos
+        
+        # Generar HTML para impresión directa, incluyendo las etiquetas de refrigeración si corresponde
         return render_template(
             'tasks/print_labels.html',
             product=product,
@@ -2412,7 +2458,11 @@ def generate_labels():
             expiry_datetime=expiry_datetime,
             secondary_expiry_date=secondary_expiry_date,
             quantity=quantity,
-            template=template  # Pasamos la plantilla a la vista
+            template=template,
+            auto_generate_refrigeration=auto_generate_refrigeration,
+            refrigeration_conservation_type=refrigeration_conservation_type,
+            refrigeration_expiry_datetime=refrigeration_expiry_datetime,
+            refrigeration_start_time=expiry_datetime  # La hora de inicio de refrigeración es la hora de fin de descongelación
         )
         
     except Exception as e:
