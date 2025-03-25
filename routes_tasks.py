@@ -1211,61 +1211,28 @@ def local_portal(location_id):
 @tasks_bp.route('/local-user-login/<int:user_id>', methods=['GET', 'POST'])
 def local_user_login(user_id):
     """Login con PIN para empleado local"""
-    try:
-        current_app.logger.info(f"Intento de login para usuario local ID: {user_id}")
-        current_app.logger.info(f"Método: {request.method}")
-        current_app.logger.info(f"Datos del formulario: {request.form}")
-        
-        if 'location_id' not in session:
-            current_app.logger.warning("No hay location_id en la sesión")
-            return redirect(url_for('tasks.index'))
-        
-        user = LocalUser.query.get_or_404(user_id)
-        current_app.logger.info(f"Usuario encontrado: {user.name} {user.last_name}")
-        
-        # Verificar que pertenece al local correcto
-        if user.location_id != session['location_id']:
-            current_app.logger.warning(f"Usuario {user_id} no pertenece al local {session['location_id']}")
-            flash('Usuario no válido para este local.', 'danger')
-            return redirect(url_for('tasks.local_portal', location_id=session['location_id']))
-        
-        form = LocalUserPinForm()
-        
-        # Log detallado de validación
-        if request.method == 'POST':
-            form_valid = form.validate_on_submit()
-            current_app.logger.info(f"Formulario válido: {form_valid}")
-            if not form_valid:
-                current_app.logger.info(f"Errores de validación: {form.errors}")
-        
-        if form.validate_on_submit():
-            current_app.logger.info(f"Validando PIN para usuario {user_id}")
-            pin_data = form.pin.data
-            current_app.logger.info(f"PIN introducido: {pin_data}")
-            
-            try:
-                # Log detallado de verificación de PIN
-                pin_check_result = user.check_pin(pin_data)
-                current_app.logger.info(f"Resultado verificación PIN: {pin_check_result}")
-                
-                if pin_check_result:
-                    current_app.logger.info(f"PIN válido para usuario {user_id}")
-                    # Guardar usuario en sesión
-                    session['local_user_id'] = user.id
-                    
-                    log_activity(f'Acceso de usuario local: {user.name} en {user.location.name}')
-                    flash(f'Bienvenido, {user.name}!', 'success')
-                    return redirect(url_for('tasks.local_user_tasks'))
-                else:
-                    current_app.logger.warning(f"PIN incorrecto para usuario {user_id}")
-                    flash('PIN incorrecto.', 'danger')
-            except Exception as e:
-                current_app.logger.error(f"Error verificando PIN: {str(e)}")
-                flash('Error al verificar el PIN. Inténtelo de nuevo.', 'danger')
-    except Exception as e:
-        current_app.logger.error(f"Error en local_user_login: {str(e)}")
-        flash('Ha ocurrido un error. Por favor, inténtalo de nuevo.', 'danger')
+    if 'location_id' not in session:
         return redirect(url_for('tasks.index'))
+    
+    user = LocalUser.query.get_or_404(user_id)
+    
+    # Verificar que pertenece al local correcto
+    if user.location_id != session['location_id']:
+        flash('Usuario no válido para este local.', 'danger')
+        return redirect(url_for('tasks.local_portal', location_id=session['location_id']))
+    
+    form = LocalUserPinForm()
+    
+    if form.validate_on_submit():
+        if user.check_pin(form.pin.data):
+            # Guardar usuario en sesión
+            session['local_user_id'] = user.id
+            
+            log_activity(f'Acceso de usuario local: {user.name} en {user.location.name}')
+            flash(f'Bienvenido, {user.name}!', 'success')
+            return redirect(url_for('tasks.local_user_tasks'))
+        else:
+            flash('PIN incorrecto.', 'danger')
     
     return render_template('tasks/local_user_pin.html',
                           title=f'Acceso de {user.name}',

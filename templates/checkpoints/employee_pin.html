@@ -51,7 +51,7 @@
                                     <div id="pin-display" class="pin-display">****</div>
                                 </div>
                                 
-                                {{ form.pin(class="form-control visually-hidden", id="pin-input", maxlength="4", autocomplete="off", readonly="readonly") }}
+                                {{ form.pin(class="form-control visually-hidden", id="pin-input", maxlength="4", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
                                 
                                 <div class="pin-pad">
                                     <div class="row g-2 mb-2">
@@ -134,23 +134,6 @@
 
 {% block styles %}
 <style>
-    /* Evitar que aparezca el teclado en dispositivos móviles */
-    body {
-        touch-action: manipulation;
-        overscroll-behavior: none;
-    }
-
-    /* Deshabilitar zoom en elementos de entrada (iPhone) */
-    input[type="text"],
-    input[type="number"],
-    input[type="password"] {
-        -webkit-text-size-adjust: 100%;
-        -webkit-touch-callout: none;
-        -webkit-user-select: none;
-        user-select: none;
-        font-size: 16px; /* Esto evita que iOS haga zoom */
-    }
-    
     .pin-display {
         font-size: 2rem;
         letter-spacing: 10px;
@@ -158,50 +141,6 @@
         padding: 0.5rem;
         margin-bottom: 1rem;
         text-align: center;
-    }
-    
-    .pin-display.sending {
-        animation: pulse 0.5s infinite alternate;
-    }
-    
-    .pin-display.error-shake {
-        animation: shake 0.5s;
-        border: 2px solid #dc3545;
-        background-color: rgba(220, 53, 69, 0.1);
-    }
-    
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            opacity: 0.5;
-        }
-        100% {
-            transform: scale(1.1);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
-    }
-    
-    .btn-pulse {
-        animation: btn-pulse 1.5s infinite;
-        box-shadow: 0 0 0 rgba(0, 123, 255, 0.4);
-    }
-    
-    @keyframes btn-pulse {
-        0% {
-            box-shadow: 0 0 0 0 rgba(0, 123, 255, 0.4);
-        }
-        70% {
-            box-shadow: 0 0 0 10px rgba(0, 123, 255, 0);
-        }
-        100% {
-            box-shadow: 0 0 0 0 rgba(0, 123, 255, 0);
-        }
     }
     
     .pin-pad {
@@ -213,7 +152,6 @@
         font-size: 1.5rem;
         padding: 15px;
         border-radius: 10px;
-        touch-action: manipulation;
     }
 </style>
 {% endblock %}
@@ -254,16 +192,6 @@
                 if (pinInput.value.length < 4) {
                     pinInput.value += digit;
                     updatePinDisplay();
-                    
-                    // Verificar automáticamente si se completó el PIN
-                    if (pinInput.value.length === 4) {
-                        // Agregar animación al display
-                        pinDisplay.classList.add('sending');
-                        // Verificar PIN
-                        setTimeout(() => {
-                            verifyPin();
-                        }, 100);
-                    }
                 }
             });
         });
@@ -288,13 +216,8 @@
         // También permitir entrada por teclado
         pinInput.addEventListener('input', updatePinDisplay);
         
-        // No enfocar automáticamente el campo de PIN para evitar teclado virtual
-        // pinInput.focus();
-        
-        // Prevenir el enfoque de input cuando se hace clic en el input
-        pinInput.addEventListener('focus', function(e) {
-            this.blur();
-        });
+        // Enfocar automáticamente el campo de PIN
+        pinInput.focus();
         
         // Al inicio, desactivar el botón de verificar hasta que se tenga un PIN completo
         document.getElementById('validate-pin').disabled = true;
@@ -332,19 +255,16 @@
             }
         }
         
-        // Función para verificar el PIN automáticamente
-        function verifyPin() {
+        // Al hacer clic en el botón de verificar PIN
+        document.getElementById('validate-pin').addEventListener('click', function() {
             // Verificar que el PIN tiene 4 dígitos
             if (pinInput.value.length === 4) {
                 // Mostrar indicador de carga
-                let validationButton = document.getElementById('validate-pin');
-                validationButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verificando...';
-                validationButton.disabled = true;
+                this.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span> Verificando...';
+                this.disabled = true;
                 
                 // Limpiar mensajes de error anteriores
                 clearErrorMessage();
-                
-                console.log('Verificando PIN:', pinInput.value); // Depuración
                 
                 // Hacer una verificación AJAX del PIN
                 fetch('{{ url_for("checkpoints.validate_pin") }}', {
@@ -358,24 +278,13 @@
                         pin: pinInput.value
                     })
                 })
-                .then(response => {
-                    console.log('Respuesta recibida:', response.status); // Depuración
-                    return response.json();
-                })
+                .then(response => response.json())
                 .then(data => {
-                    console.log('Datos recibidos:', data); // Depuración
-                    
                     // Restablecer el botón
-                    validationButton.innerHTML = 'Verificar PIN';
-                    validationButton.disabled = false;
-                    
-                    // Quitar la animación
-                    pinDisplay.classList.remove('sending');
+                    document.getElementById('validate-pin').innerHTML = 'Verificar PIN';
+                    document.getElementById('validate-pin').disabled = false;
                     
                     if (data.success) {
-                        console.log('PIN verificado correctamente'); // Depuración
-                        console.log('Acción a realizar:', data.action); // Depuración
-                        
                         // PIN correcto, ocultar el teclado PIN y los botones de entrada
                         document.querySelector('.pin-container').style.display = 'none';
                         document.getElementById('pin-entry-buttons').style.display = 'none';
@@ -384,69 +293,26 @@
                         document.getElementById('pin-verified').value = '1';
                         
                         // Mostrar los botones de acción
-                        const actionButtons = document.getElementById('action-buttons');
-                        actionButtons.classList.remove('d-none');
-                        
-                        // Mostrar animación de éxito
-                        const form = document.querySelector('form');
-                        form.classList.add('was-validated');
-                        
-                        // Agregar mensaje de éxito
-                        const successMsg = document.createElement('div');
-                        successMsg.className = 'alert alert-success mt-3';
-                        successMsg.textContent = 'PIN verificado correctamente.';
-                        document.querySelector('.form-group').appendChild(successMsg);
-                        
-                        // Resaltar el botón de acción adecuado
-                        const checkinBtn = document.getElementById('btn-checkin');
-                        const checkoutBtn = document.getElementById('btn-checkout');
-                        
-                        if (data.action === 'checkin' && checkinBtn) {
-                            checkinBtn.classList.add('btn-pulse');
-                        } else if (data.action === 'checkout' && checkoutBtn) {
-                            checkoutBtn.classList.add('btn-pulse');
-                        }
+                        document.getElementById('action-buttons').classList.remove('d-none');
                     } else {
-                        console.log('PIN incorrecto'); // Depuración
-                        
                         // PIN incorrecto, mostrar mensaje de error
                         showErrorMessage(data.message || 'PIN incorrecto. Inténtelo de nuevo.');
                         
                         // Limpiar el campo PIN
                         pinInput.value = '';
                         updatePinDisplay();
-                        
-                        // Agregar vibración al display del PIN para indicar error
-                        pinDisplay.classList.add('error-shake');
-                        setTimeout(() => {
-                            pinDisplay.classList.remove('error-shake');
-                        }, 500);
                     }
                 })
                 .catch(error => {
                     // Error de red o del servidor
-                    console.error('Error en la petición:', error); // Depuración
-                    
-                    validationButton.innerHTML = 'Verificar PIN';
-                    validationButton.disabled = false;
-                    
-                    // Quitar la animación
-                    pinDisplay.classList.remove('sending');
+                    document.getElementById('validate-pin').innerHTML = 'Verificar PIN';
+                    document.getElementById('validate-pin').disabled = false;
                     
                     showErrorMessage('Error al verificar el PIN. Inténtelo de nuevo.');
+                    console.error('Error:', error);
                 });
             }
-        }
-        
-        // Verificar PIN automáticamente cuando se introduzcan 4 dígitos
-        pinInput.addEventListener('input', function() {
-            if (this.value.length === 4) {
-                verifyPin();
-            }
         });
-        
-        // Mantener el botón de verificar para compatibilidad
-        document.getElementById('validate-pin').addEventListener('click', verifyPin);
     });
 </script>
 {% endblock %}

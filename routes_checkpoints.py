@@ -1526,9 +1526,9 @@ def employee_pin(id):
         else:
             flash('PIN incorrecto. Inténtelo de nuevo.', 'danger')
     
-    # Renderizar la plantilla con los datos necesarios (usando la versión simplificada)
+    # Renderizar la plantilla con los datos necesarios
     return render_template(
-        'checkpoints/employee_pin_simple.html', 
+        'checkpoints/employee_pin.html', 
         form=form,
         employee=employee,
         pending_record=pending_record,
@@ -2029,92 +2029,54 @@ def get_company_employees():
 @checkpoint_required
 def validate_pin():
     """Validar el PIN del empleado mediante AJAX"""
-    try:
-        current_app.logger.info("Inicio de validación de PIN")
+    if not request.is_json:
+        return jsonify({"success": False, "message": "Se requiere un JSON"}), 400
         
-        if not request.is_json:
-            current_app.logger.warning("Solicitud no es JSON")
-            return jsonify({"success": False, "message": "Se requiere un JSON"}), 400
-            
-        # Obtener datos de la solicitud
-        data = request.get_json()
-        current_app.logger.info(f"Datos recibidos: {data}")
+    # Obtener datos de la solicitud
+    data = request.get_json()
+    employee_id = data.get('employee_id')
+    pin = data.get('pin')
+    
+    if not employee_id or not pin:
+        return jsonify({"success": False, "message": "Falta ID de empleado o PIN"}), 400
         
-        employee_id = data.get('employee_id')
-        pin = data.get('pin')
+    # Obtener el checkpoint activo desde la sesión
+    checkpoint_id = session.get('checkpoint_id')
+    if not checkpoint_id:
+        return jsonify({"success": False, "message": "Sesión de punto de fichaje no iniciada."}), 401
+    
+    # Verificar que el empleado existe y pertenece a la empresa del checkpoint
+    employee = Employee.query.get(employee_id)
+    if not employee:
+        return jsonify({"success": False, "message": "Empleado no encontrado."}), 404
         
-        current_app.logger.info(f"Validando PIN para employee_id: {employee_id}")
+    checkpoint = CheckPoint.query.get(checkpoint_id)
+    if not checkpoint:
+        return jsonify({"success": False, "message": "Punto de fichaje no encontrado."}), 404
+    
+    if employee.company_id != checkpoint.company_id:
+        return jsonify({"success": False, "message": "Empleado no pertenece a la empresa."}), 403
+    
+    # Verificar el PIN (últimos 4 dígitos del DNI)
+    pin_from_dni = employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
+    
+    if pin == pin_from_dni:
+        # Verificar si hay un registro pendiente
+        pending_record = CheckPointRecord.query.filter_by(
+            employee_id=employee.id,
+            checkpoint_id=checkpoint_id,
+            check_out_time=None
+        ).order_by(CheckPointRecord.check_in_time.desc()).first()
         
-        if not employee_id or not pin:
-            current_app.logger.warning("Falta ID de empleado o PIN")
-            return jsonify({"success": False, "message": "Falta ID de empleado o PIN"}), 400
-            
-        # Obtener el checkpoint activo desde la sesión
-        checkpoint_id = session.get('checkpoint_id')
-        if not checkpoint_id:
-            current_app.logger.warning("Sesión de punto de fichaje no iniciada")
-            return jsonify({"success": False, "message": "Sesión de punto de fichaje no iniciada."}), 401
+        action = "checkout" if pending_record else "checkin"
         
-        current_app.logger.info(f"Punto de fichaje ID: {checkpoint_id}")
-        
-        # Verificar que el empleado existe y pertenece a la empresa del checkpoint
-        employee = Employee.query.get(employee_id)
-        if not employee:
-            current_app.logger.warning(f"Empleado no encontrado: {employee_id}")
-            return jsonify({"success": False, "message": "Empleado no encontrado."}), 404
-            
-        checkpoint = CheckPoint.query.get(checkpoint_id)
-        if not checkpoint:
-            current_app.logger.warning(f"Punto de fichaje no encontrado: {checkpoint_id}")
-            return jsonify({"success": False, "message": "Punto de fichaje no encontrado."}), 404
-        
-        if employee.company_id != checkpoint.company_id:
-            current_app.logger.warning(f"Empleado {employee_id} no pertenece a la empresa del checkpoint {checkpoint_id}")
-            return jsonify({"success": False, "message": "Empleado no pertenece a la empresa."}), 403
-        
-        # Verificar el PIN (últimos 4 dígitos del DNI)
-        pin_from_dni = employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
-        
-        current_app.logger.info(f"PIN empleado: {pin_from_dni}, PIN ingresado: {pin}")
-        
-        # Validar formato del PIN
-        if not pin.isdigit() or len(pin) != 4:
-            current_app.logger.warning(f"Formato de PIN incorrecto para empleado {employee_id}: {pin}")
-            return jsonify({"success": False, "message": "El PIN debe tener 4 dígitos numéricos"}), 400
-            
-        if pin == pin_from_dni:
-            try:
-                # Verificar si hay un registro pendiente
-                pending_record = CheckPointRecord.query.filter_by(
-                    employee_id=employee.id,
-                    checkpoint_id=checkpoint_id,
-                    check_out_time=None
-                ).order_by(CheckPointRecord.check_in_time.desc()).first()
-                
-                action = "checkout" if pending_record else "checkin"
-                
-                # Verificar estado del empleado
-                if not employee.is_active:
-                    current_app.logger.warning(f"Empleado {employee_id} no está activo")
-                    return jsonify({"success": False, "message": "Este empleado no está activo en el sistema"}), 403
-                
-                current_app.logger.info(f"PIN validado correctamente para empleado {employee_id}. Acción: {action}")
-                
-                return jsonify({
-                    "success": True, 
-                    "action": action,
-                    "is_on_shift": employee.is_on_shift,
-                    "name": f"{employee.first_name} {employee.last_name}"
-                })
-            except Exception as e:
-                current_app.logger.error(f"Error al validar PIN: {str(e)}")
-                return jsonify({"success": False, "message": "Error del sistema. Inténtelo de nuevo."}), 500
-        else:
-            current_app.logger.warning(f"PIN incorrecto para empleado {employee_id}")
-            return jsonify({"success": False, "message": "PIN incorrecto. Recuerde que el PIN son los últimos 4 dígitos de su DNI/NIE."}), 401
-    except Exception as e:
-        current_app.logger.error(f"Error en validate_pin: {str(e)}")
-        return jsonify({"success": False, "message": f"Error en el servidor: {str(e)}"}), 500
+        return jsonify({
+            "success": True, 
+            "action": action,
+            "is_on_shift": employee.is_on_shift
+        })
+    else:
+        return jsonify({"success": False, "message": "PIN incorrecto"}), 401
 
 
 # Integrar el blueprint en la aplicación principal

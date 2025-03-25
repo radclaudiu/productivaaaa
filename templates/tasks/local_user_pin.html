@@ -49,7 +49,7 @@
                             
                             <!-- Hidden real input -->
                             <div class="pin-input-container d-none">
-                                {{ form.pin(class="form-control", id="pinInput", autocomplete="off", readonly="readonly") }}
+                                {{ form.pin(class="form-control", id="pinInput", autocomplete="off") }}
                                 
                                 {% for error in form.pin.errors %}
                                 <div class="invalid-feedback d-block mb-3">{{ error }}</div>
@@ -156,33 +156,6 @@
         transform: scale(1.1);
     }
     
-    .pin-dot.sending {
-        animation: pulse 0.5s infinite alternate;
-    }
-    
-    .pin-dot.error {
-        background-color: #dc3545;
-        border-color: #dc3545;
-        animation: shake 0.5s;
-    }
-    
-    @keyframes pulse {
-        0% {
-            transform: scale(1);
-            opacity: 0.5;
-        }
-        100% {
-            transform: scale(1.2);
-            opacity: 1;
-        }
-    }
-    
-    @keyframes shake {
-        0%, 100% { transform: translateX(0); }
-        10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
-        20%, 40%, 60%, 80% { transform: translateX(5px); }
-    }
-    
     /* Estilo para el teclado numérico */
     .numeric-keypad {
         max-width: 350px;
@@ -244,23 +217,13 @@
                 }
             });
             
-            // Validar y enviar automáticamente cuando haya 4 dígitos
+            // Mostrar/ocultar el botón de enviar
             if (pinLength === 4) {
-                // Mostrar una animación visual para indicar que se está enviando
-                pinDots.forEach(dot => {
-                    dot.classList.add('sending');
-                });
-                
-                console.log('PIN completo, enviando formulario...');
-                
-                // Mostrar el botón momentáneamente para propósitos de depuración
                 submitBtn.style.display = 'block';
-                
-                // Pequeño retraso para evitar problemas de sincronización
+                // Submit form automáticamente después de un breve retraso
                 setTimeout(() => {
-                    console.log('Enviando formulario...');
                     submitBtn.form.submit();
-                }, 100);
+                }, 500);
             } else {
                 submitBtn.style.display = 'none';
             }
@@ -307,11 +270,6 @@
             } else if (e.key === 'Enter' && pinInput.value.length === 4) {
                 submitBtn.form.submit();
             }
-        });
-        
-        // Prevenir el enfoque de input cuando se hace clic en el input
-        pinInput.addEventListener('focus', function(e) {
-            this.blur();
         });
         
         // Inicializar
