@@ -2063,19 +2063,21 @@ def download_excel_template():
     ws['C1'] = "Vida útil (días)"
     ws['D1'] = "Descongelación (horas)"
     ws['E1'] = "Refrigeración (horas)"
-    ws['F1'] = "Gastro (horas)"
-    ws['G1'] = "Caliente (horas)"
-    ws['H1'] = "Seco (horas)"
+    ws['F1'] = "Refrigerado Abierto (horas)"
+    ws['G1'] = "Gastro (horas)"
+    ws['H1'] = "Caliente (horas)"
+    ws['I1'] = "Seco (horas)"
     
     # Añadir una fila de ejemplo
     ws['A2'] = "Ejemplo Producto"
     ws['B2'] = "Descripción de ejemplo"
     ws['C2'] = 12  # Vida útil secundaria en días
     ws['D2'] = 48  # Horas para descongelación (2 días)
-    ws['E2'] = 72  # Horas para refrigeración (3 días) 
-    ws['F2'] = 96  # Horas para gastro (4 días)
-    ws['G2'] = 2   # Horas para caliente
-    ws['H2'] = 168 # Horas para seco (7 días)
+    ws['E2'] = 72  # Horas para refrigeración (3 días)
+    ws['F2'] = 48  # Horas para refrigerado abierto (2 días)
+    ws['G2'] = 96  # Horas para gastro (4 días)
+    ws['H2'] = 2   # Horas para caliente
+    ws['I2'] = 168 # Horas para seco (7 días)
     
     # Guardar a un objeto BytesIO
     output = io.BytesIO()
@@ -2259,6 +2261,7 @@ def import_labels_excel(location_id):
                 conservation_types = [
                     (ConservationType.DESCONGELACION, hours_descongelacion),
                     (ConservationType.REFRIGERACION, hours_refrigeracion),
+                    (ConservationType.REFRIGERADO_ABIERTO, hours_refrigerado_abierto),
                     (ConservationType.GASTRO, hours_gastro),
                     (ConservationType.CALIENTE, hours_caliente),
                     (ConservationType.SECO, hours_seco)
