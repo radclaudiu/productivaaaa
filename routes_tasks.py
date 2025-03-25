@@ -2221,13 +2221,15 @@ def import_labels_excel(location_id):
                 # Horas para cada tipo de conservación
                 hours_descongelacion = ws[f'D{row}'].value
                 hours_refrigeracion = ws[f'E{row}'].value
-                hours_gastro = ws[f'F{row}'].value
-                hours_caliente = ws[f'G{row}'].value
-                hours_seco = ws[f'H{row}'].value
+                hours_refrigerado_abierto = ws[f'F{row}'].value
+                hours_gastro = ws[f'G{row}'].value
+                hours_caliente = ws[f'H{row}'].value
+                hours_seco = ws[f'I{row}'].value
                 
                 # Usar horas directamente para almacenar en la base de datos
                 hours_descongelacion = int(hours_descongelacion) if hours_descongelacion is not None else None
                 hours_refrigeracion = int(hours_refrigeracion) if hours_refrigeracion is not None else None
+                hours_refrigerado_abierto = int(hours_refrigerado_abierto) if hours_refrigerado_abierto is not None else None
                 hours_gastro = int(hours_gastro) if hours_gastro is not None else None
                 hours_caliente = int(hours_caliente) if hours_caliente is not None else None
                 hours_seco = int(hours_seco) if hours_seco is not None else None
