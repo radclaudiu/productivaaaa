@@ -2119,9 +2119,10 @@ def export_labels_excel(location_id):
     ws['C1'] = "Vida útil (días)"
     ws['D1'] = "Descongelación (horas)"
     ws['E1'] = "Refrigeración (horas)"
-    ws['F1'] = "Gastro (horas)"
-    ws['G1'] = "Caliente (horas)"
-    ws['H1'] = "Seco (horas)"
+    ws['F1'] = "Refrigerado Abierto (horas)"
+    ws['G1'] = "Gastro (horas)"
+    ws['H1'] = "Caliente (horas)"
+    ws['I1'] = "Seco (horas)"
     
     # Obtener productos de este local
     products = Product.query.filter_by(location_id=location_id).order_by(Product.name).all()
@@ -2142,12 +2143,14 @@ def export_labels_excel(location_id):
                 ws[f'D{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.REFRIGERACION:
                 ws[f'E{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.GASTRO:
+            elif conservation.conservation_type == ConservationType.REFRIGERADO_ABIERTO:
                 ws[f'F{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.CALIENTE:
+            elif conservation.conservation_type == ConservationType.GASTRO:
                 ws[f'G{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.SECO:
+            elif conservation.conservation_type == ConservationType.CALIENTE:
                 ws[f'H{row}'] = hours_valid
+            elif conservation.conservation_type == ConservationType.SECO:
+                ws[f'I{row}'] = hours_valid
         
         row += 1
     
