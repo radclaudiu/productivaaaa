@@ -2140,14 +2140,12 @@ def export_labels_excel(location_id):
                 ws[f'D{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.REFRIGERACION:
                 ws[f'E{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.REFRIGERADO_ABIERTO:
-                ws[f'F{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.GASTRO:
-                ws[f'G{row}'] = hours_valid
+                ws[f'F{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.CALIENTE:
-                ws[f'H{row}'] = hours_valid
+                ws[f'G{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.SECO:
-                ws[f'I{row}'] = hours_valid
+                ws[f'H{row}'] = hours_valid
         
         row += 1
     
@@ -2223,15 +2221,13 @@ def import_labels_excel(location_id):
                 # Horas para cada tipo de conservación
                 hours_descongelacion = ws[f'D{row}'].value
                 hours_refrigeracion = ws[f'E{row}'].value
-                hours_refrigerado_abierto = ws[f'F{row}'].value
-                hours_gastro = ws[f'G{row}'].value
-                hours_caliente = ws[f'H{row}'].value
-                hours_seco = ws[f'I{row}'].value
+                hours_gastro = ws[f'F{row}'].value
+                hours_caliente = ws[f'G{row}'].value
+                hours_seco = ws[f'H{row}'].value
                 
                 # Usar horas directamente para almacenar en la base de datos
                 hours_descongelacion = int(hours_descongelacion) if hours_descongelacion is not None else None
                 hours_refrigeracion = int(hours_refrigeracion) if hours_refrigeracion is not None else None
-                hours_refrigerado_abierto = int(hours_refrigerado_abierto) if hours_refrigerado_abierto is not None else None
                 hours_gastro = int(hours_gastro) if hours_gastro is not None else None
                 hours_caliente = int(hours_caliente) if hours_caliente is not None else None
                 hours_seco = int(hours_seco) if hours_seco is not None else None
@@ -2261,7 +2257,6 @@ def import_labels_excel(location_id):
                 conservation_types = [
                     (ConservationType.DESCONGELACION, hours_descongelacion),
                     (ConservationType.REFRIGERACION, hours_refrigeracion),
-                    (ConservationType.REFRIGERADO_ABIERTO, hours_refrigerado_abierto),
                     (ConservationType.GASTRO, hours_gastro),
                     (ConservationType.CALIENTE, hours_caliente),
                     (ConservationType.SECO, hours_seco)
@@ -2270,14 +2265,9 @@ def import_labels_excel(location_id):
                 for cons_type, hours in conservation_types:
                     if hours is not None and hours > 0:
                         # Buscar conservación existente o crear una nueva
-                        # Debug para registrar el tipo exacto que estamos buscando en la importación Excel
-                        current_app.logger.debug(f"Importación Excel - Buscando conservation_type: {cons_type.value} para producto ID: {product.id}")
-                        
-                        # Usar filter_by con cons_type.name para mantener consistencia con los valores en BD
-                        cons_type_value = cons_type.name
                         conservation = ProductConservation.query.filter_by(
-                            product_id=product.id,
-                            conservation_type=cons_type_value
+                            product_id=product.id, 
+                            conservation_type=cons_type
                         ).first()
                         
                         if conservation:
@@ -2342,36 +2332,20 @@ def generate_labels():
         if product.location_id != user.location_id:
             return "Error: El producto no pertenece a este local", 403
         
-        # Convertir string a enum - Importante usar mayúsculas
-        # En este punto conservation_type_str es probablemente minúsculas desde el formulario
-        conservation_type_str_upper = conservation_type_str.upper()
-        current_app.logger.debug(f"Valor de conservación recibido: {conservation_type_str} -> convertido a: {conservation_type_str_upper}")
-        
+        # Convertir string a enum
         conservation_type = None
         for ct in ConservationType:
-            if ct.value == conservation_type_str_upper:
+            if ct.value == conservation_type_str:
                 conservation_type = ct
                 break
                 
         if not conservation_type:
-            # Intentar con el valor original
-            for ct in ConservationType:
-                if ct.value == conservation_type_str:
-                    conservation_type = ct
-                    break
-            
-            if not conservation_type:
-                return "Error: Tipo de conservación no válido", 400
+            return "Error: Tipo de conservación no válido", 400
         
         # Obtener configuración de conservación específica
-        # Debug para registrar el tipo exacto que estamos buscando
-        current_app.logger.debug(f"Generando labels - Buscando conservation_type: {conservation_type.value} para producto ID: {product.id}")
-        
-        # Usar filter_by con conservation_type.name para consistencia con los valores en BD
-        conservation_type_value = conservation_type.name
         conservation = ProductConservation.query.filter_by(
-            product_id=product.id,
-            conservation_type=conservation_type_value
+            product_id=product.id, 
+            conservation_type=conservation_type
         ).first()
         
         # Fecha y hora actual
@@ -2386,7 +2360,6 @@ def generate_labels():
             hours_map = {
                 ConservationType.DESCONGELACION: 24,  # 1 día
                 ConservationType.REFRIGERACION: 72,   # 3 días
-                ConservationType.REFRIGERADO_ABIERTO: 48,  # 2 días (48 horas)
                 ConservationType.GASTRO: 48,          # 2 días
                 ConservationType.CALIENTE: 2,         # 2 horas
                 ConservationType.SECO: 720            # 30 días
@@ -2438,21 +2411,16 @@ def generate_labels():
             
             # Obtener el tipo de conservación de refrigeración
             for ct in ConservationType:
-                if ct.value == "REFRIGERACION":  # Ahora estamos usando valores en mayúsculas
+                if ct.value == "refrigeracion":
                     refrigeration_conservation_type = ct
                     break
             
             # Obtener la configuración de refrigeración (si existe)
             ref_conservation = None
             if refrigeration_conservation_type:
-                # Debug para registrar el tipo exacto que estamos buscando
-                current_app.logger.debug(f"Generando etiqueta refrigeración - Buscando conservation_type: {refrigeration_conservation_type.value} para producto ID: {product.id}")
-                
-                # Usar filter_by con el nombre del enum para consistencia con los valores en BD
-                refrigeration_type_value = refrigeration_conservation_type.name
                 ref_conservation = ProductConservation.query.filter_by(
-                    product_id=product.id,
-                    conservation_type=refrigeration_type_value
+                    product_id=product.id, 
+                    conservation_type=refrigeration_conservation_type
                 ).first()
             
             # Calcular fecha de caducidad para refrigeración a partir de la fecha de caducidad de descongelación
@@ -2703,40 +2671,20 @@ def manage_product_conservations(id):
         conservation_type_str = form.conservation_type.data
         conservation_type = None
         
-        # Convertir string a enum - Importante usar mayúsculas
-        # En este punto conservation_type_str es probablemente minúsculas desde el formulario
-        conservation_type_str_upper = conservation_type_str.upper()
-        current_app.logger.debug(f"Valor de conservación recibido: {conservation_type_str} -> convertido a: {conservation_type_str_upper}")
-        
-        conservation_type = None
+        # Convertir string a enum
         for ct in ConservationType:
-            if ct.value == conservation_type_str_upper:
+            if ct.value == conservation_type_str:
                 conservation_type = ct
                 break
         
         if not conservation_type:
-            # Intentar con el valor original por si acaso
-            for ct in ConservationType:
-                if ct.value == conservation_type_str:
-                    conservation_type = ct
-                    break
-            
-            if not conservation_type:
-                flash('Tipo de conservación no válido', 'danger')
-                return redirect(url_for('tasks.manage_product_conservations', id=product.id))
+            flash('Tipo de conservación no válido', 'danger')
+            return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         
-        # Buscar si ya existe esta configuración usando el valor del enum, no el objeto enum
-        # Debug para registrar el tipo exacto que estamos buscando
-        current_app.logger.debug(f"Buscando conservation_type: {conservation_type.value} para producto ID: {product.id}")
-        
-        # IMPORTANTE: Usar conservation_type.name como valor de string para la búsqueda
-        # ya que PostgreSQL almacena los valores enum en mayúsculas
-        conservation_type_value = conservation_type.name  # Esto será 'REFRIGERADO_ABIERTO', etc.
-        
-        # Usar filter_by con el valor de string para evitar problemas de comparación de tipo enum
+        # Buscar si ya existe esta configuración
         conservation = ProductConservation.query.filter_by(
             product_id=product.id,
-            conservation_type=conservation_type_value
+            conservation_type=conservation_type
         ).first()
         
         # Obtener horas directamente del formulario
