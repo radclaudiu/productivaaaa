@@ -2270,9 +2270,13 @@ def import_labels_excel(location_id):
                 for cons_type, hours in conservation_types:
                     if hours is not None and hours > 0:
                         # Buscar conservación existente o crear una nueva
-                        conservation = ProductConservation.query.filter_by(
-                            product_id=product.id, 
-                            conservation_type=cons_type
+                        # Debug para registrar el tipo exacto que estamos buscando en la importación Excel
+                        current_app.logger.debug(f"Importación Excel - Buscando conservation_type: {cons_type.value} para producto ID: {product.id}")
+                        
+                        # Usamos .filter() en lugar de .filter_by() para mayor control
+                        conservation = ProductConservation.query.filter(
+                            ProductConservation.product_id == product.id, 
+                            ProductConservation.conservation_type == cons_type
                         ).first()
                         
                         if conservation:
@@ -2687,10 +2691,14 @@ def manage_product_conservations(id):
             flash('Tipo de conservación no válido', 'danger')
             return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         
-        # Buscar si ya existe esta configuración
-        conservation = ProductConservation.query.filter_by(
-            product_id=product.id,
-            conservation_type=conservation_type
+        # Buscar si ya existe esta configuración usando el valor del enum, no el objeto enum
+        # Debug para registrar el tipo exacto que estamos buscando
+        current_app.logger.debug(f"Buscando conservation_type: {conservation_type.value} para producto ID: {product.id}")
+        
+        # Usamos .filter() en lugar de .filter_by() para mayor control
+        conservation = ProductConservation.query.filter(
+            ProductConservation.product_id == product.id,
+            ProductConservation.conservation_type == conservation_type
         ).first()
         
         # Obtener horas directamente del formulario
