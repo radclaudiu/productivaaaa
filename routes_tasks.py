@@ -2063,21 +2063,19 @@ def download_excel_template():
     ws['C1'] = "Vida útil (días)"
     ws['D1'] = "Descongelación (horas)"
     ws['E1'] = "Refrigeración (horas)"
-    ws['F1'] = "Refrigerado Abierto (horas)"
-    ws['G1'] = "Gastro (horas)"
-    ws['H1'] = "Caliente (horas)"
-    ws['I1'] = "Seco (horas)"
+    ws['F1'] = "Gastro (horas)"
+    ws['G1'] = "Caliente (horas)"
+    ws['H1'] = "Seco (horas)"
     
     # Añadir una fila de ejemplo
     ws['A2'] = "Ejemplo Producto"
     ws['B2'] = "Descripción de ejemplo"
     ws['C2'] = 12  # Vida útil secundaria en días
     ws['D2'] = 48  # Horas para descongelación (2 días)
-    ws['E2'] = 72  # Horas para refrigeración (3 días)
-    ws['F2'] = 48  # Horas para refrigerado abierto (2 días)
-    ws['G2'] = 96  # Horas para gastro (4 días)
-    ws['H2'] = 2   # Horas para caliente
-    ws['I2'] = 168 # Horas para seco (7 días)
+    ws['E2'] = 72  # Horas para refrigeración (3 días) 
+    ws['F2'] = 96  # Horas para gastro (4 días)
+    ws['G2'] = 2   # Horas para caliente
+    ws['H2'] = 168 # Horas para seco (7 días)
     
     # Guardar a un objeto BytesIO
     output = io.BytesIO()
@@ -2119,10 +2117,9 @@ def export_labels_excel(location_id):
     ws['C1'] = "Vida útil (días)"
     ws['D1'] = "Descongelación (horas)"
     ws['E1'] = "Refrigeración (horas)"
-    ws['F1'] = "Refrigerado Abierto (horas)"
-    ws['G1'] = "Gastro (horas)"
-    ws['H1'] = "Caliente (horas)"
-    ws['I1'] = "Seco (horas)"
+    ws['F1'] = "Gastro (horas)"
+    ws['G1'] = "Caliente (horas)"
+    ws['H1'] = "Seco (horas)"
     
     # Obtener productos de este local
     products = Product.query.filter_by(location_id=location_id).order_by(Product.name).all()
@@ -2143,14 +2140,12 @@ def export_labels_excel(location_id):
                 ws[f'D{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.REFRIGERACION:
                 ws[f'E{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.REFRIGERADO_ABIERTO:
-                ws[f'F{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.GASTRO:
-                ws[f'G{row}'] = hours_valid
+                ws[f'F{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.CALIENTE:
-                ws[f'H{row}'] = hours_valid
+                ws[f'G{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.SECO:
-                ws[f'I{row}'] = hours_valid
+                ws[f'H{row}'] = hours_valid
         
         row += 1
     
@@ -2226,15 +2221,13 @@ def import_labels_excel(location_id):
                 # Horas para cada tipo de conservación
                 hours_descongelacion = ws[f'D{row}'].value
                 hours_refrigeracion = ws[f'E{row}'].value
-                hours_refrigerado_abierto = ws[f'F{row}'].value
-                hours_gastro = ws[f'G{row}'].value
-                hours_caliente = ws[f'H{row}'].value
-                hours_seco = ws[f'I{row}'].value
+                hours_gastro = ws[f'F{row}'].value
+                hours_caliente = ws[f'G{row}'].value
+                hours_seco = ws[f'H{row}'].value
                 
                 # Usar horas directamente para almacenar en la base de datos
                 hours_descongelacion = int(hours_descongelacion) if hours_descongelacion is not None else None
                 hours_refrigeracion = int(hours_refrigeracion) if hours_refrigeracion is not None else None
-                hours_refrigerado_abierto = int(hours_refrigerado_abierto) if hours_refrigerado_abierto is not None else None
                 hours_gastro = int(hours_gastro) if hours_gastro is not None else None
                 hours_caliente = int(hours_caliente) if hours_caliente is not None else None
                 hours_seco = int(hours_seco) if hours_seco is not None else None
@@ -2264,7 +2257,6 @@ def import_labels_excel(location_id):
                 conservation_types = [
                     (ConservationType.DESCONGELACION, hours_descongelacion),
                     (ConservationType.REFRIGERACION, hours_refrigeracion),
-                    (ConservationType.REFRIGERADO_ABIERTO, hours_refrigerado_abierto),
                     (ConservationType.GASTRO, hours_gastro),
                     (ConservationType.CALIENTE, hours_caliente),
                     (ConservationType.SECO, hours_seco)
@@ -2366,12 +2358,11 @@ def generate_labels():
         else:
             # Valores predeterminados por tipo
             hours_map = {
-                ConservationType.DESCONGELACION: 24,     # 1 día
-                ConservationType.REFRIGERACION: 72,      # 3 días
-                ConservationType.REFRIGERADO_ABIERTO: 48, # 2 días
-                ConservationType.GASTRO: 48,             # 2 días
-                ConservationType.CALIENTE: 2,            # 2 horas
-                ConservationType.SECO: 720               # 30 días
+                ConservationType.DESCONGELACION: 24,  # 1 día
+                ConservationType.REFRIGERACION: 72,   # 3 días
+                ConservationType.GASTRO: 48,          # 2 días
+                ConservationType.CALIENTE: 2,         # 2 horas
+                ConservationType.SECO: 720            # 30 días
             }
             hours = hours_map.get(conservation_type, 24)  # 24h por defecto
             expiry_datetime = now + timedelta(hours=hours)
@@ -2664,9 +2655,10 @@ def manage_product_conservations(id):
     selected_conservation = None
     selected_type = request.args.get('type')
     if request.method == 'GET' and selected_type:
-        # Buscar el tipo de conservación en el diccionario
-        if selected_type in conservation_dict:
-            selected_conservation = conservation_dict[selected_type]
+        for cons in conservations:
+            if cons.conservation_type.value == selected_type:
+                selected_conservation = cons
+                break
     
     # Crear formulario con o sin objeto preexistente
     form = ProductConservationForm(obj=selected_conservation)
@@ -2689,30 +2681,23 @@ def manage_product_conservations(id):
             flash('Tipo de conservación no válido', 'danger')
             return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         
-        # Buscar si ya existe esta configuración usando el diccionario
-        conservation = conservation_dict.get(conservation_type.value)
-        
-        # Si no está en el diccionario, buscar en la base de datos para estar seguros
-        if not conservation:
-            # Usar .scalar() para asegurar que solo obtenemos un resultado
-            conservation = db.session.query(ProductConservation).filter_by(
-                product_id=product.id,
-                conservation_type=conservation_type
-            ).scalar()
+        # Buscar si ya existe esta configuración
+        conservation = ProductConservation.query.filter_by(
+            product_id=product.id,
+            conservation_type=conservation_type
+        ).first()
         
         # Obtener horas directamente del formulario
         hours_valid = form.hours_valid.data
         
         # Debug logging
-        current_app.logger.debug(f"Tipo de conservación: {conservation_type.value}, Horas recibidas: {hours_valid}")
+        current_app.logger.debug(f"Horas recibidas: {hours_valid}")
         
         if conservation:
             # Actualizar existente
-            current_app.logger.debug(f"Actualizando conservación existente ID: {conservation.id}")
             conservation.hours_valid = hours_valid
         else:
             # Crear nueva
-            current_app.logger.debug(f"Creando nueva conservación para {conservation_type.value}")
             conservation = ProductConservation(
                 product_id=product.id,
                 conservation_type=conservation_type,
@@ -2724,13 +2709,12 @@ def manage_product_conservations(id):
             db.session.commit()
             # Verificar que se guardó correctamente
             db.session.refresh(conservation)
-            current_app.logger.debug(f"Guardado en BD: {conservation.id}, Tipo: {conservation.conservation_type.value}, Horas: {conservation.hours_valid}")
+            current_app.logger.debug(f"Guardado en BD: {conservation.hours_valid} horas")
             
             flash('Configuración de conservación guardada correctamente', 'success')
             return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         except Exception as e:
             db.session.rollback()
-            current_app.logger.error(f"Error al guardar configuración: {str(e)}")
             flash(f'Error al guardar configuración: {str(e)}', 'danger')
     
     return render_template(

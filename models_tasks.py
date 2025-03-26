@@ -425,12 +425,11 @@ class TaskCompletion(db.Model):
 # Modelos para el sistema de etiquetas
 
 class ConservationType(enum.Enum):
-    DESCONGELACION = "DESCONGELACION"
-    REFRIGERACION = "REFRIGERACION"
-    REFRIGERADO_ABIERTO = "REFRIGERADO_ABIERTO"
-    GASTRO = "GASTRO"
-    CALIENTE = "CALIENTE"
-    SECO = "SECO"
+    DESCONGELACION = "descongelacion"
+    REFRIGERACION = "refrigeracion"
+    GASTRO = "gastro"
+    CALIENTE = "caliente"
+    SECO = "seco"
 
 class Product(db.Model):
     """Modelo para productos alimenticios que pueden ser etiquetados"""
