@@ -45,6 +45,8 @@
                                                     <span class="text-primary"><i class="bi bi-snow me-2"></i>Descongelación</span>
                                                 {% elif conservation.conservation_type.value == 'refrigeracion' %}
                                                     <span class="text-info"><i class="bi bi-thermometer-low me-2"></i>Refrigeración</span>
+                                                {% elif conservation.conservation_type.value == 'refrigerado_abierto' %}
+                                                    <span class="text-primary-emphasis"><i class="bi bi-thermometer me-2"></i>Refri Abierto</span>
                                                 {% elif conservation.conservation_type.value == 'gastro' %}
                                                     <span class="text-success"><i class="bi bi-cup-hot me-2"></i>Gastro</span>
                                                 {% elif conservation.conservation_type.value == 'caliente' %}
@@ -117,6 +119,10 @@
                         <li class="mb-2">
                             <span class="text-info"><i class="bi bi-thermometer-low me-2"></i>Refrigeración</span>: 
                             <small class="text-muted">Para productos refrigerados (2°C - 8°C).</small>
+                        </li>
+                        <li class="mb-2">
+                            <span class="text-primary-emphasis"><i class="bi bi-thermometer me-2"></i>Refri Abierto</span>: 
+                            <small class="text-muted">Para productos refrigerados una vez abiertos.</small>
                         </li>
                         <li class="mb-2">
                             <span class="text-success"><i class="bi bi-cup-hot me-2"></i>Gastro</span>: 
