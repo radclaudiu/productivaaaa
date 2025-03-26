@@ -2273,10 +2273,11 @@ def import_labels_excel(location_id):
                         # Debug para registrar el tipo exacto que estamos buscando en la importación Excel
                         current_app.logger.debug(f"Importación Excel - Buscando conservation_type: {cons_type.value} para producto ID: {product.id}")
                         
-                        # Usamos .filter() en lugar de .filter_by() para mayor control
-                        conservation = ProductConservation.query.filter(
-                            ProductConservation.product_id == product.id, 
-                            ProductConservation.conservation_type == cons_type
+                        # Usar filter_by con cons_type.name para mantener consistencia con los valores en BD
+                        cons_type_value = cons_type.name
+                        conservation = ProductConservation.query.filter_by(
+                            product_id=product.id,
+                            conservation_type=cons_type_value
                         ).first()
                         
                         if conservation:
@@ -2341,24 +2342,36 @@ def generate_labels():
         if product.location_id != user.location_id:
             return "Error: El producto no pertenece a este local", 403
         
-        # Convertir string a enum
+        # Convertir string a enum - Importante usar mayúsculas
+        # En este punto conservation_type_str es probablemente minúsculas desde el formulario
+        conservation_type_str_upper = conservation_type_str.upper()
+        current_app.logger.debug(f"Valor de conservación recibido: {conservation_type_str} -> convertido a: {conservation_type_str_upper}")
+        
         conservation_type = None
         for ct in ConservationType:
-            if ct.value == conservation_type_str:
+            if ct.value == conservation_type_str_upper:
                 conservation_type = ct
                 break
                 
         if not conservation_type:
-            return "Error: Tipo de conservación no válido", 400
+            # Intentar con el valor original
+            for ct in ConservationType:
+                if ct.value == conservation_type_str:
+                    conservation_type = ct
+                    break
+            
+            if not conservation_type:
+                return "Error: Tipo de conservación no válido", 400
         
         # Obtener configuración de conservación específica
         # Debug para registrar el tipo exacto que estamos buscando
         current_app.logger.debug(f"Generando labels - Buscando conservation_type: {conservation_type.value} para producto ID: {product.id}")
         
-        # Usamos .filter() en lugar de .filter_by() para mayor control
-        conservation = ProductConservation.query.filter(
-            ProductConservation.product_id == product.id, 
-            ProductConservation.conservation_type == conservation_type
+        # Usar filter_by con conservation_type.name para consistencia con los valores en BD
+        conservation_type_value = conservation_type.name
+        conservation = ProductConservation.query.filter_by(
+            product_id=product.id,
+            conservation_type=conservation_type_value
         ).first()
         
         # Fecha y hora actual
@@ -2425,7 +2438,7 @@ def generate_labels():
             
             # Obtener el tipo de conservación de refrigeración
             for ct in ConservationType:
-                if ct.value == "refrigeracion":
+                if ct.value == "REFRIGERACION":  # Ahora estamos usando valores en mayúsculas
                     refrigeration_conservation_type = ct
                     break
             
@@ -2435,10 +2448,11 @@ def generate_labels():
                 # Debug para registrar el tipo exacto que estamos buscando
                 current_app.logger.debug(f"Generando etiqueta refrigeración - Buscando conservation_type: {refrigeration_conservation_type.value} para producto ID: {product.id}")
                 
-                # Usamos .filter() en lugar de .filter_by() para mayor control
-                ref_conservation = ProductConservation.query.filter(
-                    ProductConservation.product_id == product.id, 
-                    ProductConservation.conservation_type == refrigeration_conservation_type
+                # Usar filter_by con el nombre del enum para consistencia con los valores en BD
+                refrigeration_type_value = refrigeration_conservation_type.name
+                ref_conservation = ProductConservation.query.filter_by(
+                    product_id=product.id,
+                    conservation_type=refrigeration_type_value
                 ).first()
             
             # Calcular fecha de caducidad para refrigeración a partir de la fecha de caducidad de descongelación
@@ -2703,10 +2717,14 @@ def manage_product_conservations(id):
         # Debug para registrar el tipo exacto que estamos buscando
         current_app.logger.debug(f"Buscando conservation_type: {conservation_type.value} para producto ID: {product.id}")
         
-        # Usamos .filter() en lugar de .filter_by() para mayor control
-        conservation = ProductConservation.query.filter(
-            ProductConservation.product_id == product.id,
-            ProductConservation.conservation_type == conservation_type
+        # IMPORTANTE: Usar conservation_type.name como valor de string para la búsqueda
+        # ya que PostgreSQL almacena los valores enum en mayúsculas
+        conservation_type_value = conservation_type.name  # Esto será 'REFRIGERADO_ABIERTO', etc.
+        
+        # Usar filter_by con el valor de string para evitar problemas de comparación de tipo enum
+        conservation = ProductConservation.query.filter_by(
+            product_id=product.id,
+            conservation_type=conservation_type_value
         ).first()
         
         # Obtener horas directamente del formulario
