@@ -425,12 +425,14 @@ class TaskCompletion(db.Model):
 # Modelos para el sistema de etiquetas
 
 class ConservationType(enum.Enum):
-    DESCONGELACION = "descongelacion"
-    REFRIGERACION = "refrigeracion"
-    REFRIGERADO_ABIERTO = "refrigerado_abierto"
-    GASTRO = "gastro"
-    CALIENTE = "caliente"
-    SECO = "seco"
+    # IMPORTANTE: Los valores en la BD están en MAYÚSCULAS debido a cómo funciona PostgreSQL con enums
+    # No cambiar estos valores sin migrar la BD
+    DESCONGELACION = "DESCONGELACION"
+    REFRIGERACION = "REFRIGERACION"
+    REFRIGERADO_ABIERTO = "REFRIGERADO_ABIERTO"
+    GASTRO = "GASTRO"
+    CALIENTE = "CALIENTE"
+    SECO = "SECO"
 
 class Product(db.Model):
     """Modelo para productos alimenticios que pueden ser etiquetados"""
