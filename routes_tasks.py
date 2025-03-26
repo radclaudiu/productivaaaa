@@ -2703,15 +2703,27 @@ def manage_product_conservations(id):
         conservation_type_str = form.conservation_type.data
         conservation_type = None
         
-        # Convertir string a enum
+        # Convertir string a enum - Importante usar mayúsculas
+        # En este punto conservation_type_str es probablemente minúsculas desde el formulario
+        conservation_type_str_upper = conservation_type_str.upper()
+        current_app.logger.debug(f"Valor de conservación recibido: {conservation_type_str} -> convertido a: {conservation_type_str_upper}")
+        
+        conservation_type = None
         for ct in ConservationType:
-            if ct.value == conservation_type_str:
+            if ct.value == conservation_type_str_upper:
                 conservation_type = ct
                 break
         
         if not conservation_type:
-            flash('Tipo de conservación no válido', 'danger')
-            return redirect(url_for('tasks.manage_product_conservations', id=product.id))
+            # Intentar con el valor original por si acaso
+            for ct in ConservationType:
+                if ct.value == conservation_type_str:
+                    conservation_type = ct
+                    break
+            
+            if not conservation_type:
+                flash('Tipo de conservación no válido', 'danger')
+                return redirect(url_for('tasks.manage_product_conservations', id=product.id))
         
         # Buscar si ya existe esta configuración usando el valor del enum, no el objeto enum
         # Debug para registrar el tipo exacto que estamos buscando
