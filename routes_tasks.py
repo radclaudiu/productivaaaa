@@ -2352,9 +2352,13 @@ def generate_labels():
             return "Error: Tipo de conservación no válido", 400
         
         # Obtener configuración de conservación específica
-        conservation = ProductConservation.query.filter_by(
-            product_id=product.id, 
-            conservation_type=conservation_type
+        # Debug para registrar el tipo exacto que estamos buscando
+        current_app.logger.debug(f"Generando labels - Buscando conservation_type: {conservation_type.value} para producto ID: {product.id}")
+        
+        # Usamos .filter() en lugar de .filter_by() para mayor control
+        conservation = ProductConservation.query.filter(
+            ProductConservation.product_id == product.id, 
+            ProductConservation.conservation_type == conservation_type
         ).first()
         
         # Fecha y hora actual
@@ -2428,9 +2432,13 @@ def generate_labels():
             # Obtener la configuración de refrigeración (si existe)
             ref_conservation = None
             if refrigeration_conservation_type:
-                ref_conservation = ProductConservation.query.filter_by(
-                    product_id=product.id, 
-                    conservation_type=refrigeration_conservation_type
+                # Debug para registrar el tipo exacto que estamos buscando
+                current_app.logger.debug(f"Generando etiqueta refrigeración - Buscando conservation_type: {refrigeration_conservation_type.value} para producto ID: {product.id}")
+                
+                # Usamos .filter() en lugar de .filter_by() para mayor control
+                ref_conservation = ProductConservation.query.filter(
+                    ProductConservation.product_id == product.id, 
+                    ProductConservation.conservation_type == refrigeration_conservation_type
                 ).first()
             
             # Calcular fecha de caducidad para refrigeración a partir de la fecha de caducidad de descongelación
