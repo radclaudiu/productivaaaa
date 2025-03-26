@@ -2140,12 +2140,14 @@ def export_labels_excel(location_id):
                 ws[f'D{row}'] = hours_valid
             elif conservation.conservation_type == ConservationType.REFRIGERACION:
                 ws[f'E{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.GASTRO:
+            elif conservation.conservation_type == ConservationType.REFRIGERADO_ABIERTO:
                 ws[f'F{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.CALIENTE:
+            elif conservation.conservation_type == ConservationType.GASTRO:
                 ws[f'G{row}'] = hours_valid
-            elif conservation.conservation_type == ConservationType.SECO:
+            elif conservation.conservation_type == ConservationType.CALIENTE:
                 ws[f'H{row}'] = hours_valid
+            elif conservation.conservation_type == ConservationType.SECO:
+                ws[f'I{row}'] = hours_valid
         
         row += 1
     
