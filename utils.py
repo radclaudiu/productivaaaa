@@ -705,3 +705,61 @@ def get_dashboard_stats():
     logger.info(f"Dashboard stats completado en {elapsed:.3f} segundos")
     
     return stats
+def create_database_backup():
+    """Create a backup of the database"""
+    import os
+    from datetime import datetime
+    import subprocess
+    
+    # Create backups directory if it doesn't exist
+    backup_dir = os.path.join(os.getcwd(), 'backups')
+    os.makedirs(backup_dir, exist_ok=True)
+    
+    # Generate backup filename with timestamp
+    timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
+    backup_file = os.path.join(backup_dir, f'backup_{timestamp}.sql')
+    
+    try:
+        # Get database URL from environment
+        database_url = os.environ.get('DATABASE_URL')
+        if not database_url:
+            raise Exception("DATABASE_URL not found in environment variables")
+            
+        # Parse connection details from URL
+        from urllib.parse import urlparse
+        url = urlparse(database_url)
+        
+        # Create pg_dump command
+        cmd = [
+            'pg_dump',
+            '-h', url.hostname,
+            '-p', str(url.port),
+            '-U', url.username,
+            '-f', backup_file,
+            url.path[1:]  # Database name
+        ]
+        
+        # Execute backup
+        process = subprocess.Popen(
+            cmd,
+            env={'PGPASSWORD': url.password},
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE
+        )
+        
+        output, error = process.communicate()
+        
+        if process.returncode != 0:
+            raise Exception(f"Backup failed: {error.decode()}")
+            
+        return {
+            'success': True,
+            'file': backup_file,
+            'timestamp': timestamp
+        }
+        
+    except Exception as e:
+        return {
+            'success': False,
+            'error': str(e)
+        }

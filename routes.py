@@ -909,6 +909,25 @@ def manage_notes(id):
                           notes=notes, 
                           form=form)
 
+@employee_bp.route('/backup/database', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def backup_database():
+    """Create a database backup"""
+    if request.method == 'POST':
+        result = create_database_backup()
+        if result['success']:
+            flash('Copia de seguridad creada con éxito', 'success')
+            return send_file(
+                result['file'],
+                as_attachment=True,
+                download_name=f"backup_{result['timestamp']}.sql"
+            )
+        else:
+            flash(f'Error al crear la copia de seguridad: {result["error"]}', 'danger')
+            
+    return render_template('backup_form.html', title='Copia de Seguridad de Base de Datos')
+
 @employee_bp.route('/notes/<int:note_id>/delete', methods=['POST'])
 @login_required
 def delete_note(note_id):
