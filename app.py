@@ -66,6 +66,7 @@ def create_app(config_class='config.Config'):
     from routes_tasks import tasks_bp
     from routes_checkpoints import init_app as init_checkpoints_app
     from routes_checkpoints_new import checkpoints_bp as checkpoints_new_bp
+    from api_routes import api_bp, init_api
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -78,9 +79,13 @@ def create_app(config_class='config.Config'):
     app.register_blueprint(ui_bp)
     app.register_blueprint(tasks_bp, url_prefix='/tasks')
     app.register_blueprint(checkpoints_new_bp)
+    app.register_blueprint(api_bp)  # Registrar blueprint de la API
     
     # Inicializar el sistema de puntos de fichaje
     init_checkpoints_app(app)
+    
+    # Inicializar la API con JWT
+    init_api(app)
     
     # Register error handlers
     @app.errorhandler(403)

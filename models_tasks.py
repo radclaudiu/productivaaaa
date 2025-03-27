@@ -104,6 +104,10 @@ class Location(db.Model):
             return check_password_hash(self.portal_password_hash, password)
         # Si no, comparamos con la contraseña fija
         return password == self.portal_fixed_password
+        
+    def check_password(self, password):
+        """Verifica si la contraseña coincide con la almacenada (para API)"""
+        return self.check_portal_password(password)
     
     @property
     def portal_fixed_username(self):
@@ -165,6 +169,10 @@ class LocalUser(db.Model):
         
     def check_pin(self, pin):
         return check_password_hash(self.pin, pin)
+    
+    def check_password(self, password):
+        """Verifica si la contraseña coincide con el PIN del usuario (para API)"""
+        return self.check_pin(password)
     
     def get_full_name(self):
         return f"{self.name} {self.last_name}"
