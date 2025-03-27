@@ -175,6 +175,9 @@
                 <button id="brother-print-btn" class="btn btn-success">Imprimir con Brother TD-40</button>
             </div>
             <div class="col-auto">
+                <button id="bluetooth-print-btn" class="btn btn-info">Imprimir con Bluetooth</button>
+            </div>
+            <div class="col-auto">
                 <button id="config-printer-btn" class="btn btn-outline-secondary">⚙️ Configurar Impresora</button>
             </div>
         </div>
@@ -214,9 +217,10 @@
     <!-- Datos ocultos para la impresión con Brother -->
     <input type="hidden" id="quantity" value="{{ quantity }}">
     
-    <!-- Scripts para Bootstrap y la impresora Brother -->
+    <!-- Scripts para Bootstrap y las impresoras -->
     <script src="/static/js/bootstrap.min.js"></script>
     <script src="/static/js/brother-printer.js"></script>
+    <script src="/static/js/brother-bluetooth.js"></script>
     
     <script>
         // Inicializar controles
@@ -230,6 +234,20 @@
             }
             
             // El script brother-printer.js ya maneja los botones Brother
+            // El script brother-bluetooth.js maneja la impresión Bluetooth
+            
+            // Detectar si estamos en móvil para mostrar/ocultar opciones
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+            
+            // En dispositivos de escritorio, ocultar la opción de Bluetooth
+            if (!isMobile && document.getElementById('bluetooth-print-btn')) {
+                document.getElementById('bluetooth-print-btn').style.display = 'none';
+            }
+            
+            // En dispositivos móviles, destacar la opción de Bluetooth
+            if (isMobile && document.getElementById('bluetooth-print-btn')) {
+                document.getElementById('bluetooth-print-btn').classList.add('btn-lg');
+            }
         });
     </script>
 </body>
