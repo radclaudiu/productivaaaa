@@ -192,7 +192,7 @@
             }
             
             // Enviar solicitud para completar la tarea
-            fetch('/tasks/complete-local-task/' + taskId, {
+            fetch('/tasks/local-user/tasks/' + taskId + '/ajax-complete', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json',
