@@ -1157,8 +1157,26 @@ def portal_login(location_id):
 
 @tasks_bp.route('/local-login', methods=['GET', 'POST'])
 def local_login():
-    """Redirigir a la página de login para usuarios locales (obsoleta)"""
-    return redirect(url_for('tasks.portal_selection'))
+    """Página de login para usuarios locales"""
+    # Verificar si ya hay un usuario local en la sesión
+    if 'local_user_id' in session:
+        return redirect(url_for('tasks.local_user_labels'))
+    
+    # Obtener todos los locales activos
+    locations = Location.query.filter_by(is_active=True).all()
+    
+    # Si hay un local guardado en la sesión, usarlo
+    saved_location_id = session.get('saved_location_id')
+    
+    # Si solo hay un local, redireccionar al portal
+    if len(locations) == 1:
+        location = locations[0]
+        return redirect(url_for('tasks.local_portal', location_id=location.id))
+    
+    return render_template('tasks/local_login.html',
+                          title='Acceso a Portal de Tareas',
+                          locations=locations,
+                          saved_location_id=saved_location_id)
 
 @tasks_bp.route('/local-portal/<int:location_id>')
 def local_portal(location_id):

@@ -168,9 +168,9 @@ document.addEventListener('DOMContentLoaded', function() {
         {% for product in products %}
         {
             id: {{ product.id }},
-            name: "{{ product.name }}",
+            name: "{{ product.name|safe|replace('"', '\\"') }}",
             conservationTypes: {{ product.conservation_types|map(attribute='conservation_type.value')|list|tojson }}
-        },
+        }{% if not loop.last %},{% endif %}
         {% endfor %}
     ];
 
