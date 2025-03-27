@@ -74,7 +74,7 @@ interface ApiService {
 
 ```kotlin
 object RetrofitClient {
-    private const val BASE_URL = "https://tu-aplicacion.replit.app/" // Cambia por la URL de tu API
+    private const val BASE_URL = "https://NOMBRE-DE-TU-REPL.replit.app/" // IMPORTANTE: Cambia por la URL real de tu aplicación (el nombre de tu repl)
     
     private val retrofit: Retrofit by lazy {
         Retrofit.Builder()
