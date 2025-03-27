@@ -13,7 +13,7 @@
                 </div>
                 <div class="card-body">
                     <p class="text-center">
-                        Seleccione un producto, tipo de conservación y cantidad para generar etiquetas que se imprimirán automáticamente.
+                        Seleccione un producto de la lista para generar etiquetas, o utilice el buscador para encontrar rápidamente.
                     </p>
                 </div>
             </div>
@@ -25,567 +25,127 @@
             <i class="bi bi-exclamation-triangle-fill me-2"></i>No hay productos disponibles. Contacte con un administrador.
         </div>
     {% else %}
-        <div class="row">
-            <div class="col-lg-6 mx-auto">
-                <div class="card shadow-sm mb-4">
-                    <div class="card-header bg-light">
-                        <h5 class="mb-0 text-center">GENERAR ETIQUETA</h5>
-                    </div>
+        <!-- Buscador -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="card shadow-sm">
                     <div class="card-body">
-                        <form id="labelForm" action="{{ url_for('tasks.generate_labels') }}" method="post">
-                            <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            
-                            <!-- Mensaje de status -->
-                            <div id="statusMessage" class="alert alert-info mb-4" style="display: none;">
-                                <i class="bi bi-info-circle-fill me-2"></i>
-                                <span id="statusText"></span>
-                            </div>
-                            
-                            <!-- 1. Selección de producto -->
-                            <div class="mb-4">
-                                <label for="product_search" class="form-label fw-bold">1. Buscar Producto</label>
-                                <div class="input-group mb-2">
-                                    <span class="input-group-text"><i class="bi bi-search"></i></span>
-                                    <input type="text" id="product_search" class="form-control form-control-lg" placeholder="Nombre del producto..." autocomplete="off" autofocus>
-                                </div>
-                                <div id="product_results" class="list-group mt-2 d-none">
-                                    <!-- Los resultados se mostrarán aquí -->
-                                </div>
-                                <input type="hidden" id="product_id" name="product_id" required>
-                                <div id="selected_product" class="mt-2 p-2 bg-light border rounded text-center fs-5 fw-bold" style="display:none;"></div>
-                            </div>
-
-                            <!-- 2. Tipo de conservación -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">2. Tipo de Conservación</label>
-                                <div class="conservation-buttons">
-                                    <input type="hidden" id="conservation_type" name="conservation_type" required>
-
-                                    <button type="button" class="btn-conservation" data-value="descongelacion">
-                                        <i class="bi bi-snow"></i>
-                                        <span>Descongelación</span>
-                                    </button>
-
-                                    <button type="button" class="btn-conservation" data-value="refrigeracion">
-                                        <i class="bi bi-thermometer-low"></i>
-                                        <span>Refrigeración</span>
-                                    </button>
-
-                                    <button type="button" class="btn-conservation" data-value="gastro">
-                                        <i class="bi bi-cup-hot"></i>
-                                        <span>Gastro</span>
-                                    </button>
-
-                                    <button type="button" class="btn-conservation" data-value="caliente">
-                                        <i class="bi bi-fire"></i>
-                                        <span>Caliente</span>
-                                    </button>
-
-                                    <button type="button" class="btn-conservation" data-value="seco">
-                                        <i class="bi bi-box2"></i>
-                                        <span>Seco</span>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- 3. Cantidad -->
-                            <div class="mb-4">
-                                <label class="form-label fw-bold">3. Cantidad</label>
-                                <div class="quantity-control">
-                                    <button type="button" class="btn-quantity" id="decrease-quantity">
-                                        <i class="bi bi-dash-lg"></i>
-                                    </button>
-                                    <div class="quantity-display">
-                                        <span id="quantity-value">1</span>
-                                        <input type="hidden" id="quantity" name="quantity" value="1" min="1" max="100" required>
-                                    </div>
-                                    <button type="button" class="btn-quantity" id="increase-quantity">
-                                        <i class="bi bi-plus-lg"></i>
-                                    </button>
-                                </div>
-                            </div>
-
-                            <!-- 4. Opciones y Botón de imprimir -->
-                            <div class="mb-3">
-                                <div class="form-check form-switch">
-                                    <input class="form-check-input" type="checkbox" id="bluetoothOption" checked>
-                                    <label class="form-check-label" for="bluetoothOption">
-                                        <i class="bi bi-bluetooth me-1"></i> Usar impresora Bluetooth (para dispositivos móviles)
-                                    </label>
-                                </div>
-                            </div>
-                            
-                            <div class="d-grid mt-4">
-                                <button type="submit" id="submitButton" class="btn btn-primary btn-lg py-3" disabled>
-                                    <i class="bi bi-printer-fill me-2"></i>IMPRIMIR ETIQUETAS
+                        <form action="{{ url_for('tasks.local_user_labels') }}" method="get">
+                            <div class="input-group input-group-lg">
+                                <span class="input-group-text bg-primary text-white">
+                                    <i class="bi bi-search"></i>
+                                </span>
+                                <input type="text" name="q" class="form-control form-control-lg" 
+                                    placeholder="Buscar producto..." 
+                                    value="{{ search_query }}" 
+                                    autocomplete="off" 
+                                    autofocus>
+                                <button type="submit" class="btn btn-primary">
+                                    <i class="bi bi-search me-1"></i>Buscar
                                 </button>
+                                {% if search_query %}
+                                <a href="{{ url_for('tasks.local_user_labels') }}" class="btn btn-outline-secondary">
+                                    <i class="bi bi-x-circle me-1"></i>Limpiar
+                                </a>
+                                {% endif %}
                             </div>
                         </form>
                     </div>
                 </div>
             </div>
         </div>
+
+        <!-- Lista de productos -->
+        <div class="row row-cols-1 row-cols-md-2 row-cols-lg-3 g-4 mb-4">
+            {% for product in products %}
+            <div class="col">
+                <div class="card h-100 shadow-sm product-card">
+                    <div class="card-body d-flex flex-column">
+                        <div class="product-icon text-center mb-2">
+                            <i class="bi bi-box-seam display-1"></i>
+                        </div>
+                        <h5 class="card-title text-center mb-3">{{ product.name }}</h5>
+                        <div class="conservation-types small mb-3">
+                            <div class="d-flex flex-wrap justify-content-center gap-1">
+                                {% if product.conservation_types %}
+                                    {% for ct in product.conservation_types %}
+                                        <span class="badge rounded-pill {% if ct.conservation_type.value == 'descongelacion' %}bg-primary{% elif ct.conservation_type.value == 'refrigeracion' %}bg-info{% elif ct.conservation_type.value == 'gastro' %}bg-success{% elif ct.conservation_type.value == 'caliente' %}bg-danger{% else %}bg-warning{% endif %}">
+                                            {% if ct.conservation_type.value == 'descongelacion' %}
+                                                <i class="bi bi-snow me-1"></i>
+                                            {% elif ct.conservation_type.value == 'refrigeracion' %}
+                                                <i class="bi bi-thermometer-snow me-1"></i>
+                                            {% elif ct.conservation_type.value == 'gastro' %}
+                                                <i class="bi bi-cup-hot me-1"></i>
+                                            {% elif ct.conservation_type.value == 'caliente' %}
+                                                <i class="bi bi-fire me-1"></i>
+                                            {% else %}
+                                                <i class="bi bi-droplet me-1"></i>
+                                            {% endif %}
+                                            {{ ct.conservation_type.value|capitalize }}
+                                        </span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="badge bg-secondary">Sin tipos de conservación</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                        <div class="mt-auto">
+                            <a href="{{ url_for('tasks.product_conservation_selection', product_id=product.id) }}" class="btn btn-primary w-100">
+                                <i class="bi bi-tag-fill me-2"></i>Generar Etiqueta
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            {% endfor %}
+        </div>
+
+        <!-- Paginación (para futura implementación) -->
+        <div class="row">
+            <div class="col-12 d-flex justify-content-center">
+                <nav>
+                    <ul class="pagination">
+                        <li class="page-item disabled">
+                            <span class="page-link">Anterior</span>
+                        </li>
+                        <li class="page-item active">
+                            <span class="page-link">1</span>
+                        </li>
+                        <li class="page-item disabled">
+                            <span class="page-link">Siguiente</span>
+                        </li>
+                    </ul>
+                </nav>
+            </div>
+        </div>
     {% endif %}
 </div>
+{% endblock %}
 
-<script>
-document.addEventListener('DOMContentLoaded', function() {
-    // Variables principales
-    const productSearchInput = document.getElementById('product_search');
-    const productIdInput = document.getElementById('product_id');
-    const productResultsDiv = document.getElementById('product_results');
-    const selectedProductDiv = document.getElementById('selected_product');
-    const conservationSelect = document.getElementById('conservation_type');
-    const submitButton = document.getElementById('submitButton');
-    const statusMessage = document.getElementById('statusMessage');
-    const statusText = document.getElementById('statusText');
-    const bluetoothOption = document.getElementById('bluetoothOption');
-    
-    // Detectar si estamos en un dispositivo móvil
-    const isMobileDevice = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-    
-    // Mostrar/ocultar opciones de Bluetooth según el dispositivo
-    if (bluetoothOption) {
-        const optionContainer = bluetoothOption.closest('.form-check');
-        if (!isMobileDevice && optionContainer) {
-            optionContainer.style.display = 'none';
-        } else if (isMobileDevice) {
-            // En móviles, destacar la opción
-            if (optionContainer) {
-                optionContainer.classList.add('mb-3', 'p-2', 'border', 'rounded', 'bg-light');
-            }
-        }
-    }
-
-    // Control de cantidad
-    const quantityInput = document.getElementById('quantity');
-    const quantityValueSpan = document.getElementById('quantity-value');
-    const decreaseBtn = document.getElementById('decrease-quantity');
-    const increaseBtn = document.getElementById('increase-quantity');
-    
-    // Lista de productos (del servidor)
-    const products = [
-        {% for product in products %}
-        {
-            id: {{ product.id }},
-            name: "{{ product.name|safe|replace('"', '\\"') }}",
-            conservationTypes: {{ product.conservation_types|map(attribute='conservation_type.value')|list|tojson }}
-        }{% if not loop.last %},{% endif %}
-        {% endfor %}
-    ];
-
-    // Nombres amigables de tipos de conservación
-    const conservationTypeText = {
-        'descongelacion': 'Descongelación',
-        'refrigeracion': 'Refrigeración',
-        'gastro': 'Gastro',
-        'caliente': 'Caliente',
-        'seco': 'Seco'
-    };
-
-    // Función para verificar formulario completo
-    function checkFormComplete() {
-        const productSelected = productIdInput.value !== '';
-        const conservationSelected = conservationSelect.value !== '';
-        
-        if (productSelected && conservationSelected) {
-            submitButton.disabled = false;
-        } else {
-            submitButton.disabled = true;
-        }
-    }
-
-    // Función para mostrar mensaje de estado
-    function showStatus(message, type = 'info') {
-        statusText.textContent = message;
-        statusMessage.className = `alert alert-${type} mb-4`;
-        statusMessage.style.display = 'block';
-    }
-
-    // Función para ocultar mensaje de estado
-    function hideStatus() {
-        statusMessage.style.display = 'none';
-    }
-
-    // Enfocar campo de búsqueda al cargar
-    setTimeout(function() {
-        productSearchInput.focus();
-        // Mostrar teclado en pantalla (móviles)
-        productSearchInput.click();
-    }, 500);
-
-    // Buscar productos al escribir
-    productSearchInput.addEventListener('input', function() {
-        const searchTerm = this.value.toLowerCase().trim();
-        
-        if (searchTerm === '') {
-            productResultsDiv.classList.add('d-none');
-            return;
-        }
-
-        // Filtrar productos
-        const filteredProducts = products.filter(product => 
-            product.name.toLowerCase().includes(searchTerm)
-        );
-
-        // Mostrar resultados
-        productResultsDiv.innerHTML = '';
-        
-        if (filteredProducts.length === 0) {
-            productResultsDiv.innerHTML = '<div class="list-group-item">No se encontraron resultados</div>';
-        } else {
-            filteredProducts.forEach(product => {
-                const item = document.createElement('button');
-                item.type = 'button';
-                item.className = 'list-group-item list-group-item-action py-3';
-                item.textContent = product.name;
-                item.dataset.id = product.id;
-                item.dataset.conservationTypes = JSON.stringify(product.conservationTypes);
-                
-                item.addEventListener('click', function() {
-                    selectProduct(product);
-                    productResultsDiv.classList.add('d-none');
-                    productSearchInput.value = '';
-                });
-                
-                productResultsDiv.appendChild(item);
-            });
-        }
-        
-        productResultsDiv.classList.remove('d-none');
-    });
-
-    // Función para seleccionar un producto
-    function selectProduct(product) {
-        productIdInput.value = product.id;
-        selectedProductDiv.textContent = product.name;
-        selectedProductDiv.style.display = 'block';
-        
-        // Resetear conservación
-        conservationSelect.value = '';
-        document.querySelectorAll('.btn-conservation').forEach(button => {
-            button.classList.remove('selected');
-            button.classList.remove('disabled');
-            
-            // Deshabilitar tipos no disponibles
-            if (product.conservationTypes.length > 0) {
-                const buttonValue = button.dataset.value;
-                if (!product.conservationTypes.includes(buttonValue)) {
-                    button.classList.add('disabled');
-                }
-            }
-        });
-        
-        showStatus(`Producto seleccionado: ${product.name}. Ahora elige el tipo de conservación.`);
-        
-        checkFormComplete();
-    }
-
-    // Botones de conservación
-    document.querySelectorAll('.btn-conservation').forEach(button => {
-        button.addEventListener('click', function() {
-            if (this.classList.contains('disabled')) return;
-            
-            if (productIdInput.value === '') {
-                showStatus('Primero debes seleccionar un producto', 'warning');
-                productSearchInput.focus();
-                return;
-            }
-            
-            const conservationType = this.dataset.value;
-            conservationSelect.value = conservationType;
-            
-            // Marcar botón seleccionado
-            document.querySelectorAll('.btn-conservation').forEach(btn => {
-                btn.classList.remove('selected');
-            });
-            this.classList.add('selected');
-            
-            hideStatus();
-            checkFormComplete();
-        });
-    });
-
-    // Controles de cantidad
-    decreaseBtn.addEventListener('click', function() {
-        let value = parseInt(quantityInput.value);
-        if (value > 1) {
-            value--;
-            quantityInput.value = value;
-            quantityValueSpan.textContent = value;
-        }
-    });
-
-    increaseBtn.addEventListener('click', function() {
-        let value = parseInt(quantityInput.value);
-        if (value < 100) {
-            value++;
-            quantityInput.value = value;
-            quantityValueSpan.textContent = value;
-        }
-    });
-
-    // Ocultar resultados al hacer clic fuera
-    document.addEventListener('click', function(event) {
-        if (!productSearchInput.contains(event.target) && !productResultsDiv.contains(event.target)) {
-            productResultsDiv.classList.add('d-none');
-        }
-    });
-
-    // Validación al enviar formulario
-    document.getElementById('labelForm').addEventListener('submit', function(event) {
-        event.preventDefault(); // Siempre prevenir el envío normal del formulario
-        
-        // Validar datos
-        if (productIdInput.value === '') {
-            showStatus('Por favor, seleccione un producto', 'danger');
-            productSearchInput.focus();
-            return false;
-        }
-
-        if (conservationSelect.value === '') {
-            showStatus('Por favor, seleccione un tipo de conservación', 'danger');
-            return false;
-        }
-        
-        // Deshabilitar botón para evitar múltiples envíos
-        submitButton.disabled = true;
-        submitButton.innerHTML = '<i class="bi bi-hourglass-split me-2"></i>GENERANDO...';
-        
-        // Mostrar mensaje de procesamiento
-        showStatus('Generando etiquetas para imprimir...', 'info');
-        
-        // Datos del formulario
-        const formData = new FormData(this);
-        
-        // Enviar petición AJAX al servidor
-        fetch(this.action, {
-            method: 'POST',
-            body: formData,
-            headers: {
-                'X-Requested-With': 'XMLHttpRequest'
-            }
-        })
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al generar etiquetas: ' + response.status);
-            }
-            return response.text();
-        })
-        .then(html => {
-            // Antes de procesar, asegurarse de que el script de Bluetooth esté incluido en la respuesta HTML
-            if (!html.includes('/static/js/brother-bluetooth.js')) {
-                html = html.replace('</head>', '<script src="/static/js/brother-bluetooth.js"></script></head>');
-            }
-            
-            // Detectar si el usuario quiere usar Bluetooth
-            const useBluetoothPrinter = document.getElementById('bluetoothOption') && 
-                                      document.getElementById('bluetoothOption').checked && 
-                                      /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
-            
-            if (useBluetoothPrinter) {
-                // Crear el iframe oculto para el contenido
-                let printIframe = document.getElementById('print-iframe');
-                if (!printIframe) {
-                    printIframe = document.createElement('iframe');
-                    printIframe.id = 'print-iframe';
-                    printIframe.style.display = 'none';
-                    document.body.appendChild(printIframe);
-                }
-                
-                // Escribir el HTML en el iframe
-                printIframe.srcdoc = html;
-                
-                // Cuando el iframe cargue, activar el botón de impresión Bluetooth
-                printIframe.onload = function() {
-                    try {
-                        // Encontrar el botón de Bluetooth en el iframe y activarlo
-                        const bluetoothBtn = printIframe.contentDocument.getElementById('bluetooth-print-btn');
-                        if (bluetoothBtn) {
-                            showStatus('Iniciando impresión Bluetooth...');
-                            setTimeout(() => { bluetoothBtn.click(); }, 500);
-                        } else {
-                            throw new Error('No se pudo encontrar el botón de impresión Bluetooth');
-                        }
-                    } catch (e) {
-                        console.error('Error al iniciar impresión Bluetooth:', e);
-                        showStatus('Error al iniciar impresión Bluetooth. Intente con impresión normal.', 'warning');
-                        
-                        // En caso de error, abrir ventana normal de impresión
-                        const printWindow = window.open('', '_blank');
-                        if (printWindow) {
-                            printWindow.document.write(html);
-                            printWindow.document.close();
-                        }
-                    }
-                };
-            } else {
-                // Método tradicional: Crear ventana para impresión
-                const printWindow = window.open('', '_blank');
-                if (!printWindow) {
-                    showStatus('El navegador bloqueó la apertura de la ventana. Por favor, permita ventanas emergentes.', 'warning');
-                    submitButton.disabled = false;
-                    submitButton.innerHTML = '<i class="bi bi-printer-fill me-2"></i>IMPRIMIR ETIQUETAS';
-                    return;
-                }
-                
-                // Escribir el HTML en la nueva ventana
-                printWindow.document.write(html);
-                printWindow.document.close();
-            }
-            
-            // Resetear formulario
-            setTimeout(() => {
-                // Restablecer interfaz
-                selectedProductDiv.style.display = 'none';
-                productIdInput.value = '';
-                conservationSelect.value = '';
-                quantityInput.value = '1';
-                quantityValueSpan.textContent = '1';
-                
-                // Desmarcar botones de conservación
-                document.querySelectorAll('.btn-conservation').forEach(btn => {
-                    btn.classList.remove('selected');
-                    btn.classList.remove('disabled');
-                });
-                
-                // Habilitar botón nuevamente
-                submitButton.disabled = true;
-                submitButton.innerHTML = '<i class="bi bi-printer-fill me-2"></i>IMPRIMIR ETIQUETAS';
-                
-                // Enfocar búsqueda para nueva etiqueta
-                productSearchInput.focus();
-                
-                // Mostrar mensaje de éxito que desaparecerá
-                showStatus('Etiquetas generadas correctamente', 'success');
-                setTimeout(hideStatus, 2000);
-            }, 1000);
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            showStatus('Error: ' + error.message, 'danger');
-            submitButton.disabled = false;
-            submitButton.innerHTML = '<i class="bi bi-printer-fill me-2"></i>IMPRIMIR ETIQUETAS';
-        });
-    });
-});
-</script>
-
+{% block styles %}
 <style>
-/* Estilos para el buscador */
-#product_results {
-    max-height: 300px;
-    overflow-y: auto;
-    position: absolute;
-    width: calc(100% - 2rem);
-    z-index: 1000;
-    border: 1px solid rgba(0,0,0,.125);
-    border-radius: 0.25rem;
-    box-shadow: 0 4px 12px rgba(0,0,0,.15);
-}
-
-#product_results .list-group-item {
-    cursor: pointer;
-    font-size: 1.1rem;
-}
-
-#product_results .list-group-item:hover {
-    background-color: rgba(0,0,0,.05);
-}
-
-/* Botones de conservación */
-.conservation-buttons {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
-    gap: 10px;
-    margin-bottom: 15px;
-}
-
-.btn-conservation {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-    padding: 15px 10px;
-    border: 2px solid #ced4da;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    color: #212529;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    height: 100px;
-    font-weight: 500;
-}
-
-.btn-conservation i {
-    font-size: 2rem;
-    margin-bottom: 8px;
-}
-
-.btn-conservation span {
-    font-size: 0.9rem;
-    text-align: center;
-    font-weight: bold;
-}
-
-.btn-conservation[data-value="descongelacion"] i { color: #0d6efd; }
-.btn-conservation[data-value="refrigeracion"] i { color: #0dcaf0; }
-.btn-conservation[data-value="gastro"] i { color: #198754; }
-.btn-conservation[data-value="caliente"] i { color: #dc3545; }
-.btn-conservation[data-value="seco"] i { color: #ffc107; }
-
-.btn-conservation.selected {
-    border-color: #0d6efd;
-    background-color: #e7f1ff;
-    transform: scale(1.05);
-    box-shadow: 0 2px 8px rgba(0,0,0,0.2);
-}
-
-.btn-conservation.disabled {
-    opacity: 0.5;
-    cursor: not-allowed;
-}
-
-/* Controles de cantidad */
-.quantity-control {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    gap: 10px;
-    margin-bottom: 10px;
-}
-
-.btn-quantity {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 80px;
-    width: 80px;
-    font-size: 2rem;
-    border: 2px solid #ced4da;
-    border-radius: 8px;
-    background-color: #f8f9fa;
-    color: #212529;
-    cursor: pointer;
-    transition: transform 0.1s ease;
-}
-
-.btn-quantity:active {
-    transform: scale(0.95);
-}
-
-.quantity-display {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    height: 80px;
-    min-width: 100px;
-    padding: 0 20px;
-    background-color: #fff;
-    border: 2px solid #dee2e6;
-    border-radius: 8px;
-    font-size: 2.5rem;
-    font-weight: bold;
-}
+    .product-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        border-radius: 12px;
+        overflow: hidden;
+    }
+    
+    .product-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.15) !important;
+    }
+    
+    .product-icon {
+        color: #6c757d;
+        transition: color 0.3s ease;
+    }
+    
+    .product-card:hover .product-icon {
+        color: #0d6efd;
+    }
+    
+    .conservation-types {
+        min-height: 40px;
+    }
 </style>
 {% endblock %}

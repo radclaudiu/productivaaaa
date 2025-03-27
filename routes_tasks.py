@@ -1773,7 +1773,7 @@ def task_stats():
 @tasks_bp.route('/local-user/labels')
 @local_user_required
 def local_user_labels():
-    """Generador de etiquetas para productos"""
+    """Generador de etiquetas para productos - Lista de productos disponibles"""
     user_id = session['local_user_id']
     user = LocalUser.query.get_or_404(user_id)
     location = user.location
@@ -1781,14 +1781,43 @@ def local_user_labels():
     # Obtener los productos disponibles para este local
     products = Product.query.filter_by(location_id=location.id, is_active=True).order_by(Product.name).all()
     
-    # Obtener la fecha y hora actual para la vista previa
-    now = datetime.now()
+    # Filtro de búsqueda (si existe)
+    search_query = request.args.get('q', '')
+    if search_query:
+        products = [p for p in products if search_query.lower() in p.name.lower()]
     
     return render_template('tasks/local_user_labels.html',
-                          title='Generador de Etiquetas',
+                          title='Selección de Producto',
                           user=user,
                           location=location,
                           products=products,
+                          search_query=search_query)
+
+# Página de selección de conservación para un producto específico
+@tasks_bp.route('/local-user/labels/<int:product_id>')
+@local_user_required
+def product_conservation_selection(product_id):
+    """Selección de tipo de conservación para un producto específico"""
+    user_id = session['local_user_id']
+    user = LocalUser.query.get_or_404(user_id)
+    location = user.location
+    
+    # Obtener el producto
+    product = Product.query.get_or_404(product_id)
+    
+    # Verificar que el producto pertenece al local del usuario
+    if product.location_id != user.location_id:
+        flash("El producto seleccionado no pertenece a este local", "danger")
+        return redirect(url_for('tasks.local_user_labels'))
+    
+    # Obtener la fecha y hora actual
+    now = datetime.now()
+    
+    return render_template('tasks/product_conservation_selection.html',
+                          title=f'Etiqueta para: {product.name}',
+                          user=user,
+                          location=location,
+                          product=product,
                           now=now)
 
 # Gestor de etiquetas en la página de tareas
