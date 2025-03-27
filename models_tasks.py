@@ -241,33 +241,37 @@ class Task(db.Model):
         if self.start_date and today < self.start_date:
             return False
         
+        # Para tareas diarias, siempre están activas (si están dentro del rango de fechas)
+        if self.frequency == TaskFrequency.DIARIA:
+            return True
+        
         # Para tareas personalizadas con múltiples días, verificamos los días configurados
-        if self.frequency == TaskFrequency.PERSONALIZADA and self.weekdays:
-            for weekday_entry in self.weekdays:
-                if TaskWeekday.day_matches_today(weekday_entry.day_of_week):
-                    return True
-            # Si llegamos aquí, es que hoy no es uno de los días configurados
-            return False
+        if self.frequency == TaskFrequency.PERSONALIZADA:
+            if self.weekdays:
+                for weekday_entry in self.weekdays:
+                    if TaskWeekday.day_matches_today(weekday_entry.day_of_week):
+                        return True
+                # Si llegamos aquí, es que hoy no es uno de los días configurados
+                return False
+            else:
+                # Si no tiene días específicos configurados, mostrar la tarea
+                return True
             
         # Si no hay programación específica (schedule_details está vacío),
         # consideramos que la tarea está activa según su frecuencia
         if not self.schedule_details:
-            # Para tareas diarias, siempre están activas
-            if self.frequency == TaskFrequency.DIARIA:
-                return True
-                
             # Para tareas semanales, verificamos si today es el mismo día de la semana que start_date
-            elif self.frequency == TaskFrequency.SEMANAL and self.start_date:
+            if self.frequency == TaskFrequency.SEMANAL and self.start_date:
                 return today.weekday() == self.start_date.weekday()
                 
             # Para tareas mensuales, verificamos si today es el mismo día del mes que start_date
             elif self.frequency == TaskFrequency.MENSUAL and self.start_date:
                 return today.day == self.start_date.day
                 
-            # Para tareas quincenales, verificamos si han pasado múltiplos de 15 días desde start_date
+            # Para tareas quincenales, verificamos si han pasado múltiplos de 14 días desde start_date
             elif self.frequency == TaskFrequency.QUINCENAL and self.start_date:
                 delta = (today - self.start_date).days
-                return delta % 15 == 0
+                return delta % 14 == 0
             
             # Para cualquier otro caso, mostramos la tarea
             return True
@@ -277,6 +281,7 @@ class Task(db.Model):
             if schedule.is_active_for_date(today):
                 return True
                 
+        # Si no hay ninguna coincidencia, la tarea no está activa hoy
         return False
 
 class TaskSchedule(db.Model):
@@ -325,13 +330,13 @@ class TaskSchedule(db.Model):
         if self.task.frequency == TaskFrequency.MENSUAL and self.day_of_month:
             return check_date.day == self.day_of_month
             
-        # Para tareas quincenales (cada 15 días)
+        # Para tareas quincenales (cada 14 días para ser consistente)
         if self.task.frequency == TaskFrequency.QUINCENAL:
             if not self.task.start_date:
                 return False
                 
             delta = (check_date - self.task.start_date).days
-            return delta % 15 == 0
+            return delta % 14 == 0
             
         # Si llegamos aquí y no hemos retornado, no está activa
         return False

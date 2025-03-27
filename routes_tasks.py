@@ -1417,15 +1417,22 @@ def local_user_tasks(date_str=None, group_id=None):
         
         # Verificar frecuencia
         if task.frequency == TaskFrequency.DIARIA:
+            # Las tareas diarias siempre deben aparecer (si están dentro del rango de fechas)
             return True
         
         # Para tareas semanales, verificar día de la semana
         if task.frequency == TaskFrequency.SEMANAL:
-            weekday_name = WeekDay(days_map[check_date.weekday()].lower())
-            for schedule in task.schedule_details:
-                if schedule.day_of_week and schedule.day_of_week.value == weekday_name.value:
-                    return True
-            return False
+            # Si hay schedules específicos, verificar contra ellos
+            if task.schedule_details:
+                weekday_name = days_map[check_date.weekday()].lower()
+                for schedule in task.schedule_details:
+                    if schedule.day_of_week and schedule.day_of_week.value == weekday_name:
+                        return True
+                return False
+            # Si no hay schedules, usar el día de inicio como referencia
+            else:
+                start_date = task.start_date or task.created_at.date()
+                return check_date.weekday() == start_date.weekday()
         
         # Para tareas quincenales, verificar quincena
         if task.frequency == TaskFrequency.QUINCENAL:
@@ -1447,12 +1454,16 @@ def local_user_tasks(date_str=None, group_id=None):
         if task.frequency == TaskFrequency.PERSONALIZADA:
             # Verificar si alguno de los días de la semana coincide
             weekday_value = days_map[check_date.weekday()].lower()
-            for weekday in task.weekdays:
-                if weekday.day_of_week.value == weekday_value:
-                    return True
-            return False
+            if task.weekdays:
+                for weekday in task.weekdays:
+                    if weekday.day_of_week.value == weekday_value:
+                        return True
+                return False
+            # Si no hay días específicos configurados, mostrar la tarea
+            return True
         
-        return False
+        # Por defecto, mostrar la tarea para evitar que tareas se pierdan
+        return True
     
     for task in pending_tasks:
         # Usar la nueva función para verificar tareas en fechas específicas
