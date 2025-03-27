@@ -31,3 +31,4 @@ openai==1.68.2
 
 # Development tools
 python-dotenv==1.0.0
+requests

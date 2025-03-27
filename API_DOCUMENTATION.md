@@ -118,6 +118,48 @@ El modelo de datos para las tareas incluye los siguientes campos:
 }
 ```
 
+### 3. Obtener tareas de un portal externo
+
+**Endpoint:** `/api/external/portal/<portal_id>`
+**Método:** GET
+**Descripción:** Obtiene tareas desde un portal externo específico como https://productiva.replit.app.
+
+**Parámetros de ruta:**
+- `portal_id`: ID del portal externo (entero)
+
+**Ejemplo de respuesta (cuando el portal externo devuelve JSON):**
+```json
+{
+  "status": "success",
+  "source": "https://productiva.replit.app/tasks/portal/1",
+  "data": {
+    // Datos del portal externo en formato JSON
+  }
+}
+```
+
+**Ejemplo de respuesta (cuando el portal externo no devuelve JSON):**
+```json
+{
+  "status": "success",
+  "source": "https://productiva.replit.app/tasks/portal/1",
+  "data": {
+    "content": "...", // Contenido HTML/texto del portal externo
+    "content_type": "text/html"
+  }
+}
+```
+
+**Ejemplo de respuesta (cuando hay un error):**
+```json
+{
+  "status": "error",
+  "source": "https://productiva.replit.app/tasks/portal/1",
+  "code": 404,
+  "message": "Error al conectar con el portal externo: Not Found"
+}
+```
+
 ## Manejo de Errores
 
 La API devuelve los siguientes códigos de estado HTTP:

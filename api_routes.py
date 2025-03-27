@@ -2,6 +2,7 @@
 Rutas de la API para el módulo de tareas.
 """
 from flask import Blueprint, jsonify, request, abort
+import requests
 from app import db
 from api_models import APITask
 
@@ -61,3 +62,63 @@ def resource_not_found(e):
 def internal_server_error(e):
     """Manejador de error 500"""
     return jsonify(error="Error interno del servidor"), 500
+
+
+@api_bp.route('/external/portal/<int:portal_id>', methods=['GET'])
+def get_external_portal_tasks(portal_id):
+    """
+    Obtiene tareas desde un portal externo.
+    
+    Args:
+        portal_id: ID del portal externo
+        
+    Returns:
+        JSON con las tareas del portal externo
+        
+    Raises:
+        404: Si el portal no existe
+        500: Si hay un error de conexión
+    """
+    try:
+        # URL del portal externo
+        external_url = f"https://productiva.replit.app/tasks/portal/{portal_id}"
+        
+        # Realizar la solicitud al portal externo
+        response = requests.get(external_url, timeout=10)
+        
+        # Verificar si la solicitud fue exitosa
+        if response.status_code == 200:
+            # Intentar parsear la respuesta como JSON
+            try:
+                data = response.json()
+                return jsonify({
+                    'status': 'success',
+                    'source': external_url,
+                    'data': data
+                })
+            except ValueError:
+                # Si la respuesta no es JSON válido, devolvemos el contenido como texto
+                return jsonify({
+                    'status': 'success',
+                    'source': external_url,
+                    'data': {
+                        'content': response.text,
+                        'content_type': response.headers.get('Content-Type', 'text/html')
+                    }
+                })
+        else:
+            # Si la solicitud no fue exitosa, devolvemos el código de estado
+            return jsonify({
+                'status': 'error',
+                'source': external_url,
+                'code': response.status_code,
+                'message': f"Error al conectar con el portal externo: {response.reason}"
+            }), response.status_code
+            
+    except requests.exceptions.RequestException as e:
+        # Si hay un error de conexión, devolvemos un error 500
+        return jsonify({
+            'status': 'error',
+            'source': f"https://productiva.replit.app/tasks/portal/{portal_id}",
+            'message': f"Error al conectar con el portal externo: {str(e)}"
+        }), 500
