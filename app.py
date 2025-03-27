@@ -56,6 +56,9 @@ def create_app(config_class='config.Config'):
         from models_checkpoints import (CheckPoint, CheckPointRecord, CheckPointIncident, 
                                       EmployeeContractHours, CheckPointStatus, CheckPointIncidentType)
         
+        # Import API models
+        from api_models import APITask
+        
         # Create admin user if it doesn't exist
         from utils import create_admin_user
         create_admin_user()
@@ -66,6 +69,7 @@ def create_app(config_class='config.Config'):
     from routes_tasks import tasks_bp
     from routes_checkpoints import init_app as init_checkpoints_app
     from routes_checkpoints_new import checkpoints_bp as checkpoints_new_bp
+    from api_routes import api_bp
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -78,6 +82,7 @@ def create_app(config_class='config.Config'):
     app.register_blueprint(ui_bp)
     app.register_blueprint(tasks_bp, url_prefix='/tasks')
     app.register_blueprint(checkpoints_new_bp)
+    app.register_blueprint(api_bp)
     
     # Inicializar el sistema de puntos de fichaje
     init_checkpoints_app(app)
