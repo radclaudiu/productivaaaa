@@ -1,5 +1,6 @@
 import os
 import json
+import re
 from datetime import datetime, date, time, timedelta
 from functools import wraps
 
@@ -1509,8 +1510,8 @@ def employee_pin(id):
         # Verificar si el PIN ha sido validado por AJAX
         pin_verified = request.form.get('pin_verified') == '1'
         
-        # Verificación del PIN (últimos 4 dígitos del DNI)
-        pin_from_dni = employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
+        # Verificación del PIN (últimos 4 dígitos numéricos del DNI)
+        pin_from_dni = get_pin_from_dni(employee.dni)
         
         # Si el PIN fue validado por AJAX o si es correcto
         if pin_verified or form.pin.data == pin_from_dni:
@@ -1986,6 +1987,29 @@ def daily_report():
                          missing_employees=missing_employees)
 
 
+# Función utilitaria para obtener el PIN a partir del DNI
+def get_pin_from_dni(dni):
+    """
+    Extrae solo los dígitos del DNI y devuelve los últimos 4 como PIN.
+    Si no hay suficientes dígitos, devuelve todos los dígitos disponibles.
+    Si el DNI es None o vacío, devuelve cadena vacía.
+    
+    Args:
+        dni (str): El DNI del empleado
+        
+    Returns:
+        str: El PIN extraído del DNI (últimos 4 dígitos)
+    """
+    if not dni:
+        return ''
+    
+    # Extraer solo los dígitos del DNI
+    digits_only = ''.join(char for char in dni if char.isdigit())
+    
+    # Tomar los últimos 4 dígitos
+    return digits_only[-4:] if len(digits_only) >= 4 else digits_only
+
+
 @checkpoints_bp.route('/api/company-employees', methods=['GET'])
 @checkpoint_required
 def get_company_employees():
@@ -2019,7 +2043,7 @@ def get_company_employees():
             'position': employee.position,
             'has_pending_record': pending_record is not None,
             'is_on_shift': employee.is_on_shift,
-            'dni_last_digits': employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
+            'dni_last_digits': get_pin_from_dni(employee.dni)
         })
     
     return jsonify(employees_data)
@@ -2057,8 +2081,8 @@ def validate_pin():
     if employee.company_id != checkpoint.company_id:
         return jsonify({"success": False, "message": "Empleado no pertenece a la empresa."}), 403
     
-    # Verificar el PIN (últimos 4 dígitos del DNI)
-    pin_from_dni = employee.dni[-4:] if len(employee.dni) >= 4 else employee.dni
+    # Verificar el PIN (últimos 4 dígitos del DNI, excluyendo letras)
+    pin_from_dni = get_pin_from_dni(employee.dni)
     
     if pin == pin_from_dni:
         # Verificar si hay un registro pendiente
