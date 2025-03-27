@@ -1415,71 +1415,43 @@ def local_user_tasks(date_str=None, group_id=None):
         if task.end_date and check_date > task.end_date:
             return False
         
-        # Para tareas diarias, siempre están activas (si están dentro del rango de fechas)
+        # Verificar frecuencia
         if task.frequency == TaskFrequency.DIARIA:
             return True
         
-        # Para tareas personalizadas con múltiples días, verificamos los días configurados
-        if task.frequency == TaskFrequency.PERSONALIZADA:
-            if task.weekdays:
-                check_weekday = check_date.weekday()
-                weekday_value = days_map[check_weekday].lower()
-                for weekday_entry in task.weekdays:
-                    if weekday_entry.day_of_week.value == weekday_value:
-                        return True
-                # Si llegamos aquí, es que el día seleccionado no es uno de los días configurados
-                return False
-            else:
-                # Si no tiene días específicos configurados, mostrar la tarea
-                return True
-            
-        # Si no hay programación específica (schedule_details está vacío),
-        # consideramos que la tarea está activa según su frecuencia
-        if not task.schedule_details:
-            # Para tareas semanales, verificamos si check_date es el mismo día de la semana que start_date
-            if task.frequency == TaskFrequency.SEMANAL and task.start_date:
-                return check_date.weekday() == task.start_date.weekday()
-                
-            # Para tareas mensuales, verificamos si check_date es el mismo día del mes que start_date
-            elif task.frequency == TaskFrequency.MENSUAL and task.start_date:
-                return check_date.day == task.start_date.day
-                
-            # Para tareas quincenales, verificamos si han pasado múltiplos de 14 días desde start_date
-            elif task.frequency == TaskFrequency.QUINCENAL and task.start_date:
-                delta = (check_date - task.start_date).days
-                return delta % 14 == 0
-            
-            # Para cualquier otro caso, mostramos la tarea
-            return True
+        # Para tareas semanales, verificar día de la semana
+        if task.frequency == TaskFrequency.SEMANAL:
+            weekday_name = WeekDay(days_map[check_date.weekday()].lower())
+            for schedule in task.schedule_details:
+                if schedule.day_of_week and schedule.day_of_week.value == weekday_name.value:
+                    return True
+            return False
         
-        # Comprobamos la programación específica
-        for schedule in task.schedule_details:
-            # Para tareas semanales, comprobamos el día de la semana
-            if task.frequency == TaskFrequency.SEMANAL and schedule.day_of_week:
-                day_map = {
-                    WeekDay.LUNES: 0,
-                    WeekDay.MARTES: 1,
-                    WeekDay.MIERCOLES: 2,
-                    WeekDay.JUEVES: 3,
-                    WeekDay.VIERNES: 4,
-                    WeekDay.SABADO: 5,
-                    WeekDay.DOMINGO: 6
-                }
-                if check_date.weekday() == day_map[schedule.day_of_week]:
+        # Para tareas quincenales, verificar quincena
+        if task.frequency == TaskFrequency.QUINCENAL:
+            start_date = task.start_date or task.created_at.date()
+            days_diff = (check_date - start_date).days
+            return days_diff % 14 == 0
+        
+        # Para tareas mensuales, verificar día del mes
+        if task.frequency == TaskFrequency.MENSUAL:
+            # Si hay horario mensual definido, verificar día del mes
+            schedules = [s for s in task.schedule_details if s.day_of_month]
+            if schedules:
+                return any(s.day_of_month == check_date.day for s in schedules)
+            # Si no hay horario específico, usar el día de inicio como referencia
+            start_date = task.start_date or task.created_at.date()
+            return start_date.day == check_date.day
+        
+        # Para tareas personalizadas, verificar días específicos
+        if task.frequency == TaskFrequency.PERSONALIZADA:
+            # Verificar si alguno de los días de la semana coincide
+            weekday_value = days_map[check_date.weekday()].lower()
+            for weekday in task.weekdays:
+                if weekday.day_of_week.value == weekday_value:
                     return True
-                
-            # Para tareas mensuales, comprobamos el día del mes
-            elif task.frequency == TaskFrequency.MENSUAL and schedule.day_of_month:
-                if check_date.day == schedule.day_of_month:
-                    return True
-                
-            # Para tareas quincenales
-            elif task.frequency == TaskFrequency.QUINCENAL and task.start_date:
-                delta = (check_date - task.start_date).days
-                if delta % 14 == 0:
-                    return True
-                    
-        # Si no hay ninguna coincidencia, la tarea no está activa para la fecha seleccionada
+            return False
+        
         return False
     
     for task in pending_tasks:

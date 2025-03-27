@@ -1,9 +1,5 @@
 {% extends 'layout.html' %}
 
-{% block head %}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/task-status-indicators.css') }}">
-{% endblock %}
-
 {% block content %}
 <div class="container-fluid py-4">
     <div class="d-flex justify-content-between flex-wrap flex-md-nowrap align-items-center pt-3 pb-2 mb-3 border-bottom">
@@ -26,78 +22,14 @@
         </div>
     </div>
 
-    <!-- Resumen de Estados -->
-    <div class="row mb-4">
-        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
-            <div class="card shadow-sm">
-                <div class="card-body p-3 d-flex align-items-center">
-                    <div class="bg-light rounded p-3 me-3">
-                        <i class="bi bi-list-check text-primary fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Total Tareas</div>
-                        <div class="fs-5 fw-bold" id="total-tasks-counter">{{ tasks|length }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
-            <div class="card shadow-sm">
-                <div class="card-body p-3 d-flex align-items-center">
-                    <div class="bg-warning bg-opacity-25 rounded p-3 me-3">
-                        <i class="bi bi-hourglass-split text-warning fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Pendientes</div>
-                        <div class="fs-5 fw-bold text-warning" id="pending-tasks-counter">{{ tasks|selectattr('status.value', 'equalto', 'pendiente')|list|length }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
-            <div class="card shadow-sm">
-                <div class="card-body p-3 d-flex align-items-center">
-                    <div class="bg-success bg-opacity-25 rounded p-3 me-3">
-                        <i class="bi bi-check2-circle text-success fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Completadas</div>
-                        <div class="fs-5 fw-bold text-success" id="completed-tasks-counter">{{ tasks|selectattr('status.value', 'equalto', 'completada')|list|length }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-        <div class="col-md-3 col-sm-6 mb-3 mb-md-0">
-            <div class="card shadow-sm">
-                <div class="card-body p-3 d-flex align-items-center">
-                    <div class="bg-danger bg-opacity-25 rounded p-3 me-3">
-                        <i class="bi bi-exclamation-diamond text-danger fs-4"></i>
-                    </div>
-                    <div>
-                        <div class="text-muted small">Vencidas</div>
-                        <div class="fs-5 fw-bold text-danger" id="expired-tasks-counter">{{ tasks|selectattr('status.value', 'equalto', 'vencida')|list|length }}</div>
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-
     <!-- Filtros y Búsqueda -->
     <div class="row mb-4">
         <div class="col-md-8">
             <div class="btn-group" role="group">
-                <button type="button" class="btn btn-outline-secondary active filter-btn" data-filter="all">
-                    Todas <span class="badge bg-primary rounded-pill ms-1">{{ tasks|length }}</span>
-                </button>
-                <button type="button" class="btn btn-outline-warning filter-btn" data-filter="pendiente">
-                    Pendientes <span class="badge bg-warning rounded-pill ms-1">{{ tasks|selectattr('status.value', 'equalto', 'pendiente')|list|length }}</span>
-                </button>
-                <button type="button" class="btn btn-outline-success filter-btn" data-filter="completada">
-                    Completadas <span class="badge bg-success rounded-pill ms-1">{{ tasks|selectattr('status.value', 'equalto', 'completada')|list|length }}</span>
-                </button>
-                <button type="button" class="btn btn-outline-danger filter-btn" data-filter="vencida">
-                    Vencidas <span class="badge bg-danger rounded-pill ms-1">{{ tasks|selectattr('status.value', 'equalto', 'vencida')|list|length }}</span>
-                </button>
+                <button type="button" class="btn btn-outline-secondary active filter-btn" data-filter="all">Todas</button>
+                <button type="button" class="btn btn-outline-warning filter-btn" data-filter="pendiente">Pendientes</button>
+                <button type="button" class="btn btn-outline-success filter-btn" data-filter="completada">Completadas</button>
+                <button type="button" class="btn btn-outline-danger filter-btn" data-filter="vencida">Vencidas</button>
             </div>
         </div>
         <div class="col-md-4">
@@ -133,7 +65,7 @@
                             </thead>
                             <tbody>
                                 {% for task in tasks %}
-                                <tr class="task-row" data-status="{{ task.status.value }}" data-priority="{{ task.priority.value }}">
+                                <tr class="task-row" data-status="{{ task.status.value }}">
                                     <td>{{ task.title }}</td>
                                     <td>
                                         {% if task.group %}
@@ -147,52 +79,24 @@
                                     <td>{{ task.frequency.name.capitalize() }}</td>
                                     <td>
                                         {% if task.priority.value == 'baja' %}
-                                        <div class="task-status-indicator pending baja">
-                                            <i class="bi bi-arrow-down-circle"></i>Baja
-                                        </div>
+                                        <span class="badge bg-info">Baja</span>
                                         {% elif task.priority.value == 'media' %}
-                                        <div class="task-status-indicator pending media">
-                                            <i class="bi bi-dash-circle"></i>Media
-                                        </div>
+                                        <span class="badge bg-primary">Media</span>
                                         {% elif task.priority.value == 'alta' %}
-                                        <div class="task-status-indicator pending alta">
-                                            <i class="bi bi-arrow-up-circle"></i>Alta
-                                        </div>
+                                        <span class="badge bg-warning">Alta</span>
                                         {% else %}
-                                        <div class="task-status-indicator pending urgente pulse">
-                                            <i class="bi bi-exclamation-circle"></i>Urgente
-                                        </div>
+                                        <span class="badge bg-danger">Urgente</span>
                                         {% endif %}
                                     </td>
                                     <td>
                                         {% if task.status.value == 'pendiente' %}
-                                        <div class="task-status-indicator pending with-progress">
-                                            <div class="progress-icon">
-                                                <i class="bi bi-hourglass-split"></i>
-                                            </div>
-                                            Pendiente
-                                        </div>
+                                        <span class="badge bg-warning">Pendiente</span>
                                         {% elif task.status.value == 'completada' %}
-                                        <div class="task-status-indicator completed with-progress">
-                                            <div class="progress-icon">
-                                                <i class="bi bi-check-lg"></i>
-                                            </div>
-                                            Completada
-                                        </div>
+                                        <span class="badge bg-success">Completada</span>
                                         {% elif task.status.value == 'vencida' %}
-                                        <div class="task-status-indicator expired with-progress pulse">
-                                            <div class="progress-icon">
-                                                <i class="bi bi-x-lg"></i>
-                                            </div>
-                                            Vencida
-                                        </div>
+                                        <span class="badge bg-danger">Vencida</span>
                                         {% else %}
-                                        <div class="task-status-indicator cancelled with-progress">
-                                            <div class="progress-icon">
-                                                <i class="bi bi-slash-circle"></i>
-                                            </div>
-                                            Cancelada
-                                        </div>
+                                        <span class="badge bg-secondary">Cancelada</span>
                                         {% endif %}
                                     </td>
                                     <td>{{ task.start_date.strftime('%d/%m/%Y') }}</td>
@@ -234,7 +138,6 @@
 {% endblock %}
 
 {% block scripts %}
-<script src="{{ url_for('static', filename='js/task-status-indicators.js') }}"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
         // Filtrado por estado
