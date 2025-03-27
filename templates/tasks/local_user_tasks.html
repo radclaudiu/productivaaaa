@@ -222,6 +222,9 @@
                                 </span>
                             `;
                         }
+                        
+                        // Actualizar los contadores
+                        updateTaskCounters();
                     }
                 } else {
                     alert(data.message || 'Error al completar la tarea.');
@@ -229,6 +232,39 @@
                     if (button) {
                         button.disabled = false;
                         button.innerHTML = '<i class="bi bi-check-lg"></i> Completar';
+                    }
+                }
+                
+                // Función para actualizar los contadores
+                function updateTaskCounters() {
+                    // 1. Actualizar contador de completadas
+                    const completedCounter = document.getElementById('completed-tasks-counter');
+                    if (completedCounter) {
+                        const currentCompleted = parseInt(completedCounter.textContent.trim(), 10);
+                        completedCounter.textContent = currentCompleted + 1;
+                    }
+                    
+                    // 2. Actualizar contador de pendientes
+                    const pendingCounter = document.getElementById('pending-tasks-counter');
+                    if (pendingCounter) {
+                        const currentPending = parseInt(pendingCounter.textContent.trim(), 10);
+                        // Solo actualizar si hay tareas pendientes
+                        if (currentPending > 0) {
+                            pendingCounter.textContent = currentPending - 1;
+                        }
+                    }
+                    
+                    // 3. Actualizar contador de urgentes si la tarea era urgente
+                    const taskPriorityElement = row.querySelector('.badge-priority');
+                    if (taskPriorityElement && taskPriorityElement.textContent.trim().toLowerCase().includes('urgente')) {
+                        const urgentCounter = document.getElementById('urgent-tasks-counter');
+                        if (urgentCounter) {
+                            const currentUrgent = parseInt(urgentCounter.textContent.trim(), 10);
+                            // Solo actualizar si hay tareas urgentes
+                            if (currentUrgent > 0) {
+                                urgentCounter.textContent = currentUrgent - 1;
+                            }
+                        }
                     }
                 }
             })
