@@ -1,0 +1,839 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Sistema Integral de Gestión para Locales Comerciales - Optimice sus operaciones comerciales">
+    <title>Sistema Integral de Gestión para Locales Comerciales</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    <link href="https://unpkg.com/aos@2.3.1/dist/aos.css" rel="stylesheet">
+    <style>
+        :root {
+            --primary-color: #00adef;
+            --secondary-color: #162221;
+            --accent-color: #00adef;
+            --text-light: #ffffff;
+            --text-dark: #333333;
+            --background-light: #f8f9fa;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
+            line-height: 1.6;
+            color: var(--text-dark);
+            background-color: var(--background-light);
+        }
+
+        .navbar {
+            background-color: var(--text-light);
+            padding: 1rem 0;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+            position: fixed;
+            width: 100%;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .navbar-brand {
+            color: var(--text-dark) !important;
+            font-weight: 600;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .logo {
+            width: 40px;
+            height: 40px;
+            background: var(--primary-color);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: var(--text-light);
+            font-weight: bold;
+            font-size: 1.2rem;
+        }
+
+        .login-btn {
+            background-color: var(--primary-color);
+            color: var(--text-light);
+            border: none;
+            padding: 0.8rem 1.5rem;
+            border-radius: 25px;
+            transition: all 0.3s ease;
+            font-weight: 500;
+        }
+
+        .login-btn:hover {
+            background-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .hero-section {
+            position: relative;
+            color: var(--text-light);
+            padding: 200px 0 100px;
+            text-align: center;
+            overflow: hidden;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            background: var(--secondary-color);
+        }
+
+        .hero-video {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            min-width: 100%;
+            min-height: 100%;
+            width: auto;
+            height: auto;
+            transform: translateX(-50%) translateY(-50%);
+            z-index: -2;
+            opacity: 0.3;
+        }
+
+        .hero-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(rgba(22, 34, 33, 0.9), rgba(22, 34, 33, 0.7));
+            z-index: -1;
+        }
+
+        .hero-content {
+            position: relative;
+            z-index: 1;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+
+        .hero-title {
+            font-size: 4rem;
+            font-weight: 700;
+            margin-bottom: 1.5rem;
+            line-height: 1.2;
+        }
+
+        .hero-subtitle {
+            font-size: 1.5rem;
+            margin-bottom: 2rem;
+            opacity: 0.9;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            border-color: var(--primary-color);
+            padding: 1rem 2.5rem;
+            font-weight: 500;
+            border-radius: 25px;
+            font-size: 1.1rem;
+            transition: all 0.3s ease;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--secondary-color);
+            border-color: var(--secondary-color);
+            transform: translateY(-2px);
+        }
+
+        .section-title {
+            font-size: 2.5rem;
+            font-weight: 700;
+            margin-bottom: 3rem;
+            text-align: center;
+            color: var(--secondary-color);
+        }
+
+        .feature-detail {
+            padding: 4rem 0;
+            display: flex;
+            align-items: center;
+            gap: 4rem;
+            width: 100%;
+            border-bottom: 1px solid rgba(0,0,0,0.1);
+        }
+
+        .feature-content h3 {
+            font-size: 2.5rem;
+            margin-bottom: 1.5rem;
+            color: var(--secondary-color);
+            font-weight: 700;
+        }
+
+        .feature-list li {
+            font-size: 1.2rem;
+            margin-bottom: 1rem;
+            padding-left: 2rem;
+            position: relative;
+        }
+
+        .feature-list li::before {
+            content: '→';
+            color: var(--primary-color);
+            position: absolute;
+            left: 0;
+            font-weight: bold;
+        }
+
+        .feature-card {
+            border: none;
+            border-radius: 15px;
+            transition: all 0.3s ease;
+            margin-bottom: 30px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            background: white;
+            overflow: hidden;
+        }
+
+        .feature-card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 15px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-icon {
+            font-size: 2.5rem;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+            transition: transform 0.3s ease;
+        }
+
+        .feature-card:hover .feature-icon {
+            transform: scale(1.1);
+        }
+
+        .benefits-section {
+            background-color: #f8f9fa;
+            padding: 80px 0;
+            position: relative;
+        }
+
+        .benefits-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 100px;
+            background: linear-gradient(to bottom right, var(--primary-color), var(--secondary-color));
+            opacity: 0.05;
+        }
+
+        .benefit-item {
+            padding: 2rem;
+            text-align: center;
+            transition: all 0.3s ease;
+        }
+
+        .benefit-item:hover {
+            transform: translateY(-5px);
+        }
+
+        .contact-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-light);
+            padding: 80px 0;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .contact-section::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: url('data:image/svg+xml,<svg width="20" height="20" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><rect width="1" height="1" fill="rgba(255,255,255,0.05)"/></svg>');
+            opacity: 0.1;
+        }
+
+        .contact-content {
+            position: relative;
+            z-index: 1;
+        }
+
+        .feature-image {
+            width: 600px;
+            height: 400px;
+            object-fit: cover;
+            border-radius: 10px;
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        }
+
+        .feature-image img {
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 10px;
+        }
+
+        .feature-content {
+            flex: 1;
+            padding-right: 2rem;
+        }
+
+        .feature-list {
+            list-style: none;
+            padding: 0;
+        }
+
+        .stats-section {
+            background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+            color: var(--text-light);
+            padding: 4rem 0;
+        }
+
+        .stat-item {
+            text-align: center;
+            padding: 1rem;
+        }
+
+        .stat-number {
+            font-size: 3rem;
+            font-weight: 700;
+            margin-bottom: 0.5rem;
+        }
+
+        .stat-label {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .how-it-works {
+            padding: 4rem 0;
+        }
+
+        .step-item {
+            text-align: center;
+            padding: 2rem;
+            position: relative;
+        }
+
+        .step-number {
+            width: 40px;
+            height: 40px;
+            background: var(--accent-color);
+            color: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 1rem;
+            font-weight: bold;
+        }
+
+        .testimonial-section {
+            background: #f8f9fa;
+            padding: 4rem 0;
+        }
+
+        .testimonial-card {
+            background: white;
+            padding: 2rem;
+            border-radius: 15px;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .testimonial-text {
+            font-style: italic;
+            margin-bottom: 1rem;
+        }
+
+        .testimonial-author {
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .pricing-section {
+            padding: 4rem 0;
+        }
+
+        .pricing-card {
+            background: white;
+            border-radius: 15px;
+            padding: 2rem;
+            text-align: center;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease;
+        }
+
+        .pricing-card:hover {
+            transform: translateY(-10px);
+        }
+
+        .pricing-title {
+            font-size: 1.5rem;
+            font-weight: bold;
+            margin-bottom: 1rem;
+            color: var(--primary-color);
+        }
+
+        .pricing-price {
+            font-size: 2.5rem;
+            font-weight: 700;
+            color: var(--accent-color);
+            margin-bottom: 1.5rem;
+        }
+
+        .pricing-features {
+            list-style: none;
+            padding: 0;
+            margin-bottom: 2rem;
+        }
+
+        .pricing-features li {
+            margin-bottom: 0.5rem;
+            padding-left: 1.5rem;
+            position: relative;
+        }
+
+        .pricing-features li::before {
+            content: '✓';
+            color: var(--accent-color);
+            position: absolute;
+            left: 0;
+        }
+
+        .faq-section {
+            padding: 4rem 0;
+            background: #f8f9fa;
+        }
+
+        .faq-item {
+            background: white;
+            border-radius: 10px;
+            margin-bottom: 1rem;
+            overflow: hidden;
+        }
+
+        .faq-question {
+            padding: 1.5rem;
+            font-weight: bold;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .faq-answer {
+            padding: 0 1.5rem 1.5rem;
+            display: none;
+        }
+
+        .faq-item.active .faq-answer {
+            display: block;
+        }
+
+        .faq-item.active .faq-question {
+            color: var(--accent-color);
+        }
+
+        @media (max-width: 768px) {
+            .feature-detail {
+                flex-direction: column;
+                padding: 2rem 0;
+                gap: 2rem;
+            }
+            .feature-image {
+                width: 100%;
+                height: 300px;
+            }
+            .feature-content {
+                padding-right: 0;
+            }
+        }
+
+        [data-aos] {
+            opacity: 0;
+            transition: all 0.8s ease;
+        }
+
+        [data-aos].aos-animate {
+            opacity: 1;
+        }
+
+        .fade-up {
+            transform: translateY(30px);
+        }
+
+        .fade-down {
+            transform: translateY(-30px);
+        }
+
+        .fade-left {
+            transform: translateX(-30px);
+        }
+
+        .fade-right {
+            transform: translateX(30px);
+        }
+
+        .zoom-in {
+            transform: scale(0.95);
+        }
+
+        .zoom-out {
+            transform: scale(1.05);
+        }
+    </style>
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-lg navbar-dark">
+            <div class="container">
+                <a class="navbar-brand" href="#">
+                    <div class="logo">SIG</div>
+                    <span>Sistema de Gestión</span>
+                </a>
+                <button class="navbar-toggler" type="button" data-bs-toggle="collapse" data-bs-target="#navbarNav">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="collapse navbar-collapse justify-content-end" id="navbarNav">
+                    <button class="login-btn">
+                        <i class="fas fa-sign-in-alt me-2"></i>Iniciar Sesión
+                    </button>
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="hero-section">
+            <video class="hero-video" autoplay muted loop playsinline>
+                <source src="https://cdn.coverr.co/videos/coverr-people-working-in-office-4293/1080p.mp4" type="video/mp4">
+                Tu navegador no soporta el elemento de video.
+            </video>
+            <div class="hero-overlay"></div>
+            <div class="container hero-content">
+                <h1 class="hero-title" data-aos="fade-down">Sistema Integral de Gestión de Empleados</h1>
+                <p class="hero-subtitle" data-aos="fade-up" data-aos-delay="200">Herramientas sencillas para crear, gestionar y compartir la información de su personal</p>
+                <button class="btn btn-primary btn-lg" data-aos="fade-up" data-aos-delay="400">
+                    <i class="fas fa-play-circle me-2"></i>Probar Gratis
+                </button>
+            </div>
+        </section>
+
+        <section class="py-5">
+            <div class="container">
+                <h2 class="section-title text-center" data-aos="fade-up">Características Principales</h2>
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <div class="feature-detail" data-aos="fade-right">
+                            <div class="feature-content">
+                                <h3><i class="fas fa-clock me-2"></i>Control de Fichajes</h3>
+                                <ul class="feature-list">
+                                    <li>Registro de entrada y salida de empleados</li>
+                                    <li>Control de horas trabajadas</li>
+                                    <li>Gestión de turnos y horarios</li>
+                                    <li>Reportes de asistencia</li>
+                                    <li>Control de ausencias y retrasos</li>
+                                    <li>Integración con sistemas de nómina</li>
+                                </ul>
+                            </div>
+                            <div class="feature-image">
+                                <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Control de Fichajes - Captura de pantalla">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <div class="feature-detail flex-row-reverse" data-aos="fade-left">
+                            <div class="feature-content">
+                                <h3><i class="fas fa-tasks me-2"></i>Gestión de Tareas</h3>
+                                <ul class="feature-list">
+                                    <li>Asignación y seguimiento de tareas</li>
+                                    <li>Sistema de impresión de etiquetas</li>
+                                    <li>Base de datos de etiquetas personalizada</li>
+                                    <li>Control de estado y progreso</li>
+                                    <li>Priorización de actividades</li>
+                                    <li>Reportes de productividad</li>
+                                </ul>
+                            </div>
+                            <div class="feature-image">
+                                <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Gestión de Tareas - Captura de pantalla">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row mb-5">
+                    <div class="col-12">
+                        <div class="feature-detail" data-aos="fade-right">
+                            <div class="feature-content">
+                                <h3><i class="fas fa-calendar-alt me-2"></i>Gestión de Vacaciones</h3>
+                                <ul class="feature-list">
+                                    <li>Control de días disponibles</li>
+                                    <li>Solicitudes y aprobaciones</li>
+                                    <li>Calendario de vacaciones</li>
+                                    <li>Notificaciones automáticas</li>
+                                    <li>Gestión de sustituciones</li>
+                                    <li>Reportes de ausencias</li>
+                                </ul>
+                            </div>
+                            <div class="feature-image">
+                                <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Gestión de Vacaciones - Captura de pantalla">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="row">
+                    <div class="col-12">
+                        <div class="feature-detail flex-row-reverse" data-aos="fade-left">
+                            <div class="feature-content">
+                                <h3><i class="fas fa-user-tie me-2"></i>Fichas de Empleados</h3>
+                                <ul class="feature-list">
+                                    <li>Datos personales y laborales</li>
+                                    <li>Historial de empleo</li>
+                                    <li>Documentación digital</li>
+                                    <li>Evaluaciones y rendimiento</li>
+                                    <li>Formación y certificaciones</li>
+                                    <li>Gestión de permisos</li>
+                                </ul>
+                            </div>
+                            <div class="feature-image">
+                                <img src="https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?ixlib=rb-1.2.1&auto=format&fit=crop&w=800&q=80" alt="Fichas de Empleados - Captura de pantalla">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="stats-section">
+            <div class="container">
+                <div class="row">
+                    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="100">
+                        <div class="stat-item">
+                            <div class="stat-number"><i class="fas fa-users"></i></div>
+                            <div class="stat-label">Gestión de Personal</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="200">
+                        <div class="stat-item">
+                            <div class="stat-number"><i class="fas fa-clock"></i></div>
+                            <div class="stat-label">Control de Asistencia</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="300">
+                        <div class="stat-item">
+                            <div class="stat-number"><i class="fas fa-calendar-check"></i></div>
+                            <div class="stat-label">Gestión de Vacaciones</div>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="zoom-in" data-aos-delay="400">
+                        <div class="stat-item">
+                            <div class="stat-number"><i class="fas fa-database"></i></div>
+                            <div class="stat-label">Base de Datos Centralizada</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="how-it-works">
+            <div class="container">
+                <h2 class="section-title text-center" data-aos="fade-up">Beneficios Tangibles</h2>
+                <div class="row">
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                        <div class="step-item">
+                            <div class="step-number"><i class="fas fa-clock"></i></div>
+                            <h3>Aumento de Eficiencia</h3>
+                            <p>Reducción de tiempo en tareas administrativas y optimización de procesos operativos</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                        <div class="step-item">
+                            <div class="step-number"><i class="fas fa-star"></i></div>
+                            <h3>Mejora en la Calidad</h3>
+                            <p>Cumplimiento de estándares y mejor control de inventario</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                        <div class="step-item">
+                            <div class="step-number"><i class="fas fa-piggy-bank"></i></div>
+                            <h3>Ahorro de Costos</h3>
+                            <p>Reducción de desperdicios y optimización de recursos</p>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+                        <div class="step-item">
+                            <div class="step-number"><i class="fas fa-trophy"></i></div>
+                            <h3>Ventaja Competitiva</h3>
+                            <p>Procesos más eficientes y mejor experiencia del cliente</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="testimonial-section">
+            <div class="container">
+                <h2 class="section-title text-center" data-aos="fade-up">Tecnología de Vanguardia</h2>
+                <div class="row">
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                        <div class="testimonial-card">
+                            <div class="testimonial-text">
+                                <i class="fas fa-laptop feature-icon"></i>
+                                <h4>Plataforma Web Moderna</h4>
+                                <p>Interfaz responsive y fácil de usar</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                        <div class="testimonial-card">
+                            <div class="testimonial-text">
+                                <i class="fas fa-shield-alt feature-icon"></i>
+                                <h4>Seguridad Avanzada</h4>
+                                <p>Protección de datos y credenciales personalizadas</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                        <div class="testimonial-card">
+                            <div class="testimonial-text">
+                                <i class="fas fa-mobile-alt feature-icon"></i>
+                                <h4>Integración Móvil</h4>
+                                <p>Acceso desde cualquier dispositivo</p>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+                        <div class="testimonial-card">
+                            <div class="testimonial-text">
+                                <i class="fas fa-print feature-icon"></i>
+                                <h4>Impresión Profesional</h4>
+                                <p>Sistema de impresión de etiquetas de alta calidad</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="pricing-section">
+            <div class="container">
+                <h2 class="section-title text-center" data-aos="fade-up">Soporte Continuo</h2>
+                <div class="row">
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="100">
+                        <div class="pricing-card">
+                            <div class="pricing-title">Capacitación</div>
+                            <div class="pricing-price"><i class="fas fa-graduation-cap"></i></div>
+                            <ul class="pricing-features">
+                                <li>Capacitación completa del personal</li>
+                                <li>Manuales de usuario</li>
+                                <li>Videos tutoriales</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="200">
+                        <div class="pricing-card">
+                            <div class="pricing-title">Soporte Técnico</div>
+                            <div class="pricing-price"><i class="fas fa-headset"></i></div>
+                            <ul class="pricing-features">
+                                <li>Soporte técnico dedicado</li>
+                                <li>Respuesta rápida</li>
+                                <li>Asistencia remota</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="300">
+                        <div class="pricing-card">
+                            <div class="pricing-title">Actualizaciones</div>
+                            <div class="pricing-price"><i class="fas fa-sync"></i></div>
+                            <ul class="pricing-features">
+                                <li>Actualizaciones regulares</li>
+                                <li>Nuevas funcionalidades</li>
+                                <li>Mejoras de rendimiento</li>
+                            </ul>
+                        </div>
+                    </div>
+                    <div class="col-md-3" data-aos="fade-up" data-aos-delay="400">
+                        <div class="pricing-card">
+                            <div class="pricing-title">Asesoramiento</div>
+                            <div class="pricing-price"><i class="fas fa-comments"></i></div>
+                            <ul class="pricing-features">
+                                <li>Asesoramiento personalizado</li>
+                                <li>Consultoría especializada</li>
+                                <li>Optimización continua</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="faq-section">
+            <div class="container">
+                <h2 class="section-title text-center">Próximos Pasos</h2>
+                <div class="row justify-content-center">
+                    <div class="col-md-8">
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="fas fa-play-circle me-2"></i>Solicitar Demostración Personalizada
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="fas fa-search me-2"></i>Explorar Funcionalidades Específicas
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="fas fa-calculator me-2"></i>Consultar Planes y Precios
+                            </div>
+                        </div>
+                        <div class="faq-item">
+                            <div class="faq-question">
+                                <i class="fas fa-rocket me-2"></i>Comenzar Transformación Digital
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <section class="contact-section">
+            <div class="container contact-content text-center">
+                <h2 class="section-title">¿Listo para transformar su negocio?</h2>
+                <p class="lead mb-4">Contáctenos hoy mismo para descubrir cómo nuestro sistema puede ayudarle</p>
+                <button class="btn btn-light btn-lg">
+                    <i class="fas fa-envelope me-2"></i>Contactar Ahora
+                </button>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-dark text-light py-4">
+        <div class="container text-center">
+            <p class="mb-0">&copy; 2024 Sistema Integral de Gestión. Todos los derechos reservados.</p>
+        </div>
+    </footer>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="https://unpkg.com/aos@2.3.1/dist/aos.js"></script>
+    <script>
+        // Inicializar AOS
+        AOS.init({
+            duration: 800,
+            once: true,
+            offset: 100
+        });
+
+        // FAQ Toggle
+        document.querySelectorAll('.faq-question').forEach(question => {
+            question.addEventListener('click', () => {
+                const item = question.parentElement;
+                item.classList.toggle('active');
+            });
+        });
+    </script>
+</body>
+</html> 
