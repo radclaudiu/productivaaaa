@@ -127,13 +127,13 @@ El modelo de datos para las tareas incluye los siguientes campos:
 **Parámetros de ruta:**
 - `portal_id`: ID del portal externo (entero)
 
-**IMPORTANTE:** Para usar este endpoint desde tu aplicación Android, debes usar la URL completa con el nombre real de tu aplicación en Replit:
+**IMPORTANTE:** Para usar este endpoint desde tu aplicación Android, debes usar la URL completa con la dirección real de tu aplicación en Replit:
 
 ```
-https://NOMBRE-DE-TU-REPL.replit.app/api/external/portal/1
+https://edc3b852-35d9-4c5a-803d-8b7219b0680a-00-z3b3hb9xg7tr.spock.replit.dev/api/external/portal/1
 ```
 
-Donde `NOMBRE-DE-TU-REPL` debe ser sustituido por el nombre real de tu aplicación en Replit.
+Este es el dominio específico asignado a tu aplicación en Replit.
 
 **Ejemplo de respuesta (cuando el portal externo devuelve JSON):**
 ```json
