@@ -1,0 +1,171 @@
+/* Estilos para los indicadores de estado de tareas */
+.task-status-indicator {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.4rem 0.8rem;
+    border-radius: 50px;
+    font-weight: 600;
+    font-size: 0.85rem;
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.05);
+}
+
+/* Efecto de pulso para tareas pendientes y urgentes */
+.task-status-indicator.pulse {
+    animation: pulse-animation 2s infinite;
+}
+
+@keyframes pulse-animation {
+    0% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0.7);
+    }
+    70% {
+        box-shadow: 0 0 0 10px rgba(255, 193, 7, 0);
+    }
+    100% {
+        box-shadow: 0 0 0 0 rgba(255, 193, 7, 0);
+    }
+}
+
+/* Indicador con icono */
+.task-status-indicator i {
+    margin-right: 0.5rem;
+    font-size: 1rem;
+}
+
+/* Tipos específicos de indicadores de estado */
+
+/* PENDIENTE */
+.task-status-indicator.pending {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #856404;
+    border: 1px solid rgba(255, 193, 7, 0.5);
+}
+
+.task-status-indicator.pending.baja {
+    background-color: rgba(108, 117, 125, 0.2);
+    color: #5a6268;
+    border: 1px solid rgba(108, 117, 125, 0.5);
+    animation: none;
+}
+
+.task-status-indicator.pending.media {
+    background-color: rgba(0, 123, 255, 0.2);
+    color: #0056b3;
+    border: 1px solid rgba(0, 123, 255, 0.5);
+}
+
+.task-status-indicator.pending.alta {
+    background-color: rgba(255, 193, 7, 0.2);
+    color: #856404;
+    border: 1px solid rgba(255, 193, 7, 0.5);
+}
+
+.task-status-indicator.pending.urgente {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #721c24;
+    border: 1px solid rgba(220, 53, 69, 0.5);
+    animation: pulse-animation 2s infinite;
+}
+
+/* COMPLETADA */
+.task-status-indicator.completed {
+    background-color: rgba(40, 167, 69, 0.2);
+    color: #155724;
+    border: 1px solid rgba(40, 167, 69, 0.5);
+}
+
+.task-status-indicator.completed i {
+    color: #28a745;
+}
+
+/* VENCIDA */
+.task-status-indicator.expired {
+    background-color: rgba(220, 53, 69, 0.2);
+    color: #721c24;
+    border: 1px solid rgba(220, 53, 69, 0.5);
+}
+
+.task-status-indicator.expired i {
+    color: #dc3545;
+}
+
+/* CANCELADA */
+.task-status-indicator.cancelled {
+    background-color: rgba(108, 117, 125, 0.2);
+    color: #5a6268;
+    border: 1px solid rgba(108, 117, 125, 0.5);
+}
+
+.task-status-indicator.cancelled i {
+    color: #6c757d;
+}
+
+/* Efectos de brillo al pasar el ratón */
+.task-status-indicator:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Estilos para la versión con progreso */
+.task-status-indicator.with-progress {
+    padding-left: 2.5rem;
+}
+
+.task-status-indicator .progress-icon {
+    position: absolute;
+    left: 0.5rem;
+    width: 1.5rem;
+    height: 1.5rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+}
+
+.task-status-indicator.pending .progress-icon {
+    background-color: rgba(255, 193, 7, 0.3);
+}
+
+.task-status-indicator.completed .progress-icon {
+    background-color: rgba(40, 167, 69, 0.3);
+}
+
+.task-status-indicator.expired .progress-icon {
+    background-color: rgba(220, 53, 69, 0.3);
+}
+
+.task-status-indicator.cancelled .progress-icon {
+    background-color: rgba(108, 117, 125, 0.3);
+}
+
+/* Estilos para filas con estado de tarea */
+tr.task-row.pending-baja {
+    background-color: rgba(108, 117, 125, 0.05);
+}
+
+tr.task-row.pending-media {
+    background-color: rgba(0, 123, 255, 0.05);
+}
+
+tr.task-row.pending-alta {
+    background-color: rgba(255, 193, 7, 0.05);
+}
+
+tr.task-row.pending-urgente {
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+tr.task-row.completed {
+    background-color: rgba(40, 167, 69, 0.05);
+}
+
+tr.task-row.expired {
+    background-color: rgba(220, 53, 69, 0.05);
+}
+
+tr.task-row.cancelled {
+    background-color: rgba(108, 117, 125, 0.05);
+}

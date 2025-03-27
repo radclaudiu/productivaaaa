@@ -1,6 +1,7 @@
 {% extends 'tasks/portal_layout.html' %}
 
 {% block styles %}
+<link rel="stylesheet" href="{{ url_for('static', filename='css/task-status-indicators.css') }}">
 <style>
     /* Estilos para el carrusel de fechas */
     .day-selector {
@@ -80,6 +81,28 @@
         border-bottom: 2px solid var(--bs-border-color);
     }
     
+    /* Dashboard de tareas - Contadores */
+    .task-counter-card {
+        border-radius: 12px;
+        overflow: hidden;
+        transition: all 0.3s ease;
+    }
+    
+    .task-counter-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+    }
+    
+    .task-counter-icon {
+        font-size: 2rem;
+        width: 60px;
+        height: 60px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 12px;
+    }
+    
     /* Estilos responsivos */
     @media (max-width: 768px) {
         .col-md-4 {
@@ -94,6 +117,136 @@
         }
     }
 </style>
+{% endblock %}
+
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/task-status-indicators.js') }}"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Inicializar los indicadores de estado
+        initializeTaskStatusIndicators();
+        
+        // Cambiar grupo activo
+        function showTaskGroup(groupId, event) {
+            if (event) {
+                event.preventDefault();
+            }
+
+            // Ocultar todos los contenedores de tareas
+            document.querySelectorAll('.task-group-content').forEach(function(groupEl) {
+                groupEl.style.display = 'none';
+            });
+            
+            // Mostrar el grupo seleccionado
+            const selectedGroup = document.getElementById('task-group-' + groupId);
+            if (selectedGroup) {
+                selectedGroup.style.display = 'block';
+            }
+            
+            // Actualizar estado activo de los botones de grupo
+            document.querySelectorAll('#taskGroupsList a').forEach(function(btn) {
+                btn.classList.remove('active');
+            });
+            
+            // Activar el botón del grupo seleccionado
+            if (event && event.currentTarget) {
+                event.currentTarget.classList.add('active');
+            } else {
+                const defaultBtn = document.querySelector('#taskGroupsList a[data-group="' + groupId + '"]');
+                if (defaultBtn) {
+                    defaultBtn.classList.add('active');
+                }
+            }
+            
+            // Actualizar el título del grupo
+            const titleElement = document.getElementById('currentTaskGroupTitle');
+            if (titleElement) {
+                if (groupId === 'general') {
+                    {% if selected_date == today %}
+                        titleElement.textContent = 'Tareas Generales para Hoy';
+                    {% else %}
+                        titleElement.textContent = 'Tareas Generales para {{ selected_date.strftime('%d/%m/%Y') }}';
+                    {% endif %}
+                } else {
+                    const groupName = document.querySelector('#taskGroupsList a[data-group="' + groupId + '"]')?.textContent.trim();
+                    if (groupName) {
+                        {% if selected_date == today %}
+                            titleElement.textContent = groupName + ' para Hoy';
+                        {% else %}
+                            titleElement.textContent = groupName + ' para {{ selected_date.strftime('%d/%m/%Y') }}';
+                        {% endif %}
+                    }
+                }
+            }
+        }
+        
+        // Función para completar tarea
+        window.completeTask = function(taskId, userName) {
+            if (!taskId) return;
+            
+            // Mostrar indicador de carga en el botón
+            const button = document.querySelector('.complete-task-btn[data-task-id="' + taskId + '"]');
+            if (button) {
+                button.disabled = true;
+                button.innerHTML = '<i class="bi bi-hourglass-split me-1"></i> Procesando...';
+            }
+            
+            // Enviar solicitud para completar la tarea
+            fetch('/tasks/complete-local-task/' + taskId, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    notes: ''
+                })
+            })
+            .then(response => {
+                if (!response.ok) {
+                    throw new Error('Error al completar la tarea: ' + response.status);
+                }
+                return response.json();
+            })
+            .then(data => {
+                if (data.success) {
+                    // Actualizar la UI para mostrar la tarea como completada
+                    const row = document.getElementById('task-row-' + taskId);
+                    if (row) {
+                        const actionCell = row.querySelector('td:last-child');
+                        if (actionCell) {
+                            // Reemplazar el botón con un badge de completado
+                            actionCell.innerHTML = `
+                                <span class="badge bg-success">
+                                    <i class="bi bi-check-lg"></i> Completada por ${userName} a las ${new Date().toLocaleTimeString()}
+                                </span>
+                            `;
+                        }
+                    }
+                } else {
+                    alert(data.message || 'Error al completar la tarea.');
+                    // Restaurar el botón si hay un error
+                    if (button) {
+                        button.disabled = false;
+                        button.innerHTML = '<i class="bi bi-check-lg"></i> Completar';
+                    }
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error al completar la tarea. Inténtelo de nuevo.');
+                // Restaurar el botón si hay un error
+                if (button) {
+                    button.disabled = false;
+                    button.innerHTML = '<i class="bi bi-check-lg"></i> Completar';
+                }
+            });
+        };
+        
+        // Exponer la función globalmente
+        window.showTaskGroup = showTaskGroup;
+    });
+</script>
 {% endblock %}
 
 {% block content %}
