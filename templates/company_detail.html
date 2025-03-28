@@ -76,6 +76,15 @@
                                 {% endif %}
                             </dd>
                             
+                            <dt class="col-sm-4">Cuenta Bancaria:</dt>
+                            <dd class="col-sm-8">
+                                {% if company.bank_account %}
+                                {{ company.bank_account }}
+                                {% else %}
+                                <span class="text-muted">No disponible</span>
+                                {% endif %}
+                            </dd>
+                            
                             <dt class="col-sm-4">Estado:</dt>
                             <dd class="col-sm-8">
                                 <span class="badge {% if company.is_active %}bg-success{% else %}bg-danger{% endif %}">

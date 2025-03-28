@@ -98,9 +98,10 @@ class Company(db.Model):
     country = db.Column(db.String(64))
     sector = db.Column(db.String(64))
     tax_id = db.Column(db.String(32), unique=True)
-    phone = db.Column(db.String(32))
+    phone = db.Column(db.String(13))  # Reducir longitud a 13 caracteres
     email = db.Column(db.String(120))
     website = db.Column(db.String(128))
+    bank_account = db.Column(db.String(24))  # Agregar campo de cuenta bancaria
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     is_active = db.Column(db.Boolean, default=True)
@@ -132,6 +133,7 @@ class Company(db.Model):
             'phone': self.phone,
             'email': self.email,
             'website': self.website,
+            'bank_account': self.bank_account,
             'is_active': self.is_active,
             'employee_count': len(self.employees)
         }

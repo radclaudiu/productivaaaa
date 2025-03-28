@@ -3,7 +3,7 @@ from flask_wtf.file import FileField, FileAllowed, FileRequired
 from wtforms import StringField, PasswordField, SubmitField, TextAreaField, SelectField, widgets
 from wtforms import BooleanField, DateField, HiddenField, EmailField, TelField, URLField, TimeField
 from wtforms import SelectMultipleField
-from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional
+from wtforms.validators import DataRequired, Email, EqualTo, Length, ValidationError, Optional, Regexp
 from datetime import date, datetime
 from sqlalchemy import func
 
@@ -127,16 +127,25 @@ class PasswordChangeForm(FlaskForm):
     submit = SubmitField('Cambiar Contraseña')
 
 class CompanyForm(FlaskForm):
-    name = StringField('Nombre', validators=[DataRequired(), Length(max=128)])
+    name = StringField('Nombre', validators=[
+        DataRequired(), 
+        Length(max=128),
+        Regexp(r'^[a-zA-Z0-9áéíóúÁÉÍÓÚüÜñÑ\s&-]+$', 
+               message='El nombre no debe contener caracteres especiales como puntos (.), comas, etc.')
+    ])
     address = StringField('Dirección', validators=[Length(max=256)])
     city = StringField('Ciudad', validators=[Length(max=64)])
     postal_code = StringField('Código Postal', validators=[Length(max=16)])
     country = StringField('País', validators=[Length(max=64)])
     sector = StringField('Sector', validators=[Length(max=64)])
     tax_id = StringField('CIF/NIF', validators=[DataRequired(), Length(max=32)])
-    phone = TelField('Teléfono', validators=[Length(max=32)])
+    phone = TelField('Teléfono', validators=[
+        Length(max=13),
+        Regexp(r'^\+?[0-9\s-]+$', message='El teléfono solo debe contener números, espacios o guiones.')
+    ])
     email = EmailField('Email', validators=[Email(), Length(max=120)])
-    website = URLField('Sitio Web', validators=[Length(max=128)])
+    website = URLField('Sitio Web', validators=[Optional(), Length(max=128)])
+    bank_account = StringField('Cuenta Bancaria', validators=[Optional(), Length(max=24)])
     is_active = BooleanField('Empresa Activa')
     submit = SubmitField('Guardar')
     
@@ -154,6 +163,12 @@ class CompanyForm(FlaskForm):
         company = Company.query.filter(func.lower(Company.tax_id) == func.lower(tax_id.data)).first()
         if company is not None:
             raise ValidationError('Ya existe una empresa con este CIF/NIF. Por favor, verifica los datos.')
+    
+    def validate_name(self, name):
+        """Validar que el nombre no tenga caracteres especiales"""
+        import re
+        if not re.match(r'^[a-zA-Z0-9áéíóúÁÉÍÓÚüÜñÑ\s&-]+$', name.data):
+            raise ValidationError('El nombre no debe contener caracteres especiales como puntos (.), comas, etc.')
 
 class EmployeeForm(FlaskForm):
     first_name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])

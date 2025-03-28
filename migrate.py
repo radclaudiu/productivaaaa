@@ -8,8 +8,12 @@ if __name__ == '__main__':
         # Importar todos los modelos para asegurar que estén registrados
         from models import *
         from models_tasks import *
+        from models_checkpoints import *
         
-        # Crear tablas que no existen
+        # Aplicar las migraciones Alembic
+        upgrade()
+        
+        # Para mayor seguridad, asegurarse de que todas las tablas existan
         db.create_all()
         
         print("Migración completada.")
