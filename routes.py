@@ -232,8 +232,20 @@ def list_companies():
 @company_bp.route('/<string:slug>')
 @login_required
 def view_company(slug):
-    # Buscar la empresa por su slug
-    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
+    # Usar approach más robusto para buscar empresas por slug
+    from utils import slugify
+    
+    # Buscar por ID si es un número
+    if slug.isdigit():
+        company = Company.query.get_or_404(int(slug))
+    else:
+        # Buscar todas las empresas y comparar slugs
+        all_companies = Company.query.all()
+        company = next((c for c in all_companies if slugify(c.name) == slug), None)
+        
+        if not company:
+            flash('Empresa no encontrada', 'danger')
+            return redirect(url_for('company.list_companies'))
     
     # Check if user has permission to view this company
     if not current_user.is_admin() and company not in current_user.companies:
@@ -273,7 +285,20 @@ def create_company():
 @company_bp.route('/<string:slug>/edit', methods=['GET', 'POST'])
 @login_required
 def edit_company(slug):
-    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
+    # Usar approach más robusto para buscar empresas por slug
+    from utils import slugify
+    
+    # Buscar por ID si es un número
+    if slug.isdigit():
+        company = Company.query.get_or_404(int(slug))
+    else:
+        # Buscar todas las empresas y comparar slugs
+        all_companies = Company.query.all()
+        company = next((c for c in all_companies if slugify(c.name) == slug), None)
+        
+        if not company:
+            flash('Empresa no encontrada', 'danger')
+            return redirect(url_for('company.list_companies'))
     
     # Check if user has permission to edit this company
     if not can_manage_company(company.id):
@@ -308,7 +333,20 @@ def edit_company(slug):
 @company_bp.route('/<string:slug>/export', methods=['GET'])
 @admin_required
 def export_company_data(slug):
-    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
+    # Usar approach más robusto para buscar empresas por slug
+    from utils import slugify
+    
+    # Buscar por ID si es un número
+    if slug.isdigit():
+        company = Company.query.get_or_404(int(slug))
+    else:
+        # Buscar todas las empresas y comparar slugs
+        all_companies = Company.query.all()
+        company = next((c for c in all_companies if slugify(c.name) == slug), None)
+        
+        if not company:
+            flash('Empresa no encontrada', 'danger')
+            return redirect(url_for('company.list_companies'))
     
     # Export company data as ZIP
     export_data = export_company_employees_zip(company.id)
@@ -327,7 +365,20 @@ def export_company_data(slug):
 @company_bp.route('/<string:slug>/delete', methods=['POST'])
 @admin_required
 def delete_company(slug):
-    company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
+    # Usar approach más robusto para buscar empresas por slug
+    from utils import slugify
+    
+    # Buscar por ID si es un número
+    if slug.isdigit():
+        company = Company.query.get_or_404(int(slug))
+    else:
+        # Buscar todas las empresas y comparar slugs
+        all_companies = Company.query.all()
+        company = next((c for c in all_companies if slugify(c.name) == slug), None)
+        
+        if not company:
+            flash('Empresa no encontrada', 'danger')
+            return redirect(url_for('company.list_companies'))
     
     # Proceed with deletion
     company_name = company.name

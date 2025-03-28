@@ -86,8 +86,20 @@ def select_company():
 def index_company(slug):
     """Página principal del sistema de fichajes para una empresa específica"""
     try:
-        # Verificar permiso para acceder a esta empresa
-        company = Company.query.filter(func.lower(func.replace(Company.name, ' ', '-')) == func.lower(slug)).first_or_404()
+        # Usar approach más robusto para buscar empresas por slug
+        from utils import slugify
+        
+        # Buscar por ID si es un número
+        if slug.isdigit():
+            company = Company.query.get_or_404(int(slug))
+        else:
+            # Buscar todas las empresas y comparar slugs
+            all_companies = Company.query.all()
+            company = next((c for c in all_companies if slugify(c.name) == slug), None)
+            
+            if not company:
+                flash('Empresa no encontrada', 'danger')
+                return redirect(url_for('checkpoints.select_company'))
         
         if not current_user.is_admin() and company not in current_user.companies:
             flash('No tiene permiso para gestionar esta empresa.', 'danger')

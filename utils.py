@@ -502,18 +502,26 @@ def slugify(text):
     Elimina caracteres especiales, espacios y acentos
     """
     if not text:
-        return ""
+        return "empresa"
         
     # Normalizar texto (eliminar acentos)
     text = unicodedata.normalize('NFKD', str(text)).encode('ASCII', 'ignore').decode('utf-8')
-    # Convertir a minúsculas y eliminar caracteres no alfanuméricos
-    text = re.sub(r'[^\w\s-]', '', text.lower())
+    
+    # Reemplazar puntos y otros caracteres especiales primero con guiones
+    text = re.sub(r'[^\w\s-]', '-', text.lower())
+    
     # Reemplazar espacios y múltiples guiones con un solo guión
     text = re.sub(r'[-\s]+', '-', text).strip('-_')
     
     # Si después de todo el procesamiento el slug está vacío, usar un valor por defecto
     if not text:
         return "empresa"
+    
+    # Añadir un identificador único al slug para evitar colisiones con nombres similares
+    if '.' in str(text):
+        import hashlib
+        hash_suffix = hashlib.md5(str(text).encode()).hexdigest()[:6]
+        text = f"{text}-{hash_suffix}"
         
     return text
 
