@@ -107,6 +107,12 @@ class CheckPointRecord(db.Model):
         delta = self.check_out_time - self.check_in_time
         return delta.total_seconds() / 3600  # Convertir a horas
     
+    @property
+    def has_original_record(self):
+        """Comprueba si este registro tiene un registro original asociado"""
+        # Evitamos la importación cíclica usando el nombre de la tabla directamente
+        return db.session.query(db.Model.metadata.tables['checkpoint_original_records']).filter_by(record_id=self.id).count() > 0
+    
     def to_dict(self):
         """Convierte el registro a un diccionario para serialización"""
         result = {
@@ -115,9 +121,10 @@ class CheckPointRecord(db.Model):
             'employee_name': f"{self.employee.first_name} {self.employee.last_name}",
             'check_in_time': self.check_in_time.isoformat() if self.check_in_time else None,
             'check_out_time': self.check_out_time.isoformat() if self.check_out_time else None,
-            'duration': round(self.duration(), 2) if self.duration() is not None else None,
+            'duration': None if self.duration() is None else round(self.duration(), 2),
             'adjusted': self.adjusted,
-            'has_signature': self.has_signature
+            'has_signature': self.has_signature,
+            'has_original_record': self.has_original_record
         }
         
         if self.adjusted and self.original_check_in_time:

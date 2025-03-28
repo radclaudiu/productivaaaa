@@ -855,7 +855,7 @@ def resolve_incident(id):
 @login_required
 @admin_required
 def view_original_records(slug):
-    """Página secreta para ver los registros originales antes de ajustes de una empresa específica"""
+    """Página secreta para ver todos los registros de fichaje de una empresa específica"""
     from models_checkpoints import CheckPointOriginalRecord
     from utils import slugify
     
@@ -878,38 +878,61 @@ def view_original_records(slug):
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     employee_id = request.args.get('employee_id', type=int)
+    show_all = request.args.get('show_all', 'true')  # Parámetro para mostrar todos los registros
     
     # Obtener los IDs de los empleados de esta empresa
     employee_ids = db.session.query(Employee.id).filter_by(company_id=company_id).all()
     employee_ids = [e[0] for e in employee_ids]
     
-    # Construir la consulta base con filtro de empresa
-    query = db.session.query(
-        CheckPointOriginalRecord, 
-        CheckPointRecord, 
-        Employee
-    ).join(
-        CheckPointRecord, 
-        CheckPointOriginalRecord.record_id == CheckPointRecord.id
-    ).join(
-        Employee,
-        CheckPointRecord.employee_id == Employee.id
-    ).filter(
-        Employee.company_id == company_id
-    )
+    # Construir la consulta base con filtro de empresa para todos los registros
+    if show_all == 'true':
+        # Consulta para todos los registros, incluyendo los no modificados
+        query = db.session.query(
+            CheckPointRecord, 
+            Employee
+        ).join(
+            Employee,
+            CheckPointRecord.employee_id == Employee.id
+        ).filter(
+            Employee.company_id == company_id
+        ).outerjoin(
+            CheckPointOriginalRecord,
+            CheckPointOriginalRecord.record_id == CheckPointRecord.id
+        )
+    else:
+        # Consulta original sólo para registros modificados
+        query = db.session.query(
+            CheckPointOriginalRecord, 
+            CheckPointRecord, 
+            Employee
+        ).join(
+            CheckPointRecord, 
+            CheckPointOriginalRecord.record_id == CheckPointRecord.id
+        ).join(
+            Employee,
+            CheckPointRecord.employee_id == Employee.id
+        ).filter(
+            Employee.company_id == company_id
+        )
     
     # Aplicar filtros si los hay
     if start_date:
         try:
             start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) >= start_date)
+            if show_all == 'true':
+                query = query.filter(func.date(CheckPointRecord.check_in_time) >= start_date)
+            else:
+                query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) >= start_date)
         except ValueError:
             pass
     
     if end_date:
         try:
             end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) <= end_date)
+            if show_all == 'true':
+                query = query.filter(func.date(CheckPointRecord.check_in_time) <= end_date)
+            else:
+                query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) <= end_date)
         except ValueError:
             pass
     
@@ -917,9 +940,14 @@ def view_original_records(slug):
         query = query.filter(Employee.id == employee_id)
     
     # Ordenar y paginar
-    original_records = query.order_by(
-        CheckPointOriginalRecord.adjusted_at.desc()
-    ).paginate(page=page, per_page=20)
+    if show_all == 'true':
+        all_records = query.order_by(
+            CheckPointRecord.check_in_time.desc()
+        ).paginate(page=page, per_page=20)
+    else:
+        all_records = query.order_by(
+            CheckPointOriginalRecord.adjusted_at.desc()
+        ).paginate(page=page, per_page=20)
     
     # Obtener la lista de empleados para el filtro (solo de esta empresa)
     employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
@@ -931,16 +959,17 @@ def view_original_records(slug):
     
     return render_template(
         'checkpoints/original_records.html',
-        original_records=original_records,
+        original_records=all_records,
         employees=employees,
         company=company,
         company_id=company_id,
+        show_all=show_all,
         filters={
             'start_date': start_date.strftime('%Y-%m-%d') if isinstance(start_date, date) else None,
             'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
             'employee_id': employee_id
         },
-        title=f"Registros Originales de {company.name if company else ''} (Antes de Ajustes)"
+        title=f"Registros de Fichaje de {company.name if company else ''} ({('Todos los registros' if show_all == 'true' else 'Solo registros modificados')})"
     )
 
 @checkpoints_bp.route('/company/<slug>/rrrrrr/edit/<int:id>', methods=['GET', 'POST'])
