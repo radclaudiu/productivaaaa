@@ -2125,5 +2125,28 @@ def validate_pin():
 
 
 # Integrar el blueprint en la aplicación principal
+@checkpoints_bp.route('/check_credentials', methods=['GET'])
+def check_credentials():
+    """Endpoint temporal para comprobar credenciales"""
+    username = request.args.get('username', '')
+    password = request.args.get('password', '')
+    
+    checkpoint = CheckPoint.query.filter_by(username=username).first()
+    
+    if checkpoint:
+        is_valid = checkpoint.verify_password(password)
+        return jsonify({
+            'username': username,
+            'checkpoint_id': checkpoint.id,
+            'checkpoint_name': checkpoint.name,
+            'password_valid': is_valid,
+            'status': checkpoint.status.value
+        })
+    else:
+        return jsonify({
+            'username': username,
+            'error': 'Usuario no encontrado'
+        })
+
 def init_app(app):
     app.register_blueprint(checkpoints_bp)
