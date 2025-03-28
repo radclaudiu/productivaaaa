@@ -266,7 +266,7 @@ def create_company():
         
         log_activity(f'Empresa creada: {company.name}')
         flash(f'Empresa "{company.name}" creada correctamente.', 'success')
-        return redirect(url_for('company.view_company', slug=company.get_slug()))
+        return redirect(url_for('company.list_companies'))
     
     return render_template('company_form.html', title='Nueva Empresa', form=form)
 
