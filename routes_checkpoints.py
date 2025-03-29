@@ -1223,11 +1223,12 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             # Guardar siempre el registro original primero al hacer checkout
             from models_checkpoints import CheckPointOriginalRecord
             
-            # Datos originales antes de cualquier ajuste
-            original_checkin = pending_record.check_in_time
-            original_checkout = pending_record.check_out_time
+            # Capturar los valores reales antes de cualquier ajuste
+            # Importante: Guardamos la hora exacta que se introdujo al inicio de la jornada
+            original_checkin = pending_record.check_in_time  # Esta es la hora original de entrada
+            original_checkout = datetime.now()  # Esta es la hora real de salida antes de ajustes
             
-            # Crear un registro del estado original
+            # Crear un registro del estado original con las horas reales
             original_record = CheckPointOriginalRecord(
                 record_id=pending_record.id,
                 original_check_in_time=original_checkin,
@@ -1238,6 +1239,10 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                 adjustment_reason="Registro original al finalizar fichaje"
             )
             db.session.add(original_record)
+            
+            # Actualizar primero la hora de salida con la hora real
+            pending_record.check_out_time = original_checkout
+            db.session.add(pending_record)
             
             # 2. Verificar configuración de horas de contrato
             contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
@@ -1307,12 +1312,28 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             db.session.begin_nested()
             
             # 1. Crear nuevo registro de fichaje
+            checkin_time = datetime.now()
             new_record = CheckPointRecord(
                 employee_id=employee.id,
                 checkpoint_id=checkpoint_id,
-                check_in_time=datetime.now()
+                check_in_time=checkin_time
             )
             db.session.add(new_record)
+            
+            # Guardar siempre el registro original al iniciar jornada
+            from models_checkpoints import CheckPointOriginalRecord
+            
+            # Datos originales en el momento de iniciar la jornada
+            original_record = CheckPointOriginalRecord(
+                record_id=new_record.id,
+                original_check_in_time=checkin_time,
+                original_check_out_time=None,
+                original_signature_data=None,
+                original_has_signature=False,
+                original_notes=None,
+                adjustment_reason="Registro original al iniciar fichaje"
+            )
+            db.session.add(original_record)
             
             # 2. Actualizar estado del empleado
             employee.is_on_shift = True
@@ -1448,11 +1469,12 @@ def record_checkout(id):
         # Guardar siempre el registro original primero al hacer checkout
         from models_checkpoints import CheckPointOriginalRecord
         
-        # Datos originales antes de cualquier ajuste
-        original_checkin = record.check_in_time
-        original_checkout = record.check_out_time
+        # Capturar los valores reales antes de cualquier ajuste
+        # Importante: Guardamos la hora exacta que se introdujo al inicio de la jornada
+        original_checkin = record.check_in_time  # Esta es la hora original de entrada
+        original_checkout = current_time  # Esta es la hora real de salida antes de ajustes
         
-        # Crear un registro del estado original
+        # Crear un registro del estado original con las horas reales
         original_record = CheckPointOriginalRecord(
             record_id=record.id,
             original_check_in_time=original_checkin,
