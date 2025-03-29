@@ -1228,6 +1228,11 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             original_checkin = pending_record.check_in_time  # Esta es la hora original de entrada
             original_checkout = datetime.now()  # Esta es la hora real de salida antes de ajustes
             
+            # Actualizar primero la hora de salida con la hora real
+            pending_record.check_out_time = original_checkout
+            db.session.add(pending_record)
+            db.session.flush()  # Aseguramos que pending_record tenga todos sus campos actualizados
+            
             # Crear un registro del estado original con las horas reales
             original_record = CheckPointOriginalRecord(
                 record_id=pending_record.id,
@@ -1239,10 +1244,6 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                 adjustment_reason="Registro original al finalizar fichaje"
             )
             db.session.add(original_record)
-            
-            # Actualizar primero la hora de salida con la hora real
-            pending_record.check_out_time = original_checkout
-            db.session.add(pending_record)
             
             # 2. Verificar configuración de horas de contrato
             contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
@@ -1319,13 +1320,15 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                 check_in_time=checkin_time
             )
             db.session.add(new_record)
+            # Hacemos flush para que new_record obtenga un ID
+            db.session.flush()
             
             # Guardar siempre el registro original al iniciar jornada
             from models_checkpoints import CheckPointOriginalRecord
             
             # Datos originales en el momento de iniciar la jornada
             original_record = CheckPointOriginalRecord(
-                record_id=new_record.id,
+                record_id=new_record.id,  # Ahora new_record.id ya tiene un valor
                 original_check_in_time=checkin_time,
                 original_check_out_time=None,
                 original_signature_data=None,
@@ -1465,6 +1468,7 @@ def record_checkout(id):
         current_time = datetime.now()
         record.check_out_time = current_time
         db.session.add(record)
+        db.session.flush()  # Aseguramos que record tenga todos sus campos actualizados
         
         # Guardar siempre el registro original primero al hacer checkout
         from models_checkpoints import CheckPointOriginalRecord
