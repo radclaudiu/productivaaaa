@@ -861,7 +861,7 @@ def resolve_incident(id):
 
 # Se ha eliminado la ruta secreta '/company/<slug>/rrrrrr/export' y la función export_original_records_pdf
 
-@checkpoints_bp.route('/company/<slug>/original_records', methods=['GET'])
+@checkpoints_bp.route('/company/<slug>/original', methods=['GET'])
 @login_required
 @admin_required
 def view_original_records(slug):
