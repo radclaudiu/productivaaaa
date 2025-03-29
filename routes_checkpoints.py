@@ -861,6 +861,122 @@ def resolve_incident(id):
 
 # Se ha eliminado la ruta secreta '/company/<slug>/rrrrrr/export' y la función export_original_records_pdf
 
+@checkpoints_bp.route('/company/<slug>/original_records', methods=['GET'])
+@login_required
+@admin_required
+def view_original_records(slug):
+    """Página secreta para ver los registros originales de fichaje para una empresa específica"""
+    from models_checkpoints import CheckPointOriginalRecord
+    from utils import slugify
+    
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
+    
+    # Esta página es solo para administradores
+    page = request.args.get('page', 1, type=int)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    employee_id = request.args.get('employee_id', type=int)
+    show_all = request.args.get('show_all', 'true')  # Parámetro para mostrar todos los registros
+    
+    # Obtener los IDs de los empleados de esta empresa
+    employee_ids = db.session.query(Employee.id).filter_by(company_id=company_id).all()
+    employee_ids = [e[0] for e in employee_ids]
+    
+    # Construir la consulta base con filtro de empresa para todos los registros
+    if show_all == 'true':
+        # Consulta para todos los registros, incluyendo los no modificados
+        query = db.session.query(
+            CheckPointRecord, 
+            Employee
+        ).join(
+            Employee,
+            CheckPointRecord.employee_id == Employee.id
+        ).filter(
+            Employee.company_id == company_id
+        ).outerjoin(
+            CheckPointOriginalRecord,
+            CheckPointOriginalRecord.record_id == CheckPointRecord.id
+        )
+    else:
+        # Consulta original sólo para registros modificados
+        query = db.session.query(
+            CheckPointOriginalRecord, 
+            CheckPointRecord, 
+            Employee
+        ).join(
+            CheckPointRecord, 
+            CheckPointOriginalRecord.record_id == CheckPointRecord.id
+        ).join(
+            Employee,
+            CheckPointRecord.employee_id == Employee.id
+        ).filter(
+            Employee.company_id == company_id
+        )
+    
+    # Aplicar filtros si los hay
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            if show_all == 'true':
+                query = query.filter(func.date(CheckPointRecord.check_in_time) >= start_date)
+            else:
+                query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) >= start_date)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            if show_all == 'true':
+                query = query.filter(func.date(CheckPointRecord.check_in_time) <= end_date)
+            else:
+                query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) <= end_date)
+        except ValueError:
+            pass
+    
+    if employee_id:
+        query = query.filter(Employee.id == employee_id)
+    
+    # Ordenar y paginar
+    if show_all == 'true':
+        all_records = query.order_by(
+            CheckPointRecord.check_in_time.desc()
+        ).paginate(page=page, per_page=20)
+    else:
+        all_records = query.order_by(
+            CheckPointOriginalRecord.adjusted_at.desc()
+        ).paginate(page=page, per_page=20)
+    
+    # Obtener la lista de empleados para el filtro (solo de esta empresa)
+    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
+    
+    return render_template(
+        'checkpoints/original_records.html',
+        original_records=all_records,
+        employees=employees,
+        company=company,
+        company_id=company_id,
+        show_all=show_all,
+        filters={
+            'start_date': start_date.strftime('%Y-%m-%d') if isinstance(start_date, date) else None,
+            'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
+            'employee_id': employee_id
+        },
+        title=f"Registros de Fichaje de {company.name if company else ''} ({('Todos los registros' if show_all == 'true' else 'Solo registros modificados')})"
+    )
+
 @checkpoints_bp.route('/records/export', methods=['GET', 'POST'])
 @login_required
 @manager_required
@@ -1104,13 +1220,29 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             pending_record.check_out_time = checkout_time
             db.session.add(pending_record)
             
+            # Guardar siempre el registro original primero al hacer checkout
+            from models_checkpoints import CheckPointOriginalRecord
+            
+            # Datos originales antes de cualquier ajuste
+            original_checkin = pending_record.check_in_time
+            original_checkout = pending_record.check_out_time
+            
+            # Crear un registro del estado original
+            original_record = CheckPointOriginalRecord(
+                record_id=pending_record.id,
+                original_check_in_time=original_checkin,
+                original_check_out_time=original_checkout,
+                original_signature_data=pending_record.signature_data,
+                original_has_signature=pending_record.has_signature,
+                original_notes=pending_record.notes,
+                adjustment_reason="Registro original al finalizar fichaje"
+            )
+            db.session.add(original_record)
+            
             # 2. Verificar configuración de horas de contrato
             contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
             if contract_hours:
                 # Verificar si se debe ajustar el horario según configuración
-                original_checkin = pending_record.check_in_time
-                original_checkout = pending_record.check_out_time
-                
                 adjusted_checkin, adjusted_checkout = contract_hours.calculate_adjusted_hours(
                     original_checkin, original_checkout
                 )
@@ -1119,22 +1251,8 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                 needs_adjustment = (adjusted_checkin and adjusted_checkin != original_checkin) or \
                                   (adjusted_checkout and adjusted_checkout != original_checkout)
                 
-                # Si hay ajustes, guardar el registro original primero
+                # Si hay ajustes, actualizar el registro
                 if needs_adjustment:
-                    from models_checkpoints import CheckPointOriginalRecord
-                    
-                    # Crear un registro del estado original antes del ajuste automático
-                    original_record = CheckPointOriginalRecord(
-                        record_id=pending_record.id,
-                        original_check_in_time=original_checkin,
-                        original_check_out_time=original_checkout,
-                        original_signature_data=pending_record.signature_data,
-                        original_has_signature=pending_record.has_signature,
-                        original_notes=pending_record.notes,
-                        adjustment_reason="Ajuste automático por límite de horas de contrato"
-                    )
-                    db.session.add(original_record)
-                    
                     # Actualizar el registro con los valores ajustados
                     if adjusted_checkin and adjusted_checkin != original_checkin:
                         pending_record.check_in_time = adjusted_checkin
@@ -1148,6 +1266,10 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                     
                     # Marcar como ajustado
                     pending_record.adjusted = True
+                    
+                    # Actualizar la razón del ajuste en el registro original
+                    original_record.adjustment_reason = "Ajuste automático por límite de horas de contrato"
+                    db.session.add(original_record)
                 
                 # Verificar si hay horas extra
                 duration = (pending_record.check_out_time - pending_record.check_in_time).total_seconds() / 3600
@@ -1323,13 +1445,29 @@ def record_checkout(id):
         record.check_out_time = current_time
         db.session.add(record)
         
+        # Guardar siempre el registro original primero al hacer checkout
+        from models_checkpoints import CheckPointOriginalRecord
+        
+        # Datos originales antes de cualquier ajuste
+        original_checkin = record.check_in_time
+        original_checkout = record.check_out_time
+        
+        # Crear un registro del estado original
+        original_record = CheckPointOriginalRecord(
+            record_id=record.id,
+            original_check_in_time=original_checkin,
+            original_check_out_time=original_checkout,
+            original_signature_data=record.signature_data,
+            original_has_signature=record.has_signature,
+            original_notes=record.notes,
+            adjustment_reason="Registro original al finalizar fichaje desde pantalla de detalles"
+        )
+        db.session.add(original_record)
+        
         # 2. Verificar configuración de horas de contrato
         contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
         if contract_hours:
             # Verificar si se debe ajustar el horario según configuración
-            original_checkin = record.check_in_time
-            original_checkout = record.check_out_time
-            
             adjusted_checkin, adjusted_checkout = contract_hours.calculate_adjusted_hours(
                 original_checkin, original_checkout
             )
@@ -1338,22 +1476,8 @@ def record_checkout(id):
             needs_adjustment = (adjusted_checkin and adjusted_checkin != original_checkin) or \
                               (adjusted_checkout and adjusted_checkout != original_checkout)
             
-            # Si hay ajustes, guardar el registro original primero
+            # Si hay ajustes, actualizar el registro
             if needs_adjustment:
-                from models_checkpoints import CheckPointOriginalRecord
-                
-                # Crear un registro del estado original antes del ajuste automático
-                original_record = CheckPointOriginalRecord(
-                    record_id=record.id,
-                    original_check_in_time=original_checkin,
-                    original_check_out_time=original_checkout,
-                    original_signature_data=record.signature_data,
-                    original_has_signature=record.has_signature,
-                    original_notes=record.notes,
-                    adjustment_reason="Ajuste automático por límite de horas de contrato"
-                )
-                db.session.add(original_record)
-                
                 # Actualizar el registro con los valores ajustados
                 if adjusted_checkin and adjusted_checkin != original_checkin:
                     record.check_in_time = adjusted_checkin
@@ -1367,6 +1491,10 @@ def record_checkout(id):
                 
                 # Marcar como ajustado
                 record.adjusted = True
+                
+                # Actualizar la razón del ajuste en el registro original
+                original_record.adjustment_reason = "Ajuste automático por límite de horas de contrato"
+                db.session.add(original_record)
             
             # Verificar si hay horas extra
             duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
