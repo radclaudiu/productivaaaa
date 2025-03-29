@@ -1299,10 +1299,10 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             print(f"   Registro ID: {record_id}, Salida: {pending_record.check_out_time}")
             
             # Notificar al usuario
-            flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}', 'success')
+            flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}. Por favor, firma tu registro.', 'success')
             
-            # Redirigir a detalles del registro
-            return redirect(url_for('checkpoints.record_details', id=pending_record.id))
+            # Redirigir directamente a la página de firma
+            return redirect(url_for('checkpoints.checkpoint_record_signature', id=pending_record.id))
         
         # CASO 2: Check-in (iniciar jornada)
         elif action == 'checkin' and not pending_record:
@@ -1544,7 +1544,10 @@ def record_checkout(id):
         print(f"   Registro ID: {record.id}, Entrada: {record.check_in_time}, Salida: {record.check_out_time}")
         
         # Notificar al usuario
-        flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}', 'success')
+        flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}. Por favor, firma tu registro.', 'success')
+        
+        # Redirigir directamente a la página de firma
+        return redirect(url_for('checkpoints.checkpoint_record_signature', id=record.id))
     except Exception as e:
         # Rollback en caso de error
         db.session.rollback()
@@ -1556,9 +1559,9 @@ def record_checkout(id):
         
         # Notificar al usuario
         flash(f'Error al registrar la salida: {str(e)}', 'danger')
-    
-    # Siempre redirigir a la página de detalles
-    return redirect(url_for('checkpoints.record_details', id=record.id))
+        
+        # En caso de error, redirigir a la página de detalles
+        return redirect(url_for('checkpoints.record_details', id=record.id))
 
 
 @checkpoints_bp.route('/record/<int:id>/signature_pad', methods=['GET', 'POST'])
