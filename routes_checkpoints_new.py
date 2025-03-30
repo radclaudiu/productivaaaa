@@ -369,7 +369,10 @@ def export_original_records(slug):
         Employee,
         CheckPointRecord.employee_id == Employee.id
     ).filter(
-        Employee.company_id == company_id
+        Employee.company_id == company_id,
+        # Filtrar solo registros completos (con hora de entrada y salida)
+        CheckPointRecord.check_out_time.isnot(None),
+        CheckPointOriginalRecord.original_check_out_time.isnot(None)
     )
     
     # Aplicar filtros
@@ -401,8 +404,31 @@ def export_original_records(slug):
         flash('No se encontraron registros para los filtros seleccionados', 'warning')
         return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
     
-    # Generar PDF
-    return export_original_records_pdf(records, start_date, end_date, company)
+    # Filtrar registros duplicados (mismo empleado, misma fecha, mismo periodo)
+    # Esto elimina casos en los que un registro puede aparecer como parcial y completo
+    filtered_records = []
+    seen_records = set()  # Para rastrear registros ya procesados
+    
+    for original, record, employee in records:
+        # Crear una clave única para identificar registros duplicados
+        record_key = (
+            employee.id,
+            original.original_check_in_time.strftime('%Y-%m-%d'),
+            original.original_check_in_time.strftime('%H:%M'),
+            original.original_check_out_time.strftime('%H:%M') if original.original_check_out_time else None
+        )
+        
+        # Solo incluir registros que no hemos visto antes
+        if record_key not in seen_records:
+            filtered_records.append((original, record, employee))
+            seen_records.add(record_key)
+    
+    if not filtered_records:
+        flash('No se encontraron registros completos para los filtros seleccionados', 'warning')
+        return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
+    
+    # Generar PDF con los registros filtrados
+    return export_original_records_pdf(filtered_records, start_date, end_date, company)
 
 def export_original_records_pdf(records, start_date=None, end_date=None, company=None):
     """Genera un PDF con los registros originales"""
