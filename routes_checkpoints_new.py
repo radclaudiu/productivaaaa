@@ -431,14 +431,29 @@ def export_original_records(slug):
     return export_original_records_pdf(filtered_records, start_date, end_date, company)
 
 def export_original_records_pdf(records, start_date=None, end_date=None, company=None):
-    """Genera un PDF con los registros originales"""
+    """Genera un PDF con los registros originales agrupados por semanas (lunes a domingo)"""
     from fpdf import FPDF
     from tempfile import NamedTemporaryFile
     import os
+    from datetime import datetime, timedelta
     
     # Crear un archivo temporal para guardar el PDF
     pdf_file = NamedTemporaryFile(delete=False, suffix='.pdf')
     pdf_file.close()
+    
+    # Función auxiliar para obtener el lunes de la semana de una fecha
+    def get_week_start(date_obj):
+        """Retorna la fecha del lunes de la semana a la que pertenece date_obj"""
+        # weekday() retorna 0 para lunes, 6 para domingo
+        days_to_subtract = date_obj.weekday()
+        return date_obj - timedelta(days=days_to_subtract)
+    
+    # Función auxiliar para obtener el domingo de la semana de una fecha
+    def get_week_end(date_obj):
+        """Retorna la fecha del domingo de la semana a la que pertenece date_obj"""
+        # weekday() retorna 0 para lunes, 6 para domingo
+        days_to_add = 6 - date_obj.weekday()
+        return date_obj + timedelta(days=days_to_add)
     
     # Crear un PDF personalizado
     class OriginalRecordsPDF(FPDF):
@@ -491,71 +506,130 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
     # Llenar el PDF con los datos
     pdf.set_font('Arial', '', 8)
     
+    # Ordenar registros por empleado, fecha y hora
+    sorted_records = sorted(records, key=lambda x: (
+        x[2].id,  # employee.id
+        x[0].original_check_in_time.date(),  # date
+        x[0].original_check_in_time.time()  # time
+    ))
+    
+    # Preparar diccionarios para acumular totales por empleado y semana
     current_employee = None
+    current_week_start = None
+    week_hours_original = 0
+    week_hours_adjusted = 0
     total_hours_original = 0
     total_hours_adjusted = 0
     
-    for original, record, employee in records:
-        # Si cambia el empleado, agregar totales y reiniciar
-        if current_employee and current_employee != employee.id:
-            # Agregar fila de totales
-            pdf.set_font('Arial', 'B', 8)
-            pdf.cell(90, 7, f'Total horas originales: {total_hours_original:.2f}', 1, 0, 'R')
-            pdf.cell(90, 7, f'Total horas ajustadas: {total_hours_adjusted:.2f}', 1, 1, 'R')
-            pdf.ln(5)
-            
-            # Reiniciar totales
-            total_hours_original = 0
-            total_hours_adjusted = 0
-            
-            # Nueva página para cada empleado
-            pdf.add_page()
-            
-        # Actualizar empleado actual
-        current_employee = employee.id
+    # Estructurar registros por empleado
+    employee_records = {}
+    for original, record, employee in sorted_records:
+        if employee.id not in employee_records:
+            employee_records[employee.id] = {
+                'employee': employee,
+                'weeks': {}
+            }
         
-        # Calcular horas trabajadas (original y ajustado)
+        # Obtener fecha de inicio de la semana (lunes)
+        week_start = get_week_start(original.original_check_in_time.date())
+        week_end = get_week_end(original.original_check_in_time.date())
+        week_key = week_start.strftime('%Y-%m-%d')
+        
+        if week_key not in employee_records[employee.id]['weeks']:
+            employee_records[employee.id]['weeks'][week_key] = {
+                'start_date': week_start,
+                'end_date': week_end,
+                'records': [],
+                'original_hours': 0,
+                'adjusted_hours': 0
+            }
+        
+        # Calcular horas trabajadas
+        hours_original = 0
         if original.original_check_out_time and original.original_check_in_time:
             hours_original = (original.original_check_out_time - original.original_check_in_time).total_seconds() / 3600
-            total_hours_original += hours_original
+            employee_records[employee.id]['weeks'][week_key]['original_hours'] += hours_original
         
+        hours_adjusted = 0
         if record.check_out_time and record.check_in_time:
             hours_adjusted = (record.check_out_time - record.check_in_time).total_seconds() / 3600
-            total_hours_adjusted += hours_adjusted
-        
-        # Formatear datos
-        employee_name = f"{employee.first_name} {employee.last_name}"
-        date_str = original.original_check_in_time.strftime('%d/%m/%Y')
-        
-        in_time_orig = original.original_check_in_time.strftime('%H:%M')
-        out_time_orig = original.original_check_out_time.strftime('%H:%M') if original.original_check_out_time else '-'
-        
-        in_time_mod = record.check_in_time.strftime('%H:%M')
-        out_time_mod = record.check_out_time.strftime('%H:%M') if record.check_out_time else '-'
-        
-        adjusted_by = original.adjusted_by.username if original.adjusted_by else 'Sistema'
-        
-        # Imprimir fila
-        pdf.set_font('Arial', '', 8)
-        pdf.cell(40, 7, employee_name, 1, 0, 'L')
-        pdf.cell(20, 7, date_str, 1, 0, 'C')
-        pdf.cell(15, 7, in_time_orig, 1, 0, 'C')
-        pdf.cell(15, 7, out_time_orig, 1, 0, 'C')
-        pdf.cell(15, 7, in_time_mod, 1, 0, 'C')
-        pdf.cell(15, 7, out_time_mod, 1, 0, 'C')
-        pdf.cell(20, 7, adjusted_by, 1, 0, 'C')
-        
-        # Ajustar motivo para que quepa en una fila
-        motivo = original.adjustment_reason
-        if motivo and len(motivo) > 30:
-            motivo = motivo[:27] + '...'
-        pdf.cell(50, 7, motivo or '', 1, 1, 'L')
+            employee_records[employee.id]['weeks'][week_key]['adjusted_hours'] += hours_adjusted
+            
+        # Guardar registro
+        employee_records[employee.id]['weeks'][week_key]['records'].append((original, record, hours_original, hours_adjusted))
     
-    # Agregar totales del último empleado
-    if current_employee:
-        pdf.set_font('Arial', 'B', 8)
-        pdf.cell(90, 7, f'Total horas originales: {total_hours_original:.2f}', 1, 0, 'R')
-        pdf.cell(90, 7, f'Total horas ajustadas: {total_hours_adjusted:.2f}', 1, 1, 'R')
+    # Generar PDF con los datos estructurados
+    for emp_id, emp_data in employee_records.items():
+        employee = emp_data['employee']
+        employee_name = f"{employee.first_name} {employee.last_name}"
+        
+        # Imprimir nombre del empleado como encabezado
+        pdf.set_font('Arial', 'B', 12)
+        pdf.ln(5)
+        pdf.cell(0, 10, f"Empleado: {employee_name}", 0, 1, 'L')
+        pdf.set_font('Arial', '', 8)
+        
+        employee_total_original = 0
+        employee_total_adjusted = 0
+        
+        # Procesar cada semana del empleado
+        for week_key in sorted(emp_data['weeks'].keys()):
+            week_data = emp_data['weeks'][week_key]
+            
+            # Imprimir encabezado de la semana
+            week_header = f"Semana: {week_data['start_date'].strftime('%d/%m/%Y')} - {week_data['end_date'].strftime('%d/%m/%Y')}"
+            pdf.set_font('Arial', 'B', 10)
+            pdf.ln(3)
+            pdf.cell(0, 7, week_header, 0, 1, 'L')
+            pdf.set_font('Arial', '', 8)
+            
+            # Imprimir registros de la semana
+            for original, record, hours_original, hours_adjusted in week_data['records']:
+                date_str = original.original_check_in_time.strftime('%d/%m/%Y')
+                
+                in_time_orig = original.original_check_in_time.strftime('%H:%M')
+                out_time_orig = original.original_check_out_time.strftime('%H:%M') if original.original_check_out_time else '-'
+                
+                in_time_mod = record.check_in_time.strftime('%H:%M')
+                out_time_mod = record.check_out_time.strftime('%H:%M') if record.check_out_time else '-'
+                
+                adjusted_by = original.adjusted_by.username if original.adjusted_by else 'Sistema'
+                
+                # Imprimir fila
+                pdf.cell(40, 7, "", 1, 0, 'L')  # Columna vacía para el empleado (ya está en el encabezado)
+                pdf.cell(20, 7, date_str, 1, 0, 'C')
+                pdf.cell(15, 7, in_time_orig, 1, 0, 'C')
+                pdf.cell(15, 7, out_time_orig, 1, 0, 'C')
+                pdf.cell(15, 7, in_time_mod, 1, 0, 'C')
+                pdf.cell(15, 7, out_time_mod, 1, 0, 'C')
+                pdf.cell(20, 7, adjusted_by, 1, 0, 'C')
+                
+                # Ajustar motivo para que quepa en una fila
+                motivo = original.adjustment_reason
+                if motivo and len(motivo) > 30:
+                    motivo = motivo[:27] + '...'
+                pdf.cell(50, 7, motivo or '', 1, 1, 'L')
+            
+            # Imprimir totales de la semana
+            pdf.set_font('Arial', 'B', 8)
+            pdf.set_fill_color(230, 230, 230)
+            pdf.cell(90, 7, f'Total semana (horas originales): {week_data["original_hours"]:.2f}', 1, 0, 'R', True)
+            pdf.cell(90, 7, f'Total semana (horas ajustadas): {week_data["adjusted_hours"]:.2f}', 1, 1, 'R', True)
+            pdf.ln(5)
+            
+            # Acumular totales del empleado
+            employee_total_original += week_data['original_hours']
+            employee_total_adjusted += week_data['adjusted_hours']
+        
+        # Imprimir totales del empleado
+        pdf.set_font('Arial', 'B', 10)
+        pdf.set_fill_color(200, 220, 255)
+        pdf.cell(90, 8, f'TOTAL EMPLEADO (horas originales): {employee_total_original:.2f}', 1, 0, 'R', True)
+        pdf.cell(90, 8, f'TOTAL EMPLEADO (horas ajustadas): {employee_total_adjusted:.2f}', 1, 1, 'R', True)
+        
+        # Nueva página para cada empleado, excepto el último
+        if list(employee_records.keys()).index(emp_id) < len(employee_records) - 1:
+            pdf.add_page()
     
     # Guardar PDF
     pdf.output(pdf_file.name)
