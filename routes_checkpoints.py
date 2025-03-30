@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from models import User, Employee, Company, UserRole
 from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, EmployeeContractHours
-from models_checkpoints import CheckPointStatus, CheckPointIncidentType
+from models_checkpoints import CheckPointStatus, CheckPointIncidentType, CheckPointOriginalRecord
 from forms_checkpoints import (CheckPointForm, CheckPointLoginForm, CheckPointEmployeePinForm, 
                              ContractHoursForm, CheckPointRecordAdjustmentForm,
                              SignaturePadForm, ExportCheckPointRecordsForm)
@@ -1547,8 +1547,8 @@ def record_checkout(id):
         # Notificar al usuario
         flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}. Por favor, firma tu registro.', 'success')
         
-        # Redirigir primero a la página oculta de fichajes
-        return redirect(url_for('checkpoints.hidden_checkout_records', id=record.id))
+        # Redirigir directamente a la página de firma (ya no pasamos por la página oculta)
+        return redirect(url_for('checkpoints.checkpoint_record_signature', id=record.id))
     except Exception as e:
         # Rollback en caso de error
         db.session.rollback()
@@ -1636,26 +1636,61 @@ def checkpoint_record_signature(id):
     )
 
 
-@checkpoints_bp.route('/hidden_checkout_records/<int:id>', methods=['GET'])
-@checkpoint_required
-def hidden_checkout_records(id):
-    """Página oculta que muestra los detalles del fichaje de salida antes de procesarlo"""
-    record = CheckPointRecord.query.get_or_404(id)
-    checkpoint_id = session.get('checkpoint_id')
-    checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
+@checkpoints_bp.route('/admin/original_records', methods=['GET'])
+@login_required
+@admin_required
+def original_records_admin():
+    """Página admin para ver los registros originales de fichajes"""
+    # Por defecto, mostrar los registros de los últimos 7 días
+    end_date = date.today()
+    start_date = end_date - timedelta(days=7)
     
-    if record.checkpoint_id != checkpoint_id:
-        flash('Registro no válido para este punto de fichaje.', 'danger')
-        return redirect(url_for('checkpoints.checkpoint_dashboard'))
+    # Obtener los parámetros de fecha de la URL
+    if request.args.get('start_date'):
+        try:
+            start_date = datetime.strptime(request.args.get('start_date'), '%Y-%m-%d').date()
+        except ValueError:
+            flash('Formato de fecha de inicio inválido. Usando la fecha predeterminada.', 'warning')
     
-    # Determinar la URL de destino (a firma o a donde corresponda)
-    next_url = url_for('checkpoints.checkpoint_record_signature', id=record.id)
+    if request.args.get('end_date'):
+        try:
+            end_date = datetime.strptime(request.args.get('end_date'), '%Y-%m-%d').date()
+        except ValueError:
+            flash('Formato de fecha de fin inválido. Usando la fecha predeterminada.', 'warning')
+            
+    # Asegurar que la fecha de fin sea posterior a la de inicio
+    if end_date < start_date:
+        flash('La fecha de fin debe ser posterior a la de inicio. Ajustando fechas.', 'warning')
+        end_date = start_date + timedelta(days=1)
     
-    # Renderizar la plantilla oculta con los detalles del fichaje
-    return render_template('checkpoints/hidden_checkout_records.html', 
-                          record=record, 
-                          checkpoint=checkpoint,
-                          next_url=next_url)
+    # Obtener registros originales del período
+    original_records = CheckPointOriginalRecord.query.join(
+        CheckPointRecord, CheckPointOriginalRecord.record_id == CheckPointRecord.id
+    ).filter(
+        func.date(CheckPointRecord.check_in_time) >= start_date,
+        func.date(CheckPointRecord.check_in_time) <= end_date
+    ).order_by(CheckPointRecord.check_in_time.desc()).all()
+    
+    # Agrupar por registro principal
+    records_by_id = {}
+    for orig_record in original_records:
+        if orig_record.record_id not in records_by_id:
+            records_by_id[orig_record.record_id] = []
+        records_by_id[orig_record.record_id].append(orig_record)
+    
+    # Obtener la información de los registros principales
+    main_records = {}
+    for record_id in records_by_id.keys():
+        record = CheckPointRecord.query.get(record_id)
+        if record:
+            main_records[record_id] = record
+    
+    return render_template('checkpoints/hidden_checkout_records.html',
+                           original_records=original_records,
+                           records_by_id=records_by_id,
+                           main_records=main_records,
+                           start_date=start_date,
+                           end_date=end_date)
 
 
 @checkpoints_bp.route('/daily-report')
