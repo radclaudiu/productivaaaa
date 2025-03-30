@@ -774,13 +774,31 @@ def delete_employee(id):
         flash('No tienes permiso para eliminar este empleado.', 'danger')
         return redirect(url_for('employee.list_employees'))
     
-    employee_name = f"{employee.first_name} {employee.last_name}"
-    db.session.delete(employee)
-    db.session.commit()
+    # Verificar si el empleado tiene registros de fichaje
+    from models_checkpoints import CheckPointRecord
+    checkpoint_records = CheckPointRecord.query.filter_by(employee_id=employee.id).count()
     
-    log_activity(f'Empleado eliminado: {employee_name}')
-    flash(f'Empleado "{employee_name}" eliminado correctamente.', 'success')
-    return redirect(url_for('employee.list_employees'))
+    if checkpoint_records > 0:
+        employee_name = f"{employee.first_name} {employee.last_name}"
+        message = f'No se puede eliminar al empleado "{employee_name}" porque tiene {checkpoint_records} registros de fichaje asociados. '
+        message += 'Para eliminar este empleado, primero debes eliminar todos sus registros de fichaje o desactivarlo en lugar de eliminarlo.'
+        log_activity(f'Intento fallido de eliminar empleado con registros: {employee_name}')
+        flash(message, 'warning')
+        return redirect(url_for('employee.view_employee', id=employee.id))
+    
+    try:
+        employee_name = f"{employee.first_name} {employee.last_name}"
+        db.session.delete(employee)
+        db.session.commit()
+        
+        log_activity(f'Empleado eliminado: {employee_name}')
+        flash(f'Empleado "{employee_name}" eliminado correctamente.', 'success')
+        return redirect(url_for('employee.list_employees'))
+    except Exception as e:
+        db.session.rollback()
+        log_activity(f'Error al eliminar empleado {employee.id}: {str(e)}')
+        flash(f'Error al eliminar empleado: {str(e)}', 'danger')
+        return redirect(url_for('employee.list_employees'))
     
 @employee_bp.route('/<int:id>/status', methods=['GET', 'POST'])
 @login_required
