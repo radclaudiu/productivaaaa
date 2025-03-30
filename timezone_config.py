@@ -43,5 +43,6 @@ def format_datetime(dt, format_str='%Y-%m-%d %H:%M:%S'):
     try:
         madrid_dt = datetime_to_madrid(dt)
         return madrid_dt.strftime(format_str)
-    except:
+    except Exception as e:
+        print(f"Error al formatear fecha: {e}")
         return ""

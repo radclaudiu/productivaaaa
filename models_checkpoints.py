@@ -197,7 +197,15 @@ class CheckPointOriginalRecord(db.Model):
         """Calcula la duración del fichaje original en horas"""
         if not self.original_check_out_time:
             return None
-        delta = self.original_check_out_time - self.original_check_in_time
+            
+        # Asegurarse de que ambas fechas tengan la misma información de zona horaria
+        from timezone_config import datetime_to_madrid
+        
+        # Convertir ambas fechas a aware con la misma zona horaria
+        check_in = datetime_to_madrid(self.original_check_in_time)
+        check_out = datetime_to_madrid(self.original_check_out_time)
+        
+        delta = check_out - check_in
         return delta.total_seconds() / 3600  # Convertir segundos a horas
     
     def __repr__(self):
@@ -263,13 +271,24 @@ class EmployeeContractHours(db.Model):
         if not check_out_time:
             return None, None
             
+        # Asegurarse de que ambas fechas tengan la misma información de zona horaria
+        from timezone_config import datetime_to_madrid, TIMEZONE
+        
+        # Convertir ambas fechas a aware con la misma zona horaria
+        check_in_time = datetime_to_madrid(check_in_time)
+        check_out_time = datetime_to_madrid(check_out_time)
+            
         adjusted_in = check_in_time
         adjusted_out = check_out_time
         
         # 1. Verificar si se debe aplicar horario normal
         if self.use_normal_schedule and self.normal_start_time and self.normal_end_time:
             # Si la hora de entrada está fuera del horario normal (demasiado temprano), ajustar
-            normal_start_datetime = datetime.combine(check_in_time.date(), self.normal_start_time)
+            # Creamos un datetime aware con la fecha de check_in y la hora de normal_start
+            check_in_date = check_in_time.date()
+            normal_start_datetime = datetime.combine(check_in_date, self.normal_start_time)
+            # Convertir a aware con zona horaria
+            normal_start_datetime = TIMEZONE.localize(normal_start_datetime)
             
             # Permitimos margen de flexibilidad si está configurado
             if self.use_flexibility and self.checkin_flexibility:
@@ -284,11 +303,17 @@ class EmployeeContractHours(db.Model):
             
             # Si la hora de salida es después del horario normal, ajustar (solo si no se permiten horas extra)
             if not self.allow_overtime and self.normal_end_time:
-                normal_end_datetime = datetime.combine(check_out_time.date(), self.normal_end_time)
+                check_out_date = check_out_time.date()
+                normal_end_datetime = datetime.combine(check_out_date, self.normal_end_time)
+                # Convertir a aware con zona horaria
+                normal_end_datetime = TIMEZONE.localize(normal_end_datetime)
                 
                 # Considerar si la salida es al día siguiente
                 if normal_end_datetime < normal_start_datetime:
-                    normal_end_datetime = datetime.combine(check_out_time.date() + timedelta(days=1), self.normal_end_time)
+                    next_day = check_out_time.date() + timedelta(days=1)
+                    normal_end_datetime = datetime.combine(next_day, self.normal_end_time)
+                    # Convertir a aware con zona horaria
+                    normal_end_datetime = TIMEZONE.localize(normal_end_datetime)
                 
                 # Permitimos margen de flexibilidad si está configurado
                 if self.use_flexibility and self.checkout_flexibility:
