@@ -52,6 +52,7 @@
                         <th>Ubicación</th>
                         <th>Empresa</th>
                         <th>Estado</th>
+                        <th>Auto Checkout</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -74,6 +75,15 @@
                                 <span class="badge bg-warning">Mantenimiento</span>
                                 {% elif checkpoint.status.value == 'disabled' %}
                                 <span class="badge bg-danger">Desactivado</span>
+                                {% endif %}
+                            </td>
+                            <td>
+                                {% if checkpoint.auto_checkout_time %}
+                                <span class="badge bg-info">
+                                    <i class="bi bi-clock"></i> {{ checkpoint.auto_checkout_time.strftime('%H:%M') }}
+                                </span>
+                                {% else %}
+                                <span class="badge bg-secondary">No configurado</span>
                                 {% endif %}
                             </td>
                             <td>
@@ -106,7 +116,7 @@
                         {% endfor %}
                     {% else %}
                         <tr>
-                            <td colspan="5" class="text-center">No hay puntos de fichaje configurados</td>
+                            <td colspan="6" class="text-center">No hay puntos de fichaje configurados</td>
                         </tr>
                     {% endif %}
                 </tbody>

@@ -60,8 +60,12 @@
         </div>
         <div class="col-md-6">
             <div class="card h-100">
-                <div class="card-header bg-primary text-white">
+                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
                     <h4 class="mb-0">Punto de Fichaje</h4>
+                    <button id="auto-checkout-btn" class="btn btn-sm btn-warning" 
+                            onclick="triggerAutoCheckout()" title="Ejecutar fichaje automático de salida">
+                        <i class="bi bi-clock-history"></i> Ejecutar Auto-Checkout
+                    </button>
                 </div>
                 <div class="card-body">
                     <h3>{{ checkpoint.name }}</h3>
@@ -72,7 +76,7 @@
                         <strong><i class="bi bi-geo-alt"></i> Ubicación:</strong> 
                         {{ checkpoint.location or 'No especificada' }}
                     </p>
-                    <p class="mb-0">
+                    <p>
                         <strong><i class="bi bi-info-circle"></i> Estado:</strong>
                         {% if checkpoint.status.value == 'active' %}
                             <span class="badge bg-success">Activo</span>
@@ -80,6 +84,14 @@
                             <span class="badge bg-warning">Mantenimiento</span>
                         {% else %}
                             <span class="badge bg-danger">Desactivado</span>
+                        {% endif %}
+                    </p>
+                    <p class="mb-0">
+                        <strong><i class="bi bi-clock"></i> Auto-Checkout:</strong>
+                        {% if checkpoint.auto_checkout_time %}
+                            <span class="badge bg-info">{{ checkpoint.auto_checkout_time.strftime('%H:%M') }}</span>
+                        {% else %}
+                            <span class="badge bg-secondary">No configurado</span>
                         {% endif %}
                     </p>
                 </div>
@@ -145,9 +157,62 @@
     setInterval(updateBigClock, 1000);
     
     function selectEmployee(employeeId, employeeName) {
-        // Add your employee selection logic here.  For example, you might redirect to a new page:
-        // window.location.href = `/employees/${employeeId}`;
-        console.log("Employee selected:", employeeId, employeeName);
+        window.location.href = "{{ url_for('checkpoints.employee_pin', id=0) }}".replace('0', employeeId);
+    }
+    
+    function triggerAutoCheckout() {
+        const btn = document.getElementById('auto-checkout-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
+        
+        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Proceso de auto-checkout completado correctamente. Se han procesado ' + data.processed + ' registros.', 'success');
+            } else {
+                showAlert('Error al ejecutar el auto-checkout: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error de conexión: ' + error, 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-clock-history"></i> Ejecutar Auto-Checkout';
+            
+            // Recargar la página después de 3 segundos para mostrar los cambios
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        });
+    }
+    
+    function showAlert(message, type) {
+        const alertDiv = document.createElement('div');
+        alertDiv.className = `alert alert-${type} alert-dismissible fade show`;
+        alertDiv.role = 'alert';
+        alertDiv.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Insertar alerta después del reloj
+        const container = document.querySelector('.container');
+        const clock = document.querySelector('.row.mb-4');
+        container.insertBefore(alertDiv, clock.nextSibling);
+        
+        // Auto-ocultar después de 5 segundos
+        setTimeout(() => {
+            alertDiv.classList.remove('show');
+            setTimeout(() => alertDiv.remove(), 500);
+        }, 5000);
     }
 </script>
 {% endblock %}

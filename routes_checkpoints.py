@@ -1774,6 +1774,33 @@ def validate_pin():
         return jsonify({"success": False, "message": "PIN incorrecto"}), 401
 
 
+# Endpoint para procesar auto-checkouts
+@checkpoints_bp.route('/auto_checkout', methods=['GET', 'POST'])
+@login_required
+@checkpoint_required
+def trigger_auto_checkout():
+    """Endpoint para ejecutar manualmente los auto-checkouts"""
+    from utils_checkpoints import process_auto_checkouts
+    
+    try:
+        # Ejecutar los auto-checkouts
+        records_processed = process_auto_checkouts()
+        
+        # Devolver resultado
+        return jsonify({
+            'success': True,
+            'processed': records_processed,
+            'message': f'Se procesaron {records_processed} registros con checkout automático.'
+        })
+    except Exception as e:
+        # Usar print para log en lugar de app.logger
+        print(f"Error en auto-checkout: {str(e)}")
+        return jsonify({
+            'success': False,
+            'processed': 0,
+            'message': f'Error al procesar los checkouts automáticos: {str(e)}'
+        }), 500
+
 # Integrar el blueprint en la aplicación principal
 @checkpoints_bp.route('/check_credentials', methods=['GET'])
 def check_credentials():
@@ -1799,4 +1826,18 @@ def check_credentials():
         })
 
 def init_app(app):
+    # Registrar el blueprint
     app.register_blueprint(checkpoints_bp)
+    
+    # Configurar tarea para ejecutar checkouts automáticos en cada solicitud (1 de cada 10)
+    @app.before_request
+    def check_auto_checkouts():
+        # Solo procesar en 1 de cada 10 solicitudes para no sobrecargar el servidor
+        import random
+        if random.random() < 0.1:  # 10% de probabilidad
+            from utils_checkpoints import process_auto_checkouts
+            try:
+                process_auto_checkouts()
+            except Exception as e:
+                # Loggear el error pero no interrumpir la solicitud
+                print(f"Error al procesar auto-checkouts: {str(e)}")
