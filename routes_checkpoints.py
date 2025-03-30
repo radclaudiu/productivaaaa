@@ -975,7 +975,7 @@ def view_original_records(slug):
             'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
             'employee_id': employee_id
         },
-        title=f"Registros de Fichaje de {company.name if company else ''} ({('Todos los registros' if show_all == 'true' else 'Solo registros modificados')})"
+        title=f"Registros Originales de {company.name if company else ''} ({('Vista simplificada' if show_all == 'true' else 'Registros modificados')})"
     )
 
 @checkpoints_bp.route('/records/export', methods=['GET', 'POST'])

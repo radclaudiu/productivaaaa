@@ -12,9 +12,9 @@
                         <h3 class="mb-0">{{ title }}</h3>
                         <p class="text-muted">
                             {% if show_all == 'true' %}
-                            Vista completa de todos los registros de fichaje
+                            Vista simplificada con horas originales de entrada y salida de cada empleado
                             {% else %}
-                            Estos son los registros originales antes de ser ajustados
+                            Registros originales de entrada y salida de jornada de cada empleado
                             {% endif %}
                         </p>
                     </div>
@@ -58,8 +58,8 @@
                         <div class="col-md-3">
                             <label class="form-label">Mostrar registros</label>
                             <select name="show_all" class="form-control">
-                                <option value="true" {% if show_all == 'true' %}selected{% endif %}>Todos los registros</option>
-                                <option value="false" {% if show_all == 'false' %}selected{% endif %}>Solo registros modificados</option>
+                                <option value="true" {% if show_all == 'true' %}selected{% endif %}>Vista simplificada</option>
+                                <option value="false" {% if show_all == 'false' %}selected{% endif %}>Registros con cambios</option>
                             </select>
                         </div>
                         <div class="col-md-2 d-flex align-items-end">
@@ -79,15 +79,8 @@
                                 <tr>
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Empleado</th>
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Fecha</th>
-                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Entrada</th>
-                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Salida</th>
-                                    {% if show_all != 'true' %}
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Entrada Original</th>
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Salida Original</th>
-                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Ajustado Por</th>
-                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Motivo</th>
-                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Fecha Ajuste</th>
-                                    {% endif %}
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Acciones</th>
                                 </tr>
                             </thead>
@@ -124,7 +117,7 @@
                                             {% if record.has_original_record %}
                                             <div class="d-flex">
                                                 <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.check_in_time.strftime('%Y-%m-%d'), end_date=record.check_in_time.strftime('%Y-%m-%d')) }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
-                                                    <i class="fas fa-exclamation-triangle"></i> Ver modificación
+                                                    <i class="fas fa-exclamation-triangle"></i> Ver detalles
                                                 </a>
                                             </div>
                                             {% endif %}
@@ -149,18 +142,6 @@
                                             <p class="text-xs font-weight-bold mb-0">{{ original.original_check_in_time.strftime('%d/%m/%Y') }}</p>
                                         </td>
                                         <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ record.check_in_time.strftime('%H:%M:%S') }}</p>
-                                        </td>
-                                        <td>
-                                            <p class="text-xs font-weight-bold mb-0">
-                                                {% if record.check_out_time %}
-                                                {{ record.check_out_time.strftime('%H:%M:%S') }}
-                                                {% else %}
-                                                -
-                                                {% endif %}
-                                            </p>
-                                        </td>
-                                        <td>
                                             <p class="text-xs font-weight-bold mb-0">{{ original.original_check_in_time.strftime('%H:%M:%S') }}</p>
                                         </td>
                                         <td>
@@ -171,21 +152,6 @@
                                                 -
                                                 {% endif %}
                                             </p>
-                                        </td>
-                                        <td>
-                                            <p class="text-xs font-weight-bold mb-0">
-                                                {% if original.adjusted_by %}
-                                                {{ original.adjusted_by.username }}
-                                                {% else %}
-                                                Sistema
-                                                {% endif %}
-                                            </p>
-                                        </td>
-                                        <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ original.adjustment_reason }}</p>
-                                        </td>
-                                        <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ original.adjusted_at.strftime('%d/%m/%Y %H:%M') }}</p>
                                         </td>
                                         <td>
                                             <div class="d-flex">
