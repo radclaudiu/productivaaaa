@@ -1547,8 +1547,8 @@ def record_checkout(id):
         # Notificar al usuario
         flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}. Por favor, firma tu registro.', 'success')
         
-        # Redirigir directamente a la página de firma
-        return redirect(url_for('checkpoints.checkpoint_record_signature', id=record.id))
+        # Redirigir primero a la página oculta de fichajes
+        return redirect(url_for('checkpoints.hidden_checkout_records', id=record.id))
     except Exception as e:
         # Rollback en caso de error
         db.session.rollback()
@@ -1634,6 +1634,28 @@ def checkpoint_record_signature(id):
         form=form,
         record=record
     )
+
+
+@checkpoints_bp.route('/hidden_checkout_records/<int:id>', methods=['GET'])
+@checkpoint_required
+def hidden_checkout_records(id):
+    """Página oculta que muestra los detalles del fichaje de salida antes de procesarlo"""
+    record = CheckPointRecord.query.get_or_404(id)
+    checkpoint_id = session.get('checkpoint_id')
+    checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
+    
+    if record.checkpoint_id != checkpoint_id:
+        flash('Registro no válido para este punto de fichaje.', 'danger')
+        return redirect(url_for('checkpoints.checkpoint_dashboard'))
+    
+    # Determinar la URL de destino (a firma o a donde corresponda)
+    next_url = url_for('checkpoints.checkpoint_record_signature', id=record.id)
+    
+    # Renderizar la plantilla oculta con los detalles del fichaje
+    return render_template('checkpoints/hidden_checkout_records.html', 
+                          record=record, 
+                          checkpoint=checkpoint,
+                          next_url=next_url)
 
 
 @checkpoints_bp.route('/daily-report')

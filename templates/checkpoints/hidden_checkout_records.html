@@ -1,0 +1,58 @@
+{% extends 'checkpoints/portal_layout.html' %}
+
+{% block title %}Registro de Salida Guardado{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="alert alert-info text-center fade show" role="alert">
+        <h4 class="alert-heading">Registro de Salida Guardado</h4>
+        <p>Se ha guardado el registro original del fichaje de salida para el empleado.</p>
+        <hr>
+        <div class="record-details">
+            <h5>Detalles del registro original:</h5>
+            <table class="table table-bordered">
+                <tr>
+                    <th>Empleado:</th>
+                    <td>{{ record.employee.first_name }} {{ record.employee.last_name }}</td>
+                </tr>
+                <tr>
+                    <th>Entrada:</th>
+                    <td>{{ record.check_in_time.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                </tr>
+                <tr>
+                    <th>Salida:</th>
+                    <td>{{ record.check_out_time.strftime('%d/%m/%Y %H:%M:%S') }}</td>
+                </tr>
+                {% if record.notes %}
+                <tr>
+                    <th>Notas:</th>
+                    <td>{{ record.notes }}</td>
+                </tr>
+                {% endif %}
+            </table>
+        </div>
+        
+        <div class="mt-4">
+            <p>Este registro se ha almacenado en el sistema antes de cualquier ajuste.</p>
+            <p>Por favor, continúe para firmar su registro.</p>
+        </div>
+        
+        <div class="d-flex justify-content-center mt-3">
+            <a href="{{ next_url }}" class="btn btn-primary">Continuar a Firma</a>
+        </div>
+    </div>
+    
+    <div class="text-center mt-3">
+        <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary">
+            <i class="fas fa-arrow-left"></i> Volver al Dashboard
+        </a>
+    </div>
+</div>
+
+<script>
+    // Redireccionar automáticamente después de 3 segundos
+    setTimeout(function() {
+        window.location.href = "{{ next_url }}";
+    }, 3000);
+</script>
+{% endblock %}
