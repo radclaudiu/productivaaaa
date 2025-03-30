@@ -60,101 +60,14 @@ def checkpoint_required(f):
 
 # Resto del código...
 
-@checkpoints_bp.route('/company/<slug>/rrrrrr', methods=['GET'])
-@login_required
-@admin_required
-def view_original_records(slug):
-    """Página secreta para ver los registros originales antes de ajustes de una empresa específica"""
-    from models_checkpoints import CheckPointOriginalRecord
-    
-    # Buscar la empresa por slug
-    companies = Company.query.all()
-    company = None
-    company_id = None
-    
-    for comp in companies:
-        if slugify(comp.name) == slug:
-            company = comp
-            company_id = comp.id
-            break
-    
-    if not company:
-        abort(404)
-    
-    # Esta página es solo para administradores
-    page = request.args.get('page', 1, type=int)
-    start_date = request.args.get('start_date')
-    end_date = request.args.get('end_date')
-    employee_id = request.args.get('employee_id', type=int)
-    
-    # Obtener los IDs de los empleados de esta empresa
-    employee_ids = db.session.query(Employee.id).filter_by(company_id=company_id).all()
-    employee_ids = [e[0] for e in employee_ids]
-    
-    # Construir la consulta base con filtro de empresa
-    query = db.session.query(
-        CheckPointOriginalRecord, 
-        CheckPointRecord, 
-        Employee
-    ).join(
-        CheckPointRecord, 
-        CheckPointOriginalRecord.record_id == CheckPointRecord.id
-    ).join(
-        Employee,
-        CheckPointRecord.employee_id == Employee.id
-    ).filter(
-        Employee.company_id == company_id
-    )
-    
-    # Aplicar filtros si los hay
-    if start_date:
-        try:
-            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
-            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) >= start_date)
-        except ValueError:
-            pass
-    
-    if end_date:
-        try:
-            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
-            query = query.filter(func.date(CheckPointOriginalRecord.original_check_in_time) <= end_date)
-        except ValueError:
-            pass
-    
-    if employee_id:
-        query = query.filter(Employee.id == employee_id)
-    
-    # Ordenar y paginar
-    original_records = query.order_by(
-        CheckPointOriginalRecord.adjusted_at.desc()
-    ).paginate(page=page, per_page=20)
-    
-    # Obtener la lista de empleados para el filtro (solo de esta empresa)
-    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
-    
-    # Si se solicita exportación
-    export_format = request.args.get('export')
-    if export_format == 'pdf':
-        return export_original_records_pdf(query.all(), start_date, end_date, company)
-    
-    return render_template(
-        'checkpoints/original_records.html',
-        original_records=original_records,
-        employees=employees,
-        company=company,
-        company_id=company_id,
-        filters={
-            'start_date': start_date.strftime('%Y-%m-%d') if isinstance(start_date, date) else None,
-            'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
-            'employee_id': employee_id
-        },
-        title=f"Registros Originales de {company.name if company else ''} (Antes de Ajustes)"
-    )
+# La ruta '/company/<slug>/rrrrrr' ha sido eliminada
+# def view_original_records(slug):
+    """Página secreta para ver los registros originales antes de ajustes de una empresa específica - ELIMINADA"""
+    # Esta función ha sido eliminada
+    abort(404)
 
-@checkpoints_bp.route('/company/<slug>/rrrrrr/edit/<int:id>', methods=['GET', 'POST'])
-@login_required
-@admin_required
-def edit_original_record(slug, id):
+# La ruta '/company/<slug>/rrrrrr/edit/<int:id>' ha sido eliminada
+# def edit_original_record(slug, id):
     """Edita un registro original"""
     from models_checkpoints import CheckPointOriginalRecord
     from flask_wtf import FlaskForm
@@ -240,10 +153,8 @@ def edit_original_record(slug, id):
                           company=company,
                           company_id=company_id)
 
-@checkpoints_bp.route('/company/<slug>/rrrrrr/restore/<int:id>', methods=['GET'])
-@login_required
-@admin_required
-def restore_original_record(slug, id):
+# La ruta '/company/<slug>/rrrrrr/restore/<int:id>' ha sido eliminada
+# def restore_original_record(slug, id):
     """Restaura los valores originales en el registro actual"""
     from models_checkpoints import CheckPointOriginalRecord
     
@@ -290,10 +201,8 @@ def restore_original_record(slug, id):
     
     return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
 
-@checkpoints_bp.route('/company/<slug>/rrrrrr/delete/<int:id>', methods=['GET'])
-@login_required
-@admin_required
-def delete_original_record(slug, id):
+# La ruta '/company/<slug>/rrrrrr/delete/<int:id>' ha sido eliminada
+# def delete_original_record(slug, id):
     """Elimina un registro original"""
     from models_checkpoints import CheckPointOriginalRecord
     
@@ -331,10 +240,8 @@ def delete_original_record(slug, id):
     
     return redirect(url_for('checkpoints_slug.view_original_records', slug=slug))
 
-@checkpoints_bp.route('/company/<slug>/rrrrrr/export', methods=['GET'])
-@login_required
-@admin_required
-def export_original_records(slug):
+# La ruta '/company/<slug>/rrrrrr/export' ha sido eliminada
+# def export_original_records(slug):
     """Exporta los registros originales a PDF"""
     from models_checkpoints import CheckPointOriginalRecord
     
@@ -404,7 +311,8 @@ def export_original_records(slug):
     # Generar PDF
     return export_original_records_pdf(records, start_date, end_date, company)
 
-def export_original_records_pdf(records, start_date=None, end_date=None, company=None):
+# Esta función ha sido eliminada
+# def export_original_records_pdf(records, start_date=None, end_date=None, company=None):
     """Genera un PDF con los registros originales"""
     from fpdf import FPDF
     from tempfile import NamedTemporaryFile
