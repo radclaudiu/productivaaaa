@@ -86,6 +86,7 @@ def view_original_records(slug):
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
     employee_id = request.args.get('employee_id', type=int)
+    show_all = request.args.get('show_all', 'false')
     
     # Obtener los IDs de los empleados de esta empresa
     employee_ids = db.session.query(Employee.id).filter_by(company_id=company_id).all()
@@ -106,6 +107,9 @@ def view_original_records(slug):
         Employee.company_id == company_id
     )
     
+    # Filtrar solo registros completos (con hora de salida)
+    query = query.filter(CheckPointOriginalRecord.original_check_out_time.isnot(None))
+    
     # Aplicar filtros si los hay
     if start_date:
         try:
@@ -124,10 +128,74 @@ def view_original_records(slug):
     if employee_id:
         query = query.filter(Employee.id == employee_id)
     
-    # Ordenar y paginar
-    original_records = query.order_by(
+    # Ejecutar la consulta y obtener todos los resultados
+    all_records = query.order_by(
         CheckPointOriginalRecord.adjusted_at.desc()
-    ).paginate(page=page, per_page=20)
+    ).all()
+    
+    # Filtrar registros duplicados (mismo empleado, misma fecha) manteniendo solo los completos
+    filtered_records = []
+    seen_records = set()  # Para rastrear combinaciones empleado-fecha ya procesadas
+    
+    for original, record, employee in all_records:
+        # Crear una clave única para identificar registros del mismo empleado en el mismo día
+        record_date = original.original_check_in_time.date()
+        record_key = (employee.id, record_date)
+        
+        # Solo incluir cada combinación empleado-fecha una vez
+        # Y asegurar que tenga hora de salida completa
+        if record_key not in seen_records and original.original_check_out_time is not None:
+            filtered_records.append((original, record, employee))
+            seen_records.add(record_key)
+    
+    # Paginar los resultados filtrados manualmente
+    total_records = len(filtered_records)
+    per_page = 20
+    total_pages = (total_records + per_page - 1) // per_page  # Redondear hacia arriba
+    
+    # Validar número de página
+    if page < 1:
+        page = 1
+    if page > total_pages and total_pages > 0:
+        page = total_pages
+    
+    # Calcular índices de inicio y fin para la página actual
+    start_idx = (page - 1) * per_page
+    end_idx = min(start_idx + per_page, total_records)
+    
+    # Obtener los registros para la página actual
+    page_records = filtered_records[start_idx:end_idx] if filtered_records else []
+    
+    # Crear un objeto similar a la paginación de SQLAlchemy para usar en la plantilla
+    class Pagination:
+        def __init__(self, items, page, per_page, total):
+            self.items = items
+            self.page = page
+            self.per_page = per_page
+            self.total = total
+            
+        @property
+        def pages(self):
+            return (self.total + self.per_page - 1) // self.per_page
+            
+        @property
+        def has_prev(self):
+            return self.page > 1
+            
+        @property
+        def has_next(self):
+            return self.page < self.pages
+            
+        @property
+        def prev_num(self):
+            return self.page - 1 if self.has_prev else None
+            
+        @property
+        def next_num(self):
+            return self.page + 1 if self.has_next else None
+    
+    # Crear objeto de paginación
+    paginated_records = Pagination(page_records, page, per_page, total_records)
     
     # Obtener la lista de empleados para el filtro (solo de esta empresa)
     employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
@@ -135,11 +203,11 @@ def view_original_records(slug):
     # Si se solicita exportación
     export_format = request.args.get('export')
     if export_format == 'pdf':
-        return export_original_records_pdf(query.all(), start_date, end_date, company)
+        return export_original_records_pdf(filtered_records, start_date, end_date, company)
     
     return render_template(
         'checkpoints/original_records.html',
-        original_records=original_records,
+        original_records=paginated_records,
         employees=employees,
         company=company,
         company_id=company_id,
@@ -148,6 +216,7 @@ def view_original_records(slug):
             'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
             'employee_id': employee_id
         },
+        show_all=show_all,
         title=f"Registros Originales de {company.name if company else ''} (Antes de Ajustes)"
     )
 
