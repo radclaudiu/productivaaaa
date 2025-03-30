@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from io import BytesIO
 from PIL import Image
 from fpdf import FPDF
+from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
 
 class CheckPointPDF(FPDF):
     """Clase personalizada para generar PDFs de fichajes con cabecera y pie de página"""
@@ -358,8 +359,8 @@ def process_auto_checkouts():
     # Contador total de registros procesados
     total_processed = 0
     
-    # Obtener la fecha/hora actual
-    now = datetime.now()
+    # Obtener la fecha/hora actual en la zona horaria de Madrid
+    now = get_current_time()
     
     # Determinar el día de la semana actual (1-7, donde 1 es lunes)
     today_weekday = now.isoweekday()
@@ -369,7 +370,10 @@ def process_auto_checkouts():
         # Procesamiento basado en auto_checkout_time (configuración global)
         if checkpoint.auto_checkout_time:
             # Construir la fecha/hora de corte de hoy usando la configuración del punto de fichaje
+            # Combinamos la fecha del día actual con la hora de auto-checkout configurada
             global_checkout_datetime = datetime.combine(now.date(), checkpoint.auto_checkout_time)
+            # Aseguramos que esté en la zona horaria de Madrid
+            global_checkout_datetime = global_checkout_datetime.replace(tzinfo=TIMEZONE)
             
             # Solo procesar si ya pasó la hora de corte global
             if now >= global_checkout_datetime:
@@ -379,11 +383,15 @@ def process_auto_checkouts():
                 print(f"   Hora de auto-checkout: {checkpoint.auto_checkout_time.strftime('%H:%M:%S')}")
                 
                 # Buscar todos los fichajes de hoy sin checkout
+                # Creamos un datetime con la hora mínima (00:00:00) para la fecha actual
+                start_of_day = datetime.combine(now.date(), datetime.min.time())
+                start_of_day = start_of_day.replace(tzinfo=TIMEZONE)
+                
                 pending_records = CheckPointRecord.query.filter(
                     CheckPointRecord.checkpoint_id == checkpoint.id,
                     CheckPointRecord.check_out_time.is_(None),
                     CheckPointRecord.check_in_time.between(
-                        datetime.combine(now.date(), datetime.min.time()),
+                        start_of_day,
                         now
                     )
                 ).all()
@@ -495,6 +503,8 @@ def process_auto_checkouts():
             if schedule and schedule.is_working_day and schedule.end_time:
                 # Construir fecha/hora de fin de turno programado
                 scheduled_end_datetime = datetime.combine(now.date(), schedule.end_time)
+                # Aseguramos que esté en la zona horaria de Madrid
+                scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=TIMEZONE)
                 
                 # Verificar si ya pasó la hora de fin de turno (con margen de 15 minutos)
                 margin = timedelta(minutes=15)

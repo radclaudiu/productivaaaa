@@ -2,6 +2,7 @@ import os
 import json
 from datetime import datetime, date, time, timedelta
 from functools import wraps
+from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask import current_app, abort, send_file
@@ -1216,7 +1217,7 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             db.session.begin_nested()
             
             # 1. Registrar hora de salida
-            checkout_time = datetime.now()
+            checkout_time = get_current_time()
             pending_record.check_out_time = checkout_time
             db.session.add(pending_record)
             
@@ -1226,7 +1227,7 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             # Capturar los valores reales antes de cualquier ajuste
             # Importante: Guardamos la hora exacta que se introdujo al inicio de la jornada
             original_checkin = pending_record.check_in_time  # Esta es la hora original de entrada
-            original_checkout = datetime.now()  # Esta es la hora real de salida antes de ajustes
+            original_checkout = get_current_time()  # Esta es la hora real de salida antes de ajustes
             
             # Actualizar primero la hora de salida con la hora real
             pending_record.check_out_time = original_checkout
@@ -1313,7 +1314,7 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             db.session.begin_nested()
             
             # 1. Crear nuevo registro de fichaje
-            checkin_time = datetime.now()
+            checkin_time = get_current_time()
             new_record = CheckPointRecord(
                 employee_id=employee.id,
                 checkpoint_id=checkpoint_id,
@@ -1465,7 +1466,7 @@ def record_checkout(id):
         db.session.begin_nested()
         
         # 1. Actualizar el registro con la hora de salida
-        current_time = datetime.now()
+        current_time = get_current_time()
         record.check_out_time = current_time
         db.session.add(record)
         db.session.flush()  # Aseguramos que record tenga todos sus campos actualizados
