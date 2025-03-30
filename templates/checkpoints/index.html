@@ -269,6 +269,11 @@
                                 {% endfor %}
                             </ul>
                         </div>
+                        
+                        <!-- Acceso a registros originales -->
+                        <a href="{{ url_for('checkpoints.original_records_company', slug=company.get_slug()) }}" class="btn btn-warning btn-action mt-2">
+                            <i class="bi bi-file-earmark-text quick-action-icon"></i>Registros Originales
+                        </a>
                     </div>
                 </div>
             </div>

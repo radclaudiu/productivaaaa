@@ -1,10 +1,22 @@
-{% extends 'layout.html' %}
+{% if from_checkpoint is defined and from_checkpoint %}
+    {% extends 'checkpoints/portal_layout.html' %}
+{% else %}
+    {% extends 'layout.html' %}
+{% endif %}
 
 {% block title %}Registros Originales de Fichajes{% endblock %}
 
 {% block content %}
 <div class="container mt-4">
-    <h2 class="mb-4">Registros Originales de Fichajes</h2>
+    <h2 class="mb-4">
+        {% if from_checkpoint is defined and from_checkpoint %}
+            Registros Originales - {{ checkpoint.name }}
+        {% elif company is defined %}
+            Registros Originales - {{ company.name }}
+        {% else %}
+            Registros Originales de Fichajes
+        {% endif %}
+    </h2>
     
     <!-- Filtro de fechas -->
     <div class="card mb-4">
@@ -12,7 +24,12 @@
             <h5 class="card-title mb-0">Filtrar por fecha</h5>
         </div>
         <div class="card-body">
-            <form method="GET" action="{{ url_for('checkpoints.original_records_admin') }}" class="row g-3">
+            <form method="GET" class="row g-3">
+                {% if from_checkpoint is defined and from_checkpoint %}
+                    <input type="hidden" name="current_url" value="{{ url_for('checkpoints.checkpoint_original_records', id=checkpoint.id) }}">
+                {% elif company is defined %}
+                    <input type="hidden" name="current_url" value="{{ url_for('checkpoints.original_records_company', slug=company.get_slug()) }}">
+                {% endif %}
                 <div class="col-md-4">
                     <label for="start_date" class="form-label">Fecha de inicio</label>
                     <input type="date" class="form-control" id="start_date" name="start_date" 
@@ -25,7 +42,13 @@
                 </div>
                 <div class="col-md-4 d-flex align-items-end">
                     <button type="submit" class="btn btn-primary">Filtrar</button>
-                    <a href="{{ url_for('checkpoints.original_records_admin') }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+                    {% if from_checkpoint is defined and from_checkpoint %}
+                        <a href="{{ url_for('checkpoints.checkpoint_original_records', id=checkpoint.id) }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+                    {% elif company is defined %}
+                        <a href="{{ url_for('checkpoints.original_records_company', slug=company.get_slug()) }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+                    {% else %}
+                        <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary ms-2">Limpiar</a>
+                    {% endif %}
                 </div>
             </form>
         </div>
@@ -157,9 +180,19 @@
     {% endif %}
     
     <div class="mt-4 mb-5 text-center">
-        <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
-            <i class="fas fa-arrow-left"></i> Volver al Dashboard
-        </a>
+        {% if from_checkpoint is defined and from_checkpoint %}
+            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        {% elif company is defined %}
+            <a href="{{ url_for('checkpoints.index_company', slug=company.get_slug()) }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        {% else %}
+            <a href="{{ url_for('dashboard') }}" class="btn btn-outline-secondary">
+                <i class="fas fa-arrow-left"></i> Volver al Dashboard
+            </a>
+        {% endif %}
     </div>
 </div>
 {% endblock %}
