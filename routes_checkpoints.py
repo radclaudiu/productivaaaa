@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from models import User, Employee, Company, UserRole
 from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, EmployeeContractHours
-from models_checkpoints import CheckPointStatus, CheckPointIncidentType, CheckPointOriginalRecord
+from models_checkpoints import CheckPointStatus, CheckPointIncidentType
 from forms_checkpoints import (CheckPointForm, CheckPointLoginForm, CheckPointEmployeePinForm, 
                              ContractHoursForm, CheckPointRecordAdjustmentForm,
                              SignaturePadForm, ExportCheckPointRecordsForm)
@@ -1547,7 +1547,7 @@ def record_checkout(id):
         # Notificar al usuario
         flash(f'Jornada finalizada correctamente para {employee.first_name} {employee.last_name}. Por favor, firma tu registro.', 'success')
         
-        # Redirigir directamente a la página de firma (ya no pasamos por la página oculta)
+        # Redirigir directamente a la página de firma
         return redirect(url_for('checkpoints.checkpoint_record_signature', id=record.id))
     except Exception as e:
         # Rollback en caso de error
@@ -1634,158 +1634,6 @@ def checkpoint_record_signature(id):
         form=form,
         record=record
     )
-
-
-@checkpoints_bp.route('/company/<string:slug>/original_records', methods=['GET'])
-@login_required
-@manager_required
-def original_records_company(slug):
-    """Página para ver los registros originales de fichajes para una empresa específica"""
-    try:
-        # Usar approach más robusto para buscar empresas por slug
-        from utils import slugify
-        
-        # Buscar por ID si es un número
-        if slug.isdigit():
-            company = Company.query.get_or_404(int(slug))
-        else:
-            # Buscar todas las empresas y comparar slugs
-            all_companies = Company.query.all()
-            company = next((c for c in all_companies if slugify(c.name) == slug), None)
-            
-            if not company:
-                flash('Empresa no encontrada', 'danger')
-                return redirect(url_for('checkpoints.select_company'))
-        
-        if not current_user.is_admin() and company not in current_user.companies:
-            flash('No tiene permiso para gestionar esta empresa.', 'danger')
-            return redirect(url_for('main.dashboard'))
-            
-        # Por defecto, mostrar los registros de los últimos 7 días
-        end_date = date.today()
-        start_date = end_date - timedelta(days=7)
-        
-        # Obtener los parámetros de fecha de la URL
-        if request.args.get('start_date'):
-            try:
-                start_date = datetime.strptime(request.args.get('start_date'), '%Y-%m-%d').date()
-            except ValueError:
-                flash('Formato de fecha de inicio inválido. Usando la fecha predeterminada.', 'warning')
-        
-        if request.args.get('end_date'):
-            try:
-                end_date = datetime.strptime(request.args.get('end_date'), '%Y-%m-%d').date()
-            except ValueError:
-                flash('Formato de fecha de fin inválido. Usando la fecha predeterminada.', 'warning')
-                
-        # Asegurar que la fecha de fin sea posterior a la de inicio
-        if end_date < start_date:
-            flash('La fecha de fin debe ser posterior a la de inicio. Ajustando fechas.', 'warning')
-            end_date = start_date + timedelta(days=1)
-        
-        # Obtener registros originales del período para la empresa específica
-        original_records = CheckPointOriginalRecord.query.join(
-            CheckPointRecord, CheckPointOriginalRecord.record_id == CheckPointRecord.id
-        ).join(
-            CheckPoint, CheckPointRecord.checkpoint_id == CheckPoint.id
-        ).filter(
-            CheckPoint.company_id == company.id,
-            func.date(CheckPointRecord.check_in_time) >= start_date,
-            func.date(CheckPointRecord.check_in_time) <= end_date
-        ).order_by(CheckPointRecord.check_in_time.desc()).all()
-        
-        # Agrupar por registro principal
-        records_by_id = {}
-        for orig_record in original_records:
-            if orig_record.record_id not in records_by_id:
-                records_by_id[orig_record.record_id] = []
-            records_by_id[orig_record.record_id].append(orig_record)
-        
-        # Obtener la información de los registros principales
-        main_records = {}
-        for record_id in records_by_id.keys():
-            record = CheckPointRecord.query.get(record_id)
-            if record:
-                main_records[record_id] = record
-        
-        return render_template('checkpoints/hidden_checkout_records.html',
-                              original_records=original_records,
-                              records_by_id=records_by_id,
-                              main_records=main_records,
-                              start_date=start_date,
-                              end_date=end_date,
-                              company=company)
-    except Exception as e:
-        print(f"Error al obtener registros originales: {str(e)}")
-        flash('Se produjo un error al cargar los registros originales.', 'danger')
-        return redirect(url_for('checkpoints.index_company', slug=slug))
-
-
-@checkpoints_bp.route('/checkpoint/<int:id>/original_records', methods=['GET'])
-@checkpoint_required
-def checkpoint_original_records(id):
-    """Página para ver los registros originales desde el panel de punto de fichaje"""
-    # Obtener el ID del checkpoint desde la sesión
-    checkpoint_id = session.get('checkpoint_id')
-    if not checkpoint_id or checkpoint_id != id:
-        flash('No tiene permiso para acceder a estos registros.', 'danger')
-        return redirect(url_for('checkpoints.checkpoint_dashboard'))
-        
-    checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
-    
-    # Por defecto, mostrar los registros de los últimos 7 días
-    end_date = date.today()
-    start_date = end_date - timedelta(days=7)
-    
-    # Obtener los parámetros de fecha de la URL
-    if request.args.get('start_date'):
-        try:
-            start_date = datetime.strptime(request.args.get('start_date'), '%Y-%m-%d').date()
-        except ValueError:
-            flash('Formato de fecha de inicio inválido. Usando la fecha predeterminada.', 'warning')
-    
-    if request.args.get('end_date'):
-        try:
-            end_date = datetime.strptime(request.args.get('end_date'), '%Y-%m-%d').date()
-        except ValueError:
-            flash('Formato de fecha de fin inválido. Usando la fecha predeterminada.', 'warning')
-            
-    # Asegurar que la fecha de fin sea posterior a la de inicio
-    if end_date < start_date:
-        flash('La fecha de fin debe ser posterior a la de inicio. Ajustando fechas.', 'warning')
-        end_date = start_date + timedelta(days=1)
-    
-    # Obtener registros originales del período para este checkpoint específico
-    original_records = CheckPointOriginalRecord.query.join(
-        CheckPointRecord, CheckPointOriginalRecord.record_id == CheckPointRecord.id
-    ).filter(
-        CheckPointRecord.checkpoint_id == checkpoint_id,
-        func.date(CheckPointRecord.check_in_time) >= start_date,
-        func.date(CheckPointRecord.check_in_time) <= end_date
-    ).order_by(CheckPointRecord.check_in_time.desc()).all()
-    
-    # Agrupar por registro principal
-    records_by_id = {}
-    for orig_record in original_records:
-        if orig_record.record_id not in records_by_id:
-            records_by_id[orig_record.record_id] = []
-        records_by_id[orig_record.record_id].append(orig_record)
-    
-    # Obtener la información de los registros principales
-    main_records = {}
-    for record_id in records_by_id.keys():
-        record = CheckPointRecord.query.get(record_id)
-        if record:
-            main_records[record_id] = record
-    
-    return render_template('checkpoints/hidden_checkout_records.html',
-                          original_records=original_records,
-                          records_by_id=records_by_id,
-                          main_records=main_records,
-                          start_date=start_date,
-                          end_date=end_date,
-                          checkpoint=checkpoint,
-                          from_checkpoint=True)
 
 
 @checkpoints_bp.route('/daily-report')
