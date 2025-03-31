@@ -352,9 +352,12 @@ def create_checkpoint():
             status=status_enum,
             username=form.username.data,
             company_id=form.company_id.data,
-            # auto_checkout_time eliminado
             enforce_contract_hours=form.enforce_contract_hours.data,
-            auto_adjust_overtime=form.auto_adjust_overtime.data
+            auto_adjust_overtime=form.auto_adjust_overtime.data,
+            # Nuevos campos para configuración de horario de funcionamiento
+            enforce_operation_hours=form.enforce_operation_hours.data,
+            operation_start_time=form.operation_start_time.data,
+            operation_end_time=form.operation_end_time.data
         )
         
         if form.password.data:
@@ -410,9 +413,12 @@ def edit_checkpoint(id):
         checkpoint.status = status_enum
         checkpoint.username = form.username.data
         checkpoint.company_id = form.company_id.data
-        # El campo auto_checkout_time ha sido eliminado
         checkpoint.enforce_contract_hours = form.enforce_contract_hours.data
         checkpoint.auto_adjust_overtime = form.auto_adjust_overtime.data
+        # Actualizar configuración de horario de funcionamiento
+        checkpoint.enforce_operation_hours = form.enforce_operation_hours.data
+        checkpoint.operation_start_time = form.operation_start_time.data
+        checkpoint.operation_end_time = form.operation_end_time.data
         
         if form.password.data:
             checkpoint.set_password(form.password.data)

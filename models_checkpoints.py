@@ -47,6 +47,11 @@ class CheckPoint(db.Model):
     enforce_contract_hours = db.Column(db.Boolean, default=False)
     auto_adjust_overtime = db.Column(db.Boolean, default=False)
     
+    # Configuración de horario de funcionamiento
+    operation_start_time = db.Column(db.Time, nullable=True)
+    operation_end_time = db.Column(db.Time, nullable=True)
+    enforce_operation_hours = db.Column(db.Boolean, default=False)
+    
     # Fichajes realizados desde este punto
     check_ins = db.relationship('CheckPointRecord', back_populates='checkpoint', cascade='all, delete-orphan')
     

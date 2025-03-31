@@ -23,6 +23,11 @@ class CheckPointForm(FlaskForm):
     enforce_contract_hours = BooleanField('Aplicar límite horas contrato', default=False)
     auto_adjust_overtime = BooleanField('Ajustar automáticamente horas extra', default=False)
     
+    # Configuración de horario de funcionamiento
+    enforce_operation_hours = BooleanField('Aplicar horario de funcionamiento', default=False)
+    operation_start_time = TimeField('Hora de inicio de operación', validators=[Optional()])
+    operation_end_time = TimeField('Hora de fin de operación', validators=[Optional()])
+    
     company_id = SelectField('Empresa', coerce=int, validators=[DataRequired()])
     
     submit = SubmitField('Guardar')
@@ -31,6 +36,11 @@ class CheckPointForm(FlaskForm):
         """Asegura que la contraseña y la confirmación coincidan"""
         if self.password.data and self.password.data != self.confirm_password.data:
             raise ValidationError('Las contraseñas no coinciden')
+            
+    def validate_operation_end_time(self, field):
+        """Verifica que la hora de fin de operación sea posterior a la de inicio"""
+        if field.data and self.operation_start_time.data and field.data <= self.operation_start_time.data:
+            raise ValidationError('La hora de fin de operación debe ser posterior a la hora de inicio')
 
 
 class CheckPointEmployeePinForm(FlaskForm):

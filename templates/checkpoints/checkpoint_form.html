@@ -179,8 +179,70 @@
                                 Si está activado, se ajustarán las horas extras según la configuración de cada empleado.
                             </div>
                         </div>
+                        
+                        <h4 class="mb-3 mt-4">Horario de Funcionamiento</h4>
+                        
+                        <div class="form-check mb-3">
+                            {{ form.enforce_operation_hours(class="form-check-input", id="enforce_operation_hours") }}
+                            {{ form.enforce_operation_hours.label(class="form-check-label") }}
+                            <div class="form-text">
+                                Si está activado, el punto de fichaje solo funcionará en el horario establecido y cerrará automáticamente todos los fichajes pendientes al finalizar.
+                            </div>
+                        </div>
+                        
+                        <div id="operation_hours_container" class="mb-3">
+                            <div class="row">
+                                <div class="col-md-6">
+                                    {{ form.operation_start_time.label(class="form-label") }}
+                                    {{ form.operation_start_time(class="form-control" + (" is-invalid" if form.operation_start_time.errors else ""), type="time") }}
+                                    {% if form.operation_start_time.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.operation_start_time.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                                <div class="col-md-6">
+                                    {{ form.operation_end_time.label(class="form-label") }}
+                                    {{ form.operation_end_time(class="form-control" + (" is-invalid" if form.operation_end_time.errors else ""), type="time") }}
+                                    {% if form.operation_end_time.errors %}
+                                        <div class="invalid-feedback">
+                                            {% for error in form.operation_end_time.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="form-text mt-2">
+                                Al llegar a la hora de fin, todos los fichajes pendientes se cerrarán automáticamente.
+                            </div>
+                        </div>
                     </div>
                 </div>
+                
+                <script>
+                    document.addEventListener('DOMContentLoaded', function() {
+                        const enforceHoursCheckbox = document.getElementById('enforce_operation_hours');
+                        const hoursContainer = document.getElementById('operation_hours_container');
+                        
+                        // Función para mostrar/ocultar el contenedor de horas de operación
+                        function toggleHoursVisibility() {
+                            if (enforceHoursCheckbox.checked) {
+                                hoursContainer.style.display = 'block';
+                            } else {
+                                hoursContainer.style.display = 'none';
+                            }
+                        }
+                        
+                        // Establecer visibilidad inicial
+                        toggleHoursVisibility();
+                        
+                        // Agregar listener para cambios en el checkbox
+                        enforceHoursCheckbox.addEventListener('change', toggleHoursVisibility);
+                    });
+                </script>
                 
                 <div class="mt-4 d-flex justify-content-end">
                     <a href="{{ url_for('checkpoints.list_checkpoints') }}" class="btn btn-secondary me-2">
