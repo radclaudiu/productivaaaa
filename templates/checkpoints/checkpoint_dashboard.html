@@ -171,7 +171,7 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
         
-        // Añadir parámetro force=true para forzar el procesamiento independientemente de la hora configurada
+        // Añadir parámetro force=true para forzar siempre el checkout manual
         fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}?force=true", {
             method: 'POST',
             headers: {

@@ -270,7 +270,8 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
         
-        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}", {
+        // Añadimos parámetro force=true para que funcione igual que el botón de prueba forzada
+        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}?force=true", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
