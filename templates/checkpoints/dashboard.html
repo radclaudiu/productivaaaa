@@ -87,6 +87,18 @@
         <div class="col-12">
             <div class="card dashboard-header">
                 <div class="card-body p-4">
+                    <div class="d-flex justify-content-end mb-2">
+                        <div class="btn-group">
+                            <button id="auto-checkout-btn" class="btn btn-sm btn-warning" 
+                                    onclick="triggerAutoCheckout()" title="Ejecutar auto-checkout según configuración normal">
+                                <i class="bi bi-clock-history"></i> Auto-Checkout
+                            </button>
+                            <button id="test-auto-checkout-btn" class="btn btn-sm btn-danger" 
+                                    onclick="testAutoCheckout()" title="Prueba de auto-checkout forzado para todos los empleados">
+                                <i class="bi bi-bug"></i> Probar Auto-Checkout
+                            </button>
+                        </div>
+                    </div>
                     <h1 class="text-center mb-0 text-white">{{ checkpoint.name }}</h1>
                     <p class="text-center mb-0 text-white-50">{{ checkpoint.location }}</p>
                     <div class="text-center mt-3">
@@ -250,5 +262,98 @@
             refreshButton.addEventListener('click', loadEmployees);
         }
     });
+    
+    // Funciones para los botones de auto-checkout
+    function triggerAutoCheckout() {
+        const btn = document.getElementById('auto-checkout-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
+        
+        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('Proceso de auto-checkout completado correctamente. Se han procesado ' + data.processed + ' registros.', 'success');
+            } else {
+                showAlert('Error al ejecutar el auto-checkout: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error de conexión: ' + error, 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-clock-history"></i> Auto-Checkout';
+            
+            // Recargar la página después de 3 segundos para mostrar los cambios
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        });
+    }
+    
+    function testAutoCheckout() {
+        const btn = document.getElementById('test-auto-checkout-btn');
+        btn.disabled = true;
+        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Probando...';
+        
+        // Parámetro force=true y test=true para ejecutar una prueba forzada
+        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}?force=true&test=true", {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': '{{ csrf_token() }}'
+            }
+        })
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                showAlert('PRUEBA DE AUTO-CHECKOUT: ' + data.processed + ' registros procesados. (SIN FICHAR SALIDA)', 'info');
+            } else {
+                showAlert('Error en prueba de auto-checkout: ' + data.message, 'danger');
+            }
+        })
+        .catch(error => {
+            showAlert('Error de conexión: ' + error, 'danger');
+        })
+        .finally(() => {
+            btn.disabled = false;
+            btn.innerHTML = '<i class="bi bi-bug"></i> Probar Auto-Checkout';
+            
+            // Recargar la página después de 3 segundos para mostrar los cambios
+            setTimeout(() => {
+                window.location.reload();
+            }, 3000);
+        });
+    }
+    
+    // Función para mostrar alertas
+    function showAlert(message, type) {
+        const alertContainer = document.createElement('div');
+        alertContainer.className = `alert alert-${type} alert-dismissible fade show`;
+        alertContainer.role = 'alert';
+        alertContainer.innerHTML = `
+            ${message}
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        `;
+        
+        // Insertar después de la cabecera del dashboard
+        const dashboardHeader = document.querySelector('.dashboard-header');
+        if (dashboardHeader) {
+            dashboardHeader.parentNode.insertBefore(alertContainer, dashboardHeader.nextSibling);
+        }
+        
+        // Auto-cerrar después de 5 segundos
+        setTimeout(() => {
+            alertContainer.classList.remove('show');
+            setTimeout(() => alertContainer.remove(), 500);
+        }, 5000);
+    }
 </script>
 {% endblock %}
