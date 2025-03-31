@@ -60,18 +60,8 @@
         </div>
         <div class="col-md-6">
             <div class="card h-100">
-                <div class="card-header bg-primary text-white d-flex justify-content-between align-items-center">
+                <div class="card-header bg-primary text-white">
                     <h4 class="mb-0">Punto de Fichaje</h4>
-                    <div class="btn-group" role="group">
-                        <button id="auto-checkout-btn" class="btn btn-sm btn-warning" 
-                                onclick="triggerAutoCheckout()" title="Ejecutar auto-checkout según configuración normal">
-                            <i class="bi bi-clock-history"></i> Auto-Checkout
-                        </button>
-                        <button id="test-auto-checkout-btn" class="btn btn-sm btn-danger" 
-                                onclick="testAutoCheckout()" title="Prueba de auto-checkout forzado para todos los empleados">
-                            <i class="bi bi-bug"></i> Probar Auto-Checkout
-                        </button>
-                    </div>
                 </div>
                 <div class="card-body">
                     <h3>{{ checkpoint.name }}</h3>
@@ -92,14 +82,7 @@
                             <span class="badge bg-danger">Desactivado</span>
                         {% endif %}
                     </p>
-                    <p class="mb-0">
-                        <strong><i class="bi bi-clock"></i> Auto-Checkout:</strong>
-                        {% if checkpoint.auto_checkout_time %}
-                            <span class="badge bg-info">{{ checkpoint.auto_checkout_time.strftime('%H:%M') }}</span>
-                        {% else %}
-                            <span class="badge bg-secondary">No configurado</span>
-                        {% endif %}
-                    </p>
+                    <!-- Auto-checkout eliminado -->
                 </div>
             </div>
         </div>
@@ -166,74 +149,7 @@
         window.location.href = "{{ url_for('checkpoints.employee_pin', id=0) }}".replace('0', employeeId);
     }
     
-    function triggerAutoCheckout() {
-        const btn = document.getElementById('auto-checkout-btn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
-        
-        // Añadir parámetro force=true para forzar siempre el checkout manual
-        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}?force=true", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('Proceso de auto-checkout completado correctamente. Se han procesado ' + data.processed + ' registros.', 'success');
-            } else {
-                showAlert('Error al ejecutar el auto-checkout: ' + data.message, 'danger');
-            }
-        })
-        .catch(error => {
-            showAlert('Error de conexión: ' + error, 'danger');
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-clock-history"></i> Ejecutar Auto-Checkout';
-            
-            // Recargar la página después de 3 segundos para mostrar los cambios
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-        });
-    }
-    function testAutoCheckout() {
-        const btn = document.getElementById('test-auto-checkout-btn');
-        btn.disabled = true;
-        btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Probando...';
-        
-        // Parámetro force=true y test=true para ejecutar una prueba forzada
-        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}?force=true&test=true", {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': '{{ csrf_token() }}'
-            }
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.success) {
-                showAlert('PRUEBA DE AUTO-CHECKOUT: ' + data.processed + ' registros procesados. (SIN FICHAR SALIDA)', 'info');
-            } else {
-                showAlert('Error en prueba de auto-checkout: ' + data.message, 'danger');
-            }
-        })
-        .catch(error => {
-            showAlert('Error de conexión: ' + error, 'danger');
-        })
-        .finally(() => {
-            btn.disabled = false;
-            btn.innerHTML = '<i class="bi bi-bug"></i> Probar Auto-Checkout';
-            
-            // Recargar la página después de 3 segundos para mostrar los cambios
-            setTimeout(() => {
-                window.location.reload();
-            }, 3000);
-        });
-    }
+    // Funcionalidad de auto-checkout eliminada
     
     function showAlert(message, type) {
         const alertDiv = document.createElement('div');

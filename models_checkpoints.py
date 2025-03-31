@@ -36,7 +36,6 @@ class CheckPoint(db.Model):
     password_hash = db.Column(db.String(256), nullable=False)
     
     # Configuración del punto de fichaje
-    auto_checkout_time = db.Column(db.Time)  # Hora límite para checkout automático
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow)
     

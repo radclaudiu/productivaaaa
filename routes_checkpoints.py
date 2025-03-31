@@ -1781,50 +1781,13 @@ def validate_pin():
 @login_required
 @checkpoint_required
 def trigger_auto_checkout():
-    """Endpoint para ejecutar manualmente los auto-checkouts"""
-    from utils_checkpoints import process_auto_checkouts
-    from timezone_config import get_current_time
-    from datetime import datetime, timedelta
-    
-    try:
-        # Agregar un indicador para forzar la ejecución (para uso manual) y modo prueba
-        force = request.args.get('force', 'false').lower() == 'true'
-        test_mode = request.args.get('test', 'false').lower() == 'true'
-        
-        # IMPORTANTE: Siempre usamos force=True para mantener consistencia con el comportamiento del botón
-        # para que los registros siempre se marquen como "SIN FICHAR SALIDA"
-        if test_mode:
-            print("🧪 Ejecutando PRUEBA de auto-checkout en modo forzado (SIN FICHAR SALIDA)")
-        else:
-            # Si viene del botón normal o del sistema programado, igual lo ejecutamos en modo forzado
-            print("⚠️ Ejecutando auto-checkout en modo forzado")
-        
-        # Siempre procesamos con force=True para mantener consistencia en el marcado "SIN FICHAR SALIDA"
-        records_processed = process_auto_checkouts(force=True)
-        
-        # Devolver resultado con mensaje personalizado según el modo
-        if test_mode:
-            return jsonify({
-                'success': True,
-                'processed': records_processed,
-                'message': f'PRUEBA: Se procesaron {records_processed} registros marcados como SIN FICHAR SALIDA.'
-            })
-        else:
-            return jsonify({
-                'success': True,
-                'processed': records_processed,
-                'message': f'Se procesaron {records_processed} registros con checkout automático.'
-            })
-    except Exception as e:
-        # Usar print para log en lugar de app.logger
-        print(f"Error en auto-checkout: {str(e)}")
-        import traceback
-        traceback.print_exc()
-        return jsonify({
-            'success': False,
-            'processed': 0,
-            'message': f'Error al procesar los checkouts automáticos: {str(e)}'
-        }), 500
+    """Endpoint para informar que el sistema de auto-checkout ha sido eliminado"""
+    # Informar que la funcionalidad ha sido eliminada
+    return jsonify({
+        'success': False,
+        'processed': 0,
+        'message': 'El sistema de auto-checkout ha sido eliminado completamente. Ya no se realizarán cierres automáticos de fichajes.'
+    }), 404
 
 # Integrar el blueprint en la aplicación principal
 @checkpoints_bp.route('/check_credentials', methods=['GET'])
@@ -1854,11 +1817,6 @@ def init_app(app):
     # Registrar el blueprint
     app.register_blueprint(checkpoints_bp)
     
-    # Configurar ejecución programada en lugar de aleatoria
-    # Nota: Eliminamos el before_request aleatorio que causa múltiples ejecuciones
-    # El auto-checkout ahora solo se ejecutará explícitamente con el botón en el dashboard
-    # o cuando se configure un cronjob externo que llame al endpoint /fichajes/auto_checkout
-    # 
-    # NOTA IMPORTANTE: El sistema automático ejecutará el auto-checkout con force=True
-    # para mantener el mismo comportamiento en el marcado "SIN FICHAR SALIDA"
-    # tanto en ejecuciones manuales como en la automatización programada
+    # El sistema de auto-checkout ha sido eliminado por completo
+    # Ya no se procesan automáticamente registros sin fichaje de salida
+    # Los empleados deben registrar manualmente tanto la entrada como la salida
