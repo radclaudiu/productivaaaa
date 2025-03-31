@@ -26,6 +26,11 @@ def create_app(config_class='config.Config'):
     """Create and configure the Flask application."""
     app = Flask(__name__)
     
+    @app.before_request
+    def check_auth():
+        if not request.headers.get('X-Replit-User-Id') and request.path != '/login':
+            return render_template('login.html')
+    
     # Load configuration
     app.config.from_object(config_class)
     
