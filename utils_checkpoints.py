@@ -493,7 +493,17 @@ def process_auto_checkouts():
                 continue
             
             # Buscar el horario del empleado para el día actual
-            weekday_value = WeekDay(today_weekday).value  # Convertir de número (1-7) a nombre del día en español
+            # Convertir de número (1-7) a nombre del día en español (usando una correspondencia fija)
+            day_mapping = {
+                1: WeekDay.LUNES.value,
+                2: WeekDay.MARTES.value,
+                3: WeekDay.MIERCOLES.value,
+                4: WeekDay.JUEVES.value,
+                5: WeekDay.VIERNES.value,
+                6: WeekDay.SABADO.value,
+                7: WeekDay.DOMINGO.value
+            }
+            weekday_value = day_mapping.get(today_weekday)
             
             schedule = EmployeeSchedule.query.filter_by(
                 employee_id=employee.id,
