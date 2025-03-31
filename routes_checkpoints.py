@@ -434,20 +434,35 @@ def edit_checkpoint(id):
 @manager_required
 def delete_checkpoint(id):
     """Elimina un punto de fichaje"""
-    checkpoint = CheckPoint.query.get_or_404(id)
-    
-    # Verificar permiso (solo admin o gerente de la empresa)
-    if not current_user.is_admin() and checkpoint.company_id not in [c.id for c in current_user.companies]:
-        flash('No tiene permiso para eliminar este punto de fichaje.', 'danger')
-        return redirect(url_for('checkpoints.list_checkpoints'))
-    
     try:
-        db.session.delete(checkpoint)
-        db.session.commit()
-        flash(f'Punto de fichaje "{checkpoint.name}" eliminado con éxito.', 'success')
+        checkpoint = CheckPoint.query.get_or_404(id)
+        
+        # Verificar permiso (solo admin o gerente de la empresa)
+        if not current_user.is_admin() and checkpoint.company_id not in [c.id for c in current_user.companies]:
+            flash('No tiene permiso para eliminar este punto de fichaje.', 'danger')
+            return redirect(url_for('checkpoints.list_checkpoints'))
+        
+        # Verificar si hay registros de fichaje asociados
+        records_count = CheckPointRecord.query.filter_by(checkpoint_id=id).count()
+        if records_count > 0:
+            # En lugar de intentar eliminar, mostrar mensaje de advertencia
+            flash(f'No se puede eliminar el punto de fichaje "{checkpoint.name}" porque tiene {records_count} registros asociados. ' +
+                  'Elimine primero los registros o desactive el punto de fichaje.', 'warning')
+            return redirect(url_for('checkpoints.list_checkpoints'))
+        
+        # Si no hay registros, eliminar el punto de fichaje
+        checkpoint_name = checkpoint.name
+        try:
+            db.session.delete(checkpoint)
+            db.session.commit()
+            flash(f'Punto de fichaje "{checkpoint_name}" eliminado con éxito.', 'success')
+        except Exception as e:
+            db.session.rollback()
+            current_app.logger.error(f"Error al eliminar punto de fichaje: {e}")
+            flash(f'Error al eliminar el punto de fichaje: La operación no pudo completarse debido a un error de base de datos.', 'danger')
     except Exception as e:
-        db.session.rollback()
-        flash(f'Error al eliminar el punto de fichaje: {str(e)}', 'danger')
+        current_app.logger.error(f"Error general en delete_checkpoint: {e}")
+        flash('Se produjo un error al procesar la solicitud. Por favor, inténtelo de nuevo.', 'danger')
     
     return redirect(url_for('checkpoints.list_checkpoints'))
 
