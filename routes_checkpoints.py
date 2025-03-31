@@ -14,7 +14,7 @@ from werkzeug.utils import secure_filename
 from app import db
 from models import User, Employee, Company, UserRole
 from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, EmployeeContractHours
-from models_checkpoints import CheckPointStatus, CheckPointIncidentType
+from models_checkpoints import CheckPointStatus, CheckPointIncidentType, CheckPointOriginalRecord
 from forms_checkpoints import (CheckPointForm, CheckPointLoginForm, CheckPointEmployeePinForm, 
                              ContractHoursForm, CheckPointRecordAdjustmentForm,
                              SignaturePadForm, ExportCheckPointRecordsForm)
@@ -433,7 +433,7 @@ def edit_checkpoint(id):
 @login_required
 @manager_required
 def delete_checkpoint(id):
-    """Elimina un punto de fichaje"""
+    """Elimina un punto de fichaje con todos sus registros asociados"""
     try:
         checkpoint = CheckPoint.query.get_or_404(id)
         
@@ -442,20 +442,38 @@ def delete_checkpoint(id):
             flash('No tiene permiso para eliminar este punto de fichaje.', 'danger')
             return redirect(url_for('checkpoints.list_checkpoints'))
         
-        # Verificar si hay registros de fichaje asociados
+        # Contar registros asociados para el mensaje informativo
         records_count = CheckPointRecord.query.filter_by(checkpoint_id=id).count()
-        if records_count > 0:
-            # En lugar de intentar eliminar, mostrar mensaje de advertencia
-            flash(f'No se puede eliminar el punto de fichaje "{checkpoint.name}" porque tiene {records_count} registros asociados. ' +
-                  'Elimine primero los registros o desactive el punto de fichaje.', 'warning')
-            return redirect(url_for('checkpoints.list_checkpoints'))
         
-        # Si no hay registros, eliminar el punto de fichaje
+        # Guardar el nombre para el mensaje posterior
         checkpoint_name = checkpoint.name
+        
+        # Iniciar transacción para eliminar todo en cascada
         try:
+            # 1. Primero, obtener todos los registros asociados al checkpoint
+            checkpoint_records = CheckPointRecord.query.filter_by(checkpoint_id=id).all()
+            
+            for record in checkpoint_records:
+                # 2. Eliminar las incidencias asociadas a cada registro
+                CheckPointIncident.query.filter_by(record_id=record.id).delete()
+                
+                # 3. Eliminar los registros originales (históricos) de cada registro
+                CheckPointOriginalRecord.query.filter_by(record_id=record.id).delete()
+            
+            # 4. Eliminar todos los registros del checkpoint
+            CheckPointRecord.query.filter_by(checkpoint_id=id).delete()
+            
+            # 5. Finalmente eliminar el checkpoint
             db.session.delete(checkpoint)
+            
+            # Confirmar todos los cambios
             db.session.commit()
-            flash(f'Punto de fichaje "{checkpoint_name}" eliminado con éxito.', 'success')
+            
+            if records_count > 0:
+                flash(f'Punto de fichaje "{checkpoint_name}" eliminado con éxito junto con {records_count} registros asociados.', 'success')
+            else:
+                flash(f'Punto de fichaje "{checkpoint_name}" eliminado con éxito.', 'success')
+                
         except Exception as e:
             db.session.rollback()
             current_app.logger.error(f"Error al eliminar punto de fichaje: {e}")
