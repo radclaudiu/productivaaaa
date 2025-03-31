@@ -345,8 +345,14 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
     return temp_filename
 
 
-def process_auto_checkouts():
-    """Procesa los checkouts automáticos para fichajes pendientes"""
+def process_auto_checkouts(force=False):
+    """
+    Procesa los checkouts automáticos para fichajes pendientes
+    
+    Args:
+        force (bool): Si es True, procesará todos los checkouts sin importar la hora configurada.
+                     Útil para ejecuciones manuales desde el dashboard.
+    """
     
     # Importamos las dependencias al inicio para evitar problemas
     from app import db
@@ -387,6 +393,10 @@ def process_auto_checkouts():
             
         print(f"🔄 Auto-checkouts: Usando valor '{weekday_value}' para el día {today_weekday}")
         
+        # Modo forzado para ejecuciones manuales
+        if force:
+            print(f"⚠️ Auto-checkout en modo forzado: se procesarán todos los registros independientemente de la hora")
+        
         # Para cada punto de fichaje activo
         for checkpoint in checkpoints:
             try:
@@ -396,8 +406,14 @@ def process_auto_checkouts():
                     global_checkout_datetime = datetime.combine(now.date(), checkpoint.auto_checkout_time)
                     global_checkout_datetime = global_checkout_datetime.replace(tzinfo=TIMEZONE)
                     
-                    # Solo procesar si ya pasó la hora de corte global
-                    if now >= global_checkout_datetime:
+                    # Imprimir valores para depuración
+                    print(f"⏰ Comprobando auto-checkout para punto: {checkpoint.name}")
+                    print(f"   Hora actual (Madrid): {now.strftime('%H:%M:%S')} ({now.tzinfo})")
+                    print(f"   Hora auto-checkout (original): {checkpoint.auto_checkout_time.strftime('%H:%M:%S')} (Sin zona horaria)")
+                    print(f"   Hora auto-checkout (Madrid): {global_checkout_datetime.strftime('%H:%M:%S')} ({global_checkout_datetime.tzinfo})")
+                    
+                    # Solo procesar si ya pasó la hora de corte global o si se fuerza el procesamiento
+                    if force or now >= global_checkout_datetime:
                         print(f"⏰ Procesando checkouts automáticos (hora global) para checkpoint: {checkpoint.name}")
                         print(f"   Hora actual: {now.strftime('%H:%M:%S')}")
                         print(f"   Hora de auto-checkout: {checkpoint.auto_checkout_time.strftime('%H:%M:%S')}")
@@ -519,8 +535,9 @@ def process_auto_checkouts():
                         scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=TIMEZONE)
                         
                         # Verificar si ya pasó la hora de fin de turno (con margen de 15 minutos)
+                        # o si estamos en modo forzado
                         margin = timedelta(minutes=15)
-                        if now > (scheduled_end_datetime + margin):
+                        if force or now > (scheduled_end_datetime + margin):
                             # Crear checkout automático basado en horario programado
                             pending_record.check_out_time = scheduled_end_datetime
                             pending_record.notes = (pending_record.notes or "") + f" [AUTO-S] Checkout automático basado en horario programado ({schedule.end_time.strftime('%H:%M')})"

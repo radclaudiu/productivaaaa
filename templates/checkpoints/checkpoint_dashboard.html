@@ -165,7 +165,8 @@
         btn.disabled = true;
         btn.innerHTML = '<i class="bi bi-hourglass-split"></i> Procesando...';
         
-        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}", {
+        // Añadir parámetro force=true para forzar el procesamiento independientemente de la hora configurada
+        fetch("{{ url_for('checkpoints.trigger_auto_checkout') }}?force=true", {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json',
