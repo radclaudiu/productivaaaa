@@ -352,7 +352,7 @@ def create_checkpoint():
             status=status_enum,
             username=form.username.data,
             company_id=form.company_id.data,
-            auto_checkout_time=form.auto_checkout_time.data,
+            # auto_checkout_time eliminado
             enforce_contract_hours=form.enforce_contract_hours.data,
             auto_adjust_overtime=form.auto_adjust_overtime.data
         )
@@ -410,7 +410,7 @@ def edit_checkpoint(id):
         checkpoint.status = status_enum
         checkpoint.username = form.username.data
         checkpoint.company_id = form.company_id.data
-        checkpoint.auto_checkout_time = form.auto_checkout_time.data
+        # El campo auto_checkout_time ha sido eliminado
         checkpoint.enforce_contract_hours = form.enforce_contract_hours.data
         checkpoint.auto_adjust_overtime = form.auto_adjust_overtime.data
         
@@ -1816,7 +1816,3 @@ def check_credentials():
 def init_app(app):
     # Registrar el blueprint
     app.register_blueprint(checkpoints_bp)
-    
-    # El sistema de auto-checkout ha sido eliminado por completo
-    # Ya no se procesan automáticamente registros sin fichaje de salida
-    # Los empleados deben registrar manualmente tanto la entrada como la salida

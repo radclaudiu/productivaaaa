@@ -162,18 +162,7 @@
                         
                         <h4 class="mb-3 mt-4">Opciones Avanzadas</h4>
                         
-                        <div class="mb-3">
-                            {{ form.auto_checkout_time.label(class="form-label") }}
-                            {{ form.auto_checkout_time(class="form-control" + (" is-invalid" if form.auto_checkout_time.errors else ""), type="time") }}
-                            {% if form.auto_checkout_time.errors %}
-                                <div class="invalid-feedback">
-                                    {% for error in form.auto_checkout_time.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                            <div class="form-text">Hora a la que se realizarán automáticamente los fichajes de salida pendientes (opcional)</div>
-                        </div>
+                        <!-- Eliminado campo auto_checkout_time -->
                         
                         <div class="form-check mb-3">
                             {{ form.enforce_contract_hours(class="form-check-input") }}

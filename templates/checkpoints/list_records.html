@@ -39,13 +39,7 @@
                                 <span class="badge bg-warning">Mantenimiento</span>
                                 {% endif %}
                             </p>
-                            <p><strong>Checkout automático:</strong> 
-                                {% if checkpoint.auto_checkout_time %}
-                                {{ checkpoint.auto_checkout_time.strftime('%H:%M') }}
-                                {% else %}
-                                No configurado
-                                {% endif %}
-                            </p>
+                            <!-- Eliminado el checkpoint de auto checkout -->
                             <p><strong>Configuración:</strong> 
                                 {% if checkpoint.enforce_contract_hours %}
                                 <span class="badge bg-info">Límite horas contrato</span>

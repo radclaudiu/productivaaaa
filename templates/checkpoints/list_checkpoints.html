@@ -52,7 +52,7 @@
                         <th>Ubicación</th>
                         <th>Empresa</th>
                         <th>Estado</th>
-                        <th>Auto Checkout</th>
+                        <th>Configuración</th>
                         <th>Acciones</th>
                     </tr>
                 </thead>
@@ -78,12 +78,11 @@
                                 {% endif %}
                             </td>
                             <td>
-                                {% if checkpoint.auto_checkout_time %}
-                                <span class="badge bg-info">
-                                    <i class="bi bi-clock"></i> {{ checkpoint.auto_checkout_time.strftime('%H:%M') }}
-                                </span>
-                                {% else %}
-                                <span class="badge bg-secondary">No configurado</span>
+                                {% if checkpoint.enforce_contract_hours %}
+                                <span class="badge bg-info">Límite horas contrato</span>
+                                {% endif %}
+                                {% if checkpoint.auto_adjust_overtime %}
+                                <span class="badge bg-info">Ajuste horas extra</span>
                                 {% endif %}
                             </td>
                             <td>

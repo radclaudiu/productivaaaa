@@ -19,7 +19,7 @@ class CheckPointForm(FlaskForm):
     confirm_password = PasswordField('Confirmar Contraseña', 
                                     validators=[Optional(), Length(min=6, max=64)])
     
-    auto_checkout_time = TimeField('Hora de fichaje automático de salida', validators=[Optional()])
+    # El campo auto_checkout_time ha sido eliminado
     enforce_contract_hours = BooleanField('Aplicar límite horas contrato', default=False)
     auto_adjust_overtime = BooleanField('Ajustar automáticamente horas extra', default=False)
     
