@@ -1779,58 +1779,35 @@ def validate_pin():
 # Endpoint para procesar auto-checkouts
 @checkpoints_bp.route('/auto_checkout', methods=['GET', 'POST'])
 @login_required
-@checkpoint_required
 def trigger_auto_checkout():
     """Endpoint para ejecutar manualmente los auto-checkouts"""
-    from utils_checkpoints import process_auto_checkouts
-    from timezone_config import get_current_time
-    from datetime import datetime, timedelta
+    from utils_checkpoints import ejecutar_auto_checkout
     
     try:
-        # Agregar un indicador para forzar la ejecución (para uso manual)
+        # Determinar si es forzado o no
         force = request.args.get('force', 'false').lower() == 'true'
         
-        if force:
-            print("⚠️ Ejecutando auto-checkout forzado por solicitud manual.")
-            records_processed = process_auto_checkouts(force=True)
-        else:
-            # Solo ejecutar si estamos en el momento adecuado
-            # Esto evita múltiples ejecuciones innecesarias
-            now = get_current_time()
-            checkpoint_id = session.get('checkpoint_id')
-            checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
-            
-            if checkpoint.auto_checkout_time:
-                # Construir la fecha/hora de corte de hoy usando la configuración del punto de fichaje
-                global_checkout_datetime = datetime.combine(now.date(), checkpoint.auto_checkout_time)
-                global_checkout_datetime = global_checkout_datetime.replace(tzinfo=now.tzinfo)
-                
-                # Solo procesar si ya pasó la hora de corte global o estamos muy cerca
-                # (esto permite procesar en caso de pequeños retrasos)
-                time_window = timedelta(minutes=5)
-                if now >= (global_checkout_datetime - time_window):
-                    print(f"⏰ Ejecución de auto-checkout permitida - cerca o después de la hora configurada ({checkpoint.auto_checkout_time.strftime('%H:%M')})")
-                    records_processed = process_auto_checkouts(force=False)
-                else:
-                    print(f"⏱️ Ejecución de auto-checkout omitida - demasiado pronto ({now.strftime('%H:%M')} vs {checkpoint.auto_checkout_time.strftime('%H:%M')})")
-                    return jsonify({
-                        'success': True,
-                        'processed': 0,
-                        'message': f'Auto-checkout omitido: todavía no es la hora configurada ({checkpoint.auto_checkout_time.strftime("%H:%M")}).'
-                    })
-            else:
-                # No hay hora configurada, pero podemos procesar los auto-checkouts basados en horarios
-                records_processed = process_auto_checkouts(force=False)
+        # Obtener ID del checkpoint específico (si se proporciona)
+        checkpoint_id = None
         
-        # Devolver resultado
+        # Si estamos en un checkpoint, usar ese ID
+        if 'checkpoint_id' in session:
+            checkpoint_id = session.get('checkpoint_id')
+        
+        # Ejecutar el auto-checkout
+        print(f"🔄 Ejecutando auto-checkout {'forzado' if force else 'normal'} para checkpoint_id: {checkpoint_id}")
+        
+        # Llamar a nuestra nueva función simplificada
+        resultado = ejecutar_auto_checkout(checkpoint_id=checkpoint_id, force=force)
+        
+        # Devolver el resultado en formato JSON
         return jsonify({
-            'success': True,
-            'processed': records_processed,
-            'message': f'Se procesaron {records_processed} registros con checkout automático.'
+            'success': resultado['success'],
+            'message': resultado['message'],
+            'processed': resultado['total_procesados'],
+            'detalles': resultado['detalles']
         })
     except Exception as e:
-        # Usar print para log en lugar de app.logger
-        print(f"Error en auto-checkout: {str(e)}")
         import traceback
         traceback.print_exc()
         return jsonify({

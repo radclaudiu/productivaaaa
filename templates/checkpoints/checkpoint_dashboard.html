@@ -176,7 +176,29 @@
         .then(response => response.json())
         .then(data => {
             if (data.success) {
-                showAlert('Proceso de auto-checkout completado correctamente. Se han procesado ' + data.processed + ' registros.', 'success');
+                let message = `Proceso de auto-checkout completado correctamente. Se han procesado ${data.processed} registros.`;
+                
+                // Si hay detalles, mostrarlos
+                if (data.detalles && data.detalles.length > 0) {
+                    message += '<br><br>Detalles:';
+                    data.detalles.forEach(detalle => {
+                        if (detalle.checkpoint_name) {
+                            message += `<br><strong>${detalle.checkpoint_name}</strong>: `;
+                            
+                            if (detalle.mensaje) {
+                                // Si hay un mensaje específico
+                                message += detalle.mensaje;
+                            } else if (detalle.empleados_procesados && detalle.empleados_procesados.length > 0) {
+                                // Si hay empleados procesados
+                                message += `${detalle.empleados_procesados.length} empleados procesados a las ${detalle.hora_checkout}`;
+                            } else {
+                                message += 'Sin registros procesados';
+                            }
+                        }
+                    });
+                }
+                
+                showAlert(message, 'success');
             } else {
                 showAlert('Error al ejecutar el auto-checkout: ' + data.message, 'danger');
             }
@@ -188,10 +210,10 @@
             btn.disabled = false;
             btn.innerHTML = '<i class="bi bi-clock-history"></i> Ejecutar Auto-Checkout';
             
-            // Recargar la página después de 3 segundos para mostrar los cambios
+            // Recargar la página después de 5 segundos para mostrar los cambios
             setTimeout(() => {
                 window.location.reload();
-            }, 3000);
+            }, 5000);
         });
     }
     
