@@ -470,15 +470,15 @@ def process_auto_checkouts(force=False):
                         
                         # Procesar los registros pendientes
                         for record in pending_records:
-                            # Registrar el checkout automático
+                            # Registrar el checkout automático marcando como "sin fichar salida"
                             record.check_out_time = global_checkout_datetime
-                            record.notes = (record.notes or "") + f" [AUTO] Checkout automático a las {global_checkout_datetime.strftime('%H:%M')}"
+                            record.notes = (record.notes or "") + f" [SIN FICHAR SALIDA] Fin de jornada automático a las {global_checkout_datetime.strftime('%H:%M')}"
                             
-                            # Crear incidencia por el checkout automático
+                            # Crear incidencia específica de "sin fichar salida"
                             incident = CheckPointIncident(
                                 record_id=record.id,
                                 incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
-                                description=f"Checkout automático realizado a las {global_checkout_datetime.strftime('%H:%M')} por falta de registro de salida."
+                                description=f"SIN FICHAR SALIDA: Fin de jornada automático a las {global_checkout_datetime.strftime('%H:%M')} por ausencia de fichaje manual."
                             )
                             db.session.add(incident)
                             
@@ -490,7 +490,7 @@ def process_auto_checkouts(force=False):
                                 original_signature_data=record.signature_data,
                                 original_has_signature=record.has_signature,
                                 original_notes=record.notes,
-                                adjustment_reason="Registro original creado en checkout automático"
+                                adjustment_reason="Registro original creado en checkout automático - Sin fichar salida"
                             )
                             db.session.add(original_record)
                             
@@ -633,7 +633,8 @@ def process_auto_checkouts(force=False):
                         if should_checkout:
                             # Crear checkout automático basado en horario programado
                             pending_record.check_out_time = scheduled_end_datetime
-                            pending_record.notes = (pending_record.notes or "") + f" [AUTO-S] Checkout automático basado en horario programado ({schedule.end_time.strftime('%H:%M')})"
+                            # Marcar como "sin fichar salida" en vez de salida normal
+                            pending_record.notes = (pending_record.notes or "") + f" [SIN FICHAR SALIDA] Checkout automático a las {scheduled_end_datetime.strftime('%H:%M')} por falta de registro manual."
                             
                             # Crear un registro del estado original con las horas reales
                             original_record = CheckPointOriginalRecord(
@@ -643,15 +644,15 @@ def process_auto_checkouts(force=False):
                                 original_signature_data=pending_record.signature_data,
                                 original_has_signature=pending_record.has_signature,
                                 original_notes=pending_record.notes,
-                                adjustment_reason="Registro original creado en checkout automático basado en horario"
+                                adjustment_reason="Registro original creado en checkout automático - Sin fichar salida"
                             )
                             db.session.add(original_record)
                             
-                            # Crear incidencia
+                            # Crear incidencia específica de "sin fichar salida"
                             incident = CheckPointIncident(
                                 record_id=pending_record.id,
                                 incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
-                                description=f"Checkout automático realizado a las {scheduled_end_datetime.strftime('%H:%M')} basado en horario programado."
+                                description=f"SIN FICHAR SALIDA: Fin de jornada automático a las {scheduled_end_datetime.strftime('%H:%M')} por ausencia de fichaje de salida."
                             )
                             db.session.add(incident)
                             
