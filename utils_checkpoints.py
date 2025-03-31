@@ -345,6 +345,10 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
     return temp_filename
 
 
+# Variable global para control de ejecuciones simultáneas
+# Cada vez que process_auto_checkouts() se está ejecutando, este valor es True
+_is_auto_checkout_running = False
+
 def process_auto_checkouts(force=False):
     """
     Procesa los checkouts automáticos para fichajes pendientes
@@ -353,6 +357,14 @@ def process_auto_checkouts(force=False):
         force (bool): Si es True, procesará todos los checkouts sin importar la hora configurada.
                      Útil para ejecuciones manuales desde el dashboard.
     """
+    # Control para evitar ejecuciones simultáneas
+    global _is_auto_checkout_running
+    if _is_auto_checkout_running:
+        print("⚠️ Auto-checkout ya en ejecución, omitiendo solicitud adicional")
+        return 0
+    
+    # Marcar que la función está en ejecución
+    _is_auto_checkout_running = True
     
     # Importamos las dependencias al inicio para evitar problemas
     from app import db
@@ -591,5 +603,7 @@ def process_auto_checkouts(force=False):
         traceback.print_exc()
         # Asegurar que se deshagan todos los cambios en caso de error
         db.session.rollback()
+    # Restaurar la bandera para permitir futuras ejecuciones
+    _is_auto_checkout_running = False
     
     return total_processed

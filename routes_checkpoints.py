@@ -1810,7 +1810,7 @@ def trigger_auto_checkout():
                 time_window = timedelta(minutes=5)
                 if now >= (global_checkout_datetime - time_window):
                     print(f"⏰ Ejecución de auto-checkout permitida - cerca o después de la hora configurada ({checkpoint.auto_checkout_time.strftime('%H:%M')})")
-                    records_processed = process_auto_checkouts()
+                    records_processed = process_auto_checkouts(force=False)
                 else:
                     print(f"⏱️ Ejecución de auto-checkout omitida - demasiado pronto ({now.strftime('%H:%M')} vs {checkpoint.auto_checkout_time.strftime('%H:%M')})")
                     return jsonify({
@@ -1820,7 +1820,7 @@ def trigger_auto_checkout():
                     })
             else:
                 # No hay hora configurada, pero podemos procesar los auto-checkouts basados en horarios
-                records_processed = process_auto_checkouts()
+                records_processed = process_auto_checkouts(force=False)
         
         # Devolver resultado
         return jsonify({
