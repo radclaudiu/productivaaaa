@@ -377,6 +377,11 @@ def process_auto_checkouts(force=False):
     # Contador total de registros procesados
     total_processed = 0
     
+    # Información de diagnóstico al inicio
+    print("\n======== INICIO DE AUTO-CHECKOUT ========")
+    if force:
+        print("⚠️ MODO FORZADO ACTIVADO: Se procesarán todos los registros independientemente de la hora")
+    
     try:
         # Obtener todos los puntos de fichaje activos
         checkpoints = CheckPoint.query.filter_by(status=CheckPointStatus.ACTIVE).all()
@@ -520,6 +525,14 @@ def process_auto_checkouts(force=False):
                     is_on_shift=True
                 ).all()
                 
+                # Log para depuración - es crucial verificar que se están encontrando empleados
+                print(f"🔍 Checkpoint {checkpoint.name}: Encontrados {len(employees_on_shift)} empleados en turno")
+                
+                # Si estamos en modo forzado, imprimir los IDs para ayudar a diagnosticar problemas
+                if force:
+                    for e in employees_on_shift:
+                        print(f"   - Empleado {e.id}: {e.first_name} {e.last_name}")
+                
                 for employee in employees_on_shift:
                     # Verificar si hay un registro pendiente para este empleado
                     pending_record = CheckPointRecord.query.filter(
@@ -541,15 +554,33 @@ def process_auto_checkouts(force=False):
                         day_of_week=weekday_value
                     ).first()
                     
+                    # Mostrar información detallada sobre el horario
+                    if schedule:
+                        print(f"📅 Empleado {employee.id}: Horario encontrado para {weekday_value}")
+                        print(f"   - ¿Es día laboral? {schedule.is_working_day}")
+                        print(f"   - Hora de fin: {schedule.end_time}")
+                    else:
+                        print(f"⚠️ Empleado {employee.id}: No se encontró horario para {weekday_value}")
+                        
                     if schedule and schedule.is_working_day and schedule.end_time:
                         # Construir fecha/hora de fin de turno programado
                         scheduled_end_datetime = datetime.combine(now.date(), schedule.end_time)
                         scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=TIMEZONE)
                         
+                        # Log detallado sobre la comparación de horas
+                        print(f"⏱️ Empleado {employee.id}:")
+                        print(f"   - Hora actual: {now.strftime('%H:%M:%S')}")
+                        print(f"   - Hora programada de fin: {scheduled_end_datetime.strftime('%H:%M:%S')}")
+                        print(f"   - Hora con margen: {(scheduled_end_datetime + timedelta(minutes=15)).strftime('%H:%M:%S')}")
+                        print(f"   - Modo forzado: {force}")
+                        
                         # Verificar si ya pasó la hora de fin de turno (con margen de 15 minutos)
                         # o si estamos en modo forzado
                         margin = timedelta(minutes=15)
-                        if force or now > (scheduled_end_datetime + margin):
+                        should_checkout = force or now > (scheduled_end_datetime + margin)
+                        print(f"   - ¿Debería hacer checkout? {should_checkout}")
+                        
+                        if should_checkout:
                             # Crear checkout automático basado en horario programado
                             pending_record.check_out_time = scheduled_end_datetime
                             pending_record.notes = (pending_record.notes or "") + f" [AUTO-S] Checkout automático basado en horario programado ({schedule.end_time.strftime('%H:%M')})"
