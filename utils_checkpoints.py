@@ -377,10 +377,30 @@ def process_auto_checkouts(force=False):
     # Contador total de registros procesados
     total_processed = 0
     
-    # Información de diagnóstico al inicio
-    print("\n======== INICIO DE AUTO-CHECKOUT ========")
+    # Información de diagnóstico al inicio (más detallada)
+    print("\n====================================================================")
+    print("================= INICIO DE AUTO-CHECKOUT ==========================")
+    print("====================================================================")
+    
     if force:
         print("⚠️ MODO FORZADO ACTIVADO: Se procesarán todos los registros independientemente de la hora")
+    
+    print(f"📊 TIMESTAMP INICIO: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
+    
+    # Diagnosticar estado global de empleados en turno
+    try:
+        from models import Employee
+        total_employees_on_shift = Employee.query.filter_by(is_on_shift=True).count()
+        print(f"📈 ESTADO GLOBAL: {total_employees_on_shift} empleados en turno actualmente en todo el sistema")
+        
+        # Si estamos en modo forzado, mostrar detalles de todos los empleados en turno
+        if force and total_employees_on_shift > 0:
+            all_employees_on_shift = Employee.query.filter_by(is_on_shift=True).all()
+            print("🔎 DETALLE DE EMPLEADOS EN TURNO:")
+            for emp in all_employees_on_shift:
+                print(f"   - ID: {emp.id}, Nombre: {emp.first_name} {emp.last_name}, Empresa: {emp.company_id}")
+    except Exception as e:
+        print(f"❌ Error al diagnosticar estado global: {e}")
     
     try:
         # Obtener todos los puntos de fichaje activos
@@ -609,11 +629,24 @@ def process_auto_checkouts(force=False):
                             employee.is_on_shift = False
                             db.session.add(employee)
                             
-                            # Log para depuración
-                            print(f"⏰ Auto-checkout por horario programado: Empleado {employee.id}, Hora programada: {schedule.end_time}")
+                            # Log más detallado para depuración
+                            print(f"⏰ Auto-checkout por horario programado: Empleado {employee.id}, Nombre: {employee.first_name} {employee.last_name}")
+                            print(f"   - Hora programada de salida: {schedule.end_time}")
+                            print(f"   - ID del registro: {pending_record.id}")
+                            print(f"   - Hora de entrada original: {pending_record.check_in_time}")
+                            print(f"   - Nueva hora de salida: {scheduled_end_datetime}")
                             
                             # Incrementar contador
                             total_processed += 1
+                            
+                            # Hacer commit parcial para este empleado
+                            try:
+                                db.session.commit()
+                                print(f"✅ COMMIT EXITOSO: Checkout completado para empleado {employee.id}")
+                            except Exception as e:
+                                print(f"❌ ERROR EN COMMIT PARCIAL: Empleado {employee.id}: {e}")
+                                # Rollback parcial
+                                db.session.rollback()
             
             except Exception as e:
                 print(f"Error procesando checkpoint {checkpoint.id}: {e}")
@@ -622,11 +655,23 @@ def process_auto_checkouts(force=False):
                 # No interrumpir el proceso para otros checkpoints
                 continue
         
-        # Guardar todos los cambios
+        # Guardar todos los cambios finales
         if total_processed > 0:
-            # Commit final de todos los cambios
-            db.session.commit()
-            print(f"✅ Total de registros procesados con checkout automático: {total_processed}")
+            # Commit final de todos los cambios pendientes (por si algo quedó en la sesión)
+            try:
+                db.session.commit()
+                print(f"✅ Total de registros procesados con checkout automático: {total_processed}")
+                print("✅ Commit final exitoso!")
+            except Exception as e:
+                print(f"❌ ERROR EN COMMIT FINAL: {e}")
+                print(f"⚠️ Es posible que algunos checkouts no se hayan guardado correctamente.")
+                db.session.rollback()
+        else:
+            print("ℹ️ No se encontraron registros para procesar en este ciclo.")
+            
+        # Timestamp de finalización para medir duración
+        print(f"📊 TIMESTAMP FIN: {datetime.now().strftime('%Y-%m-%d %H:%M:%S.%f')}")
+        print("====================================================================")
         
     except Exception as e:
         print(f"Error al procesar auto-checkouts: {e}")
