@@ -66,12 +66,21 @@
         <div class="date-display" id="date-display">Cargando fecha...</div>
         
         <div class="checkpoint-title">
-            <h2>Punto de Fichaje</h2>
+            {% if checkpoint %}
+                <h2>{{ checkpoint.name }}</h2>
+                <p class="text-light opacity-75">{{ checkpoint.location }}</p>
+            {% else %}
+                <h2>Punto de Fichaje</h2>
+            {% endif %}
         </div>
         
         <div class="card checkpoint-card bg-dark text-light">
             <div class="card-header bg-primary text-center py-3">
-                <h3 class="mb-0">Iniciar Sesión</h3>
+                {% if checkpoint %}
+                    <h3 class="mb-0">Acceder al Punto</h3>
+                {% else %}
+                    <h3 class="mb-0">Iniciar Sesión</h3>
+                {% endif %}
             </div>
             <div class="card-body p-4">
                 {% with messages = get_flashed_messages(with_categories=true) %}
@@ -84,6 +93,12 @@
                         {% endfor %}
                     {% endif %}
                 {% endwith %}
+                
+                {% if checkpoint %}
+                    <div class="alert alert-info mb-4">
+                        <i class="bi bi-info-circle me-2"></i> Por favor, introduzca la contraseña para acceder a este punto de fichaje.
+                    </div>
+                {% endif %}
                 
                 <form method="POST" class="needs-validation" novalidate>
                     {{ form.csrf_token }}

@@ -1101,11 +1101,59 @@ def login():
     if 'checkpoint_id' in session:
         return redirect(url_for('checkpoints.checkpoint_dashboard'))
     
+    # Verificar si se ha pasado un checkpoint_id como parámetro
+    checkpoint_id = request.args.get('checkpoint_id')
+    checkpoint = None
+    if checkpoint_id:
+        # Si tenemos un ID de checkpoint, intentamos cargar ese checkpoint específico
+        try:
+            checkpoint_id = int(checkpoint_id)
+            checkpoint = CheckPoint.query.get(checkpoint_id)
+            if not checkpoint:
+                flash('El punto de fichaje especificado no existe.', 'danger')
+        except ValueError:
+            flash('ID de punto de fichaje no válido.', 'danger')
+    
     form = CheckPointLoginForm()
     
     if form.validate_on_submit():
-        checkpoint = CheckPoint.query.filter_by(username=form.username.data).first()
+        # Si se está realizando un login mediante formulario, buscar el checkpoint por username
+        login_checkpoint = CheckPoint.query.filter_by(username=form.username.data).first()
         
+        if login_checkpoint and login_checkpoint.verify_password(form.password.data):
+            if login_checkpoint.status == CheckPointStatus.ACTIVE:
+                # Guardar ID del punto de fichaje en la sesión
+                session['checkpoint_id'] = login_checkpoint.id
+                session['checkpoint_name'] = login_checkpoint.name
+                session['company_id'] = login_checkpoint.company_id
+                
+                flash(f'Bienvenido al punto de fichaje {login_checkpoint.name}', 'success')
+                return redirect(url_for('checkpoints.checkpoint_dashboard'))
+            else:
+                flash('Este punto de fichaje está desactivado o en mantenimiento.', 'warning')
+        else:
+            flash('Usuario o contraseña incorrectos.', 'danger')
+    
+    # Si tenemos un checkpoint específico y es la primera carga (GET), prellenamos el formulario
+    if checkpoint and request.method == 'GET':
+        form.username.data = checkpoint.username
+    
+    return render_template('checkpoints/login.html', form=form, checkpoint=checkpoint)
+
+
+@checkpoints_bp.route('/login/<int:checkpoint_id>', methods=['GET', 'POST'])
+def login_to_checkpoint(checkpoint_id):
+    """Acceso directo a un punto de fichaje específico por ID"""
+    # Si ya hay una sesión activa, redirigir al dashboard
+    if 'checkpoint_id' in session:
+        return redirect(url_for('checkpoints.checkpoint_dashboard'))
+    
+    # Intentar cargar el checkpoint especificado
+    checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
+    
+    form = CheckPointLoginForm()
+    
+    if form.validate_on_submit():
         if checkpoint and checkpoint.verify_password(form.password.data):
             if checkpoint.status == CheckPointStatus.ACTIVE:
                 # Guardar ID del punto de fichaje en la sesión
@@ -1118,9 +1166,13 @@ def login():
             else:
                 flash('Este punto de fichaje está desactivado o en mantenimiento.', 'warning')
         else:
-            flash('Usuario o contraseña incorrectos.', 'danger')
+            flash('Contraseña incorrecta para este punto de fichaje.', 'danger')
     
-    return render_template('checkpoints/login.html', form=form)
+    # Prellenar el nombre de usuario
+    if request.method == 'GET':
+        form.username.data = checkpoint.username
+    
+    return render_template('checkpoints/login.html', form=form, checkpoint=checkpoint)
 
 
 @checkpoints_bp.route('/logout')
