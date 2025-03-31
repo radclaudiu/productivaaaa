@@ -1791,41 +1791,16 @@ def trigger_auto_checkout():
         force = request.args.get('force', 'false').lower() == 'true'
         test_mode = request.args.get('test', 'false').lower() == 'true'
         
-        if force:
-            if test_mode:
-                print("🧪 Ejecutando PRUEBA de auto-checkout en modo forzado (SIN FICHAR SALIDA)")
-            else:
-                print("⚠️ Ejecutando auto-checkout forzado por solicitud manual")
-            
-            records_processed = process_auto_checkouts(force=True)
+        # IMPORTANTE: Siempre usamos force=True para mantener consistencia con el comportamiento del botón
+        # para que los registros siempre se marquen como "SIN FICHAR SALIDA"
+        if test_mode:
+            print("🧪 Ejecutando PRUEBA de auto-checkout en modo forzado (SIN FICHAR SALIDA)")
         else:
-            # Solo ejecutar si estamos en el momento adecuado
-            # Esto evita múltiples ejecuciones innecesarias
-            now = get_current_time()
-            checkpoint_id = session.get('checkpoint_id')
-            checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
-            
-            if checkpoint.auto_checkout_time:
-                # Construir la fecha/hora de corte de hoy usando la configuración del punto de fichaje
-                global_checkout_datetime = datetime.combine(now.date(), checkpoint.auto_checkout_time)
-                global_checkout_datetime = global_checkout_datetime.replace(tzinfo=now.tzinfo)
-                
-                # Solo procesar si ya pasó la hora de corte global o estamos muy cerca
-                # (esto permite procesar en caso de pequeños retrasos)
-                time_window = timedelta(minutes=5)
-                if now >= (global_checkout_datetime - time_window):
-                    print(f"⏰ Ejecución de auto-checkout permitida - cerca o después de la hora configurada ({checkpoint.auto_checkout_time.strftime('%H:%M')})")
-                    records_processed = process_auto_checkouts(force=False)
-                else:
-                    print(f"⏱️ Ejecución de auto-checkout omitida - demasiado pronto ({now.strftime('%H:%M')} vs {checkpoint.auto_checkout_time.strftime('%H:%M')})")
-                    return jsonify({
-                        'success': True,
-                        'processed': 0,
-                        'message': f'Auto-checkout omitido: todavía no es la hora configurada ({checkpoint.auto_checkout_time.strftime("%H:%M")}).'
-                    })
-            else:
-                # No hay hora configurada, pero podemos procesar los auto-checkouts basados en horarios
-                records_processed = process_auto_checkouts(force=False)
+            # Si viene del botón normal o del sistema programado, igual lo ejecutamos en modo forzado
+            print("⚠️ Ejecutando auto-checkout en modo forzado")
+        
+        # Siempre procesamos con force=True para mantener consistencia en el marcado "SIN FICHAR SALIDA"
+        records_processed = process_auto_checkouts(force=True)
         
         # Devolver resultado con mensaje personalizado según el modo
         if test_mode:
@@ -1883,3 +1858,7 @@ def init_app(app):
     # Nota: Eliminamos el before_request aleatorio que causa múltiples ejecuciones
     # El auto-checkout ahora solo se ejecutará explícitamente con el botón en el dashboard
     # o cuando se configure un cronjob externo que llame al endpoint /fichajes/auto_checkout
+    # 
+    # NOTA IMPORTANTE: El sistema automático ejecutará el auto-checkout con force=True
+    # para mantener el mismo comportamiento en el marcado "SIN FICHAR SALIDA"
+    # tanto en ejecuciones manuales como en la automatización programada

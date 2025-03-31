@@ -355,7 +355,7 @@ def process_auto_checkouts(force=False):
     
     Args:
         force (bool): Si es True, procesará todos los checkouts sin importar la hora configurada.
-                     Útil para ejecuciones manuales desde el dashboard.
+                     Útil para ejecuciones manuales desde el dashboard o ejecuciones automáticas programadas.
     """
     # Control para evitar ejecuciones simultáneas
     global _is_auto_checkout_running
@@ -365,6 +365,9 @@ def process_auto_checkouts(force=False):
     
     # Marcar que la función está en ejecución
     _is_auto_checkout_running = True
+    
+    # IMPORTANTE: En modo automático programado, también debe usar mode=force=True 
+    # para mantener comportamiento consistente con los botones manuales
     
     # Importamos las dependencias al inicio para evitar problemas
     from app import db
