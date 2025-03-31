@@ -347,219 +347,231 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
 
 def process_auto_checkouts():
     """Procesa los checkouts automáticos para fichajes pendientes"""
+    
+    # Importamos las dependencias al inicio para evitar problemas
     from app import db
     from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, CheckPointIncidentType, EmployeeContractHours
-    from models import EmployeeSchedule, WeekDay, Employee
+    from models import EmployeeSchedule, Employee
+    from models import WeekDay as ModelWeekDay
     import enum
-    
-    # Obtener todos los puntos de fichaje activos
-    from models_checkpoints import CheckPointStatus
-    checkpoints = CheckPoint.query.filter_by(status=CheckPointStatus.ACTIVE).all()
+    from models_checkpoints import CheckPointStatus, CheckPointOriginalRecord
     
     # Contador total de registros procesados
     total_processed = 0
     
-    # Obtener la fecha/hora actual en la zona horaria de Madrid
-    now = get_current_time()
-    
-    # Determinar el día de la semana actual (1-7, donde 1 es lunes)
-    today_weekday = now.isoweekday()
-    
-    # Para cada punto de fichaje activo
-    for checkpoint in checkpoints:
-        # Procesamiento basado en auto_checkout_time (configuración global)
-        if checkpoint.auto_checkout_time:
-            # Construir la fecha/hora de corte de hoy usando la configuración del punto de fichaje
-            # Combinamos la fecha del día actual con la hora de auto-checkout configurada
-            global_checkout_datetime = datetime.combine(now.date(), checkpoint.auto_checkout_time)
-            # Aseguramos que esté en la zona horaria de Madrid
-            global_checkout_datetime = global_checkout_datetime.replace(tzinfo=TIMEZONE)
+    try:
+        # Obtener todos los puntos de fichaje activos
+        checkpoints = CheckPoint.query.filter_by(status=CheckPointStatus.ACTIVE).all()
+        
+        # Obtener la fecha/hora actual en la zona horaria de Madrid
+        now = get_current_time()
+        
+        # Determinar el día de la semana actual (1-7, donde 1 es lunes)
+        today_weekday = now.isoweekday()
+        print(f"🕒 Auto-checkouts: El día de la semana actual es {today_weekday} (1=Lunes, 7=Domingo)")
+        
+        # Crear mapeo de días de la semana (1-7) a la enumeración WeekDay
+        day_mapping = {
+            1: ModelWeekDay.LUNES,
+            2: ModelWeekDay.MARTES,
+            3: ModelWeekDay.MIERCOLES,
+            4: ModelWeekDay.JUEVES, 
+            5: ModelWeekDay.VIERNES,
+            6: ModelWeekDay.SABADO,
+            7: ModelWeekDay.DOMINGO
+        }
+        weekday_enum = day_mapping.get(today_weekday)
+        if not weekday_enum:
+            raise ValueError(f"No se pudo mapear el día de la semana {today_weekday} a una enumeración WeekDay")
             
-            # Solo procesar si ya pasó la hora de corte global
-            if now >= global_checkout_datetime:
-                # Log para depuración
-                print(f"⏰ Procesando checkouts automáticos (hora global) para checkpoint: {checkpoint.name}")
-                print(f"   Hora actual: {now.strftime('%H:%M:%S')}")
-                print(f"   Hora de auto-checkout: {checkpoint.auto_checkout_time.strftime('%H:%M:%S')}")
+        print(f"🔄 Auto-checkouts: Usando enumeración {weekday_enum} para el día {today_weekday}")
+        
+        # Para cada punto de fichaje activo
+        for checkpoint in checkpoints:
+            try:
+                # 1. Procesamiento basado en auto_checkout_time (configuración global)
+                if checkpoint.auto_checkout_time:
+                    # Construir la fecha/hora de corte de hoy usando la configuración del punto de fichaje
+                    global_checkout_datetime = datetime.combine(now.date(), checkpoint.auto_checkout_time)
+                    global_checkout_datetime = global_checkout_datetime.replace(tzinfo=TIMEZONE)
+                    
+                    # Solo procesar si ya pasó la hora de corte global
+                    if now >= global_checkout_datetime:
+                        print(f"⏰ Procesando checkouts automáticos (hora global) para checkpoint: {checkpoint.name}")
+                        print(f"   Hora actual: {now.strftime('%H:%M:%S')}")
+                        print(f"   Hora de auto-checkout: {checkpoint.auto_checkout_time.strftime('%H:%M:%S')}")
+                        
+                        # Buscar todos los fichajes de hoy sin checkout
+                        start_of_day = datetime.combine(now.date(), datetime.min.time())
+                        start_of_day = start_of_day.replace(tzinfo=TIMEZONE)
+                        
+                        pending_records = CheckPointRecord.query.filter(
+                            CheckPointRecord.checkpoint_id == checkpoint.id,
+                            CheckPointRecord.check_out_time.is_(None),
+                            CheckPointRecord.check_in_time.between(
+                                start_of_day,
+                                now
+                            )
+                        ).all()
+                        
+                        # Procesar los registros pendientes
+                        for record in pending_records:
+                            # Registrar el checkout automático
+                            record.check_out_time = global_checkout_datetime
+                            record.notes = (record.notes or "") + f" [AUTO] Checkout automático a las {global_checkout_datetime.strftime('%H:%M')}"
+                            
+                            # Crear incidencia por el checkout automático
+                            incident = CheckPointIncident(
+                                record_id=record.id,
+                                incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
+                                description=f"Checkout automático realizado a las {global_checkout_datetime.strftime('%H:%M')} por falta de registro de salida."
+                            )
+                            db.session.add(incident)
+                            
+                            # Crear un registro del estado original con las horas reales
+                            original_record = CheckPointOriginalRecord(
+                                record_id=record.id,
+                                original_check_in_time=record.check_in_time,
+                                original_check_out_time=global_checkout_datetime,
+                                original_signature_data=record.signature_data,
+                                original_has_signature=record.has_signature,
+                                original_notes=record.notes,
+                                adjustment_reason="Registro original creado en checkout automático"
+                            )
+                            db.session.add(original_record)
+                            
+                            # Aplicar restricciones de horario de contrato si corresponde
+                            if checkpoint.enforce_contract_hours:
+                                # Buscar configuración de horas de contrato del empleado
+                                contract_hours = EmployeeContractHours.query.filter_by(employee_id=record.employee_id).first()
+                                if contract_hours:
+                                    # Guardar los valores originales para reporte
+                                    original_checkin = record.check_in_time
+                                    original_checkout = record.check_out_time
+                                    
+                                    # Aplicar ajustes según configuración
+                                    adjusted_checkin, adjusted_checkout = contract_hours.calculate_adjusted_hours(
+                                        original_checkin, original_checkout
+                                    )
+                                    
+                                    # Si hay cambios, aplicarlos y marcar con R
+                                    if adjusted_checkin and adjusted_checkin != original_checkin:
+                                        record.check_in_time = adjusted_checkin
+                                        # Marcar con R en lugar de crear incidencia
+                                        record.notes = (record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
+                                        
+                                    if adjusted_checkout and adjusted_checkout != original_checkout:
+                                        record.check_out_time = adjusted_checkout
+                                        # Marcar con R en lugar de crear incidencia
+                                        record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
+                                    
+                                    # Verificar si hay horas extra
+                                    duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
+                                    if contract_hours.is_overtime(duration):
+                                        overtime_hours = duration - contract_hours.daily_hours
+                                        overtime_incident = CheckPointIncident(
+                                            record_id=record.id,
+                                            incident_type=CheckPointIncidentType.OVERTIME,
+                                            description=f"Jornada con {overtime_hours:.2f} horas extra sobre el límite diario de {contract_hours.daily_hours} horas"
+                                        )
+                                        db.session.add(overtime_incident)
+                            
+                            # Actualizar el estado del empleado
+                            employee = record.employee
+                            if employee.is_on_shift:
+                                employee.is_on_shift = False
+                                db.session.add(employee)
+                                
+                            # Incrementar contador 
+                            total_processed += 1
                 
-                # Buscar todos los fichajes de hoy sin checkout
-                # Creamos un datetime con la hora mínima (00:00:00) para la fecha actual
-                start_of_day = datetime.combine(now.date(), datetime.min.time())
-                start_of_day = start_of_day.replace(tzinfo=TIMEZONE)
-                
-                pending_records = CheckPointRecord.query.filter(
-                    CheckPointRecord.checkpoint_id == checkpoint.id,
-                    CheckPointRecord.check_out_time.is_(None),
-                    CheckPointRecord.check_in_time.between(
-                        start_of_day,
-                        now
-                    )
+                # 2. Procesamiento basado en horarios individuales de los empleados
+                employees_on_shift = Employee.query.filter_by(
+                    company_id=checkpoint.company_id,
+                    is_on_shift=True
                 ).all()
                 
-                # Procesar los registros pendientes
-                for record in pending_records:
-                    # Registrar el checkout automático
-                    record.check_out_time = global_checkout_datetime
-                    record.notes = (record.notes or "") + f" [AUTO] Checkout automático a las {global_checkout_datetime.strftime('%H:%M')}"
+                for employee in employees_on_shift:
+                    # Verificar si hay un registro pendiente para este empleado
+                    pending_record = CheckPointRecord.query.filter(
+                        CheckPointRecord.employee_id == employee.id, 
+                        CheckPointRecord.check_out_time.is_(None)
+                    ).order_by(CheckPointRecord.check_in_time.desc()).first()
                     
-                    # Crear incidencia por el checkout automático
-                    incident = CheckPointIncident(
-                        record_id=record.id,
-                        incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
-                        description=f"Checkout automático realizado a las {global_checkout_datetime.strftime('%H:%M')} por falta de registro de salida."
-                    )
-                    db.session.add(incident)
-                    
-                    # Registrar original record
-                    from models_checkpoints import CheckPointOriginalRecord
-                    
-                    # Crear un registro del estado original con las horas reales
-                    original_record = CheckPointOriginalRecord(
-                        record_id=record.id,
-                        original_check_in_time=record.check_in_time,
-                        original_check_out_time=global_checkout_datetime,
-                        original_signature_data=record.signature_data,
-                        original_has_signature=record.has_signature,
-                        original_notes=record.notes,
-                        adjustment_reason="Registro original creado en checkout automático"
-                    )
-                    db.session.add(original_record)
-                    
-                    # Aplicar restricciones de horario de contrato si corresponde
-                    if checkpoint.enforce_contract_hours:
-                        # Buscar configuración de horas de contrato del empleado
-                        contract_hours = EmployeeContractHours.query.filter_by(employee_id=record.employee_id).first()
-                        if contract_hours:
-                            # Guardar los valores originales para reporte
-                            original_checkin = record.check_in_time
-                            original_checkout = record.check_out_time
-                            
-                            # Aplicar ajustes según configuración
-                            adjusted_checkin, adjusted_checkout = contract_hours.calculate_adjusted_hours(
-                                original_checkin, original_checkout
-                            )
-                            
-                            # Si hay cambios, aplicarlos y marcar con R
-                            if adjusted_checkin and adjusted_checkin != original_checkin:
-                                record.check_in_time = adjusted_checkin
-                                # Marcar con R en lugar de crear incidencia
-                                record.notes = (record.notes or "") + f" [R] Hora entrada ajustada de {original_checkin.strftime('%H:%M')} a {adjusted_checkin.strftime('%H:%M')}"
-                                
-                            if adjusted_checkout and adjusted_checkout != original_checkout:
-                                record.check_out_time = adjusted_checkout
-                                # Marcar con R en lugar de crear incidencia
-                                record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
-                            
-                            # Verificar si hay horas extra
-                            duration = (record.check_out_time - record.check_in_time).total_seconds() / 3600
-                            if contract_hours.is_overtime(duration):
-                                overtime_hours = duration - contract_hours.daily_hours
-                                overtime_incident = CheckPointIncident(
-                                    record_id=record.id,
-                                    incident_type=CheckPointIncidentType.OVERTIME,
-                                    description=f"Jornada con {overtime_hours:.2f} horas extra sobre el límite diario de {contract_hours.daily_hours} horas"
-                                )
-                                db.session.add(overtime_incident)
-                    
-                    # Actualizar el estado del empleado
-                    employee = record.employee
-                    if employee.is_on_shift:
+                    if not pending_record:
+                        # El empleado está marcado como en turno pero no tiene registro pendiente
+                        # Corregir inconsistencia
                         employee.is_on_shift = False
                         db.session.add(employee)
+                        print(f"⚠️ Corrigiendo inconsistencia: Empleado {employee.id} marcado en turno sin registro pendiente")
+                        continue
+                    
+                    # Usamos la enumeración directamente, no su valor de cadena
+                    schedule = EmployeeSchedule.query.filter_by(
+                        employee_id=employee.id,
+                        day_of_week=weekday_enum
+                    ).first()
+                    
+                    if schedule and schedule.is_working_day and schedule.end_time:
+                        # Construir fecha/hora de fin de turno programado
+                        scheduled_end_datetime = datetime.combine(now.date(), schedule.end_time)
+                        scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=TIMEZONE)
                         
-                    # Incrementar contador 
-                    total_processed += 1
-        
-        # Procesamiento basado en horarios individuales de los empleados
-        # Obtener los empleados que están actualmente en turno
-        employees_on_shift = Employee.query.filter_by(
-            company_id=checkpoint.company_id,
-            is_on_shift=True
-        ).all()
-        
-        for employee in employees_on_shift:
-            # Verificar si hay un registro pendiente para este empleado
-            pending_record = CheckPointRecord.query.filter(
-                CheckPointRecord.employee_id == employee.id, 
-                CheckPointRecord.check_out_time.is_(None)
-            ).order_by(CheckPointRecord.check_in_time.desc()).first()
+                        # Verificar si ya pasó la hora de fin de turno (con margen de 15 minutos)
+                        margin = timedelta(minutes=15)
+                        if now > (scheduled_end_datetime + margin):
+                            # Crear checkout automático basado en horario programado
+                            pending_record.check_out_time = scheduled_end_datetime
+                            pending_record.notes = (pending_record.notes or "") + f" [AUTO-S] Checkout automático basado en horario programado ({schedule.end_time.strftime('%H:%M')})"
+                            
+                            # Crear un registro del estado original con las horas reales
+                            original_record = CheckPointOriginalRecord(
+                                record_id=pending_record.id,
+                                original_check_in_time=pending_record.check_in_time,
+                                original_check_out_time=scheduled_end_datetime,
+                                original_signature_data=pending_record.signature_data,
+                                original_has_signature=pending_record.has_signature,
+                                original_notes=pending_record.notes,
+                                adjustment_reason="Registro original creado en checkout automático basado en horario"
+                            )
+                            db.session.add(original_record)
+                            
+                            # Crear incidencia
+                            incident = CheckPointIncident(
+                                record_id=pending_record.id,
+                                incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
+                                description=f"Checkout automático realizado a las {scheduled_end_datetime.strftime('%H:%M')} basado en horario programado."
+                            )
+                            db.session.add(incident)
+                            
+                            # Actualizar estado del empleado
+                            employee.is_on_shift = False
+                            db.session.add(employee)
+                            
+                            # Log para depuración
+                            print(f"⏰ Auto-checkout por horario programado: Empleado {employee.id}, Hora programada: {schedule.end_time}")
+                            
+                            # Incrementar contador
+                            total_processed += 1
             
-            if not pending_record:
-                # El empleado está marcado como en turno pero no tiene registro pendiente
-                # Corregir inconsistencia
-                employee.is_on_shift = False
-                db.session.add(employee)
-                print(f"⚠️ Corrigiendo inconsistencia: Empleado {employee.id} marcado en turno sin registro pendiente")
+            except Exception as e:
+                print(f"Error procesando checkpoint {checkpoint.id}: {e}")
+                import traceback
+                traceback.print_exc()
+                # No interrumpir el proceso para otros checkpoints
                 continue
-            
-            # Buscar el horario del empleado para el día actual
-            # Convertir de número (1-7) a nombre del día en español (usando una correspondencia fija)
-            day_mapping = {
-                1: WeekDay.LUNES.value,
-                2: WeekDay.MARTES.value,
-                3: WeekDay.MIERCOLES.value,
-                4: WeekDay.JUEVES.value,
-                5: WeekDay.VIERNES.value,
-                6: WeekDay.SABADO.value,
-                7: WeekDay.DOMINGO.value
-            }
-            weekday_value = day_mapping.get(today_weekday)
-            
-            schedule = EmployeeSchedule.query.filter_by(
-                employee_id=employee.id,
-                day_of_week=weekday_value
-            ).first()
-            
-            if schedule and schedule.is_working_day and schedule.end_time:
-                # Construir fecha/hora de fin de turno programado
-                scheduled_end_datetime = datetime.combine(now.date(), schedule.end_time)
-                # Aseguramos que esté en la zona horaria de Madrid
-                scheduled_end_datetime = scheduled_end_datetime.replace(tzinfo=TIMEZONE)
-                
-                # Verificar si ya pasó la hora de fin de turno (con margen de 15 minutos)
-                margin = timedelta(minutes=15)
-                if now > (scheduled_end_datetime + margin):
-                    # Crear checkout automático basado en horario programado
-                    pending_record.check_out_time = scheduled_end_datetime
-                    pending_record.notes = (pending_record.notes or "") + f" [AUTO-S] Checkout automático basado en horario programado ({schedule.end_time.strftime('%H:%M')})"
-                    
-                    # Registrar original record
-                    from models_checkpoints import CheckPointOriginalRecord
-                    
-                    # Crear un registro del estado original con las horas reales
-                    original_record = CheckPointOriginalRecord(
-                        record_id=pending_record.id,
-                        original_check_in_time=pending_record.check_in_time,
-                        original_check_out_time=scheduled_end_datetime,
-                        original_signature_data=pending_record.signature_data,
-                        original_has_signature=pending_record.has_signature,
-                        original_notes=pending_record.notes,
-                        adjustment_reason="Registro original creado en checkout automático basado en horario"
-                    )
-                    db.session.add(original_record)
-                    
-                    # Crear incidencia
-                    incident = CheckPointIncident(
-                        record_id=pending_record.id,
-                        incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
-                        description=f"Checkout automático realizado a las {scheduled_end_datetime.strftime('%H:%M')} basado en horario programado."
-                    )
-                    db.session.add(incident)
-                    
-                    # Actualizar estado del empleado
-                    employee.is_on_shift = False
-                    db.session.add(employee)
-                    
-                    # Log para depuración
-                    print(f"⏰ Auto-checkout por horario programado: Empleado {employee.id}, Hora programada: {schedule.end_time}")
-                    
-                    # Incrementar contador
-                    total_processed += 1
-    
-    # Guardar todos los cambios
-    if total_processed > 0:
-        # Commit final de todos los cambios
-        db.session.commit()
-        print(f"✅ Total de registros procesados con checkout automático: {total_processed}")
+        
+        # Guardar todos los cambios
+        if total_processed > 0:
+            # Commit final de todos los cambios
+            db.session.commit()
+            print(f"✅ Total de registros procesados con checkout automático: {total_processed}")
+        
+    except Exception as e:
+        print(f"Error al procesar auto-checkouts: {e}")
+        import traceback
+        traceback.print_exc()
+        # Asegurar que se deshagan todos los cambios en caso de error
+        db.session.rollback()
     
     return total_processed
