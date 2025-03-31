@@ -548,6 +548,28 @@ def process_auto_checkouts(force=False):
                 # Log para depuración - es crucial verificar que se están encontrando empleados
                 print(f"🔍 Checkpoint {checkpoint.name}: Encontrados {len(employees_on_shift)} empleados en turno")
                 
+                # Consulta más detallada para diagnosticar posibles problemas con la query
+                try:
+                    # Verificar registros pendientes directamente
+                    pending_records_count = db.session.query(CheckPointRecord).join(
+                        Employee, Employee.id == CheckPointRecord.employee_id
+                    ).filter(
+                        Employee.company_id == checkpoint.company_id,
+                        CheckPointRecord.check_out_time.is_(None)
+                    ).count()
+                    
+                    print(f"📊 Diagnóstico completo para checkpoint {checkpoint.name}:")
+                    print(f"   - Empleados en turno (is_on_shift=True): {len(employees_on_shift)}")
+                    print(f"   - Registros sin checkout: {pending_records_count}")
+                    
+                    # Si hay discrepancia, mostrar alerta
+                    if pending_records_count > len(employees_on_shift):
+                        print(f"⚠️ ALERTA: Hay más registros pendientes ({pending_records_count}) que empleados marcados en turno ({len(employees_on_shift)})")
+                    elif pending_records_count < len(employees_on_shift):
+                        print(f"⚠️ ALERTA: Hay menos registros pendientes ({pending_records_count}) que empleados marcados en turno ({len(employees_on_shift)})")
+                except Exception as diag_error:
+                    print(f"❌ Error en diagnóstico detallado: {diag_error}")
+                
                 # Si estamos en modo forzado, imprimir los IDs para ayudar a diagnosticar problemas
                 if force:
                     for e in employees_on_shift:
@@ -559,6 +581,14 @@ def process_auto_checkouts(force=False):
                         CheckPointRecord.employee_id == employee.id, 
                         CheckPointRecord.check_out_time.is_(None)
                     ).order_by(CheckPointRecord.check_in_time.desc()).first()
+                    
+                    # Log detallado sobre el registro pendiente
+                    if pending_record:
+                        print(f"✓ Empleado {employee.id}: Registro pendiente encontrado (ID: {pending_record.id})")
+                        print(f"   - Hora de entrada: {pending_record.check_in_time}")
+                        print(f"   - Checkpoint: {pending_record.checkpoint_id}")
+                    else:
+                        print(f"⚠️ Empleado {employee.id}: No tiene registro pendiente pero está marcado en turno")
                     
                     if not pending_record:
                         # El empleado está marcado como en turno pero no tiene registro pendiente
