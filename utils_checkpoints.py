@@ -371,20 +371,21 @@ def process_auto_checkouts():
         print(f"🕒 Auto-checkouts: El día de la semana actual es {today_weekday} (1=Lunes, 7=Domingo)")
         
         # Crear mapeo de días de la semana (1-7) a la enumeración WeekDay
+        # En vez de usar los objetos de enumeración, usamos el mapeo al valor de enumeración PostgreSQL en mayúsculas
         day_mapping = {
-            1: ModelWeekDay.LUNES,
-            2: ModelWeekDay.MARTES,
-            3: ModelWeekDay.MIERCOLES,
-            4: ModelWeekDay.JUEVES, 
-            5: ModelWeekDay.VIERNES,
-            6: ModelWeekDay.SABADO,
-            7: ModelWeekDay.DOMINGO
+            1: "LUNES",
+            2: "MARTES",
+            3: "MIERCOLES",
+            4: "JUEVES", 
+            5: "VIERNES",
+            6: "SABADO",
+            7: "DOMINGO"
         }
-        weekday_enum = day_mapping.get(today_weekday)
-        if not weekday_enum:
+        weekday_value = day_mapping.get(today_weekday)
+        if not weekday_value:
             raise ValueError(f"No se pudo mapear el día de la semana {today_weekday} a una enumeración WeekDay")
             
-        print(f"🔄 Auto-checkouts: Usando enumeración {weekday_enum} para el día {today_weekday}")
+        print(f"🔄 Auto-checkouts: Usando valor '{weekday_value}' para el día {today_weekday}")
         
         # Para cada punto de fichaje activo
         for checkpoint in checkpoints:
@@ -506,10 +507,10 @@ def process_auto_checkouts():
                         print(f"⚠️ Corrigiendo inconsistencia: Empleado {employee.id} marcado en turno sin registro pendiente")
                         continue
                     
-                    # Usamos la enumeración directamente, no su valor de cadena
+                    # Usamos el valor en mayúsculas para la base de datos PostgreSQL
                     schedule = EmployeeSchedule.query.filter_by(
                         employee_id=employee.id,
-                        day_of_week=weekday_enum
+                        day_of_week=weekday_value
                     ).first()
                     
                     if schedule and schedule.is_working_day and schedule.end_time:
