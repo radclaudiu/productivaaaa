@@ -1787,11 +1787,16 @@ def trigger_auto_checkout():
     from datetime import datetime, timedelta
     
     try:
-        # Agregar un indicador para forzar la ejecución (para uso manual)
+        # Agregar un indicador para forzar la ejecución (para uso manual) y modo prueba
         force = request.args.get('force', 'false').lower() == 'true'
+        test_mode = request.args.get('test', 'false').lower() == 'true'
         
         if force:
-            print("⚠️ Ejecutando auto-checkout forzado por solicitud manual.")
+            if test_mode:
+                print("🧪 Ejecutando PRUEBA de auto-checkout en modo forzado (SIN FICHAR SALIDA)")
+            else:
+                print("⚠️ Ejecutando auto-checkout forzado por solicitud manual")
+            
             records_processed = process_auto_checkouts(force=True)
         else:
             # Solo ejecutar si estamos en el momento adecuado
@@ -1822,12 +1827,19 @@ def trigger_auto_checkout():
                 # No hay hora configurada, pero podemos procesar los auto-checkouts basados en horarios
                 records_processed = process_auto_checkouts(force=False)
         
-        # Devolver resultado
-        return jsonify({
-            'success': True,
-            'processed': records_processed,
-            'message': f'Se procesaron {records_processed} registros con checkout automático.'
-        })
+        # Devolver resultado con mensaje personalizado según el modo
+        if test_mode:
+            return jsonify({
+                'success': True,
+                'processed': records_processed,
+                'message': f'PRUEBA: Se procesaron {records_processed} registros marcados como SIN FICHAR SALIDA.'
+            })
+        else:
+            return jsonify({
+                'success': True,
+                'processed': records_processed,
+                'message': f'Se procesaron {records_processed} registros con checkout automático.'
+            })
     except Exception as e:
         # Usar print para log en lugar de app.logger
         print(f"Error en auto-checkout: {str(e)}")
