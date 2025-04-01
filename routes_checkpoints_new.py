@@ -712,4 +712,34 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
         mimetype='application/pdf'
     )
 
+# Ruta para acceder directamente a un checkpoint específico por ID
+@checkpoints_bp.route('/login/<int:checkpoint_id>', methods=['GET', 'POST'])
+def login_to_checkpoint(checkpoint_id):
+    """Acceso directo a un punto de fichaje específico por ID"""
+    # Si ya hay una sesión activa, redirigir al dashboard
+    if 'checkpoint_id' in session:
+        return redirect(url_for('checkpoints_slug.checkpoint_dashboard'))
+    
+    # Buscar el checkpoint por ID
+    checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
+    
+    # Si el checkpoint no está activo, mostrar error
+    if not checkpoint.is_active:
+        flash('El punto de fichaje no está activo.', 'danger')
+        return redirect(url_for('checkpoints_slug.select_company'))
+    
+    # Crear el formulario
+    form = CheckPointLoginForm()
+    
+    # Procesar el formulario si es una solicitud POST y es válido
+    if form.validate_on_submit():
+        # Guardar la información del checkpoint en la sesión
+        session['checkpoint_id'] = checkpoint.id
+        session['company_id'] = checkpoint.company_id
+        
+        # Redirigir al formulario de ingreso de PIN
+        return redirect(url_for('checkpoints_slug.employee_pin'))
+    
+    return render_template('checkpoints/login.html', form=form, checkpoint=checkpoint)
+
 # Resto del código ...
