@@ -80,6 +80,10 @@ def auto_close_pending_records():
                     
                     # Asegurarse de que la fecha de entrada tenga información de zona horaria
                     check_in_time = record.check_in_time
+                    if not check_in_time:
+                        print(f"  ⚠️ Advertencia: El registro {record.id} no tiene hora de entrada válida")
+                        continue
+                        
                     if check_in_time.tzinfo is None:
                         check_in_time = datetime_to_madrid(check_in_time)
                     
@@ -91,6 +95,8 @@ def auto_close_pending_records():
                     # Si la salida queda antes que la entrada (lo cual sería un error), 
                     # establecer la salida para el día siguiente
                     if check_out_time < check_in_time:
+                        print(f"  ⚠️  Entrada posterior a hora de cierre: {check_in_time} > {check_out_time}")
+                        print(f"  ⚠️  Ajustando la salida para el día siguiente")
                         check_out_date = check_in_date + timedelta(days=1)
                         check_out_time = datetime.combine(check_out_date, checkpoint.operation_end_time)
                         check_out_time = TIMEZONE.localize(check_out_time)
