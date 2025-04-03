@@ -1330,17 +1330,32 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             db.session.add(pending_record)
             db.session.flush()  # Aseguramos que pending_record tenga todos sus campos actualizados
             
-            # Crear un registro del estado original con las horas reales
-            original_record = CheckPointOriginalRecord(
+            # Buscar si ya existe un registro original al iniciar jornada
+            existing_original = CheckPointOriginalRecord.query.filter_by(
                 record_id=pending_record.id,
-                original_check_in_time=original_checkin,
-                original_check_out_time=original_checkout,
-                original_signature_data=pending_record.signature_data,
-                original_has_signature=pending_record.has_signature,
-                original_notes=pending_record.notes,
-                adjustment_reason="Registro original al finalizar fichaje"
-            )
-            db.session.add(original_record)
+                adjustment_reason="Registro original al iniciar fichaje"
+            ).first()
+            
+            if existing_original:
+                # Actualizar el registro existente con los datos de salida
+                existing_original.original_check_out_time = original_checkout
+                existing_original.original_signature_data = pending_record.signature_data
+                existing_original.original_has_signature = pending_record.has_signature
+                existing_original.original_notes = pending_record.notes
+                existing_original.adjustment_reason = "Registro original completo (ficha entrada/salida)"
+                db.session.add(existing_original)
+            else:
+                # Si no existe (caso poco probable), crear uno nuevo
+                original_record = CheckPointOriginalRecord(
+                    record_id=pending_record.id,
+                    original_check_in_time=original_checkin,
+                    original_check_out_time=original_checkout,
+                    original_signature_data=pending_record.signature_data,
+                    original_has_signature=pending_record.has_signature,
+                    original_notes=pending_record.notes,
+                    adjustment_reason="Registro original al finalizar fichaje"
+                )
+                db.session.add(original_record)
             
             # 2. Verificar configuración de horas de contrato
             contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
@@ -1371,8 +1386,12 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                     pending_record.adjusted = True
                     
                     # Actualizar la razón del ajuste en el registro original
-                    original_record.adjustment_reason = "Ajuste automático por límite de horas de contrato"
-                    db.session.add(original_record)
+                    if existing_original:
+                        existing_original.adjustment_reason = "Ajuste automático por límite de horas de contrato"
+                        db.session.add(existing_original)
+                    elif 'original_record' in locals():
+                        original_record.adjustment_reason = "Ajuste automático por límite de horas de contrato"
+                        db.session.add(original_record)
                 
                 # Verificar si hay horas extra
                 duration = (pending_record.check_out_time - pending_record.check_in_time).total_seconds() / 3600
@@ -1575,17 +1594,34 @@ def record_checkout(id):
         original_checkin = record.check_in_time  # Esta es la hora original de entrada
         original_checkout = current_time  # Esta es la hora real de salida antes de ajustes
         
-        # Crear un registro del estado original con las horas reales
-        original_record = CheckPointOriginalRecord(
+        # Buscar si ya existe un registro original al iniciar jornada
+        existing_original = CheckPointOriginalRecord.query.filter_by(
             record_id=record.id,
-            original_check_in_time=original_checkin,
-            original_check_out_time=original_checkout,
-            original_signature_data=record.signature_data,
-            original_has_signature=record.has_signature,
-            original_notes=record.notes,
-            adjustment_reason="Registro original al finalizar fichaje desde pantalla de detalles"
-        )
-        db.session.add(original_record)
+            adjustment_reason="Registro original al iniciar fichaje"
+        ).first()
+        
+        if existing_original:
+            # Actualizar el registro existente con los datos de salida
+            existing_original.original_check_out_time = original_checkout
+            existing_original.original_signature_data = record.signature_data
+            existing_original.original_has_signature = record.has_signature
+            existing_original.original_notes = record.notes
+            existing_original.adjustment_reason = "Registro original completo (ficha entrada/salida pantalla detalles)"
+            db.session.add(existing_original)
+            # Guardar referencia para usar después con ajustes
+            original_record = existing_original
+        else:
+            # Si no existe (caso poco probable), crear uno nuevo
+            original_record = CheckPointOriginalRecord(
+                record_id=record.id,
+                original_check_in_time=original_checkin,
+                original_check_out_time=original_checkout,
+                original_signature_data=record.signature_data,
+                original_has_signature=record.has_signature,
+                original_notes=record.notes,
+                adjustment_reason="Registro original al finalizar fichaje desde pantalla de detalles"
+            )
+            db.session.add(original_record)
         
         # 2. Verificar configuración de horas de contrato
         contract_hours = EmployeeContractHours.query.filter_by(employee_id=employee.id).first()
