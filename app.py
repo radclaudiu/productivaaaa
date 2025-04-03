@@ -193,13 +193,20 @@ def docs_txt():
 def pgadmin_redirect():
     """Redirige a pgAdmin."""
     from flask import redirect
+    import os
     
-    # Obtener el puerto configurado para pgAdmin (por defecto 5050)
-    pgadmin_port = 5050
+    # En Replit, utilizamos la variable de entorno REPL_SLUG y REPL_OWNER para construir la URL
+    repl_slug = os.environ.get('REPL_SLUG', '')
+    repl_owner = os.environ.get('REPL_OWNER', '')
     
-    # Construir la URL de pgAdmin en el mismo host pero diferente puerto
-    host = request.host.split(':')[0]  # Obtener solo el nombre del host sin el puerto
-    pgadmin_url = f'http://{host}:{pgadmin_port}'
+    # Si estamos en Replit, construimos la URL utilizando el formato de Replit
+    if repl_slug and repl_owner:
+        pgadmin_url = f'https://{repl_slug}-5050.{repl_owner}.repl.co'
+    else:
+        # Fallback para entorno local o sin variables de Replit
+        host = request.host.split(':')[0]  # Obtener solo el nombre del host sin el puerto
+        pgadmin_port = 5050
+        pgadmin_url = f'http://{host}:{pgadmin_port}'
     
     return redirect(pgadmin_url)
 
@@ -208,42 +215,48 @@ def pgadmin_redirect():
 def db_query():
     """Ejecuta consultas SQL directamente en la aplicación principal."""
     import psycopg2
+    import psycopg2.extras
     from psycopg2 import sql
     import os
     
     results = None
-    columns = None
+    affected_rows = None
     error = None
     query_text = ''
     
     if request.method == 'POST':
         query_text = request.form.get('query', '')
         
+        conn = None
         try:
             # Establecer conexión a la base de datos
             DATABASE_URL = os.environ.get('DATABASE_URL')
             conn = psycopg2.connect(DATABASE_URL)
-            cursor = conn.cursor()
+            cursor = conn.cursor(cursor_factory=psycopg2.extras.DictCursor)
             
             cursor.execute(query_text)
             
             # Si la consulta fue un SELECT, obtener resultados
             if cursor.description:
-                columns = [desc[0] for desc in cursor.description]
-                results = cursor.fetchall()
+                results_rows = cursor.fetchall()
+                # Convertir a lista de diccionarios para que funcione con la plantilla
+                results = [dict(row) for row in results_rows]
             else:
                 # Si no fue un SELECT, solo mostrar el conteo de filas afectadas
                 conn.commit()
-                results = f"Consulta ejecutada correctamente. Filas afectadas: {cursor.rowcount}"
+                affected_rows = cursor.rowcount
             
             cursor.close()
             conn.close()
             
         except Exception as e:
             error = str(e)
+            if conn:
+                conn.rollback()
+                conn.close()
     
     return render_template('db_query.html', 
                           results=results, 
-                          columns=columns, 
+                          affected_rows=affected_rows, 
                           error=error, 
                           query=query_text)
