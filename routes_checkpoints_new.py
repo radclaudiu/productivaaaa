@@ -505,6 +505,14 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
     from tempfile import NamedTemporaryFile
     import os
     from datetime import datetime, timedelta
+    import logging
+    
+    # Registrar información de depuración
+    logging.debug(f"Generando PDF con {len(records)} registros")
+    for i, (original, record, employee) in enumerate(records[:5]):  # Mostrar solo los primeros 5 para no saturar los logs
+        logging.debug(f"Registro {i+1}: Empleado={employee.first_name} {employee.last_name}, " +
+                     f"Entrada Original={original.original_check_in_time}, " +
+                     f"Salida Original={original.original_check_out_time}")
     
     # Crear un archivo temporal para guardar el PDF
     pdf_file = NamedTemporaryFile(delete=False, suffix='.pdf')
@@ -566,153 +574,222 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
             self.set_font('Arial', 'I', 8)
             self.cell(0, 10, f'Página {self.page_no()}/{{nb}}', 0, 0, 'C')
     
-    # Crear PDF
-    pdf = OriginalRecordsPDF()
-    pdf.alias_nb_pages()
-    pdf.add_page()
-    pdf.set_auto_page_break(auto=True, margin=15)
-    
-    # Llenar el PDF con los datos
-    pdf.set_font('Arial', '', 8)
-    
-    # Ordenar registros por empleado, fecha y hora
-    sorted_records = sorted(records, key=lambda x: (
-        x[2].id,  # employee.id
-        x[0].original_check_in_time.date(),  # date
-        x[0].original_check_in_time.time()  # time
-    ))
-    
-    # Preparar diccionarios para acumular totales por empleado y semana
-    current_employee = None
-    current_week_start = None
-    week_hours_original = 0
-    week_hours_adjusted = 0
-    total_hours_original = 0
-    total_hours_adjusted = 0
-    
-    # Estructurar registros por empleado
-    employee_records = {}
-    for original, record, employee in sorted_records:
-        if employee.id not in employee_records:
-            employee_records[employee.id] = {
-                'employee': employee,
-                'weeks': {}
-            }
+    try:
+        # Crear PDF
+        pdf = OriginalRecordsPDF()
+        pdf.alias_nb_pages()
+        pdf.add_page()
+        pdf.set_auto_page_break(auto=True, margin=15)
         
-        # Obtener fecha de inicio de la semana (lunes)
-        week_start = get_week_start(original.original_check_in_time.date())
-        week_end = get_week_end(original.original_check_in_time.date())
-        week_key = week_start.strftime('%Y-%m-%d')
-        
-        if week_key not in employee_records[employee.id]['weeks']:
-            employee_records[employee.id]['weeks'][week_key] = {
-                'start_date': week_start,
-                'end_date': week_end,
-                'records': [],
-                'original_hours': 0,
-                'adjusted_hours': 0
-            }
-        
-        # Calcular horas trabajadas
-        hours_original = 0
-        if original.original_check_out_time and original.original_check_in_time:
-            # Usando la función duration ya modificada para manejar correctamente los turnos nocturnos
-            hours_original = original.duration()
-            employee_records[employee.id]['weeks'][week_key]['original_hours'] += hours_original
-        
-        hours_adjusted = 0
-        if record.check_out_time and record.check_in_time:
-            # Usando la función duration ya modificada para manejar correctamente los turnos nocturnos
-            hours_adjusted = record.duration()
-            employee_records[employee.id]['weeks'][week_key]['adjusted_hours'] += hours_adjusted
-            
-        # Guardar registro
-        employee_records[employee.id]['weeks'][week_key]['records'].append((original, record, hours_original, hours_adjusted))
-    
-    # Generar PDF con los datos estructurados
-    for emp_id, emp_data in employee_records.items():
-        employee = emp_data['employee']
-        employee_name = f"{employee.first_name} {employee.last_name}"
-        
-        # Imprimir nombre del empleado como encabezado
-        pdf.set_font('Arial', 'B', 12)
-        pdf.ln(5)
-        pdf.cell(0, 10, f"Empleado: {employee_name}", 0, 1, 'L')
+        # Llenar el PDF con los datos
         pdf.set_font('Arial', '', 8)
         
-        employee_total_original = 0
-        employee_total_adjusted = 0
+        # Verificar si hay registros
+        if not records:
+            pdf.set_font('Arial', 'B', 12)
+            pdf.ln(10)
+            pdf.cell(0, 10, "No se encontraron registros para los filtros seleccionados", 0, 1, 'C')
+            pdf.output(pdf_file.name)
+            return send_file(
+                pdf_file.name,
+                as_attachment=True,
+                download_name="registros_originales.pdf",
+                mimetype='application/pdf'
+            )
         
-        # Procesar cada semana del empleado
-        for week_key in sorted(emp_data['weeks'].keys()):
-            week_data = emp_data['weeks'][week_key]
+        # Ordenar registros por empleado, fecha y hora
+        sorted_records = sorted(records, key=lambda x: (
+            x[2].id,  # employee.id
+            x[0].original_check_in_time.date() if x[0].original_check_in_time else datetime.min.date(),  # date
+            x[0].original_check_in_time.time() if x[0].original_check_in_time else datetime.min.time()  # time
+        ))
+        
+        # Estructurar registros por empleado
+        employee_records = {}
+        for original, record, employee in sorted_records:
+            # Verificar que los objetos no sean None
+            if not original or not record or not employee:
+                logging.warning(f"Skipping record with None values: original={original}, record={record}, employee={employee}")
+                continue
+                
+            if employee.id not in employee_records:
+                employee_records[employee.id] = {
+                    'employee': employee,
+                    'weeks': {}
+                }
             
-            # Imprimir encabezado de la semana
-            week_header = f"Semana: {week_data['start_date'].strftime('%d/%m/%Y')} - {week_data['end_date'].strftime('%d/%m/%Y')}"
-            pdf.set_font('Arial', 'B', 10)
-            pdf.ln(3)
-            pdf.cell(0, 7, week_header, 0, 1, 'L')
+            # Validar que original_check_in_time no sea None
+            if not original.original_check_in_time:
+                logging.warning(f"Skipping record with None original_check_in_time for employee {employee.first_name} {employee.last_name}")
+                continue
+                
+            # Obtener fecha de inicio de la semana (lunes)
+            week_start = get_week_start(original.original_check_in_time.date())
+            week_end = get_week_end(original.original_check_in_time.date())
+            week_key = week_start.strftime('%Y-%m-%d')
+            
+            if week_key not in employee_records[employee.id]['weeks']:
+                employee_records[employee.id]['weeks'][week_key] = {
+                    'start_date': week_start,
+                    'end_date': week_end,
+                    'records': [],
+                    'original_hours': 0,
+                    'adjusted_hours': 0
+                }
+            
+            try:
+                # Calcular horas trabajadas
+                hours_original = 0
+                if original.original_check_out_time and original.original_check_in_time:
+                    # Usando la función duration ya modificada para manejar correctamente los turnos nocturnos
+                    hours_original = original.duration()
+                    employee_records[employee.id]['weeks'][week_key]['original_hours'] += hours_original
+                
+                hours_adjusted = 0
+                if record.check_out_time and record.check_in_time:
+                    # Usando la función duration ya modificada para manejar correctamente los turnos nocturnos
+                    hours_adjusted = record.duration()
+                    employee_records[employee.id]['weeks'][week_key]['adjusted_hours'] += hours_adjusted
+                
+                # Guardar registro
+                employee_records[employee.id]['weeks'][week_key]['records'].append((original, record, hours_original, hours_adjusted))
+            except Exception as e:
+                logging.error(f"Error al procesar registro: {str(e)}")
+                # Continuar con el siguiente registro
+                continue
+        
+        # Verificar si hay datos para mostrar después de filtrar
+        if not employee_records:
+            pdf.set_font('Arial', 'B', 12)
+            pdf.ln(10)
+            pdf.cell(0, 10, "No se encontraron registros válidos para los filtros seleccionados", 0, 1, 'C')
+            pdf.output(pdf_file.name)
+            return send_file(
+                pdf_file.name,
+                as_attachment=True,
+                download_name="registros_originales.pdf",
+                mimetype='application/pdf'
+            )
+        
+        # Generar PDF con los datos estructurados
+        for emp_id, emp_data in employee_records.items():
+            employee = emp_data['employee']
+            employee_name = f"{employee.first_name} {employee.last_name}"
+            
+            # Imprimir nombre del empleado como encabezado
+            pdf.set_font('Arial', 'B', 12)
+            pdf.ln(5)
+            pdf.cell(0, 10, f"Empleado: {employee_name}", 0, 1, 'L')
             pdf.set_font('Arial', '', 8)
             
-            # Imprimir registros de la semana
-            for original, record, hours_original, hours_adjusted in week_data['records']:
-                date_str = original.original_check_in_time.strftime('%d/%m/%Y')
-                
-                in_time_orig = original.original_check_in_time.strftime('%H:%M')
-                out_time_orig = original.original_check_out_time.strftime('%H:%M') if original.original_check_out_time else '-'
-                
-                in_time_mod = record.check_in_time.strftime('%H:%M')
-                out_time_mod = record.check_out_time.strftime('%H:%M') if record.check_out_time else '-'
-                
-                adjusted_by = original.adjusted_by.username if original.adjusted_by else 'Sistema'
-                
-                # Imprimir fila
-                pdf.cell(40, 7, "", 1, 0, 'L')  # Columna vacía para el empleado (ya está en el encabezado)
-                pdf.cell(20, 7, date_str, 1, 0, 'C')
-                pdf.cell(15, 7, in_time_orig, 1, 0, 'C')
-                pdf.cell(15, 7, out_time_orig, 1, 0, 'C')
-                pdf.cell(15, 7, in_time_mod, 1, 0, 'C')
-                pdf.cell(15, 7, out_time_mod, 1, 0, 'C')
-                pdf.cell(20, 7, adjusted_by, 1, 0, 'C')
-                
-                # Ajustar motivo para que quepa en una fila
-                motivo = original.adjustment_reason
-                if motivo and len(motivo) > 30:
-                    motivo = motivo[:27] + '...'
-                pdf.cell(50, 7, motivo or '', 1, 1, 'L')
+            employee_total_original = 0
+            employee_total_adjusted = 0
             
-            # Imprimir totales de la semana
-            pdf.set_font('Arial', 'B', 8)
-            pdf.set_fill_color(230, 230, 230)
-            pdf.cell(90, 7, f'Total semana (horas originales): {week_data["original_hours"]:.2f}', 1, 0, 'R', True)
-            pdf.cell(90, 7, f'Total semana (horas ajustadas): {week_data["adjusted_hours"]:.2f}', 1, 1, 'R', True)
-            pdf.ln(5)
+            # Verificar si hay semanas para este empleado
+            if not emp_data['weeks']:
+                pdf.set_font('Arial', 'I', 10)
+                pdf.cell(0, 7, "No hay registros para este empleado en el período seleccionado", 0, 1, 'L')
+                continue
             
-            # Acumular totales del empleado
-            employee_total_original += week_data['original_hours']
-            employee_total_adjusted += week_data['adjusted_hours']
+            # Procesar cada semana del empleado
+            for week_key in sorted(emp_data['weeks'].keys()):
+                week_data = emp_data['weeks'][week_key]
+                
+                # Imprimir encabezado de la semana
+                week_header = f"Semana: {week_data['start_date'].strftime('%d/%m/%Y')} - {week_data['end_date'].strftime('%d/%m/%Y')}"
+                pdf.set_font('Arial', 'B', 10)
+                pdf.ln(3)
+                pdf.cell(0, 7, week_header, 0, 1, 'L')
+                pdf.set_font('Arial', '', 8)
+                
+                # Imprimir registros de la semana
+                for original, record, hours_original, hours_adjusted in week_data['records']:
+                    try:
+                        if not original.original_check_in_time:
+                            continue
+                            
+                        date_str = original.original_check_in_time.strftime('%d/%m/%Y')
+                        
+                        in_time_orig = original.original_check_in_time.strftime('%H:%M')
+                        out_time_orig = original.original_check_out_time.strftime('%H:%M') if original.original_check_out_time else '-'
+                        
+                        in_time_mod = record.check_in_time.strftime('%H:%M') if record.check_in_time else '-'
+                        out_time_mod = record.check_out_time.strftime('%H:%M') if record.check_out_time else '-'
+                        
+                        adjusted_by = original.adjusted_by.username if original.adjusted_by and hasattr(original.adjusted_by, 'username') else 'Sistema'
+                        
+                        # Imprimir fila
+                        # En lugar de dejar en blanco el nombre del empleado, pon el nombre completo
+                        pdf.cell(40, 7, employee_name, 1, 0, 'L')
+                        pdf.cell(20, 7, date_str, 1, 0, 'C')
+                        pdf.cell(15, 7, in_time_orig, 1, 0, 'C')
+                        pdf.cell(15, 7, out_time_orig, 1, 0, 'C')
+                        pdf.cell(15, 7, in_time_mod, 1, 0, 'C')
+                        pdf.cell(15, 7, out_time_mod, 1, 0, 'C')
+                        pdf.cell(20, 7, adjusted_by, 1, 0, 'C')
+                        
+                        # Ajustar motivo para que quepa en una fila
+                        motivo = original.adjustment_reason if hasattr(original, 'adjustment_reason') else ''
+                        if motivo and len(motivo) > 30:
+                            motivo = motivo[:27] + '...'
+                        pdf.cell(50, 7, motivo or '', 1, 1, 'L')
+                    except Exception as e:
+                        logging.error(f"Error al imprimir registro: {str(e)}")
+                        # Continuar con el siguiente registro
+                        continue
+                
+                # Imprimir totales de la semana
+                pdf.set_font('Arial', 'B', 8)
+                pdf.set_fill_color(230, 230, 230)
+                pdf.cell(90, 7, f'Total semana (horas originales): {week_data["original_hours"]:.2f}', 1, 0, 'R', True)
+                pdf.cell(90, 7, f'Total semana (horas ajustadas): {week_data["adjusted_hours"]:.2f}', 1, 1, 'R', True)
+                pdf.ln(5)
+                
+                # Acumular totales del empleado
+                employee_total_original += week_data['original_hours']
+                employee_total_adjusted += week_data['adjusted_hours']
+            
+            # Imprimir totales del empleado
+            pdf.set_font('Arial', 'B', 10)
+            pdf.set_fill_color(200, 220, 255)
+            pdf.cell(90, 8, f'TOTAL EMPLEADO (horas originales): {employee_total_original:.2f}', 1, 0, 'R', True)
+            pdf.cell(90, 8, f'TOTAL EMPLEADO (horas ajustadas): {employee_total_adjusted:.2f}', 1, 1, 'R', True)
+            
+            # Nueva página para cada empleado, excepto el último
+            if list(employee_records.keys()).index(emp_id) < len(employee_records) - 1:
+                pdf.add_page()
         
-        # Imprimir totales del empleado
-        pdf.set_font('Arial', 'B', 10)
-        pdf.set_fill_color(200, 220, 255)
-        pdf.cell(90, 8, f'TOTAL EMPLEADO (horas originales): {employee_total_original:.2f}', 1, 0, 'R', True)
-        pdf.cell(90, 8, f'TOTAL EMPLEADO (horas ajustadas): {employee_total_adjusted:.2f}', 1, 1, 'R', True)
+        # Guardar PDF
+        pdf.output(pdf_file.name)
         
-        # Nueva página para cada empleado, excepto el último
-        if list(employee_records.keys()).index(emp_id) < len(employee_records) - 1:
-            pdf.add_page()
-    
-    # Guardar PDF
-    pdf.output(pdf_file.name)
-    
-    # Enviar el archivo
-    filename = f"registros_originales.pdf"
-    return send_file(
-        pdf_file.name,
-        as_attachment=True,
-        download_name=filename,
-        mimetype='application/pdf'
-    )
+        # Enviar el archivo
+        filename = f"registros_originales.pdf"
+        return send_file(
+            pdf_file.name,
+            as_attachment=True,
+            download_name=filename,
+            mimetype='application/pdf'
+        )
+    except Exception as e:
+        logging.error(f"Error al generar PDF: {str(e)}")
+        # Intentar crear un PDF de error
+        try:
+            error_pdf = FPDF()
+            error_pdf.add_page()
+            error_pdf.set_font('Arial', 'B', 16)
+            error_pdf.cell(0, 10, "Error al generar el PDF", 0, 1, 'C')
+            error_pdf.set_font('Arial', '', 12)
+            error_pdf.cell(0, 10, f"Se produjo un error: {str(e)}", 0, 1, 'L')
+            error_pdf.output(pdf_file.name)
+            return send_file(
+                pdf_file.name,
+                as_attachment=True,
+                download_name="error_report.pdf",
+                mimetype='application/pdf'
+            )
+        except:
+            # Si falla incluso el PDF de error, devuelve un mensaje de error
+            return jsonify({'error': f'Error al generar el PDF: {str(e)}'}), 500
 
 # Ruta para acceder directamente a un checkpoint específico por ID
 @checkpoints_bp.route('/login/<int:checkpoint_id>', methods=['GET', 'POST'])
