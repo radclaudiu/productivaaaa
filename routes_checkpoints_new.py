@@ -13,7 +13,8 @@ from werkzeug.utils import secure_filename
 from app import db
 from models import User, Employee, Company, UserRole
 from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, EmployeeContractHours
-from models_checkpoints import CheckPointStatus, CheckPointIncidentType
+from models_checkpoints import CheckPointStatus, CheckPointIncidentType, CheckPointOriginalRecord
+from sqlalchemy import or_
 from forms_checkpoints import (CheckPointForm, CheckPointLoginForm, CheckPointEmployeePinForm, 
                              ContractHoursForm, CheckPointRecordAdjustmentForm,
                              SignaturePadForm, ExportCheckPointRecordsForm)
@@ -503,12 +504,290 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
     """Genera un PDF con los registros originales agrupados por semanas (lunes a domingo)"""
     from fpdf import FPDF
     from tempfile import NamedTemporaryFile
-    import os
-    from datetime import datetime, timedelta
-    import logging
     
-    # Registrar información de depuración
-    logging.debug(f"Generando PDF con {len(records)} registros")
+    
+# Nuevas rutas para ver y exportar ambos tipos de registros (con y sin salida)
+@checkpoints_bp.route('/company/<slug>/both', methods=['GET'])
+@login_required
+@admin_required
+def view_both_records(slug):
+    """Página para ver todos los registros (con y sin hora de salida) de una empresa específica"""
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
+    
+    # Obtener parámetros de filtrado
+    page = request.args.get('page', 1, type=int)
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    employee_id = request.args.get('employee_id', type=int)
+    
+    # Construir consulta base para todos los registros (con y sin hora de salida)
+    query = db.session.query(
+        CheckPointRecord, 
+        Employee
+    ).join(
+        Employee,
+        CheckPointRecord.employee_id == Employee.id
+    ).filter(
+        Employee.company_id == company_id
+        # No filtramos por check_out_time para mostrar todos los registros
+    ).outerjoin(
+        CheckPointOriginalRecord,
+        CheckPointOriginalRecord.record_id == CheckPointRecord.id
+    )
+    
+    # Aplicar filtros si los hay
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointRecord.check_in_time) >= start_date)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointRecord.check_in_time) <= end_date)
+        except ValueError:
+            pass
+    
+    if employee_id:
+        query = query.filter(Employee.id == employee_id)
+    
+    # Ordenar y paginar
+    records = query.order_by(
+        CheckPointRecord.check_in_time.desc()
+    ).paginate(page=page, per_page=20)
+    
+    # Obtener la lista de empleados para el filtro (solo de esta empresa)
+    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
+    
+    # Si se solicita exportación
+    export_format = request.args.get('export')
+    if export_format == 'pdf':
+        # Obtener todos los registros para exportar (sin paginación)
+        all_records = query.order_by(CheckPointRecord.employee_id, CheckPointRecord.check_in_time).all()
+        return export_both_records_pdf(all_records, start_date, end_date, company)
+    
+    return render_template(
+        'checkpoints/both_records.html',
+        records=records,
+        employees=employees,
+        company=company,
+        company_id=company_id,
+        filters={
+            'start_date': start_date.strftime('%Y-%m-%d') if isinstance(start_date, date) else None,
+            'end_date': end_date.strftime('%Y-%m-%d') if isinstance(end_date, date) else None,
+            'employee_id': employee_id
+        },
+        title=f"Todos los Registros de {company.name if company else ''}"
+    )
+
+@checkpoints_bp.route('/company/<slug>/both/export', methods=['GET'])
+@login_required
+@admin_required
+def export_both_records(slug):
+    """Exporta todos los registros (con y sin hora de salida) a PDF"""
+    # Buscar la empresa por slug
+    companies = Company.query.all()
+    company = None
+    company_id = None
+    
+    for comp in companies:
+        if slugify(comp.name) == slug:
+            company = comp
+            company_id = comp.id
+            break
+    
+    if not company:
+        abort(404)
+    
+    # Obtener parámetros de filtro
+    start_date = request.args.get('start_date')
+    end_date = request.args.get('end_date')
+    employee_id = request.args.get('employee_id', type=int)
+    
+    # Construir consulta base para todos los registros
+    query = db.session.query(
+        CheckPointRecord, 
+        Employee
+    ).join(
+        Employee,
+        CheckPointRecord.employee_id == Employee.id
+    ).filter(
+        Employee.company_id == company_id
+    )
+    
+    # Aplicar filtros
+    if start_date:
+        try:
+            start_date = datetime.strptime(start_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointRecord.check_in_time) >= start_date)
+        except ValueError:
+            pass
+    
+    if end_date:
+        try:
+            end_date = datetime.strptime(end_date, '%Y-%m-%d').date()
+            query = query.filter(func.date(CheckPointRecord.check_in_time) <= end_date)
+        except ValueError:
+            pass
+    
+    if employee_id:
+        query = query.filter(Employee.id == employee_id)
+    
+    # Ejecutar consulta
+    filtered_records = query.order_by(Employee.last_name, Employee.first_name, CheckPointRecord.check_in_time).all()
+    
+    if not filtered_records:
+        flash('No se encontraron registros para los filtros seleccionados.', 'warning')
+        return redirect(url_for('checkpoints_slug.view_both_records', slug=slug))
+    
+    # Generar PDF con los registros filtrados
+    return export_both_records_pdf(filtered_records, start_date, end_date, company)
+
+def export_both_records_pdf(records, start_date=None, end_date=None, company=None):
+    """Genera un PDF con todos los registros agrupados por empleado"""
+    from fpdf import FPDF
+    from tempfile import NamedTemporaryFile
+    
+    class PDF(FPDF):
+        def header(self):
+            # Logo (si existe) y título
+            self.set_font('Arial', 'B', 12)
+            self.cell(0, 10, f'Registros de {company.name if company else ""}', 0, 1, 'C')
+            
+            # Agregar fecha y filtros
+            self.set_font('Arial', '', 10)
+            filter_text = f"Filtro: "
+            if start_date and end_date:
+                filter_text += f"Del {start_date.strftime('%d/%m/%Y')} al {end_date.strftime('%d/%m/%Y')}"
+            elif start_date:
+                filter_text += f"Desde {start_date.strftime('%d/%m/%Y')}"
+            elif end_date:
+                filter_text += f"Hasta {end_date.strftime('%d/%m/%Y')}"
+            else:
+                filter_text += "Todos los registros"
+                
+            self.cell(0, 10, filter_text, 0, 1, 'C')
+            self.ln(5)
+        
+        def footer(self):
+            # Pie de página
+            self.set_y(-15)
+            self.set_font('Arial', 'I', 8)
+            self.cell(0, 10, f'Página {self.page_no()}/{{nb}}', 0, 0, 'C')
+            self.cell(0, 10, f'Generado el {datetime.now().strftime("%d/%m/%Y %H:%M")}', 0, 0, 'R')
+    
+    # Crear PDF
+    pdf = PDF()
+    pdf.alias_nb_pages()
+    pdf.add_page()
+    pdf.set_font('Arial', '', 10)
+    
+    # Agrupar registros por empleado
+    employees_records = {}
+    for record, employee in records:
+        if employee.id not in employees_records:
+            employees_records[employee.id] = {
+                'employee': employee,
+                'records': []
+            }
+        employees_records[employee.id]['records'].append(record)
+    
+    # Iterar sobre cada empleado
+    for employee_id, data in employees_records.items():
+        employee = data['employee']
+        employee_records = data['records']
+        
+        # Encabezado del empleado
+        pdf.set_font('Arial', 'B', 11)
+        pdf.cell(0, 10, f"{employee.first_name} {employee.last_name} - {employee.dni}", 0, 1)
+        
+        # Encabezados de columnas
+        pdf.set_font('Arial', 'B', 9)
+        pdf.cell(30, 7, 'Fecha', 1)
+        pdf.cell(25, 7, 'Entrada', 1)
+        pdf.cell(25, 7, 'Salida', 1)
+        pdf.cell(20, 7, 'Horas', 1)
+        pdf.cell(35, 7, 'Punto de Fichaje', 1)
+        pdf.cell(55, 7, 'Estado', 1)
+        pdf.ln()
+        
+        # Filas de registros
+        pdf.set_font('Arial', '', 9)
+        
+        for record in employee_records:
+            # Fecha
+            pdf.cell(30, 7, record.check_in_time.strftime('%d/%m/%Y') if record.check_in_time else '-', 1)
+            
+            # Hora entrada
+            pdf.cell(25, 7, record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-', 1)
+            
+            # Hora salida
+            if record.check_out_time:
+                pdf.cell(25, 7, record.check_out_time.strftime('%H:%M:%S'), 1)
+            else:
+                pdf.set_text_color(255, 0, 0)  # Rojo para destacar
+                pdf.cell(25, 7, 'SIN SALIDA', 1)
+                pdf.set_text_color(0, 0, 0)  # Restaurar color
+            
+            # Horas
+            if record.check_out_time:
+                pdf.cell(20, 7, f"{record.duration():.2f} h", 1)
+            else:
+                pdf.cell(20, 7, '-', 1)
+            
+            # Punto de fichaje
+            checkpoint = CheckPoint.query.get(record.checkpoint_id)
+            pdf.cell(35, 7, checkpoint.name if checkpoint else '-', 1)
+            
+            # Estado
+            if record.is_auto_closed:
+                pdf.set_text_color(255, 128, 0)  # Naranja para cierre automático
+                pdf.cell(55, 7, 'Cierre automático por fin de jornada', 1)
+                pdf.set_text_color(0, 0, 0)  # Restaurar color
+            elif hasattr(record, 'has_original_record') and record.has_original_record:
+                pdf.set_text_color(0, 0, 255)  # Azul para modificado
+                pdf.cell(55, 7, 'Registro modificado manualmente', 1)
+                pdf.set_text_color(0, 0, 0)  # Restaurar color
+            else:
+                pdf.cell(55, 7, 'Original', 1)
+            
+            pdf.ln()
+        
+        # Total de horas para este empleado
+        total_hours = sum(record.duration() for record in employee_records if record.check_out_time)
+        pdf.set_font('Arial', 'B', 9)
+        pdf.cell(80, 7, f"Total de horas: {total_hours:.2f} h", 1, 1, 'R')
+        
+        # Espacio entre empleados
+        pdf.ln(5)
+    
+    # Generar archivo PDF en memoria
+    pdf_file = NamedTemporaryFile(delete=False)
+    pdf.output(pdf_file.name)
+    pdf_file.close()
+    
+    # Devolver archivo
+    filename = f"todos_registros_{company.name.replace(' ', '_') if company else 'empresa'}.pdf"
+    return send_file(
+        pdf_file.name,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/pdf'
+    )
     for i, (original, record, employee) in enumerate(records[:5]):  # Mostrar solo los primeros 5 para no saturar los logs
         logging.debug(f"Registro {i+1}: Empleado={employee.first_name} {employee.last_name}, " +
                      f"Entrada Original={original.original_check_in_time}, " +

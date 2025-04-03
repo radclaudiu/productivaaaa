@@ -1,0 +1,190 @@
+{% extends 'layout.html' %}
+
+{% block title %}{{ title }}{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row">
+        <div class="col-12">
+            <div class="card mb-4">
+                <div class="card-header pb-0 d-flex justify-content-between align-items-center">
+                    <div>
+                        <h3 class="mb-0">{{ title }}</h3>
+                        <p class="text-muted">
+                            Vista completa de registros de entrada y salida de cada empleado
+                        </p>
+                    </div>
+                    <div>
+                        <a href="{{ url_for('checkpoints_slug.export_both_records', 
+                                slug=company.get_slug(),
+                                start_date=filters.start_date, 
+                                end_date=filters.end_date, 
+                                employee_id=filters.employee_id) }}" 
+                           class="btn btn-sm btn-info">
+                            <i class="fas fa-file-pdf"></i> Exportar a PDF
+                        </a>
+                    </div>
+                </div>
+                
+                <!-- Filtros -->
+                <div class="card-header">
+                    <form method="get" action="{{ url_for('checkpoints_slug.view_both_records', slug=company.get_slug()) }}" class="row g-3">
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha inicio</label>
+                            <input type="date" name="start_date" class="form-control" 
+                                  value="{{ filters.start_date or '' }}">
+                        </div>
+                        <div class="col-md-3">
+                            <label class="form-label">Fecha fin</label>
+                            <input type="date" name="end_date" class="form-control" 
+                                  value="{{ filters.end_date or '' }}">
+                        </div>
+                        <div class="col-md-4">
+                            <label class="form-label">Empleado</label>
+                            <select name="employee_id" class="form-control">
+                                <option value="">Todos los empleados</option>
+                                {% for employee in employees %}
+                                <option value="{{ employee.id }}" 
+                                        {% if filters.employee_id|int == employee.id %}selected{% endif %}>
+                                    {{ employee.first_name }} {{ employee.last_name }}
+                                </option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="col-md-2 d-flex align-items-end">
+                            <button type="submit" class="btn btn-primary mb-3">Filtrar</button>
+                            {% if filters.start_date or filters.end_date or filters.employee_id %}
+                            <a href="{{ url_for('checkpoints_slug.view_both_records', slug=company.get_slug()) }}" 
+                               class="btn btn-outline-secondary mb-3 ms-2">Limpiar</a>
+                            {% endif %}
+                        </div>
+                    </form>
+                </div>
+                
+                <div class="card-body px-0 pt-0 pb-2">
+                    <div class="table-responsive p-0">
+                        <table class="table align-items-center mb-0">
+                            <thead>
+                                <tr>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Empleado</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Fecha</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Entrada</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Salida</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Horas</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Estado</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Acciones</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for item in records.items %}
+                                {% set record = item[0] %}
+                                {% set employee = item[1] %}
+                                <tr>
+                                    <td>
+                                        <div class="d-flex px-2 py-1">
+                                            <div class="d-flex flex-column justify-content-center">
+                                                <h6 class="mb-0 text-sm">{{ employee.first_name }} {{ employee.last_name }}</h6>
+                                                <p class="text-xs text-secondary mb-0">{{ employee.dni }}</p>
+                                            </div>
+                                        </div>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">{{ record.check_in_time.strftime('%d/%m/%Y') if record.check_in_time else '-' }}</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">{{ record.check_in_time.strftime('%H:%M:%S') if record.check_in_time else '-' }}</p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">
+                                            {% if record.check_out_time %}
+                                            {{ record.check_out_time.strftime('%H:%M:%S') }}
+                                            {% else %}
+                                            <span class="text-warning">SIN SALIDA</span>
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">
+                                            {% if record.check_out_time %}
+                                            {{ "%.2f"|format(record.duration()) }} h
+                                            {% else %}
+                                            -
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                    <td>
+                                        <p class="text-xs font-weight-bold mb-0">
+                                            {% if record.is_auto_closed %}
+                                            <span class="badge bg-warning text-dark">Cierre automático</span>
+                                            {% elif record.has_original_record %}
+                                            <span class="badge bg-info">Modificado</span>
+                                            {% else %}
+                                            <span class="badge bg-success">Original</span>
+                                            {% endif %}
+                                        </p>
+                                    </td>
+                                    <td>
+                                        {% if record.has_original_record %}
+                                        <div class="d-flex">
+                                            <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.check_in_time.strftime('%Y-%m-%d') if record.check_in_time else '', end_date=record.check_in_time.strftime('%Y-%m-%d') if record.check_in_time else '') }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
+                                                <i class="fas fa-exclamation-triangle"></i> Ver original
+                                            </a>
+                                        </div>
+                                        {% endif %}
+                                    </td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+                
+                <!-- Paginación -->
+                <div class="card-footer">
+                    <nav aria-label="Navegación de páginas">
+                        <ul class="pagination justify-content-center">
+                            {% if records.has_prev %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('checkpoints_slug.view_both_records', slug=company.get_slug(), page=records.prev_num, start_date=filters.start_date, end_date=filters.end_date, employee_id=filters.employee_id) }}">Anterior</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">Anterior</a>
+                            </li>
+                            {% endif %}
+
+                            {% for page_num in records.iter_pages(left_edge=1, right_edge=1, left_current=2, right_current=2) %}
+                                {% if page_num %}
+                                    {% if records.page == page_num %}
+                                    <li class="page-item active">
+                                        <a class="page-link" href="{{ url_for('checkpoints_slug.view_both_records', slug=company.get_slug(), page=page_num, start_date=filters.start_date, end_date=filters.end_date, employee_id=filters.employee_id) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% else %}
+                                    <li class="page-item">
+                                        <a class="page-link" href="{{ url_for('checkpoints_slug.view_both_records', slug=company.get_slug(), page=page_num, start_date=filters.start_date, end_date=filters.end_date, employee_id=filters.employee_id) }}">{{ page_num }}</a>
+                                    </li>
+                                    {% endif %}
+                                {% else %}
+                                <li class="page-item disabled">
+                                    <a class="page-link" href="#">...</a>
+                                </li>
+                                {% endif %}
+                            {% endfor %}
+
+                            {% if records.has_next %}
+                            <li class="page-item">
+                                <a class="page-link" href="{{ url_for('checkpoints_slug.view_both_records', slug=company.get_slug(), page=records.next_num, start_date=filters.start_date, end_date=filters.end_date, employee_id=filters.employee_id) }}">Siguiente</a>
+                            </li>
+                            {% else %}
+                            <li class="page-item disabled">
+                                <a class="page-link" href="#">Siguiente</a>
+                            </li>
+                            {% endif %}
+                        </ul>
+                    </nav>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
