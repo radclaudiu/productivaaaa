@@ -2,7 +2,7 @@ import os
 import logging
 from datetime import datetime
 
-from flask import Flask, request, session, render_template
+from flask import Flask, request, session, render_template, send_file
 from flask_sqlalchemy import SQLAlchemy
 from flask_login import LoginManager
 from flask_wtf.csrf import CSRFProtect
@@ -169,3 +169,19 @@ from flask_login import current_user
 
 # Create the application instance
 app = create_app()
+
+# Rutas para documentación
+@app.route('/docs/html')
+def docs_html():
+    """Sirve la documentación HTML de las funciones."""
+    return send_file('funciones_app.html')
+
+@app.route('/docs/md')
+def docs_md():
+    """Sirve la documentación Markdown de las funciones."""
+    return send_file('funciones_app.md')
+
+@app.route('/docs/txt')
+def docs_txt():
+    """Sirve la documentación de texto de las funciones."""
+    return send_file('funciones_documentadas.txt')

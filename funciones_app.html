@@ -1,0 +1,4080 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentación de Funciones</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #3498db;
+            border-bottom: 2px solid #3498db;
+            padding-bottom: 5px;
+            margin-top: 40px;
+        }
+        h3 {
+            color: #2980b9;
+            margin-top: 20px;
+        }
+        .function {
+            background-color: #f9f9f9;
+            border-left: 4px solid #3498db;
+            padding: 15px;
+            margin-bottom: 20px;
+            border-radius: 0 4px 4px 0;
+        }
+        .function:hover {
+            background-color: #f1f1f1;
+        }
+        .function-name {
+            font-family: monospace;
+            font-weight: bold;
+            color: #e74c3c;
+        }
+        .function-meta {
+            font-size: 0.9em;
+            color: #7f8c8d;
+            margin-bottom: 10px;
+        }
+        .function-description {
+            margin-bottom: 10px;
+        }
+        .docstring {
+            background-color: #f1f1f1;
+            padding: 10px;
+            border-radius: 4px;
+            font-family: monospace;
+            white-space: pre-wrap;
+            margin-top: 10px;
+            display: none;
+        }
+        .toggle-docstring {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 5px 10px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 0.8em;
+        }
+        .toggle-docstring:hover {
+            background-color: #2980b9;
+        }
+        .search-container {
+            margin: 20px 0;
+            text-align: center;
+        }
+        #searchInput {
+            padding: 8px;
+            width: 300px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+        }
+        .file-container {
+            margin-bottom: 40px;
+        }
+        .file-header {
+            cursor: pointer;
+            padding: 10px;
+            background-color: #f5f5f5;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        .file-header:hover {
+            background-color: #e9e9e9;
+        }
+        .file-functions {
+            display: none;
+        }
+        .expand-all, .collapse-all {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 8px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            margin-right: 10px;
+        }
+        .expand-all:hover, .collapse-all:hover {
+            background-color: #2980b9;
+        }
+        .count-badge {
+            background-color: #e74c3c;
+            color: white;
+            border-radius: 50%;
+            padding: 2px 8px;
+            font-size: 0.8em;
+            margin-left: 10px;
+        }
+        .timestamp {
+            font-size: 0.8em;
+            color: #7f8c8d;
+            text-align: center;
+            margin-top: 40px;
+        }
+        .toc {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 4px;
+            margin-bottom: 30px;
+        }
+        .toc h2 {
+            margin-top: 0;
+        }
+        .toc ul {
+            list-style-type: none;
+            padding: 0;
+        }
+        .toc a {
+            text-decoration: none;
+            color: #3498db;
+        }
+        .toc a:hover {
+            text-decoration: underline;
+        }
+    </style>
+</head>
+<body>
+    <h1>Documentación de Funciones de la Aplicación</h1>
+    <p class="timestamp">Generado automáticamente el 2025-04-03 15:38:38</p>
+    
+    <div class="search-container">
+        <input type="text" id="searchInput" placeholder="Buscar funciones...">
+    </div>
+    
+    <div class="controls">
+        <button class="expand-all">Expandir Todos</button>
+        <button class="collapse-all">Colapsar Todos</button>
+    </div>
+    
+    <div class="toc">
+        <h2>Archivos</h2>
+        <ul><li><a href="#app_py">app.py</a> <span class="count-badge">7</span></li>
+<li><a href="#close_operation_hours_py">close_operation_hours.py</a> <span class="count-badge">1</span></li>
+<li><a href="#config_py">config.py</a> <span class="count-badge">1</span></li>
+<li><a href="#create_employees_py">create_employees.py</a> <span class="count-badge">3</span></li>
+<li><a href="#create_remaining_employees_py">create_remaining_employees.py</a> <span class="count-badge">3</span></li>
+<li><a href="#forms_py">forms.py</a> <span class="count-badge">19</span></li>
+<li><a href="#forms_checkpoints_py">forms_checkpoints.py</a> <span class="count-badge">6</span></li>
+<li><a href="#forms_tasks_py">forms_tasks.py</a> <span class="count-badge">12</span></li>
+<li><a href="#forms_tmp_py">forms_tmp.py</a> <span class="count-badge">18</span></li>
+<li><a href="#migrate_auto_checkout_removal_py">migrate_auto_checkout_removal.py</a> <span class="count-badge">1</span></li>
+<li><a href="#migrate_checkpoints_py">migrate_checkpoints.py</a> <span class="count-badge">1</span></li>
+<li><a href="#migrate_contract_hours_activation_py">migrate_contract_hours_activation.py</a> <span class="count-badge">1</span></li>
+<li><a href="#migrate_employee_on_shift_py">migrate_employee_on_shift.py</a> <span class="count-badge">1</span></li>
+<li><a href="#migrate_label_templates_py">migrate_label_templates.py</a> <span class="count-badge">1</span></li>
+<li><a href="#migrate_operation_hours_py">migrate_operation_hours.py</a> <span class="count-badge">1</span></li>
+<li><a href="#migrate_original_records_py">migrate_original_records.py</a> <span class="count-badge">1</span></li>
+<li><a href="#migrate_task_instances_py">migrate_task_instances.py</a> <span class="count-badge">1</span></li>
+<li><a href="#models_py">models.py</a> <span class="count-badge">31</span></li>
+<li><a href="#models_checkpoints_py">models_checkpoints.py</a> <span class="count-badge">15</span></li>
+<li><a href="#models_tasks_py">models_tasks.py</a> <span class="count-badge">35</span></li>
+<li><a href="#reset_checkpoint_password_py">reset_checkpoint_password.py</a> <span class="count-badge">1</span></li>
+<li><a href="#routes_py">routes.py</a> <span class="count-badge">52</span></li>
+<li><a href="#routes_checkpoints_py">routes_checkpoints.py</a> <span class="count-badge">38</span></li>
+<li><a href="#routes_checkpoints_new_py">routes_checkpoints_new.py</a> <span class="count-badge">23</span></li>
+<li><a href="#routes_tasks_py">routes_tasks.py</a> <span class="count-badge">60</span></li>
+<li><a href="#run_checkpoint_closer_py">run_checkpoint_closer.py</a> <span class="count-badge">2</span></li>
+<li><a href="#scheduled_checkpoints_closer_py">scheduled_checkpoints_closer.py</a> <span class="count-badge">2</span></li>
+<li><a href="#test_close_operation_hours_py">test_close_operation_hours.py</a> <span class="count-badge">3</span></li>
+<li><a href="#timezone_config_py">timezone_config.py</a> <span class="count-badge">3</span></li>
+<li><a href="#update_db_py">update_db.py</a> <span class="count-badge">1</span></li>
+<li><a href="#utils_py">utils.py</a> <span class="count-badge">15</span></li>
+<li><a href="#utils_checkpoints_py">utils_checkpoints.py</a> <span class="count-badge">5</span></li>
+<li><a href="#utils_tasks_py">utils_tasks.py</a> <span class="count-badge">5</span></li>
+<li><a href="#verify_checkpoint_closures_py">verify_checkpoint_closures.py</a> <span class="count-badge">1</span></li>
+
+        </ul>
+    </div>
+    
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('app_py')">
+            <h2 id="app_py">app.py <span class="count-badge">7</span></h2>
+        </div>
+        <div class="file-functions" id="file_app_py">
+        
+            <div class="function">
+                <h3 class="function-name">create_app</h3>
+                <div class="function-meta">Línea: 25</div>
+                <div class="function-description">Create and configure the Flask application.</div>
+                
+            <div class="docstring" id="docstring_app_py_25">
+Create and configure the Flask application.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('app_py_25')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">forbidden_page</h3>
+                <div class="function-meta">Línea: 87</div>
+                <div class="function-description">Maneja las respuestas HTTP 403 (Prohibido)</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">page_not_found</h3>
+                <div class="function-meta">Línea: 91</div>
+                <div class="function-description">Maneja las respuestas HTTP 404 (No encontrado)</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">server_error_page</h3>
+                <div class="function-meta">Línea: 95</div>
+                <div class="function-description">Maneja las respuestas HTTP 500 (Error del servidor)</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">load_locations</h3>
+                <div class="function-meta">Línea: 100</div>
+                <div class="function-description">Carga locations</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">log_activity</h3>
+                <div class="function-meta">Línea: 137</div>
+                <div class="function-description">Registra activity</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">after_request_handler</h3>
+                <div class="function-meta">Línea: 156</div>
+                <div class="function-description">Función para after request handler</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('close_operation_hours_py')">
+            <h2 id="close_operation_hours_py">close_operation_hours.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_close_operation_hours_py">
+        
+            <div class="function">
+                <h3 class="function-name">auto_close_pending_records</h3>
+                <div class="function-meta">Línea: 16</div>
+                <div class="function-description">Cierra automáticamente todos los registros pendientes de los puntos de fichaje </div>
+                
+            <div class="docstring" id="docstring_close_operation_hours_py_16">
+Cierra automáticamente todos los registros pendientes de los puntos de fichaje 
+que han llegado a su hora de fin de funcionamiento configurada.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('close_operation_hours_py_16')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('config_py')">
+            <h2 id="config_py">config.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_config_py">
+        
+            <div class="function">
+                <h3 class="function-name">init_app</h3>
+                <div class="function-meta">Línea: 52</div>
+                <div class="function-description">Inicializa app</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('create_employees_py')">
+            <h2 id="create_employees_py">create_employees.py <span class="count-badge">3</span></h2>
+        </div>
+        <div class="file-functions" id="file_create_employees_py">
+        
+            <div class="function">
+                <h3 class="function-name">generate_dni</h3>
+                <div class="function-meta">Línea: 33</div>
+                <div class="function-description">Genera un DNI ficticio con formato español válido (8 números + letra)</div>
+                
+            <div class="docstring" id="docstring_create_employees_py_33">
+Genera un DNI ficticio con formato español válido (8 números + letra)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('create_employees_py_33')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_bank_account</h3>
+                <div class="function-meta">Línea: 41</div>
+                <div class="function-description">Genera un número de cuenta bancaria ficticio</div>
+                
+            <div class="docstring" id="docstring_create_employees_py_41">
+Genera un número de cuenta bancaria ficticio
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('create_employees_py_41')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_employees</h3>
+                <div class="function-meta">Línea: 51</div>
+                <div class="function-description">Crea 30 empleados ficticios para la empresa 100RCS (ID 8)</div>
+                
+            <div class="docstring" id="docstring_create_employees_py_51">
+Crea 30 empleados ficticios para la empresa 100RCS (ID 8)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('create_employees_py_51')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('create_remaining_employees_py')">
+            <h2 id="create_remaining_employees_py">create_remaining_employees.py <span class="count-badge">3</span></h2>
+        </div>
+        <div class="file-functions" id="file_create_remaining_employees_py">
+        
+            <div class="function">
+                <h3 class="function-name">generate_dni</h3>
+                <div class="function-meta">Línea: 24</div>
+                <div class="function-description">Genera un DNI ficticio con formato español válido (8 números + letra)</div>
+                
+            <div class="docstring" id="docstring_create_remaining_employees_py_24">
+Genera un DNI ficticio con formato español válido (8 números + letra)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('create_remaining_employees_py_24')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_bank_account</h3>
+                <div class="function-meta">Línea: 32</div>
+                <div class="function-description">Genera un número de cuenta bancaria ficticio</div>
+                
+            <div class="docstring" id="docstring_create_remaining_employees_py_32">
+Genera un número de cuenta bancaria ficticio
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('create_remaining_employees_py_32')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_remaining_employees</h3>
+                <div class="function-meta">Línea: 42</div>
+                <div class="function-description">Crea los empleados ficticios restantes para la empresa 100RCS (ID 8)</div>
+                
+            <div class="docstring" id="docstring_create_remaining_employees_py_42">
+Crea los empleados ficticios restantes para la empresa 100RCS (ID 8)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('create_remaining_employees_py_42')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('forms_py')">
+            <h2 id="forms_py">forms.py <span class="count-badge">19</span></h2>
+        </div>
+        <div class="file-functions" id="file_forms_py">
+        
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 36</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_username</h3>
+                <div class="function-meta">Línea: 50</div>
+                <div class="function-description">Valida username</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_email</h3>
+                <div class="function-meta">Línea: 55</div>
+                <div class="function-description">Valida email</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_role</h3>
+                <div class="function-meta">Línea: 60</div>
+                <div class="function-description">Valida role</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 79</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_username</h3>
+                <div class="function-meta">Línea: 96</div>
+                <div class="function-description">Valida username</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_email</h3>
+                <div class="function-meta">Línea: 102</div>
+                <div class="function-description">Valida email</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_role</h3>
+                <div class="function-meta">Línea: 108</div>
+                <div class="function-description">Valida role</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 152</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_tax_id</h3>
+                <div class="function-meta">Línea: 156</div>
+                <div class="function-description">Valida tax id</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_name</h3>
+                <div class="function-meta">Línea: 167</div>
+                <div class="function-description">Validar que el nombre no tenga caracteres especiales</div>
+                
+            <div class="docstring" id="docstring_forms_py_167">
+Validar que el nombre no tenga caracteres especiales
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('forms_py_167')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 189</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_status_end_date</h3>
+                <div class="function-meta">Línea: 212</div>
+                <div class="function-description">Valida status end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_time</h3>
+                <div class="function-meta">Línea: 227</div>
+                <div class="function-description">Valida end time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate</h3>
+                <div class="function-meta">Línea: 269</div>
+                <div class="function-description">Función para validate</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_check_out_time</h3>
+                <div class="function-meta">Línea: 304</div>
+                <div class="function-description">Valida check out time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 314</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 325</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 334</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('forms_checkpoints_py')">
+            <h2 id="forms_checkpoints_py">forms_checkpoints.py <span class="count-badge">6</span></h2>
+        </div>
+        <div class="file-functions" id="file_forms_checkpoints_py">
+        
+            <div class="function">
+                <h3 class="function-name">validate_password</h3>
+                <div class="function-meta">Línea: 35</div>
+                <div class="function-description">Asegura que la contraseña y la confirmación coincidan</div>
+                
+            <div class="docstring" id="docstring_forms_checkpoints_py_35">
+Asegura que la contraseña y la confirmación coincidan
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('forms_checkpoints_py_35')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_operation_end_time</h3>
+                <div class="function-meta">Línea: 40</div>
+                <div class="function-description">Verifica que la hora de fin de operación sea posterior a la de inicio</div>
+                
+            <div class="docstring" id="docstring_forms_checkpoints_py_40">
+Verifica que la hora de fin de operación sea posterior a la de inicio
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('forms_checkpoints_py_40')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_weekly_hours</h3>
+                <div class="function-meta">Línea: 96</div>
+                <div class="function-description">Verifica que las horas semanales sean coherentes con las diarias</div>
+                
+            <div class="docstring" id="docstring_forms_checkpoints_py_96">
+Verifica que las horas semanales sean coherentes con las diarias
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('forms_checkpoints_py_96')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_normal_end_time</h3>
+                <div class="function-meta">Línea: 101</div>
+                <div class="function-description">Verifica que la hora de fin sea posterior a la de inicio</div>
+                
+            <div class="docstring" id="docstring_forms_checkpoints_py_101">
+Verifica que la hora de fin sea posterior a la de inicio
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('forms_checkpoints_py_101')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_check_out_time</h3>
+                <div class="function-meta">Línea: 119</div>
+                <div class="function-description">Verifica que la hora de salida sea posterior a la de entrada</div>
+                
+            <div class="docstring" id="docstring_forms_checkpoints_py_119">
+Verifica que la hora de salida sea posterior a la de entrada
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('forms_checkpoints_py_119')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 141</div>
+                <div class="function-description">Verifica que la fecha de fin sea posterior a la de inicio</div>
+                
+            <div class="docstring" id="docstring_forms_checkpoints_py_141">
+Verifica que la fecha de fin sea posterior a la de inicio
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('forms_checkpoints_py_141')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('forms_tasks_py')">
+            <h2 id="forms_tasks_py">forms_tasks.py <span class="count-badge">12</span></h2>
+        </div>
+        <div class="file-functions" id="file_forms_tasks_py">
+        
+            <div class="function">
+                <h3 class="function-name">validate_pin</h3>
+                <div class="function-meta">Línea: 46</div>
+                <div class="function-description">Valida pin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 71</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 77</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate</h3>
+                <div class="function-meta">Línea: 81</div>
+                <div class="function-description">Función para validate</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_time</h3>
+                <div class="function-meta">Línea: 100</div>
+                <div class="function-description">Valida end time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_time</h3>
+                <div class="function-meta">Línea: 110</div>
+                <div class="function-description">Valida end time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_time</h3>
+                <div class="function-meta">Línea: 123</div>
+                <div class="function-description">Valida end time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_time</h3>
+                <div class="function-meta">Línea: 132</div>
+                <div class="function-description">Valida end time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_pin</h3>
+                <div class="function-meta">Línea: 149</div>
+                <div class="function-description">Valida pin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_time</h3>
+                <div class="function-meta">Línea: 168</div>
+                <div class="function-description">Valida end time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 204</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 219</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('forms_tmp_py')">
+            <h2 id="forms_tmp_py">forms_tmp.py <span class="count-badge">18</span></h2>
+        </div>
+        <div class="file-functions" id="file_forms_tmp_py">
+        
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 36</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_username</h3>
+                <div class="function-meta">Línea: 50</div>
+                <div class="function-description">Valida username</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_email</h3>
+                <div class="function-meta">Línea: 55</div>
+                <div class="function-description">Valida email</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_role</h3>
+                <div class="function-meta">Línea: 60</div>
+                <div class="function-description">Valida role</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 79</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_username</h3>
+                <div class="function-meta">Línea: 96</div>
+                <div class="function-description">Valida username</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_email</h3>
+                <div class="function-meta">Línea: 102</div>
+                <div class="function-description">Valida email</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_role</h3>
+                <div class="function-meta">Línea: 108</div>
+                <div class="function-description">Valida role</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 137</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_tax_id</h3>
+                <div class="function-meta">Línea: 141</div>
+                <div class="function-description">Valida tax id</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 168</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_status_end_date</h3>
+                <div class="function-meta">Línea: 191</div>
+                <div class="function-description">Valida status end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_time</h3>
+                <div class="function-meta">Línea: 206</div>
+                <div class="function-description">Valida end time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate</h3>
+                <div class="function-meta">Línea: 248</div>
+                <div class="function-description">Función para validate</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_check_out_time</h3>
+                <div class="function-meta">Línea: 283</div>
+                <div class="function-description">Valida check out time</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 293</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 304</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_end_date</h3>
+                <div class="function-meta">Línea: 313</div>
+                <div class="function-description">Valida end date</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_auto_checkout_removal_py')">
+            <h2 id="migrate_auto_checkout_removal_py">migrate_auto_checkout_removal.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_auto_checkout_removal_py">
+        
+            <div class="function">
+                <h3 class="function-name">run_migration</h3>
+                <div class="function-meta">Línea: 8</div>
+                <div class="function-description">Elimina la columna auto_checkout_time de la tabla checkpoints</div>
+                
+            <div class="docstring" id="docstring_migrate_auto_checkout_removal_py_8">
+Elimina la columna auto_checkout_time de la tabla checkpoints
+que fue parte del sistema de auto-checkout que ha sido eliminado.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_auto_checkout_removal_py_8')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_checkpoints_py')">
+            <h2 id="migrate_checkpoints_py">migrate_checkpoints.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_checkpoints_py">
+        
+            <div class="function">
+                <h3 class="function-name">create_checkpoint_tables</h3>
+                <div class="function-meta">Línea: 8</div>
+                <div class="function-description">Función para crear las tablas de puntos de fichaje</div>
+                
+            <div class="docstring" id="docstring_migrate_checkpoints_py_8">
+Función para crear las tablas de puntos de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_checkpoints_py_8')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_contract_hours_activation_py')">
+            <h2 id="migrate_contract_hours_activation_py">migrate_contract_hours_activation.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_contract_hours_activation_py">
+        
+            <div class="function">
+                <h3 class="function-name">add_activation_columns</h3>
+                <div class="function-meta">Línea: 18</div>
+                <div class="function-description">Añade las columnas use_normal_schedule y use_flexibility a la tabla employee_contract_hours</div>
+                
+            <div class="docstring" id="docstring_migrate_contract_hours_activation_py_18">
+Añade las columnas use_normal_schedule y use_flexibility a la tabla employee_contract_hours
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_contract_hours_activation_py_18')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_employee_on_shift_py')">
+            <h2 id="migrate_employee_on_shift_py">migrate_employee_on_shift.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_employee_on_shift_py">
+        
+            <div class="function">
+                <h3 class="function-name">add_is_on_shift_column</h3>
+                <div class="function-meta">Línea: 10</div>
+                <div class="function-description">Añade la columna is_on_shift a la tabla employees</div>
+                
+            <div class="docstring" id="docstring_migrate_employee_on_shift_py_10">
+Añade la columna is_on_shift a la tabla employees
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_employee_on_shift_py_10')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_label_templates_py')">
+            <h2 id="migrate_label_templates_py">migrate_label_templates.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_label_templates_py">
+        
+            <div class="function">
+                <h3 class="function-name">create_label_tables</h3>
+                <div class="function-meta">Línea: 17</div>
+                <div class="function-description">Crea las tablas relacionadas con las etiquetas si no existen</div>
+                
+            <div class="docstring" id="docstring_migrate_label_templates_py_17">
+Crea las tablas relacionadas con las etiquetas si no existen
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_label_templates_py_17')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_operation_hours_py')">
+            <h2 id="migrate_operation_hours_py">migrate_operation_hours.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_operation_hours_py">
+        
+            <div class="function">
+                <h3 class="function-name">migrate</h3>
+                <div class="function-meta">Línea: 10</div>
+                <div class="function-description">Agrega los campos necesarios para la configuración de horario de funcionamiento:</div>
+                
+            <div class="docstring" id="docstring_migrate_operation_hours_py_10">
+Agrega los campos necesarios para la configuración de horario de funcionamiento:
+- operation_start_time: Hora de inicio de funcionamiento
+- operation_end_time: Hora de fin de funcionamiento
+- enforce_operation_hours: Si se debe aplicar el horario de funcionamiento
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_operation_hours_py_10')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_original_records_py')">
+            <h2 id="migrate_original_records_py">migrate_original_records.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_original_records_py">
+        
+            <div class="function">
+                <h3 class="function-name">create_original_records_table</h3>
+                <div class="function-meta">Línea: 8</div>
+                <div class="function-description">Crea la tabla para almacenar registros originales de fichajes</div>
+                
+            <div class="docstring" id="docstring_migrate_original_records_py_8">
+Crea la tabla para almacenar registros originales de fichajes
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_original_records_py_8')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('migrate_task_instances_py')">
+            <h2 id="migrate_task_instances_py">migrate_task_instances.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_migrate_task_instances_py">
+        
+            <div class="function">
+                <h3 class="function-name">create_task_instances_table</h3>
+                <div class="function-meta">Línea: 9</div>
+                <div class="function-description">Crea la tabla para almacenar instancias de tareas programadas</div>
+                
+            <div class="docstring" id="docstring_migrate_task_instances_py_9">
+Crea la tabla para almacenar instancias de tareas programadas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('migrate_task_instances_py_9')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('models_py')">
+            <h2 id="models_py">models.py <span class="count-badge">31</span></h2>
+        </div>
+        <div class="file-functions" id="file_models_py">
+        
+            <div class="function">
+                <h3 class="function-name">company_id</h3>
+                <div class="function-meta">Línea: 41</div>
+                <div class="function-description">Función para company id</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">company</h3>
+                <div class="function-meta">Línea: 47</div>
+                <div class="function-description">Función para company</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">set_password</h3>
+                <div class="function-meta">Línea: 56</div>
+                <div class="function-description">Establece password</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">check_password</h3>
+                <div class="function-meta">Línea: 59</div>
+                <div class="function-description">Verifica password</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">is_admin</h3>
+                <div class="function-meta">Línea: 62</div>
+                <div class="function-description">Comprueba si admin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">is_gerente</h3>
+                <div class="function-meta">Línea: 65</div>
+                <div class="function-description">Comprueba si gerente</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">is_empleado</h3>
+                <div class="function-meta">Línea: 68</div>
+                <div class="function-description">Comprueba si empleado</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 71</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 74</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">load_user</h3>
+                <div class="function-meta">Línea: 87</div>
+                <div class="function-description">Carga user</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 114</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_slug</h3>
+                <div class="function-meta">Línea: 117</div>
+                <div class="function-description">Obtiene el slug (URL amigable) del nombre de la empresa</div>
+                
+            <div class="docstring" id="docstring_models_py_117">
+Obtiene el slug (URL amigable) del nombre de la empresa
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_py_117')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 122</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 201</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 204</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 241</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 258</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 276</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 294</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 297</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 322</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 325</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_realistic_time</h3>
+                <div class="function-meta">Línea: 337</div>
+                <div class="function-description">Generate a realistic check-in or check-out time with random variation.</div>
+                
+            <div class="docstring" id="docstring_models_py_337">
+Generate a realistic check-in or check-out time with random variation.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_py_337')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_check_ins_for_schedule</h3>
+                <div class="function-meta">Línea: 354</div>
+                <div class="function-description">Generate check-ins for an employee based on their schedule.</div>
+                
+            <div class="docstring" id="docstring_models_py_354">
+Generate check-ins for an employee based on their schedule.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_py_354')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 451</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 454</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">total_days</h3>
+                <div class="function-meta">Línea: 468</div>
+                <div class="function-description">Calculate the total number of days in this vacation period.</div>
+                
+            <div class="docstring" id="docstring_models_py_468">
+Calculate the total number of days in this vacation period.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_py_468')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">mark_as_signed</h3>
+                <div class="function-meta">Línea: 474</div>
+                <div class="function-description">Mark the vacation as signed by the employee.</div>
+                
+            <div class="docstring" id="docstring_models_py_474">
+Mark the vacation as signed by the employee.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_py_474')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">mark_as_enjoyed</h3>
+                <div class="function-meta">Línea: 479</div>
+                <div class="function-description">Mark the vacation as enjoyed after the date has passed.</div>
+                
+            <div class="docstring" id="docstring_models_py_479">
+Mark the vacation as enjoyed after the date has passed.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_py_479')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">overlaps_with</h3>
+                <div class="function-meta">Línea: 484</div>
+                <div class="function-description">Check if this vacation period overlaps with the given dates.</div>
+                
+            <div class="docstring" id="docstring_models_py_484">
+Check if this vacation period overlaps with the given dates.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_py_484')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 500</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('models_checkpoints_py')">
+            <h2 id="models_checkpoints_py">models_checkpoints.py <span class="count-badge">15</span></h2>
+        </div>
+        <div class="file-functions" id="file_models_checkpoints_py">
+        
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 58</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">set_password</h3>
+                <div class="function-meta">Línea: 61</div>
+                <div class="function-description">Establece password</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">verify_password</h3>
+                <div class="function-meta">Línea: 64</div>
+                <div class="function-description">Verifica una contraseña contra su hash</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 102</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">duration</h3>
+                <div class="function-meta">Línea: 106</div>
+                <div class="function-description">Calcula la duración del fichaje en horas</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_106">
+Calcula la duración del fichaje en horas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_106')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">has_original_record</h3>
+                <div class="function-meta">Línea: 129</div>
+                <div class="function-description">Comprueba si este registro tiene un registro original asociado</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_129">
+Comprueba si este registro tiene un registro original asociado
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_129')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 134</div>
+                <div class="function-description">Convierte el registro a un diccionario para serialización</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_134">
+Convierte el registro a un diccionario para serialización
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_134')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 175</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">resolve</h3>
+                <div class="function-meta">Línea: 178</div>
+                <div class="function-description">Marca la incidencia como resuelta</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_178">
+Marca la incidencia como resuelta
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_178')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">duration</h3>
+                <div class="function-meta">Línea: 214</div>
+                <div class="function-description">Calcula la duración del fichaje original en horas</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_214">
+Calcula la duración del fichaje original en horas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_214')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 236</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 239</div>
+                <div class="function-description">Convierte el registro a un diccionario para serialización</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_239">
+Convierte el registro a un diccionario para serialización
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_239')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 287</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">is_overtime</h3>
+                <div class="function-meta">Línea: 290</div>
+                <div class="function-description">Comprueba si una duración de horas supera el máximo diario</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_290">
+Comprueba si una duración de horas supera el máximo diario
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_290')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">calculate_adjusted_hours</h3>
+                <div class="function-meta">Línea: 294</div>
+                <div class="function-description">Calcula el tiempo ajustado según el contrato y configuración</div>
+                
+            <div class="docstring" id="docstring_models_checkpoints_py_294">
+Calcula el tiempo ajustado según el contrato y configuración
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_checkpoints_py_294')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('models_tasks_py')">
+            <h2 id="models_tasks_py">models_tasks.py <span class="count-badge">35</span></h2>
+        </div>
+        <div class="file-functions" id="file_models_tasks_py">
+        
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 53</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 56</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 93</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">set_portal_password</h3>
+                <div class="function-meta">Línea: 96</div>
+                <div class="function-description">Establece una contraseña encriptada para el portal</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_96">
+Establece una contraseña encriptada para el portal
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_96')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">check_portal_password</h3>
+                <div class="function-meta">Línea: 100</div>
+                <div class="function-description">Verifica si la contraseña proporcionada coincide con la almacenada</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_100">
+Verifica si la contraseña proporcionada coincide con la almacenada
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_100')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">portal_fixed_username</h3>
+                <div class="function-meta">Línea: 109</div>
+                <div class="function-description">Retorna el nombre de usuario para este local</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_109">
+Retorna el nombre de usuario para este local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_109')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">portal_fixed_password</h3>
+                <div class="function-meta">Línea: 115</div>
+                <div class="function-description">Retorna la contraseña para este local</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_115">
+Retorna la contraseña para este local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_115')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 125</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 159</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">set_pin</h3>
+                <div class="function-meta">Línea: 162</div>
+                <div class="function-description">Establece pin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">check_pin</h3>
+                <div class="function-meta">Línea: 166</div>
+                <div class="function-description">Verifica pin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_full_name</h3>
+                <div class="function-meta">Línea: 169</div>
+                <div class="function-description">Obtiene full name</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 172</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 214</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 217</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">is_due_today</h3>
+                <div class="function-meta">Línea: 231</div>
+                <div class="function-description">Comprueba si la tarea está programada para hoy según su programación.</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_231">
+Comprueba si la tarea está programada para hoy según su programación.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_231')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 297</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">is_active_for_date</h3>
+                <div class="function-meta">Línea: 305</div>
+                <div class="function-description">Comprueba si este horario está activo para una fecha determinada.</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_305">
+Comprueba si este horario está activo para una fecha determinada.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_305')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 350</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">day_matches_today</h3>
+                <div class="function-meta">Línea: 354</div>
+                <div class="function-description">Comprueba si el día de la semana corresponde al día actual</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_354">
+Comprueba si el día de la semana corresponde al día actual
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_354')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 384</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 387</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 411</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 414</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 456</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 459</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_shelf_life_expiry</h3>
+                <div class="function-meta">Línea: 470</div>
+                <div class="function-description">Calcula la fecha de caducidad secundaria basada en la vida útil en días</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_470">
+Calcula la fecha de caducidad secundaria basada en la vida útil en días
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_470')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 499</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 502</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_expiry_date</h3>
+                <div class="function-meta">Línea: 511</div>
+                <div class="function-description">Calcula la fecha de caducidad basada en horas</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_511">
+Calcula la fecha de caducidad basada en horas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_511')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_expiry_datetime</h3>
+                <div class="function-meta">Línea: 516</div>
+                <div class="function-description">Calcula el datetime exacto de caducidad, incluyendo la hora</div>
+                
+            <div class="docstring" id="docstring_models_tasks_py_516">
+Calcula el datetime exacto de caducidad, incluyendo la hora
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('models_tasks_py_516')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 577</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 580</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__repr__</h3>
+                <div class="function-meta">Línea: 629</div>
+                <div class="function-description">Función para   repr  </div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">to_dict</h3>
+                <div class="function-meta">Línea: 632</div>
+                <div class="function-description">Función para to dict</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('reset_checkpoint_password_py')">
+            <h2 id="reset_checkpoint_password_py">reset_checkpoint_password.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_reset_checkpoint_password_py">
+        
+            <div class="function">
+                <h3 class="function-name">reset_checkpoint_password</h3>
+                <div class="function-meta">Línea: 5</div>
+                <div class="function-description">Resetea la contraseña del punto de fichaje con username &#39;movil&#39; a &#39;movil&#39;</div>
+                
+            <div class="docstring" id="docstring_reset_checkpoint_password_py_5">
+Resetea la contraseña del punto de fichaje con username &#39;movil&#39; a &#39;movil&#39;
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('reset_checkpoint_password_py_5')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('routes_py')">
+            <h2 id="routes_py">routes.py <span class="count-badge">52</span></h2>
+        </div>
+        <div class="file-functions" id="file_routes_py">
+        
+            <div class="function">
+                <h3 class="function-name">admin_required</h3>
+                <div class="function-meta">Línea: 36</div>
+                <div class="function-description">Función para admin required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 38</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manager_required</h3>
+                <div class="function-meta">Línea: 46</div>
+                <div class="function-description">Función para manager required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 48</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">login</h3>
+                <div class="function-meta">Línea: 57</div>
+                <div class="function-description">Gestiona el inicio de sesión</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">logout</h3>
+                <div class="function-meta">Línea: 82</div>
+                <div class="function-description">Gestiona el cierre de sesión</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">register</h3>
+                <div class="function-meta">Línea: 90</div>
+                <div class="function-description">Gestiona el registro de nuevos usuarios</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">index</h3>
+                <div class="function-meta">Línea: 128</div>
+                <div class="function-description">Función para index</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">dashboard</h3>
+                <div class="function-meta">Línea: 135</div>
+                <div class="function-description">Función para dashboard</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">profile</h3>
+                <div class="function-meta">Línea: 141</div>
+                <div class="function-description">Función para profile</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">search</h3>
+                <div class="function-meta">Línea: 159</div>
+                <div class="function-description">Función para search</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_companies</h3>
+                <div class="function-meta">Línea: 217</div>
+                <div class="function-description">Función para list companies</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">view_company</h3>
+                <div class="function-meta">Línea: 234</div>
+                <div class="function-description">Función para view company</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_company</h3>
+                <div class="function-meta">Línea: 259</div>
+                <div class="function-description">Crea company</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_company</h3>
+                <div class="function-meta">Línea: 287</div>
+                <div class="function-description">Función para edit company</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">export_company_data</h3>
+                <div class="function-meta">Línea: 335</div>
+                <div class="function-description">Exporta company data</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_company</h3>
+                <div class="function-meta">Línea: 367</div>
+                <div class="function-description">Elimina company</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_employees</h3>
+                <div class="function-meta">Línea: 548</div>
+                <div class="function-description">Función para list employees</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">view_employee</h3>
+                <div class="function-meta">Línea: 611</div>
+                <div class="function-description">Función para view employee</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_employee</h3>
+                <div class="function-meta">Línea: 623</div>
+                <div class="function-description">Crea employee</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_employee</h3>
+                <div class="function-meta">Línea: 682</div>
+                <div class="function-description">Función para edit employee</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_employee</h3>
+                <div class="function-meta">Línea: 769</div>
+                <div class="function-description">Elimina employee</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manage_status</h3>
+                <div class="function-meta">Línea: 805</div>
+                <div class="function-description">Función para manage status</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_documents</h3>
+                <div class="function-meta">Línea: 855</div>
+                <div class="function-description">Función para list documents</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">upload_document</h3>
+                <div class="function-meta">Línea: 871</div>
+                <div class="function-description">Función para upload document</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">download_document</h3>
+                <div class="function-meta">Línea: 909</div>
+                <div class="function-description">Función para download document</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_document</h3>
+                <div class="function-meta">Línea: 928</div>
+                <div class="function-description">Elimina document</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manage_notes</h3>
+                <div class="function-meta">Línea: 951</div>
+                <div class="function-description">Función para manage notes</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">backup_database</h3>
+                <div class="function-meta">Línea: 984</div>
+                <div class="function-description">Create a database backup</div>
+                
+            <div class="docstring" id="docstring_routes_py_984">
+Create a database backup
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_py_984')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_note</h3>
+                <div class="function-meta">Línea: 1002</div>
+                <div class="function-description">Elimina note</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">view_history</h3>
+                <div class="function-meta">Línea: 1020</div>
+                <div class="function-description">Función para view history</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_users</h3>
+                <div class="function-meta">Línea: 1037</div>
+                <div class="function-description">Función para list users</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_user</h3>
+                <div class="function-meta">Línea: 1043</div>
+                <div class="function-description">Función para edit user</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">reset_password</h3>
+                <div class="function-meta">Línea: 1092</div>
+                <div class="function-description">Reinicia la contraseña de un usuario</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">toggle_activation</h3>
+                <div class="function-meta">Línea: 1111</div>
+                <div class="function-description">Función para toggle activation</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_user</h3>
+                <div class="function-meta">Línea: 1134</div>
+                <div class="function-description">Elimina user</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_schedules</h3>
+                <div class="function-meta">Línea: 1158</div>
+                <div class="function-description">Función para list schedules</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_schedule</h3>
+                <div class="function-meta">Línea: 1175</div>
+                <div class="function-description">Crea schedule</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">weekly_schedule</h3>
+                <div class="function-meta">Línea: 1207</div>
+                <div class="function-description">Función para weekly schedule</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_schedule</h3>
+                <div class="function-meta">Línea: 1283</div>
+                <div class="function-description">Función para edit schedule</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_schedule</h3>
+                <div class="function-meta">Línea: 1315</div>
+                <div class="function-description">Elimina schedule</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_checkins</h3>
+                <div class="function-meta">Línea: 1335</div>
+                <div class="function-description">Función para list checkins</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_month_year</h3>
+                <div class="function-meta">Línea: 1353</div>
+                <div class="function-description">Obtiene month year</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_checkin</h3>
+                <div class="function-meta">Línea: 1386</div>
+                <div class="function-description">Crea checkin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_checkin</h3>
+                <div class="function-meta">Línea: 1425</div>
+                <div class="function-description">Función para edit checkin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_checkin</h3>
+                <div class="function-meta">Línea: 1470</div>
+                <div class="function-description">Elimina checkin</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">export_checkins</h3>
+                <div class="function-meta">Línea: 1489</div>
+                <div class="function-description">Exporta checkins</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_checkins_by_date</h3>
+                <div class="function-meta">Línea: 1523</div>
+                <div class="function-description">Elimina checkins by date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_checkins</h3>
+                <div class="function-meta">Línea: 1576</div>
+                <div class="function-description">Genera checkins</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_vacations</h3>
+                <div class="function-meta">Línea: 1619</div>
+                <div class="function-description">Función para list vacations</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_vacation</h3>
+                <div class="function-meta">Línea: 1636</div>
+                <div class="function-description">Crea vacation</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_vacation</h3>
+                <div class="function-meta">Línea: 1687</div>
+                <div class="function-description">Elimina vacation</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('routes_checkpoints_py')">
+            <h2 id="routes_checkpoints_py">routes_checkpoints.py <span class="count-badge">38</span></h2>
+        </div>
+        <div class="file-functions" id="file_routes_checkpoints_py">
+        
+            <div class="function">
+                <h3 class="function-name">admin_required</h3>
+                <div class="function-meta">Línea: 30</div>
+                <div class="function-description">Función para admin required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 32</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manager_required</h3>
+                <div class="function-meta">Línea: 40</div>
+                <div class="function-description">Función para manager required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 42</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">checkpoint_required</h3>
+                <div class="function-meta">Línea: 53</div>
+                <div class="function-description">Función para checkpoint required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 55</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">select_company</h3>
+                <div class="function-meta">Línea: 66</div>
+                <div class="function-description">Página de selección de empresa para el sistema de fichajes</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_66">
+Página de selección de empresa para el sistema de fichajes
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_66')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">index_company</h3>
+                <div class="function-meta">Línea: 87</div>
+                <div class="function-description">Página principal del sistema de fichajes para una empresa específica</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_87">
+Página principal del sistema de fichajes para una empresa específica
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_87')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_checkpoints</h3>
+                <div class="function-meta">Línea: 280</div>
+                <div class="function-description">Lista todos los puntos de fichaje disponibles</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_280">
+Lista todos los puntos de fichaje disponibles
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_280')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_checkpoint</h3>
+                <div class="function-meta">Línea: 312</div>
+                <div class="function-description">Crea un nuevo punto de fichaje</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_312">
+Crea un nuevo punto de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_312')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_checkpoint</h3>
+                <div class="function-meta">Línea: 382</div>
+                <div class="function-description">Edita un punto de fichaje existente</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_382">
+Edita un punto de fichaje existente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_382')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_checkpoint</h3>
+                <div class="function-meta">Línea: 441</div>
+                <div class="function-description">Elimina un punto de fichaje con todos sus registros asociados</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_441">
+Elimina un punto de fichaje con todos sus registros asociados
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_441')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_checkpoint_records</h3>
+                <div class="function-meta">Línea: 497</div>
+                <div class="function-description">Muestra los registros de fichaje de un punto específico</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_497">
+Muestra los registros de fichaje de un punto específico
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_497')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manage_contract_hours</h3>
+                <div class="function-meta">Línea: 519</div>
+                <div class="function-description">Gestiona la configuración de horas por contrato de un empleado</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_519">
+Gestiona la configuración de horas por contrato de un empleado
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_519')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">adjust_record</h3>
+                <div class="function-meta">Línea: 557</div>
+                <div class="function-description">Ajusta manualmente un registro de fichaje</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_557">
+Ajusta manualmente un registro de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_557')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">record_signature</h3>
+                <div class="function-meta">Línea: 648</div>
+                <div class="function-description">Permite al empleado firmar un registro de fichaje</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_648">
+Permite al empleado firmar un registro de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_648')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_records_all</h3>
+                <div class="function-meta">Línea: 687</div>
+                <div class="function-description">Muestra todos los registros de fichaje disponibles según permisos</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_687">
+Muestra todos los registros de fichaje disponibles según permisos
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_687')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_incidents</h3>
+                <div class="function-meta">Línea: 785</div>
+                <div class="function-description">Muestra todas las incidencias de fichaje según permisos</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_785">
+Muestra todas las incidencias de fichaje según permisos
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_785')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">resolve_incident</h3>
+                <div class="function-meta">Línea: 864</div>
+                <div class="function-description">Marca una incidencia como resuelta</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_864">
+Marca una incidencia como resuelta
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_864')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">view_original_records</h3>
+                <div class="function-meta">Línea: 907</div>
+                <div class="function-description">Página secreta para ver los registros originales de fichaje para una empresa específica</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_907">
+Página secreta para ver los registros originales de fichaje para una empresa específica
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_907')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">export_records</h3>
+                <div class="function-meta">Línea: 1024</div>
+                <div class="function-description">Exporta registros de fichaje a PDF</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1024">
+Exporta registros de fichaje a PDF
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1024')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">login</h3>
+                <div class="function-meta">Línea: 1098</div>
+                <div class="function-description">Página de login para puntos de fichaje</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1098">
+Página de login para puntos de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1098')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">login_to_checkpoint</h3>
+                <div class="function-meta">Línea: 1145</div>
+                <div class="function-description">Acceso directo a un punto de fichaje específico por ID</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1145">
+Acceso directo a un punto de fichaje específico por ID
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1145')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">logout</h3>
+                <div class="function-meta">Línea: 1179</div>
+                <div class="function-description">Cierra la sesión del punto de fichaje</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1179">
+Cierra la sesión del punto de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1179')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">checkpoint_dashboard</h3>
+                <div class="function-meta">Línea: 1193</div>
+                <div class="function-description">Dashboard principal del punto de fichaje</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1193">
+Dashboard principal del punto de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1193')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">employee_pin</h3>
+                <div class="function-meta">Línea: 1214</div>
+                <div class="function-description">Página para introducir el PIN del empleado</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1214">
+Página para introducir el PIN del empleado
+
+Nueva implementación con separación clara de responsabilidades:
+1. Validación del empleado y permisos
+2. Verificación del PIN
+3. Interfaz de usuario adaptativa según el estado del empleado
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1214')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_schedule_incident</h3>
+                <div class="function-meta">Línea: 1284</div>
+                <div class="function-description">Crea una incidencia relacionada con horarios</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1284">
+Crea una incidencia relacionada con horarios
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1284')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">process_employee_action</h3>
+                <div class="function-meta">Línea: 1296</div>
+                <div class="function-description">Función auxiliar para procesar las acciones de entrada/salida</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1296">
+Función auxiliar para procesar las acciones de entrada/salida
+Encapsula la lógica de negocio y el manejo de transacciones
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1296')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">fix_employee_state_inconsistency</h3>
+                <div class="function-meta">Línea: 1484</div>
+                <div class="function-description">Función auxiliar para detectar y corregir inconsistencias entre </div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1484">
+Función auxiliar para detectar y corregir inconsistencias entre 
+el estado is_on_shift y los registros de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1484')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">record_details</h3>
+                <div class="function-meta">Línea: 1513</div>
+                <div class="function-description">Muestra los detalles de un registro recién creado</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1513">
+Muestra los detalles de un registro recién creado
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1513')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">record_checkout</h3>
+                <div class="function-meta">Línea: 1535</div>
+                <div class="function-description">Registra la salida para un fichaje pendiente desde la pantalla de detalles</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1535">
+Registra la salida para un fichaje pendiente desde la pantalla de detalles
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1535')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">checkpoint_record_signature</h3>
+                <div class="function-meta">Línea: 1662</div>
+                <div class="function-description">Permite al empleado firmar un registro de fichaje desde el punto de fichaje</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1662">
+Permite al empleado firmar un registro de fichaje desde el punto de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1662')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">daily_report</h3>
+                <div class="function-meta">Línea: 1733</div>
+                <div class="function-description">Muestra un informe de fichajes del día actual</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1733">
+Muestra un informe de fichajes del día actual
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1733')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_company_employees</h3>
+                <div class="function-meta">Línea: 1777</div>
+                <div class="function-description">Devuelve la lista de empleados de la empresa en formato JSON</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1777">
+Devuelve la lista de empleados de la empresa en formato JSON
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1777')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">validate_pin</h3>
+                <div class="function-meta">Línea: 1816</div>
+                <div class="function-description">Validar el PIN del empleado mediante AJAX</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1816">
+Validar el PIN del empleado mediante AJAX
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1816')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">trigger_auto_checkout</h3>
+                <div class="function-meta">Línea: 1874</div>
+                <div class="function-description">Endpoint para informar que el sistema de auto-checkout ha sido eliminado</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1874">
+Endpoint para informar que el sistema de auto-checkout ha sido eliminado
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1874')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">check_credentials</h3>
+                <div class="function-meta">Línea: 1885</div>
+                <div class="function-description">Endpoint temporal para comprobar credenciales</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_py_1885">
+Endpoint temporal para comprobar credenciales
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_py_1885')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">init_app</h3>
+                <div class="function-meta">Línea: 1907</div>
+                <div class="function-description">Inicializa app</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('routes_checkpoints_new_py')">
+            <h2 id="routes_checkpoints_new_py">routes_checkpoints_new.py <span class="count-badge">23</span></h2>
+        </div>
+        <div class="file-functions" id="file_routes_checkpoints_new_py">
+        
+            <div class="function">
+                <h3 class="function-name">admin_required</h3>
+                <div class="function-meta">Línea: 29</div>
+                <div class="function-description">Función para admin required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 31</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manager_required</h3>
+                <div class="function-meta">Línea: 39</div>
+                <div class="function-description">Función para manager required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 41</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">checkpoint_required</h3>
+                <div class="function-meta">Línea: 52</div>
+                <div class="function-description">Función para checkpoint required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 54</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">view_original_records</h3>
+                <div class="function-meta">Línea: 66</div>
+                <div class="function-description">Página secreta para ver los registros originales antes de ajustes de una empresa específica</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_66">
+Página secreta para ver los registros originales antes de ajustes de una empresa específica
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_66')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 171</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">pages</h3>
+                <div class="function-meta">Línea: 178</div>
+                <div class="function-description">Función para pages</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">has_prev</h3>
+                <div class="function-meta">Línea: 182</div>
+                <div class="function-description">Comprueba si tiene prev</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">has_next</h3>
+                <div class="function-meta">Línea: 186</div>
+                <div class="function-description">Comprueba si tiene next</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">prev_num</h3>
+                <div class="function-meta">Línea: 190</div>
+                <div class="function-description">Función para prev num</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">next_num</h3>
+                <div class="function-meta">Línea: 194</div>
+                <div class="function-description">Función para next num</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_original_record</h3>
+                <div class="function-meta">Línea: 226</div>
+                <div class="function-description">Edita un registro original</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_226">
+Edita un registro original
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_226')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">restore_original_record</h3>
+                <div class="function-meta">Línea: 315</div>
+                <div class="function-description">Restaura los valores originales en el registro actual</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_315">
+Restaura los valores originales en el registro actual
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_315')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_original_record</h3>
+                <div class="function-meta">Línea: 365</div>
+                <div class="function-description">Elimina un registro original</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_365">
+Elimina un registro original
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_365')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">export_original_records</h3>
+                <div class="function-meta">Línea: 406</div>
+                <div class="function-description">Exporta los registros originales a PDF</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_406">
+Exporta los registros originales a PDF
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_406')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">export_original_records_pdf</h3>
+                <div class="function-meta">Línea: 502</div>
+                <div class="function-description">Genera un PDF con los registros originales agrupados por semanas (lunes a domingo)</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_502">
+Genera un PDF con los registros originales agrupados por semanas (lunes a domingo)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_502')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_week_start</h3>
+                <div class="function-meta">Línea: 514</div>
+                <div class="function-description">Retorna la fecha del lunes de la semana a la que pertenece date_obj</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_514">
+Retorna la fecha del lunes de la semana a la que pertenece date_obj
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_514')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_week_end</h3>
+                <div class="function-meta">Línea: 521</div>
+                <div class="function-description">Retorna la fecha del domingo de la semana a la que pertenece date_obj</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_521">
+Retorna la fecha del domingo de la semana a la que pertenece date_obj
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_521')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">header</h3>
+                <div class="function-meta">Línea: 529</div>
+                <div class="function-description">Función para header</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">footer</h3>
+                <div class="function-meta">Línea: 562</div>
+                <div class="function-description">Función para footer</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">login_to_checkpoint</h3>
+                <div class="function-meta">Línea: 719</div>
+                <div class="function-description">Acceso directo a un punto de fichaje específico por ID</div>
+                
+            <div class="docstring" id="docstring_routes_checkpoints_new_py_719">
+Acceso directo a un punto de fichaje específico por ID
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_checkpoints_new_py_719')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('routes_tasks_py')">
+            <h2 id="routes_tasks_py">routes_tasks.py <span class="count-badge">60</span></h2>
+        </div>
+        <div class="file-functions" id="file_routes_tasks_py">
+        
+            <div class="function">
+                <h3 class="function-name">manager_required</h3>
+                <div class="function-meta">Línea: 27</div>
+                <div class="function-description">Función para manager required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 29</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">local_user_required</h3>
+                <div class="function-meta">Línea: 41</div>
+                <div class="function-description">Función para local user required</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">decorated_function</h3>
+                <div class="function-meta">Línea: 43</div>
+                <div class="function-description">Función para decorated function</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">index</h3>
+                <div class="function-meta">Línea: 53</div>
+                <div class="function-description">Dashboard principal del módulo de tareas</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_53">
+Dashboard principal del módulo de tareas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_53')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_locations</h3>
+                <div class="function-meta">Línea: 79</div>
+                <div class="function-description">Lista de locales disponibles</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_79">
+Lista de locales disponibles
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_79')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_location</h3>
+                <div class="function-meta">Línea: 95</div>
+                <div class="function-description">Crear un nuevo local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_95">
+Crear un nuevo local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_95')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_location</h3>
+                <div class="function-meta">Línea: 140</div>
+                <div class="function-description">Editar un local existente</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_140">
+Editar un local existente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_140')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_location</h3>
+                <div class="function-meta">Línea: 195</div>
+                <div class="function-description">Eliminar un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_195">
+Eliminar un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_195')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_task_groups</h3>
+                <div class="function-meta">Línea: 220</div>
+                <div class="function-description">Lista de grupos de tareas para un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_220">
+Lista de grupos de tareas para un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_220')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_task_group</h3>
+                <div class="function-meta">Línea: 240</div>
+                <div class="function-description">Crear un nuevo grupo de tareas</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_240">
+Crear un nuevo grupo de tareas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_240')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_task_group</h3>
+                <div class="function-meta">Línea: 276</div>
+                <div class="function-description">Editar un grupo de tareas existente</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_276">
+Editar un grupo de tareas existente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_276')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_task_group</h3>
+                <div class="function-meta">Línea: 309</div>
+                <div class="function-description">Eliminar un grupo de tareas</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_309">
+Eliminar un grupo de tareas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_309')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">view_location</h3>
+                <div class="function-meta">Línea: 338</div>
+                <div class="function-description">Ver detalles de un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_338">
+Ver detalles de un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_338')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_local_users</h3>
+                <div class="function-meta">Línea: 421</div>
+                <div class="function-description">Lista de usuarios de un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_421">
+Lista de usuarios de un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_421')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_local_user</h3>
+                <div class="function-meta">Línea: 440</div>
+                <div class="function-description">Crear un nuevo usuario local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_440">
+Crear un nuevo usuario local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_440')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_local_user</h3>
+                <div class="function-meta">Línea: 496</div>
+                <div class="function-description">Editar un usuario local existente</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_496">
+Editar un usuario local existente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_496')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_local_user</h3>
+                <div class="function-meta">Línea: 562</div>
+                <div class="function-description">Eliminar un usuario local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_562">
+Eliminar un usuario local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_562')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_tasks</h3>
+                <div class="function-meta">Línea: 599</div>
+                <div class="function-description">Lista de tareas de un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_599">
+Lista de tareas de un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_599')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_task</h3>
+                <div class="function-meta">Línea: 636</div>
+                <div class="function-description">Crear una nueva tarea</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_636">
+Crear una nueva tarea
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_636')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">configure_daily_schedule</h3>
+                <div class="function-meta">Línea: 717</div>
+                <div class="function-description">Configurar horario diario para una tarea</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_717">
+Configurar horario diario para una tarea
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_717')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">configure_weekly_schedule</h3>
+                <div class="function-meta">Línea: 765</div>
+                <div class="function-description">Configurar horario semanal para una tarea</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_765">
+Configurar horario semanal para una tarea
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_765')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">configure_monthly_schedule</h3>
+                <div class="function-meta">Línea: 815</div>
+                <div class="function-description">Configurar horario mensual para una tarea</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_815">
+Configurar horario mensual para una tarea
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_815')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">configure_biweekly_schedule</h3>
+                <div class="function-meta">Línea: 865</div>
+                <div class="function-description">Configurar horario quincenal para una tarea</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_865">
+Configurar horario quincenal para una tarea
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_865')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_task</h3>
+                <div class="function-meta">Línea: 913</div>
+                <div class="function-description">Editar una tarea existente</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_913">
+Editar una tarea existente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_913')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_task</h3>
+                <div class="function-meta">Línea: 1025</div>
+                <div class="function-description">Eliminar una tarea</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1025">
+Eliminar una tarea
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1025')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">view_task</h3>
+                <div class="function-meta">Línea: 1050</div>
+                <div class="function-description">Ver detalles de una tarea</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1050">
+Ver detalles de una tarea
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1050')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">portal_selection</h3>
+                <div class="function-meta">Línea: 1077</div>
+                <div class="function-description">Página de selección de portal</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1077">
+Página de selección de portal
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1077')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">portal_test</h3>
+                <div class="function-meta">Línea: 1094</div>
+                <div class="function-description">Ruta de prueba para diagnóstico</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1094">
+Ruta de prueba para diagnóstico
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1094')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">portal_login</h3>
+                <div class="function-meta">Línea: 1126</div>
+                <div class="function-description">Página de login para acceder al portal de un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1126">
+Página de login para acceder al portal de un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1126')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">local_login</h3>
+                <div class="function-meta">Línea: 1159</div>
+                <div class="function-description">Página de login para usuarios locales</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1159">
+Página de login para usuarios locales
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1159')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">local_portal</h3>
+                <div class="function-meta">Línea: 1182</div>
+                <div class="function-description">Portal de acceso para un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1182">
+Portal de acceso para un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1182')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">local_user_login</h3>
+                <div class="function-meta">Línea: 1230</div>
+                <div class="function-description">Login con PIN para empleado local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1230">
+Login con PIN para empleado local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1230')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">local_logout</h3>
+                <div class="function-meta">Línea: 1261</div>
+                <div class="function-description">Cerrar sesión de usuario local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1261">
+Cerrar sesión de usuario local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1261')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">portal_logout</h3>
+                <div class="function-meta">Línea: 1273</div>
+                <div class="function-description">Cerrar sesión de portal local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1273">
+Cerrar sesión de portal local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1273')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">local_user_tasks</h3>
+                <div class="function-meta">Línea: 1290</div>
+                <div class="function-description">Panel de tareas para usuario local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1290">
+Panel de tareas para usuario local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1290')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">task_is_due_on_date</h3>
+                <div class="function-meta">Línea: 1411</div>
+                <div class="function-description">Función para task is due on date</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">complete_task</h3>
+                <div class="function-meta">Línea: 1515</div>
+                <div class="function-description">Marcar una tarea como completada (versión con formulario)</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1515">
+Marcar una tarea como completada (versión con formulario)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1515')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">ajax_complete_task</h3>
+                <div class="function-meta">Línea: 1563</div>
+                <div class="function-description">Marcar una tarea como completada (versión AJAX)</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1563">
+Marcar una tarea como completada (versión AJAX)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1563')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">regenerate_password</h3>
+                <div class="function-meta">Línea: 1618</div>
+                <div class="function-description">Devuelve la contraseña fija del portal de un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1618">
+Devuelve la contraseña fija del portal de un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1618')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">update_portal_credentials</h3>
+                <div class="function-meta">Línea: 1635</div>
+                <div class="function-description">Actualiza la contraseña personalizada del portal para un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1635">
+Actualiza la contraseña personalizada del portal para un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1635')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_portal_credentials</h3>
+                <div class="function-meta">Línea: 1669</div>
+                <div class="function-description">Obtiene las credenciales fijas del portal mediante AJAX de forma segura</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1669">
+Obtiene las credenciales fijas del portal mediante AJAX de forma segura
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1669')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">task_stats</h3>
+                <div class="function-meta">Línea: 1701</div>
+                <div class="function-description">API para obtener estadísticas de tareas</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1701">
+API para obtener estadísticas de tareas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1701')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">local_user_labels</h3>
+                <div class="function-meta">Línea: 1775</div>
+                <div class="function-description">Generador de etiquetas para productos - Lista de productos disponibles</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1775">
+Generador de etiquetas para productos - Lista de productos disponibles
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1775')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">product_conservation_selection</h3>
+                <div class="function-meta">Línea: 1799</div>
+                <div class="function-description">Selección de tipo de conservación para un producto específico</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1799">
+Selección de tipo de conservación para un producto específico
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1799')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manage_labels</h3>
+                <div class="function-meta">Línea: 1828</div>
+                <div class="function-description">Gestor de etiquetas para la página de tareas, filtrado por ubicación si se especifica</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1828">
+Gestor de etiquetas para la página de tareas, filtrado por ubicación si se especifica
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1828')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">label_editor</h3>
+                <div class="function-meta">Línea: 1893</div>
+                <div class="function-description">Editor de diseño de etiquetas para un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1893">
+Editor de diseño de etiquetas para un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1893')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_label_templates</h3>
+                <div class="function-meta">Línea: 1937</div>
+                <div class="function-description">Lista de plantillas de etiquetas para un local</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1937">
+Lista de plantillas de etiquetas para un local
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1937')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_label_template</h3>
+                <div class="function-meta">Línea: 1956</div>
+                <div class="function-description">Crear una nueva plantilla de etiquetas</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_1956">
+Crear una nueva plantilla de etiquetas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_1956')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_label_template</h3>
+                <div class="function-meta">Línea: 2014</div>
+                <div class="function-description">Editar una plantilla de etiquetas existente</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2014">
+Editar una plantilla de etiquetas existente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2014')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">delete_label_template</h3>
+                <div class="function-meta">Línea: 2046</div>
+                <div class="function-description">Eliminar una plantilla de etiquetas</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2046">
+Eliminar una plantilla de etiquetas
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2046')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">set_default_label_template</h3>
+                <div class="function-meta">Línea: 2074</div>
+                <div class="function-description">Establecer una plantilla como predeterminada</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2074">
+Establecer una plantilla como predeterminada
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2074')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">download_excel_template</h3>
+                <div class="function-meta">Línea: 2100</div>
+                <div class="function-description">Descargar plantilla vacía en Excel para importación de productos</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2100">
+Descargar plantilla vacía en Excel para importación de productos
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2100')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">export_labels_excel</h3>
+                <div class="function-meta">Línea: 2145</div>
+                <div class="function-description">Exportar lista de productos y tipos de conservación a Excel</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2145">
+Exportar lista de productos y tipos de conservación a Excel
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2145')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">import_labels_excel</h3>
+                <div class="function-meta">Línea: 2217</div>
+                <div class="function-description">Importar lista de productos y tipos de conservación desde Excel</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2217">
+Importar lista de productos y tipos de conservación desde Excel
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2217')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_labels</h3>
+                <div class="function-meta">Línea: 2356</div>
+                <div class="function-description">Endpoint simplificado para generar e imprimir etiquetas directamente</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2356">
+Endpoint simplificado para generar e imprimir etiquetas directamente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2356')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">list_products</h3>
+                <div class="function-meta">Línea: 2523</div>
+                <div class="function-description">Lista de productos, filtrada por ubicación si se especifica</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2523">
+Lista de productos, filtrada por ubicación si se especifica
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2523')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_product</h3>
+                <div class="function-meta">Línea: 2574</div>
+                <div class="function-description">Crear nuevo producto, opcionalmente preseleccionando una ubicación</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2574">
+Crear nuevo producto, opcionalmente preseleccionando una ubicación
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2574')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">edit_product</h3>
+                <div class="function-meta">Línea: 2631</div>
+                <div class="function-description">Editar producto existente</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2631">
+Editar producto existente
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2631')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">manage_product_conservations</h3>
+                <div class="function-meta">Línea: 2681</div>
+                <div class="function-description">Gestionar tipos de conservación para un producto</div>
+                
+            <div class="docstring" id="docstring_routes_tasks_py_2681">
+Gestionar tipos de conservación para un producto
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('routes_tasks_py_2681')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('run_checkpoint_closer_py')">
+            <h2 id="run_checkpoint_closer_py">run_checkpoint_closer.py <span class="count-badge">2</span></h2>
+        </div>
+        <div class="file-functions" id="file_run_checkpoint_closer_py">
+        
+            <div class="function">
+                <h3 class="function-name">verificar_acceso_bd</h3>
+                <div class="function-meta">Línea: 27</div>
+                <div class="function-description">Verifica que podemos acceder a la base de datos y que las tablas necesarias están configuradas.</div>
+                
+            <div class="docstring" id="docstring_run_checkpoint_closer_py_27">
+Verifica que podemos acceder a la base de datos y que las tablas necesarias están configuradas.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('run_checkpoint_closer_py_27')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">run_once</h3>
+                <div class="function-meta">Línea: 64</div>
+                <div class="function-description">Ejecuta una verificación única de puntos de fichaje fuera de horario</div>
+                
+            <div class="docstring" id="docstring_run_checkpoint_closer_py_64">
+Ejecuta una verificación única de puntos de fichaje fuera de horario
+y cierra los registros pendientes.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('run_checkpoint_closer_py_64')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('scheduled_checkpoints_closer_py')">
+            <h2 id="scheduled_checkpoints_closer_py">scheduled_checkpoints_closer.py <span class="count-badge">2</span></h2>
+        </div>
+        <div class="file-functions" id="file_scheduled_checkpoints_closer_py">
+        
+            <div class="function">
+                <h3 class="function-name">verificar_sistema</h3>
+                <div class="function-meta">Línea: 38</div>
+                <div class="function-description">Verifica que el sistema está correctamente configurado y puede acceder a la base de datos.</div>
+                
+            <div class="docstring" id="docstring_scheduled_checkpoints_closer_py_38">
+Verifica que el sistema está correctamente configurado y puede acceder a la base de datos.
+Retorna True si todo está correcto, False si hay algún problema.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('scheduled_checkpoints_closer_py_38')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">run_service</h3>
+                <div class="function-meta">Línea: 62</div>
+                <div class="function-description">Ejecuta el servicio de verificación periódica para el cierre de fichajes</div>
+                
+            <div class="docstring" id="docstring_scheduled_checkpoints_closer_py_62">
+Ejecuta el servicio de verificación periódica para el cierre de fichajes
+pendientes en puntos de fichaje fuera de horario.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('scheduled_checkpoints_closer_py_62')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('test_close_operation_hours_py')">
+            <h2 id="test_close_operation_hours_py">test_close_operation_hours.py <span class="count-badge">3</span></h2>
+        </div>
+        <div class="file-functions" id="file_test_close_operation_hours_py">
+        
+            <div class="function">
+                <h3 class="function-name">list_checkpoints_with_hours</h3>
+                <div class="function-meta">Línea: 16</div>
+                <div class="function-description">Muestra todos los puntos de fichaje con horarios configurados</div>
+                
+            <div class="docstring" id="docstring_test_close_operation_hours_py_16">
+Muestra todos los puntos de fichaje con horarios configurados
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('test_close_operation_hours_py_16')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">force_close_checkpoint_records</h3>
+                <div class="function-meta">Línea: 44</div>
+                <div class="function-description">Fuerza el cierre de todos los registros pendientes para un punto de fichaje específico</div>
+                
+            <div class="docstring" id="docstring_test_close_operation_hours_py_44">
+Fuerza el cierre de todos los registros pendientes para un punto de fichaje específico
+sin importar la hora actual.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('test_close_operation_hours_py_44')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">main</h3>
+                <div class="function-meta">Línea: 131</div>
+                <div class="function-description">Función para main</div>
+                
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('timezone_config_py')">
+            <h2 id="timezone_config_py">timezone_config.py <span class="count-badge">3</span></h2>
+        </div>
+        <div class="file-functions" id="file_timezone_config_py">
+        
+            <div class="function">
+                <h3 class="function-name">get_current_time</h3>
+                <div class="function-meta">Línea: 12</div>
+                <div class="function-description">Obtiene la hora actual en la zona horaria configurada (Madrid)</div>
+                
+            <div class="docstring" id="docstring_timezone_config_py_12">
+Obtiene la hora actual en la zona horaria configurada (Madrid)
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('timezone_config_py_12')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">datetime_to_madrid</h3>
+                <div class="function-meta">Línea: 21</div>
+                <div class="function-description">Convierte un objeto datetime a la zona horaria de Madrid</div>
+                
+            <div class="docstring" id="docstring_timezone_config_py_21">
+Convierte un objeto datetime a la zona horaria de Madrid
+Si el datetime no tiene zona horaria, asume que es UTC
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('timezone_config_py_21')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">format_datetime</h3>
+                <div class="function-meta">Línea: 36</div>
+                <div class="function-description">Formatea un datetime en la zona horaria de Madrid</div>
+                
+            <div class="docstring" id="docstring_timezone_config_py_36">
+Formatea un datetime en la zona horaria de Madrid
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('timezone_config_py_36')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('update_db_py')">
+            <h2 id="update_db_py">update_db.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_update_db_py">
+        
+            <div class="function">
+                <h3 class="function-name">add_shelf_life_days_column</h3>
+                <div class="function-meta">Línea: 5</div>
+                <div class="function-description">Añade la columna shelf_life_days a la tabla products si no existe.</div>
+                
+            <div class="docstring" id="docstring_update_db_py_5">
+Añade la columna shelf_life_days a la tabla products si no existe.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('update_db_py_5')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('utils_py')">
+            <h2 id="utils_py">utils.py <span class="count-badge">15</span></h2>
+        </div>
+        <div class="file-functions" id="file_utils_py">
+        
+            <div class="function">
+                <h3 class="function-name">create_admin_user</h3>
+                <div class="function-meta">Línea: 19</div>
+                <div class="function-description">Create admin user if not exists.</div>
+                
+            <div class="docstring" id="docstring_utils_py_19">
+Create admin user if not exists.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_19')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">allowed_file</h3>
+                <div class="function-meta">Línea: 36</div>
+                <div class="function-description">Check if file extension is allowed.</div>
+                
+            <div class="docstring" id="docstring_utils_py_36">
+Check if file extension is allowed.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_36')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">save_file</h3>
+                <div class="function-meta">Línea: 41</div>
+                <div class="function-description">Save uploaded file to filesystem and return path.</div>
+                
+            <div class="docstring" id="docstring_utils_py_41">
+Save uploaded file to filesystem and return path.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_41')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">log_employee_change</h3>
+                <div class="function-meta">Línea: 65</div>
+                <div class="function-description">Log changes to employee data.</div>
+                
+            <div class="docstring" id="docstring_utils_py_65">
+Log changes to employee data.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_65')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">log_activity</h3>
+                <div class="function-meta">Línea: 77</div>
+                <div class="function-description">Log user activity.</div>
+                
+            <div class="docstring" id="docstring_utils_py_77">
+Log user activity.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_77')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">can_manage_company</h3>
+                <div class="function-meta">Línea: 98</div>
+                <div class="function-description">Check if current user can manage the company.</div>
+                
+            <div class="docstring" id="docstring_utils_py_98">
+Check if current user can manage the company.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_98')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">can_manage_employee</h3>
+                <div class="function-meta">Línea: 114</div>
+                <div class="function-description">Check if current user can manage the employee.</div>
+                
+            <div class="docstring" id="docstring_utils_py_114">
+Check if current user can manage the employee.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_114')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">can_view_employee</h3>
+                <div class="function-meta">Línea: 133</div>
+                <div class="function-description">Check if current user can view the employee.</div>
+                
+            <div class="docstring" id="docstring_utils_py_133">
+Check if current user can view the employee.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_133')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_checkins_pdf</h3>
+                <div class="function-meta">Línea: 152</div>
+                <div class="function-description">Generate a PDF with employee check-ins between dates.</div>
+                
+            <div class="docstring" id="docstring_utils_py_152">
+Generate a PDF with employee check-ins between dates.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_152')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">export_company_employees_zip</h3>
+                <div class="function-meta">Línea: 284</div>
+                <div class="function-description">Export all employees and their documents in a ZIP file.</div>
+                
+            <div class="docstring" id="docstring_utils_py_284">
+Export all employees and their documents in a ZIP file.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_284')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_employee_summary_pdf</h3>
+                <div class="function-meta">Línea: 415</div>
+                <div class="function-description">Create a PDF summary of an employee.</div>
+                
+            <div class="docstring" id="docstring_utils_py_415">
+Create a PDF summary of an employee.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_415')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">slugify</h3>
+                <div class="function-meta">Línea: 499</div>
+                <div class="function-description">Convierte un texto a formato slug (URL amigable)</div>
+                
+            <div class="docstring" id="docstring_utils_py_499">
+Convierte un texto a formato slug (URL amigable)
+Elimina caracteres especiales, espacios y acentos
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_499')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_dashboard_stats</h3>
+                <div class="function-meta">Línea: 528</div>
+                <div class="function-description">Get statistics for dashboard (optimizado).</div>
+                
+            <div class="docstring" id="docstring_utils_py_528">
+Get statistics for dashboard (optimizado).
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_528')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_task_stats</h3>
+                <div class="function-meta">Línea: 666</div>
+                <div class="function-description">Obtiene task stats</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">create_database_backup</h3>
+                <div class="function-meta">Línea: 724</div>
+                <div class="function-description">Create a backup of the database</div>
+                
+            <div class="docstring" id="docstring_utils_py_724">
+Create a backup of the database
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_py_724')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('utils_checkpoints_py')">
+            <h2 id="utils_checkpoints_py">utils_checkpoints.py <span class="count-badge">5</span></h2>
+        </div>
+        <div class="file-functions" id="file_utils_checkpoints_py">
+        
+            <div class="function">
+                <h3 class="function-name">__init__</h3>
+                <div class="function-meta">Línea: 13</div>
+                <div class="function-description">Constructor de la clase</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">header</h3>
+                <div class="function-meta">Línea: 24</div>
+                <div class="function-description">Función para header</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">footer</h3>
+                <div class="function-meta">Línea: 52</div>
+                <div class="function-description">Función para footer</div>
+                
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">draw_signature</h3>
+                <div class="function-meta">Línea: 71</div>
+                <div class="function-description">Dibuja la firma en el PDF desde datos base64</div>
+                
+            <div class="docstring" id="docstring_utils_checkpoints_py_71">
+Dibuja la firma en el PDF desde datos base64
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_checkpoints_py_71')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_pdf_report</h3>
+                <div class="function-meta">Línea: 99</div>
+                <div class="function-description">Genera un informe PDF de los registros de fichaje</div>
+                
+            <div class="docstring" id="docstring_utils_checkpoints_py_99">
+Genera un informe PDF de los registros de fichaje
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_checkpoints_py_99')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('utils_tasks_py')">
+            <h2 id="utils_tasks_py">utils_tasks.py <span class="count-badge">5</span></h2>
+        </div>
+        <div class="file-functions" id="file_utils_tasks_py">
+        
+            <div class="function">
+                <h3 class="function-name">create_default_local_user</h3>
+                <div class="function-meta">Línea: 8</div>
+                <div class="function-description">Crea un usuario local por defecto si no existe ninguno para la ubicación.</div>
+                
+            <div class="docstring" id="docstring_utils_tasks_py_8">
+Crea un usuario local por defecto si no existe ninguno para la ubicación.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_tasks_py_8')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">get_portal_session</h3>
+                <div class="function-meta">Línea: 42</div>
+                <div class="function-description">Obtiene información de la sesión del portal.</div>
+                
+            <div class="docstring" id="docstring_utils_tasks_py_42">
+Obtiene información de la sesión del portal.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_tasks_py_42')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">clear_portal_session</h3>
+                <div class="function-meta">Línea: 51</div>
+                <div class="function-description">Limpia la sesión del portal.</div>
+                
+            <div class="docstring" id="docstring_utils_tasks_py_51">
+Limpia la sesión del portal.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_tasks_py_51')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">generate_secure_password</h3>
+                <div class="function-meta">Línea: 62</div>
+                <div class="function-description">Genera una contraseña segura con el formato estandarizado &#39;Portal[ID]2025!&#39;.</div>
+                
+            <div class="docstring" id="docstring_utils_tasks_py_62">
+Genera una contraseña segura con el formato estandarizado &#39;Portal[ID]2025!&#39;.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_tasks_py_62')">Ver Docstring</button>
+                    
+            </div>
+                
+            <div class="function">
+                <h3 class="function-name">regenerate_portal_password</h3>
+                <div class="function-meta">Línea: 88</div>
+                <div class="function-description">Regenera y actualiza la contraseña del portal de una ubicación.</div>
+                
+            <div class="docstring" id="docstring_utils_tasks_py_88">
+Regenera y actualiza la contraseña del portal de una ubicación.
+
+Args:
+    location_id: ID de la ubicación
+    only_return: Si es True, solo devuelve la contraseña actual sin regenerarla
+
+Returns:
+    La contraseña actual o la nueva contraseña regenerada
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('utils_tasks_py_88')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <div class="file-container">
+        <div class="file-header" onclick="toggleFile('verify_checkpoint_closures_py')">
+            <h2 id="verify_checkpoint_closures_py">verify_checkpoint_closures.py <span class="count-badge">1</span></h2>
+        </div>
+        <div class="file-functions" id="file_verify_checkpoint_closures_py">
+        
+            <div class="function">
+                <h3 class="function-name">check_pending_records_after_hours</h3>
+                <div class="function-meta">Línea: 18</div>
+                <div class="function-description">Busca fichajes pendientes en puntos de fichaje que deberían haberse cerrado</div>
+                
+            <div class="docstring" id="docstring_verify_checkpoint_closures_py_18">
+Busca fichajes pendientes en puntos de fichaje que deberían haberse cerrado
+automáticamente por estar fuera del horario de funcionamiento.
+            </div>
+            <button class="toggle-docstring" onclick="toggleDocstring('verify_checkpoint_closures_py_18')">Ver Docstring</button>
+                    
+            </div>
+                
+        </div>
+    </div>
+            
+    <script>
+        // Función para alternar la visibilidad de los docstrings
+        function toggleDocstring(id) {
+            const docstring = document.getElementById('docstring_' + id);
+            const button = document.querySelector(`button[onclick="toggleDocstring('${id}')"]`);
+            
+            if (docstring.style.display === 'block') {
+                docstring.style.display = 'none';
+                button.textContent = 'Ver Docstring';
+            } else {
+                docstring.style.display = 'block';
+                button.textContent = 'Ocultar Docstring';
+            }
+        }
+        
+        // Función para alternar la visibilidad de las funciones de un archivo
+        function toggleFile(id) {
+            const fileDiv = document.getElementById('file_' + id);
+            
+            if (fileDiv.style.display === 'block') {
+                fileDiv.style.display = 'none';
+            } else {
+                fileDiv.style.display = 'block';
+            }
+        }
+        
+        // Evento de búsqueda
+        const searchInput = document.getElementById('searchInput');
+        searchInput.addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase();
+            const functions = document.querySelectorAll('.function');
+            
+            functions.forEach(function(func) {
+                const functionName = func.querySelector('.function-name').textContent.toLowerCase();
+                const description = func.querySelector('.function-description').textContent.toLowerCase();
+                
+                if (functionName.includes(searchTerm) || description.includes(searchTerm)) {
+                    func.style.display = 'block';
+                    // Mostrar el contenedor del archivo
+                    const fileContainer = func.closest('.file-functions');
+                    if (fileContainer) {
+                        fileContainer.style.display = 'block';
+                    }
+                } else {
+                    func.style.display = 'none';
+                }
+            });
+            
+            // Si el término de búsqueda está vacío, restaurar la visualización original
+            if (searchTerm === '') {
+                document.querySelectorAll('.file-functions').forEach(function(container) {
+                    container.style.display = 'none';
+                });
+            }
+        });
+        
+        // Botones para expandir/colapsar todos
+        document.querySelector('.expand-all').addEventListener('click', function() {
+            document.querySelectorAll('.file-functions').forEach(function(container) {
+                container.style.display = 'block';
+            });
+        });
+        
+        document.querySelector('.collapse-all').addEventListener('click', function() {
+            document.querySelectorAll('.file-functions').forEach(function(container) {
+                container.style.display = 'none';
+            });
+        });
+    </script>
+</body>
+</html>
+        

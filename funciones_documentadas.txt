@@ -1,0 +1,1586 @@
+# Documentación de Funciones
+
+Generado automáticamente el 2025-04-03 15:36:59
+
+
+## app.py
+
+### `create_app` (línea 25)
+
+Create and configure the Flask application.
+
+### `forbidden_page` (línea 87)
+
+Maneja las respuestas HTTP 403 (Prohibido)
+
+### `page_not_found` (línea 91)
+
+Maneja las respuestas HTTP 404 (No encontrado)
+
+### `server_error_page` (línea 95)
+
+Maneja las respuestas HTTP 500 (Error del servidor)
+
+### `load_locations` (línea 100)
+
+Carga locations
+
+### `log_activity` (línea 137)
+
+Registra activity
+
+### `after_request_handler` (línea 156)
+
+Función para after request handler
+
+
+## close_operation_hours.py
+
+### `auto_close_pending_records` (línea 16)
+
+Cierra automáticamente todos los registros pendientes de los puntos de fichaje 
+
+
+## config.py
+
+### `init_app` (línea 52)
+
+Inicializa app
+
+
+## create_employees.py
+
+### `generate_dni` (línea 33)
+
+Genera un DNI ficticio con formato español válido (8 números + letra)
+
+### `generate_bank_account` (línea 41)
+
+Genera un número de cuenta bancaria ficticio
+
+### `create_employees` (línea 51)
+
+Crea 30 empleados ficticios para la empresa 100RCS (ID 8)
+
+
+## create_remaining_employees.py
+
+### `generate_dni` (línea 24)
+
+Genera un DNI ficticio con formato español válido (8 números + letra)
+
+### `generate_bank_account` (línea 32)
+
+Genera un número de cuenta bancaria ficticio
+
+### `create_remaining_employees` (línea 42)
+
+Crea los empleados ficticios restantes para la empresa 100RCS (ID 8)
+
+
+## forms.py
+
+### `__init__` (línea 36)
+
+Constructor de la clase
+
+### `validate_username` (línea 50)
+
+Valida username
+
+### `validate_email` (línea 55)
+
+Valida email
+
+### `validate_role` (línea 60)
+
+Valida role
+
+### `__init__` (línea 79)
+
+Constructor de la clase
+
+### `validate_username` (línea 96)
+
+Valida username
+
+### `validate_email` (línea 102)
+
+Valida email
+
+### `validate_role` (línea 108)
+
+Valida role
+
+### `__init__` (línea 152)
+
+Constructor de la clase
+
+### `validate_tax_id` (línea 156)
+
+Valida tax id
+
+### `validate_name` (línea 167)
+
+Validar que el nombre no tenga caracteres especiales
+
+### `validate_end_date` (línea 189)
+
+Valida end date
+
+### `validate_status_end_date` (línea 212)
+
+Valida status end date
+
+### `validate_end_time` (línea 227)
+
+Valida end time
+
+### `validate` (línea 269)
+
+Función para validate
+
+### `validate_check_out_time` (línea 304)
+
+Valida check out time
+
+### `validate_end_date` (línea 314)
+
+Valida end date
+
+### `validate_end_date` (línea 325)
+
+Valida end date
+
+### `validate_end_date` (línea 334)
+
+Valida end date
+
+
+## forms_checkpoints.py
+
+### `validate_password` (línea 35)
+
+Asegura que la contraseña y la confirmación coincidan
+
+### `validate_operation_end_time` (línea 40)
+
+Verifica que la hora de fin de operación sea posterior a la de inicio
+
+### `validate_weekly_hours` (línea 96)
+
+Verifica que las horas semanales sean coherentes con las diarias
+
+### `validate_normal_end_time` (línea 101)
+
+Verifica que la hora de fin sea posterior a la de inicio
+
+### `validate_check_out_time` (línea 119)
+
+Verifica que la hora de salida sea posterior a la de entrada
+
+### `validate_end_date` (línea 141)
+
+Verifica que la fecha de fin sea posterior a la de inicio
+
+
+## forms_tasks.py
+
+### `validate_pin` (línea 46)
+
+Valida pin
+
+### `__init__` (línea 71)
+
+Constructor de la clase
+
+### `validate_end_date` (línea 77)
+
+Valida end date
+
+### `validate` (línea 81)
+
+Función para validate
+
+### `validate_end_time` (línea 100)
+
+Valida end time
+
+### `validate_end_time` (línea 110)
+
+Valida end time
+
+### `validate_end_time` (línea 123)
+
+Valida end time
+
+### `validate_end_time` (línea 132)
+
+Valida end time
+
+### `validate_pin` (línea 149)
+
+Valida pin
+
+### `validate_end_time` (línea 168)
+
+Valida end time
+
+### `__init__` (línea 204)
+
+Constructor de la clase
+
+### `__init__` (línea 219)
+
+Constructor de la clase
+
+
+## forms_tmp.py
+
+### `__init__` (línea 36)
+
+Constructor de la clase
+
+### `validate_username` (línea 50)
+
+Valida username
+
+### `validate_email` (línea 55)
+
+Valida email
+
+### `validate_role` (línea 60)
+
+Valida role
+
+### `__init__` (línea 79)
+
+Constructor de la clase
+
+### `validate_username` (línea 96)
+
+Valida username
+
+### `validate_email` (línea 102)
+
+Valida email
+
+### `validate_role` (línea 108)
+
+Valida role
+
+### `__init__` (línea 137)
+
+Constructor de la clase
+
+### `validate_tax_id` (línea 141)
+
+Valida tax id
+
+### `validate_end_date` (línea 168)
+
+Valida end date
+
+### `validate_status_end_date` (línea 191)
+
+Valida status end date
+
+### `validate_end_time` (línea 206)
+
+Valida end time
+
+### `validate` (línea 248)
+
+Función para validate
+
+### `validate_check_out_time` (línea 283)
+
+Valida check out time
+
+### `validate_end_date` (línea 293)
+
+Valida end date
+
+### `validate_end_date` (línea 304)
+
+Valida end date
+
+### `validate_end_date` (línea 313)
+
+Valida end date
+
+
+## migrate_auto_checkout_removal.py
+
+### `run_migration` (línea 8)
+
+Elimina la columna auto_checkout_time de la tabla checkpoints
+
+
+## migrate_checkpoints.py
+
+### `create_checkpoint_tables` (línea 8)
+
+Función para crear las tablas de puntos de fichaje
+
+
+## migrate_contract_hours_activation.py
+
+### `add_activation_columns` (línea 18)
+
+Añade las columnas use_normal_schedule y use_flexibility a la tabla employee_contract_hours
+
+
+## migrate_employee_on_shift.py
+
+### `add_is_on_shift_column` (línea 10)
+
+Añade la columna is_on_shift a la tabla employees
+
+
+## migrate_label_templates.py
+
+### `create_label_tables` (línea 17)
+
+Crea las tablas relacionadas con las etiquetas si no existen
+
+
+## migrate_operation_hours.py
+
+### `migrate` (línea 10)
+
+Agrega los campos necesarios para la configuración de horario de funcionamiento:
+
+
+## migrate_original_records.py
+
+### `create_original_records_table` (línea 8)
+
+Crea la tabla para almacenar registros originales de fichajes
+
+
+## migrate_task_instances.py
+
+### `create_task_instances_table` (línea 9)
+
+Crea la tabla para almacenar instancias de tareas programadas
+
+
+## models.py
+
+### `company_id` (línea 41)
+
+Función para company id
+
+### `company` (línea 47)
+
+Función para company
+
+### `set_password` (línea 56)
+
+Establece password
+
+### `check_password` (línea 59)
+
+Verifica password
+
+### `is_admin` (línea 62)
+
+Comprueba si admin
+
+### `is_gerente` (línea 65)
+
+Comprueba si gerente
+
+### `is_empleado` (línea 68)
+
+Comprueba si empleado
+
+### `__repr__` (línea 71)
+
+Función para   repr  
+
+### `to_dict` (línea 74)
+
+Función para to dict
+
+### `load_user` (línea 87)
+
+Carga user
+
+### `__repr__` (línea 114)
+
+Función para   repr  
+
+### `get_slug` (línea 117)
+
+Obtiene el slug (URL amigable) del nombre de la empresa
+
+### `to_dict` (línea 122)
+
+Función para to dict
+
+### `__repr__` (línea 201)
+
+Función para   repr  
+
+### `to_dict` (línea 204)
+
+Función para to dict
+
+### `__repr__` (línea 241)
+
+Función para   repr  
+
+### `__repr__` (línea 258)
+
+Función para   repr  
+
+### `__repr__` (línea 276)
+
+Función para   repr  
+
+### `__repr__` (línea 294)
+
+Función para   repr  
+
+### `to_dict` (línea 297)
+
+Función para to dict
+
+### `__repr__` (línea 322)
+
+Función para   repr  
+
+### `to_dict` (línea 325)
+
+Función para to dict
+
+### `generate_realistic_time` (línea 337)
+
+Generate a realistic check-in or check-out time with random variation.
+
+### `generate_check_ins_for_schedule` (línea 354)
+
+Generate check-ins for an employee based on their schedule.
+
+### `__repr__` (línea 451)
+
+Función para   repr  
+
+### `to_dict` (línea 454)
+
+Función para to dict
+
+### `total_days` (línea 468)
+
+Calculate the total number of days in this vacation period.
+
+### `mark_as_signed` (línea 474)
+
+Mark the vacation as signed by the employee.
+
+### `mark_as_enjoyed` (línea 479)
+
+Mark the vacation as enjoyed after the date has passed.
+
+### `overlaps_with` (línea 484)
+
+Check if this vacation period overlaps with the given dates.
+
+### `__repr__` (línea 500)
+
+Función para   repr  
+
+
+## models_checkpoints.py
+
+### `__repr__` (línea 58)
+
+Función para   repr  
+
+### `set_password` (línea 61)
+
+Establece password
+
+### `verify_password` (línea 64)
+
+Verifica una contraseña contra su hash
+
+### `__repr__` (línea 102)
+
+Función para   repr  
+
+### `duration` (línea 106)
+
+Calcula la duración del fichaje en horas
+
+### `has_original_record` (línea 129)
+
+Comprueba si este registro tiene un registro original asociado
+
+### `to_dict` (línea 134)
+
+Convierte el registro a un diccionario para serialización
+
+### `__repr__` (línea 175)
+
+Función para   repr  
+
+### `resolve` (línea 178)
+
+Marca la incidencia como resuelta
+
+### `duration` (línea 214)
+
+Calcula la duración del fichaje original en horas
+
+### `__repr__` (línea 236)
+
+Función para   repr  
+
+### `to_dict` (línea 239)
+
+Convierte el registro a un diccionario para serialización
+
+### `__repr__` (línea 287)
+
+Función para   repr  
+
+### `is_overtime` (línea 290)
+
+Comprueba si una duración de horas supera el máximo diario
+
+### `calculate_adjusted_hours` (línea 294)
+
+Calcula el tiempo ajustado según el contrato y configuración
+
+
+## models_tasks.py
+
+### `__repr__` (línea 53)
+
+Función para   repr  
+
+### `to_dict` (línea 56)
+
+Función para to dict
+
+### `__repr__` (línea 93)
+
+Función para   repr  
+
+### `set_portal_password` (línea 96)
+
+Establece una contraseña encriptada para el portal
+
+### `check_portal_password` (línea 100)
+
+Verifica si la contraseña proporcionada coincide con la almacenada
+
+### `portal_fixed_username` (línea 109)
+
+Retorna el nombre de usuario para este local
+
+### `portal_fixed_password` (línea 115)
+
+Retorna la contraseña para este local
+
+### `to_dict` (línea 125)
+
+Función para to dict
+
+### `__repr__` (línea 159)
+
+Función para   repr  
+
+### `set_pin` (línea 162)
+
+Establece pin
+
+### `check_pin` (línea 166)
+
+Verifica pin
+
+### `get_full_name` (línea 169)
+
+Obtiene full name
+
+### `to_dict` (línea 172)
+
+Función para to dict
+
+### `__repr__` (línea 214)
+
+Función para   repr  
+
+### `to_dict` (línea 217)
+
+Función para to dict
+
+### `is_due_today` (línea 231)
+
+Comprueba si la tarea está programada para hoy según su programación.
+
+### `__repr__` (línea 297)
+
+Función para   repr  
+
+### `is_active_for_date` (línea 305)
+
+Comprueba si este horario está activo para una fecha determinada.
+
+### `__repr__` (línea 350)
+
+Función para   repr  
+
+### `day_matches_today` (línea 354)
+
+Comprueba si el día de la semana corresponde al día actual
+
+### `__repr__` (línea 384)
+
+Función para   repr  
+
+### `to_dict` (línea 387)
+
+Función para to dict
+
+### `__repr__` (línea 411)
+
+Función para   repr  
+
+### `to_dict` (línea 414)
+
+Función para to dict
+
+### `__repr__` (línea 456)
+
+Función para   repr  
+
+### `to_dict` (línea 459)
+
+Función para to dict
+
+### `get_shelf_life_expiry` (línea 470)
+
+Calcula la fecha de caducidad secundaria basada en la vida útil en días
+
+### `__repr__` (línea 499)
+
+Función para   repr  
+
+### `to_dict` (línea 502)
+
+Función para to dict
+
+### `get_expiry_date` (línea 511)
+
+Calcula la fecha de caducidad basada en horas
+
+### `get_expiry_datetime` (línea 516)
+
+Calcula el datetime exacto de caducidad, incluyendo la hora
+
+### `__repr__` (línea 577)
+
+Función para   repr  
+
+### `to_dict` (línea 580)
+
+Función para to dict
+
+### `__repr__` (línea 629)
+
+Función para   repr  
+
+### `to_dict` (línea 632)
+
+Función para to dict
+
+
+## reset_checkpoint_password.py
+
+### `reset_checkpoint_password` (línea 5)
+
+Resetea la contraseña del punto de fichaje con username 'movil' a 'movil'
+
+
+## routes.py
+
+### `admin_required` (línea 36)
+
+Función para admin required
+
+### `decorated_function` (línea 38)
+
+Función para decorated function
+
+### `manager_required` (línea 46)
+
+Función para manager required
+
+### `decorated_function` (línea 48)
+
+Función para decorated function
+
+### `login` (línea 57)
+
+Gestiona el inicio de sesión
+
+### `logout` (línea 82)
+
+Gestiona el cierre de sesión
+
+### `register` (línea 90)
+
+Gestiona el registro de nuevos usuarios
+
+### `index` (línea 128)
+
+Función para index
+
+### `dashboard` (línea 135)
+
+Función para dashboard
+
+### `profile` (línea 141)
+
+Función para profile
+
+### `search` (línea 159)
+
+Función para search
+
+### `list_companies` (línea 217)
+
+Función para list companies
+
+### `view_company` (línea 234)
+
+Función para view company
+
+### `create_company` (línea 259)
+
+Crea company
+
+### `edit_company` (línea 287)
+
+Función para edit company
+
+### `export_company_data` (línea 335)
+
+Exporta company data
+
+### `delete_company` (línea 367)
+
+Elimina company
+
+### `list_employees` (línea 548)
+
+Función para list employees
+
+### `view_employee` (línea 611)
+
+Función para view employee
+
+### `create_employee` (línea 623)
+
+Crea employee
+
+### `edit_employee` (línea 682)
+
+Función para edit employee
+
+### `delete_employee` (línea 769)
+
+Elimina employee
+
+### `manage_status` (línea 805)
+
+Función para manage status
+
+### `list_documents` (línea 855)
+
+Función para list documents
+
+### `upload_document` (línea 871)
+
+Función para upload document
+
+### `download_document` (línea 909)
+
+Función para download document
+
+### `delete_document` (línea 928)
+
+Elimina document
+
+### `manage_notes` (línea 951)
+
+Función para manage notes
+
+### `backup_database` (línea 984)
+
+Create a database backup
+
+### `delete_note` (línea 1002)
+
+Elimina note
+
+### `view_history` (línea 1020)
+
+Función para view history
+
+### `list_users` (línea 1037)
+
+Función para list users
+
+### `edit_user` (línea 1043)
+
+Función para edit user
+
+### `reset_password` (línea 1092)
+
+Reinicia la contraseña de un usuario
+
+### `toggle_activation` (línea 1111)
+
+Función para toggle activation
+
+### `delete_user` (línea 1134)
+
+Elimina user
+
+### `list_schedules` (línea 1158)
+
+Función para list schedules
+
+### `create_schedule` (línea 1175)
+
+Crea schedule
+
+### `weekly_schedule` (línea 1207)
+
+Función para weekly schedule
+
+### `edit_schedule` (línea 1283)
+
+Función para edit schedule
+
+### `delete_schedule` (línea 1315)
+
+Elimina schedule
+
+### `list_checkins` (línea 1335)
+
+Función para list checkins
+
+### `get_month_year` (línea 1353)
+
+Obtiene month year
+
+### `create_checkin` (línea 1386)
+
+Crea checkin
+
+### `edit_checkin` (línea 1425)
+
+Función para edit checkin
+
+### `delete_checkin` (línea 1470)
+
+Elimina checkin
+
+### `export_checkins` (línea 1489)
+
+Exporta checkins
+
+### `delete_checkins_by_date` (línea 1523)
+
+Elimina checkins by date
+
+### `generate_checkins` (línea 1576)
+
+Genera checkins
+
+### `list_vacations` (línea 1619)
+
+Función para list vacations
+
+### `create_vacation` (línea 1636)
+
+Crea vacation
+
+### `delete_vacation` (línea 1687)
+
+Elimina vacation
+
+
+## routes_checkpoints.py
+
+### `admin_required` (línea 30)
+
+Función para admin required
+
+### `decorated_function` (línea 32)
+
+Función para decorated function
+
+### `manager_required` (línea 40)
+
+Función para manager required
+
+### `decorated_function` (línea 42)
+
+Función para decorated function
+
+### `checkpoint_required` (línea 53)
+
+Función para checkpoint required
+
+### `decorated_function` (línea 55)
+
+Función para decorated function
+
+### `select_company` (línea 66)
+
+Página de selección de empresa para el sistema de fichajes
+
+### `index_company` (línea 87)
+
+Página principal del sistema de fichajes para una empresa específica
+
+### `list_checkpoints` (línea 280)
+
+Lista todos los puntos de fichaje disponibles
+
+### `create_checkpoint` (línea 312)
+
+Crea un nuevo punto de fichaje
+
+### `edit_checkpoint` (línea 382)
+
+Edita un punto de fichaje existente
+
+### `delete_checkpoint` (línea 441)
+
+Elimina un punto de fichaje con todos sus registros asociados
+
+### `list_checkpoint_records` (línea 497)
+
+Muestra los registros de fichaje de un punto específico
+
+### `manage_contract_hours` (línea 519)
+
+Gestiona la configuración de horas por contrato de un empleado
+
+### `adjust_record` (línea 557)
+
+Ajusta manualmente un registro de fichaje
+
+### `record_signature` (línea 648)
+
+Permite al empleado firmar un registro de fichaje
+
+### `list_records_all` (línea 687)
+
+Muestra todos los registros de fichaje disponibles según permisos
+
+### `list_incidents` (línea 785)
+
+Muestra todas las incidencias de fichaje según permisos
+
+### `resolve_incident` (línea 864)
+
+Marca una incidencia como resuelta
+
+### `view_original_records` (línea 907)
+
+Página secreta para ver los registros originales de fichaje para una empresa específica
+
+### `export_records` (línea 1024)
+
+Exporta registros de fichaje a PDF
+
+### `login` (línea 1098)
+
+Página de login para puntos de fichaje
+
+### `login_to_checkpoint` (línea 1145)
+
+Acceso directo a un punto de fichaje específico por ID
+
+### `logout` (línea 1179)
+
+Cierra la sesión del punto de fichaje
+
+### `checkpoint_dashboard` (línea 1193)
+
+Dashboard principal del punto de fichaje
+
+### `employee_pin` (línea 1214)
+
+Página para introducir el PIN del empleado
+
+### `create_schedule_incident` (línea 1284)
+
+Crea una incidencia relacionada con horarios
+
+### `process_employee_action` (línea 1296)
+
+Función auxiliar para procesar las acciones de entrada/salida
+
+### `fix_employee_state_inconsistency` (línea 1484)
+
+Función auxiliar para detectar y corregir inconsistencias entre 
+
+### `record_details` (línea 1513)
+
+Muestra los detalles de un registro recién creado
+
+### `record_checkout` (línea 1535)
+
+Registra la salida para un fichaje pendiente desde la pantalla de detalles
+
+### `checkpoint_record_signature` (línea 1662)
+
+Permite al empleado firmar un registro de fichaje desde el punto de fichaje
+
+### `daily_report` (línea 1733)
+
+Muestra un informe de fichajes del día actual
+
+### `get_company_employees` (línea 1777)
+
+Devuelve la lista de empleados de la empresa en formato JSON
+
+### `validate_pin` (línea 1816)
+
+Validar el PIN del empleado mediante AJAX
+
+### `trigger_auto_checkout` (línea 1874)
+
+Endpoint para informar que el sistema de auto-checkout ha sido eliminado
+
+### `check_credentials` (línea 1885)
+
+Endpoint temporal para comprobar credenciales
+
+### `init_app` (línea 1907)
+
+Inicializa app
+
+
+## routes_checkpoints_new.py
+
+### `admin_required` (línea 29)
+
+Función para admin required
+
+### `decorated_function` (línea 31)
+
+Función para decorated function
+
+### `manager_required` (línea 39)
+
+Función para manager required
+
+### `decorated_function` (línea 41)
+
+Función para decorated function
+
+### `checkpoint_required` (línea 52)
+
+Función para checkpoint required
+
+### `decorated_function` (línea 54)
+
+Función para decorated function
+
+### `view_original_records` (línea 66)
+
+Página secreta para ver los registros originales antes de ajustes de una empresa específica
+
+### `__init__` (línea 171)
+
+Constructor de la clase
+
+### `pages` (línea 178)
+
+Función para pages
+
+### `has_prev` (línea 182)
+
+Comprueba si tiene prev
+
+### `has_next` (línea 186)
+
+Comprueba si tiene next
+
+### `prev_num` (línea 190)
+
+Función para prev num
+
+### `next_num` (línea 194)
+
+Función para next num
+
+### `edit_original_record` (línea 226)
+
+Edita un registro original
+
+### `restore_original_record` (línea 315)
+
+Restaura los valores originales en el registro actual
+
+### `delete_original_record` (línea 365)
+
+Elimina un registro original
+
+### `export_original_records` (línea 406)
+
+Exporta los registros originales a PDF
+
+### `export_original_records_pdf` (línea 502)
+
+Genera un PDF con los registros originales agrupados por semanas (lunes a domingo)
+
+### `get_week_start` (línea 514)
+
+Retorna la fecha del lunes de la semana a la que pertenece date_obj
+
+### `get_week_end` (línea 521)
+
+Retorna la fecha del domingo de la semana a la que pertenece date_obj
+
+### `header` (línea 529)
+
+Función para header
+
+### `footer` (línea 562)
+
+Función para footer
+
+### `login_to_checkpoint` (línea 719)
+
+Acceso directo a un punto de fichaje específico por ID
+
+
+## routes_tasks.py
+
+### `manager_required` (línea 27)
+
+Función para manager required
+
+### `decorated_function` (línea 29)
+
+Función para decorated function
+
+### `local_user_required` (línea 41)
+
+Función para local user required
+
+### `decorated_function` (línea 43)
+
+Función para decorated function
+
+### `index` (línea 53)
+
+Dashboard principal del módulo de tareas
+
+### `list_locations` (línea 79)
+
+Lista de locales disponibles
+
+### `create_location` (línea 95)
+
+Crear un nuevo local
+
+### `edit_location` (línea 140)
+
+Editar un local existente
+
+### `delete_location` (línea 195)
+
+Eliminar un local
+
+### `list_task_groups` (línea 220)
+
+Lista de grupos de tareas para un local
+
+### `create_task_group` (línea 240)
+
+Crear un nuevo grupo de tareas
+
+### `edit_task_group` (línea 276)
+
+Editar un grupo de tareas existente
+
+### `delete_task_group` (línea 309)
+
+Eliminar un grupo de tareas
+
+### `view_location` (línea 338)
+
+Ver detalles de un local
+
+### `list_local_users` (línea 421)
+
+Lista de usuarios de un local
+
+### `create_local_user` (línea 440)
+
+Crear un nuevo usuario local
+
+### `edit_local_user` (línea 496)
+
+Editar un usuario local existente
+
+### `delete_local_user` (línea 562)
+
+Eliminar un usuario local
+
+### `list_tasks` (línea 599)
+
+Lista de tareas de un local
+
+### `create_task` (línea 636)
+
+Crear una nueva tarea
+
+### `configure_daily_schedule` (línea 717)
+
+Configurar horario diario para una tarea
+
+### `configure_weekly_schedule` (línea 765)
+
+Configurar horario semanal para una tarea
+
+### `configure_monthly_schedule` (línea 815)
+
+Configurar horario mensual para una tarea
+
+### `configure_biweekly_schedule` (línea 865)
+
+Configurar horario quincenal para una tarea
+
+### `edit_task` (línea 913)
+
+Editar una tarea existente
+
+### `delete_task` (línea 1025)
+
+Eliminar una tarea
+
+### `view_task` (línea 1050)
+
+Ver detalles de una tarea
+
+### `portal_selection` (línea 1077)
+
+Página de selección de portal
+
+### `portal_test` (línea 1094)
+
+Ruta de prueba para diagnóstico
+
+### `portal_login` (línea 1126)
+
+Página de login para acceder al portal de un local
+
+### `local_login` (línea 1159)
+
+Página de login para usuarios locales
+
+### `local_portal` (línea 1182)
+
+Portal de acceso para un local
+
+### `local_user_login` (línea 1230)
+
+Login con PIN para empleado local
+
+### `local_logout` (línea 1261)
+
+Cerrar sesión de usuario local
+
+### `portal_logout` (línea 1273)
+
+Cerrar sesión de portal local
+
+### `local_user_tasks` (línea 1290)
+
+Panel de tareas para usuario local
+
+### `task_is_due_on_date` (línea 1411)
+
+Función para task is due on date
+
+### `complete_task` (línea 1515)
+
+Marcar una tarea como completada (versión con formulario)
+
+### `ajax_complete_task` (línea 1563)
+
+Marcar una tarea como completada (versión AJAX)
+
+### `regenerate_password` (línea 1618)
+
+Devuelve la contraseña fija del portal de un local
+
+### `update_portal_credentials` (línea 1635)
+
+Actualiza la contraseña personalizada del portal para un local
+
+### `get_portal_credentials` (línea 1669)
+
+Obtiene las credenciales fijas del portal mediante AJAX de forma segura
+
+### `task_stats` (línea 1701)
+
+API para obtener estadísticas de tareas
+
+### `local_user_labels` (línea 1775)
+
+Generador de etiquetas para productos - Lista de productos disponibles
+
+### `product_conservation_selection` (línea 1799)
+
+Selección de tipo de conservación para un producto específico
+
+### `manage_labels` (línea 1828)
+
+Gestor de etiquetas para la página de tareas, filtrado por ubicación si se especifica
+
+### `label_editor` (línea 1893)
+
+Editor de diseño de etiquetas para un local
+
+### `list_label_templates` (línea 1937)
+
+Lista de plantillas de etiquetas para un local
+
+### `create_label_template` (línea 1956)
+
+Crear una nueva plantilla de etiquetas
+
+### `edit_label_template` (línea 2014)
+
+Editar una plantilla de etiquetas existente
+
+### `delete_label_template` (línea 2046)
+
+Eliminar una plantilla de etiquetas
+
+### `set_default_label_template` (línea 2074)
+
+Establecer una plantilla como predeterminada
+
+### `download_excel_template` (línea 2100)
+
+Descargar plantilla vacía en Excel para importación de productos
+
+### `export_labels_excel` (línea 2145)
+
+Exportar lista de productos y tipos de conservación a Excel
+
+### `import_labels_excel` (línea 2217)
+
+Importar lista de productos y tipos de conservación desde Excel
+
+### `generate_labels` (línea 2356)
+
+Endpoint simplificado para generar e imprimir etiquetas directamente
+
+### `list_products` (línea 2523)
+
+Lista de productos, filtrada por ubicación si se especifica
+
+### `create_product` (línea 2574)
+
+Crear nuevo producto, opcionalmente preseleccionando una ubicación
+
+### `edit_product` (línea 2631)
+
+Editar producto existente
+
+### `manage_product_conservations` (línea 2681)
+
+Gestionar tipos de conservación para un producto
+
+
+## run_checkpoint_closer.py
+
+### `verificar_acceso_bd` (línea 27)
+
+Verifica que podemos acceder a la base de datos y que las tablas necesarias están configuradas.
+
+### `run_once` (línea 64)
+
+Ejecuta una verificación única de puntos de fichaje fuera de horario
+
+
+## scheduled_checkpoints_closer.py
+
+### `verificar_sistema` (línea 38)
+
+Verifica que el sistema está correctamente configurado y puede acceder a la base de datos.
+
+### `run_service` (línea 62)
+
+Ejecuta el servicio de verificación periódica para el cierre de fichajes
+
+
+## test_close_operation_hours.py
+
+### `list_checkpoints_with_hours` (línea 16)
+
+Muestra todos los puntos de fichaje con horarios configurados
+
+### `force_close_checkpoint_records` (línea 44)
+
+Fuerza el cierre de todos los registros pendientes para un punto de fichaje específico
+
+### `main` (línea 131)
+
+Función para main
+
+
+## timezone_config.py
+
+### `get_current_time` (línea 12)
+
+Obtiene la hora actual en la zona horaria configurada (Madrid)
+
+### `datetime_to_madrid` (línea 21)
+
+Convierte un objeto datetime a la zona horaria de Madrid
+
+### `format_datetime` (línea 36)
+
+Formatea un datetime en la zona horaria de Madrid
+
+
+## update_db.py
+
+### `add_shelf_life_days_column` (línea 5)
+
+Añade la columna shelf_life_days a la tabla products si no existe.
+
+
+## utils.py
+
+### `create_admin_user` (línea 19)
+
+Create admin user if not exists.
+
+### `allowed_file` (línea 36)
+
+Check if file extension is allowed.
+
+### `save_file` (línea 41)
+
+Save uploaded file to filesystem and return path.
+
+### `log_employee_change` (línea 65)
+
+Log changes to employee data.
+
+### `log_activity` (línea 77)
+
+Log user activity.
+
+### `can_manage_company` (línea 98)
+
+Check if current user can manage the company.
+
+### `can_manage_employee` (línea 114)
+
+Check if current user can manage the employee.
+
+### `can_view_employee` (línea 133)
+
+Check if current user can view the employee.
+
+### `generate_checkins_pdf` (línea 152)
+
+Generate a PDF with employee check-ins between dates.
+
+### `export_company_employees_zip` (línea 284)
+
+Export all employees and their documents in a ZIP file.
+
+### `create_employee_summary_pdf` (línea 415)
+
+Create a PDF summary of an employee.
+
+### `slugify` (línea 499)
+
+Convierte un texto a formato slug (URL amigable)
+
+### `get_dashboard_stats` (línea 528)
+
+Get statistics for dashboard (optimizado).
+
+### `get_task_stats` (línea 666)
+
+Obtiene task stats
+
+### `create_database_backup` (línea 724)
+
+Create a backup of the database
+
+
+## utils_checkpoints.py
+
+### `__init__` (línea 13)
+
+Constructor de la clase
+
+### `header` (línea 24)
+
+Función para header
+
+### `footer` (línea 52)
+
+Función para footer
+
+### `draw_signature` (línea 71)
+
+Dibuja la firma en el PDF desde datos base64
+
+### `generate_pdf_report` (línea 99)
+
+Genera un informe PDF de los registros de fichaje
+
+
+## utils_tasks.py
+
+### `create_default_local_user` (línea 8)
+
+Crea un usuario local por defecto si no existe ninguno para la ubicación.
+
+### `get_portal_session` (línea 42)
+
+Obtiene información de la sesión del portal.
+
+### `clear_portal_session` (línea 51)
+
+Limpia la sesión del portal.
+
+### `generate_secure_password` (línea 62)
+
+Genera una contraseña segura con el formato estandarizado 'Portal[ID]2025!'.
+
+### `regenerate_portal_password` (línea 88)
+
+Regenera y actualiza la contraseña del portal de una ubicación.
+
+
+## verify_checkpoint_closures.py
+
+### `check_pending_records_after_hours` (línea 18)
+
+Busca fichajes pendientes en puntos de fichaje que deberían haberse cerrado
+
