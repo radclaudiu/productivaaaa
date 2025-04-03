@@ -67,9 +67,20 @@ def run_service():
     start_time = datetime.now()
     logger.info("="*80)
     logger.info(f"INICIO SERVICIO DE CIERRE AUTOMÁTICO - {start_time.strftime('%Y-%m-%d %H:%M:%S')}")
-    logger.info(f"Versión: 1.1.0 - Barrido con logs detallados")
+    logger.info(f"Versión: 1.2.0 - Barrido con logs detallados y detección de redeploy")
     logger.info(f"Intervalo configurado: {CHECK_INTERVAL} segundos ({CHECK_INTERVAL/60:.1f} minutos)")
     logger.info("-"*80)
+    
+    # Eliminamos el archivo de startup para forzar la detección del primer inicio después de redeploy
+    startup_file = '.checkpoint_closer_startup'
+    if os.path.exists(startup_file):
+        try:
+            os.remove(startup_file)
+            logger.info(f"✓ Archivo de startup eliminado para forzar la detección de redeploy")
+        except Exception as e:
+            logger.warning(f"No se pudo eliminar el archivo de startup: {e}")
+    else:
+        logger.info("Primer inicio del servicio (no existe archivo de startup)")
     
     # Verificar que el sistema funciona correctamente
     if not verificar_sistema():

@@ -5,8 +5,10 @@ Este script realiza una auditoría del sistema de cierre automático para:
 1. Comprobar que no haya fichajes pendientes en puntos de fichaje fuera de horario
 2. Generar un informe de estado con las incidencias detectadas
 3. Proporcionar estadísticas sobre la efectividad del sistema de cierre
+4. Detectar si es la primera ejecución después de un redeploy
 """
 import sys
+import os
 from datetime import datetime, timedelta
 from app import db, create_app
 from models_checkpoints import (
@@ -14,6 +16,7 @@ from models_checkpoints import (
     CheckPointIncidentType, CheckPointStatus
 )
 from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
+from close_operation_hours import STARTUP_FILE
 
 def check_pending_records_after_hours():
     """
@@ -23,11 +26,20 @@ def check_pending_records_after_hours():
     current_time = get_current_time()
     current_time_utc = datetime.utcnow()
     
+    # Detectar si es el primer inicio después de un redeploy
+    is_first_startup = not os.path.exists(STARTUP_FILE)
+    
     print(f"\n{'=' * 100}")
     print(f"VERIFICACIÓN DE FICHAJES PENDIENTES FUERA DE HORARIO")
     print(f"{'=' * 100}")
     print(f"Fecha/hora actual: {current_time} ({TIMEZONE})")
     print(f"Fecha/hora UTC: {current_time_utc}")
+    print(f"Primer inicio tras redeploy: {'Sí' if is_first_startup else 'No'}")
+    
+    # Si es el primer inicio, crear el archivo de startup
+    if is_first_startup:
+        with open(STARTUP_FILE, 'w') as f:
+            f.write(f"Último inicio: {datetime.now()}")
     
     # Buscar puntos de fichaje con horario de funcionamiento configurado
     checkpoints = CheckPoint.query.filter(
@@ -106,6 +118,7 @@ def check_pending_records_after_hours():
     print(f"Puntos de fichaje verificados: {len(checkpoints)}")
     print(f"Registros pendientes fuera de horario: {total_pending_records}")
     print(f"Incidencias de cierre automático en últimas 24h: {total_incidents}")
+    print(f"Primer inicio tras redeploy: {'Sí' if is_first_startup else 'No'}")
     
     if total_pending_records > 0:
         print(f"\n⚠️ ATENCIÓN: Se han encontrado {total_pending_records} registros pendientes que deberían haberse cerrado.")

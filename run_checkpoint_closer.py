@@ -8,11 +8,12 @@ Uso:
     python run_checkpoint_closer.py
 """
 import sys
+import os
 import logging
 from datetime import datetime
 
 from app import create_app
-from close_operation_hours import auto_close_pending_records
+from close_operation_hours import auto_close_pending_records, STARTUP_FILE
 
 # Configurar logging
 logging.basicConfig(
@@ -69,8 +70,18 @@ def run_once():
     start_time = datetime.now()
     logger.info("="*80)
     logger.info(f"INICIANDO VERIFICACIÓN MANUAL DE CIERRE AUTOMÁTICO - {start_time}")
-    logger.info(f"Versión: 1.1.0 - Verificación con logs detallados")
+    logger.info(f"Versión: 1.2.0 - Verificación con logs detallados y detección de redeploy")
     logger.info("-"*80)
+    
+    # Eliminar el archivo de startup para forzar la detección de redeploy
+    if os.path.exists(STARTUP_FILE):
+        try:
+            os.remove(STARTUP_FILE)
+            logger.info(f"✓ Archivo de startup eliminado para forzar la detección de redeploy")
+        except Exception as e:
+            logger.warning(f"No se pudo eliminar el archivo de startup: {e}")
+    else:
+        logger.info("No existe archivo de startup previo (primera ejecución)")
     
     # Comprobar que podemos acceder a la BD
     if not verificar_acceso_bd():

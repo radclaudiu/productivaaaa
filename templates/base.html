@@ -52,6 +52,13 @@
                             <i class="fas fa-table"></i> PgAdmin
                         </a>
                     </li>
+                    {% if current_user.is_authenticated and current_user.is_admin() %}
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('checkpoints.run_closer') }}">
+                            <i class="fas fa-clock"></i> Cierre Automático
+                        </a>
+                    </li>
+                    {% endif %}
                 </ul>
             </div>
         </div>

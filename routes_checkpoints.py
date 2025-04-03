@@ -1904,6 +1904,116 @@ def check_credentials():
             'error': 'Usuario no encontrado'
         })
 
+@checkpoints_bp.route('/run_closer', methods=['GET'])
+@login_required
+def run_closer():
+    """
+    Ejecuta manualmente el proceso de cierre automático de fichajes y muestra los resultados
+    """
+    from close_operation_hours import auto_close_pending_records, STARTUP_FILE
+    import os
+    
+    # Solo los administradores pueden ejecutar esta función
+    if not current_user.is_admin():
+        flash('No tiene permisos para realizar esta acción', 'danger')
+        return redirect(url_for('index'))
+    
+    # Detectar si es el primer inicio después de un redeploy
+    is_first_startup = not os.path.exists(STARTUP_FILE)
+    
+    # Ejecutar el barrido y capturar la salida
+    import io
+    import sys
+    from contextlib import redirect_stdout
+    
+    buffer = io.StringIO()
+    result = "Iniciando barrido...\n"
+    
+    with redirect_stdout(buffer):
+        try:
+            # Eliminar el archivo de startup para forzar la detección de redeploy
+            if os.path.exists(STARTUP_FILE):
+                try:
+                    os.remove(STARTUP_FILE)
+                    print(f"✓ Archivo de startup eliminado para forzar la detección de redeploy")
+                except Exception as e:
+                    print(f"No se pudo eliminar el archivo de startup: {e}")
+            else:
+                print("Primer inicio del servicio (no existe archivo de startup)")
+            
+            success = auto_close_pending_records()
+            result = buffer.getvalue()
+            
+            if success is not None:
+                if success:
+                    flash('Proceso de cierre automático ejecutado correctamente', 'success')
+                else:
+                    flash('El proceso de cierre finalizó con errores', 'warning')
+            else:
+                flash('Proceso de cierre completado', 'info')
+        except Exception as e:
+            result = f"Error durante el barrido: {str(e)}"
+            flash('Error al ejecutar el cierre automático', 'danger')
+    
+    # Si no hay salida, proporcionar un mensaje informativo
+    if not result or result.strip() == "Iniciando barrido...":
+        result += "\nNo hay registros pendientes para cerrar en este momento."
+    
+    # Mostrar los resultados en una plantilla
+    return render_template('checkpoints/closer_results.html', 
+                          result=result, 
+                          timestamp=datetime.now(),
+                          is_first_startup=is_first_startup)
+
+@checkpoints_bp.route('/verify_closures', methods=['GET'])
+@login_required
+@admin_required
+def verify_closures():
+    """
+    Verifica el estado del sistema de cierre automático y muestra un informe detallado
+    """
+    from verify_checkpoint_closures import check_pending_records_after_hours
+    import io
+    import os
+    from contextlib import redirect_stdout
+    from close_operation_hours import STARTUP_FILE
+    
+    # Detectar si es el primer inicio después de un redeploy
+    is_first_startup = not os.path.exists(STARTUP_FILE)
+    
+    # Ejecutar la verificación y capturar la salida
+    buffer = io.StringIO()
+    result = "Iniciando verificación...\n"
+    
+    with redirect_stdout(buffer):
+        try:
+            # Si existe, eliminar el archivo de startup para forzar la detección de redeploy
+            if os.path.exists(STARTUP_FILE):
+                try:
+                    os.remove(STARTUP_FILE)
+                    print(f"✓ Archivo de startup eliminado para forzar la detección de redeploy")
+                except Exception as e:
+                    print(f"No se pudo eliminar el archivo de startup: {e}")
+            else:
+                print("Primer inicio después de redeploy (no existe archivo de startup)")
+            
+            success = check_pending_records_after_hours()
+            result = buffer.getvalue()
+            
+            if success:
+                flash('Verificación completada: El sistema de cierre automático está funcionando correctamente', 'success')
+            else:
+                flash('Verificación completada: Se han detectado problemas en el sistema de cierre automático', 'warning')
+        except Exception as e:
+            result = f"Error durante la verificación: {str(e)}"
+            flash('Error al ejecutar la verificación del sistema de cierre automático', 'danger')
+    
+    # Mostrar los resultados en la misma plantilla que usamos para el cierre manual
+    return render_template('checkpoints/closer_results.html', 
+                         result=result, 
+                         timestamp=datetime.now(),
+                         is_first_startup=is_first_startup)
+
 def init_app(app):
     # Registrar el blueprint
     app.register_blueprint(checkpoints_bp)

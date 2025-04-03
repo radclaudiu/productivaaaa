@@ -6,6 +6,8 @@ Este script debería ejecutarse periódicamente, por ejemplo, cada 5 minutos,
 para verificar si algún punto de fichaje debe cerrar sus registros pendientes.
 """
 import sys
+import os
+import logging
 from datetime import datetime, timedelta
 from sqlalchemy import func
 
@@ -13,17 +15,51 @@ from app import db, create_app
 from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, CheckPointIncidentType, CheckPointStatus
 from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
 
+# Configurar logging
+logging.basicConfig(
+    filename='checkpoints_closer.log',
+    level=logging.INFO,
+    format='%(asctime)s [%(levelname)s] - %(message)s',
+    datefmt='%Y-%m-%d %H:%M:%S'
+)
+logger = logging.getLogger('checkpoints_closer')
+
+# Variable para detectar primer inicio después de redeploy
+STARTUP_FILE = '.checkpoint_closer_startup'
+
 def auto_close_pending_records():
     """
     Cierra automáticamente todos los registros pendientes de los puntos de fichaje 
     que han llegado a su hora de fin de funcionamiento configurada.
     """
     timestamp = datetime.now()
+    
+    # Detectar si es el primer inicio después de un redeploy
+    is_first_startup = not os.path.exists(STARTUP_FILE)
+    if is_first_startup:
+        # Registrar en el log que es el primer inicio después de un redeploy
+        startup_message = f"🚀 PRIMER INICIO DESPUÉS DE REDEPLOY - {timestamp}"
+        logger.info(startup_message)
+        print(f"\n{'*' * 100}")
+        print(f"* {startup_message}")
+        print(f"{'*' * 100}\n")
+        
+        # Crear el archivo para futuras ejecuciones
+        with open(STARTUP_FILE, 'w') as f:
+            f.write(f"Último inicio: {timestamp}")
+    
     print(f"\n{'*' * 100}")
     print(f"* INICIANDO FUNCIÓN DE BARRIDO AUTOMÁTICO")
     print(f"* Fecha/hora: {timestamp}")
-    print(f"* Versión: 1.1.0")
+    print(f"* Versión: 1.2.0")  # Actualizada la versión con detección de redeploy
+    print(f"* Primer inicio después de redeploy: {'Sí' if is_first_startup else 'No'}")
     print(f"{'*' * 100}\n")
+    
+    # Registrar cada ejecución en el log
+    if is_first_startup:
+        logger.info(f"Iniciando barrido de cierre automático: {timestamp} [PRIMER INICIO TRAS REDEPLOY]")
+    else:
+        logger.info(f"Iniciando barrido de cierre automático: {timestamp}")
     
     print(f"========== INICIO BARRIDO DE CIERRE AUTOMÁTICO: {timestamp} ==========")
     print(f"Ejecutando verificación de cierre automático por fin de horario de funcionamiento: {timestamp}")
@@ -131,23 +167,38 @@ def auto_close_pending_records():
         # Mostrar resumen final del barrido
         end_timestamp = datetime.now()
         duration = (end_timestamp - timestamp).total_seconds()
-        print(f"\n========== RESUMEN DEL BARRIDO DE CIERRE AUTOMÁTICO ==========")
-        print(f"Fecha y hora de inicio: {timestamp}")
-        print(f"Fecha y hora de fin: {end_timestamp}")
-        print(f"Duración: {duration:.2f} segundos")
-        print(f"Puntos de fichaje procesados: {total_checkpoints_processed} de {len(checkpoints)}")
-        print(f"Registros cerrados: {total_records_closed}")
-        print(f"========== FIN BARRIDO DE CIERRE AUTOMÁTICO ==========\n")
+        
+        # Crear mensaje de resumen
+        summary = f"\n========== RESUMEN DEL BARRIDO DE CIERRE AUTOMÁTICO ==========\n"
+        summary += f"Fecha y hora de inicio: {timestamp}\n"
+        summary += f"Fecha y hora de fin: {end_timestamp}\n"
+        summary += f"Duración: {duration:.2f} segundos\n"
+        summary += f"Primer inicio tras redeploy: {'Sí' if is_first_startup else 'No'}\n"
+        summary += f"Puntos de fichaje procesados: {total_checkpoints_processed} de {len(checkpoints)}\n"
+        summary += f"Registros cerrados: {total_records_closed}\n"
+        summary += f"========== FIN BARRIDO DE CIERRE AUTOMÁTICO ==========\n"
+        
+        # Mostrar en consola y registrar en log
+        print(summary)
+        logger.info(f"Barrido completado - {total_records_closed} registros cerrados en {duration:.2f} segundos")
         
         return True
         
     except Exception as e:
         end_timestamp = datetime.now()
-        print(f"\n========== ERROR EN BARRIDO DE CIERRE AUTOMÁTICO ==========")
-        print(f"Fecha y hora de inicio: {timestamp}")
-        print(f"Fecha y hora de error: {end_timestamp}")
-        print(f"Error general durante el proceso: {e}")
-        print(f"========== FIN BARRIDO CON ERROR ==========\n")
+        
+        # Crear mensaje de error
+        error_msg = f"\n========== ERROR EN BARRIDO DE CIERRE AUTOMÁTICO ==========\n"
+        error_msg += f"Fecha y hora de inicio: {timestamp}\n"
+        error_msg += f"Fecha y hora de error: {end_timestamp}\n"
+        error_msg += f"Primer inicio tras redeploy: {'Sí' if is_first_startup else 'No'}\n"
+        error_msg += f"Error general durante el proceso: {str(e)}\n"
+        error_msg += f"========== FIN BARRIDO CON ERROR ==========\n"
+        
+        # Mostrar en consola y registrar en log
+        print(error_msg)
+        logger.error(f"Error en barrido: {str(e)}")
+        
         return False
 
 
