@@ -107,8 +107,8 @@ def view_original_records(slug):
         Employee.company_id == company_id
     )
     
-    # Filtrar solo registros completos (con hora de salida)
-    query = query.filter(CheckPointOriginalRecord.original_check_out_time.isnot(None))
+    # Mostrar todos los registros originales, incluyendo los que solo tienen entrada
+    # No filtramos por original_check_out_time para mostrar todos los registros
     
     # Aplicar filtros si los hay
     if start_date:
@@ -143,8 +143,8 @@ def view_original_records(slug):
         record_key = (employee.id, record_date)
         
         # Solo incluir cada combinación empleado-fecha una vez
-        # Y asegurar que tenga hora de salida completa
-        if record_key not in seen_records and original.original_check_out_time is not None:
+        # Incluimos también los registros con solo hora de entrada
+        if record_key not in seen_records:
             filtered_records.append((original, record, employee))
             seen_records.add(record_key)
     
