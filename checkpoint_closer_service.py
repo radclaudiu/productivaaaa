@@ -32,6 +32,10 @@ def checkpoint_closer_worker():
     """
     global service_running, last_run_time, checkpoint_closer_active
     
+    # Importar la aplicación Flask
+    from app import create_app
+    app = create_app()
+    
     logger.info("Iniciando servicio de cierre automático de fichajes")
     checkpoint_closer_active = True
     
@@ -46,7 +50,10 @@ def checkpoint_closer_worker():
         while service_running:
             try:
                 logger.info("Ejecutando verificación de cierre automático de fichajes")
-                success = auto_close_pending_records()
+                
+                # Usar el contexto de la aplicación para operaciones de base de datos
+                with app.app_context():
+                    success = auto_close_pending_records()
                 
                 if success is not None:
                     if success:
@@ -153,11 +160,21 @@ def get_service_status():
     
     is_alive = service_thread is not None and service_thread.is_alive()
     
+    # Formatear los tiempos para mostrarlos de forma amigable
+    formatted_last_run = "No ejecutado aún" if last_run_time is None else last_run_time.strftime('%Y-%m-%d %H:%M:%S')
+    
+    next_run = None
+    if last_run_time is not None:
+        next_run = last_run_time + timedelta(seconds=CHECK_INTERVAL)
+        formatted_next_run = next_run.strftime('%Y-%m-%d %H:%M:%S')
+    else:
+        formatted_next_run = "Pendiente de primera ejecución"
+    
     return {
         'active': is_alive and checkpoint_closer_active,
         'running': service_running,
-        'last_run': last_run_time,
-        'next_run': last_run_time + timedelta(seconds=CHECK_INTERVAL) if last_run_time else None,
+        'last_run': formatted_last_run,
+        'next_run': formatted_next_run,
         'thread_alive': is_alive,
         'check_interval_minutes': CHECK_INTERVAL / 60
     }
