@@ -713,8 +713,18 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
                         in_time_orig = original.original_check_in_time.strftime('%H:%M')
                         out_time_orig = original.original_check_out_time.strftime('%H:%M') if original.original_check_out_time else '-'
                         
+                        # Verificar si es un cierre automático por olvido
+                        is_auto_close = record.notes and "[Cerrado automáticamente por fin de horario de funcionamiento]" in record.notes
+                        
                         in_time_mod = record.check_in_time.strftime('%H:%M') if record.check_in_time else '-'
-                        out_time_mod = record.check_out_time.strftime('%H:%M') if record.check_out_time else '-'
+                        
+                        # Si fue cerrado automáticamente, mostrar "SIN SALIDA" en vez de la hora
+                        if is_auto_close:
+                            out_time_mod = "SIN SALIDA"
+                        elif record.check_out_time:
+                            out_time_mod = record.check_out_time.strftime('%H:%M')
+                        else:
+                            out_time_mod = '-'
                         
                         adjusted_by = original.adjusted_by.username if original.adjusted_by and hasattr(original.adjusted_by, 'username') else 'Sistema'
                         

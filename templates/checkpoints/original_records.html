@@ -100,15 +100,15 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ record.check_in_time.strftime('%d/%m/%Y') }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ record.original_check_in_time.strftime('%d/%m/%Y') }}</p>
                                         </td>
                                         <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ record.check_in_time.strftime('%H:%M:%S') }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ record.original_check_in_time.strftime('%H:%M:%S') }}</p>
                                         </td>
                                         <td>
                                             <p class="text-xs font-weight-bold mb-0">
-                                                {% if record.check_out_time %}
-                                                {{ record.check_out_time.strftime('%H:%M:%S') }}
+                                                {% if record.original_check_out_time %}
+                                                {{ record.original_check_out_time.strftime('%H:%M:%S') }}
                                                 {% else %}
                                                 -
                                                 {% endif %}
@@ -116,7 +116,7 @@
                                         </td>
                                         <td>
                                             <p class="text-xs font-weight-bold mb-0">
-                                                {% if record.check_out_time %}
+                                                {% if record.original_check_out_time %}
                                                 {{ "%.2f"|format(record.duration()) }} h
                                                 {% else %}
                                                 -
@@ -126,7 +126,7 @@
                                         <td>
                                             {% if record.has_original_record %}
                                             <div class="d-flex">
-                                                <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.check_in_time.strftime('%Y-%m-%d'), end_date=record.check_in_time.strftime('%Y-%m-%d')) }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
+                                                <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.original_check_in_time.strftime('%Y-%m-%d'), end_date=record.original_check_in_time.strftime('%Y-%m-%d')) }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
                                                     <i class="fas fa-exclamation-triangle"></i> Ver detalles
                                                 </a>
                                             </div>

@@ -130,7 +130,9 @@
                                 <td>{{ record.check_in_time.strftime('%d/%m/%Y') }}</td>
                                 <td>{{ record.check_in_time.strftime('%H:%M') }}</td>
                                 <td>
-                                    {% if record.check_out_time %}
+                                    {% if record.notes and "[Cerrado automáticamente por fin de horario de funcionamiento]" in record.notes %}
+                                    <span class="text-danger">SIN SALIDA</span>
+                                    {% elif record.check_out_time %}
                                     {{ record.check_out_time.strftime('%H:%M') }}
                                     {% else %}
                                     <span class="text-warning">Pendiente</span>
