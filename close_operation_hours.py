@@ -12,7 +12,10 @@ from datetime import datetime, timedelta
 from sqlalchemy import func
 
 from app import db, create_app
-from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident, CheckPointIncidentType, CheckPointStatus
+from models_checkpoints import (
+    CheckPoint, CheckPointRecord, CheckPointIncident, 
+    CheckPointIncidentType, CheckPointStatus, EmployeeContractHours
+)
 from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
 
 # Configurar logging
@@ -143,6 +146,22 @@ def auto_close_pending_records():
                     # Marcar que fue cerrado automáticamente
                     record.notes = (record.notes or "") + " [Cerrado automáticamente por fin de horario de funcionamiento]"
                     record.adjusted = True
+                    
+                    # Comprobar si el empleado tiene configuración de horas por contrato
+                    contract_hours = EmployeeContractHours.query.filter_by(employee_id=record.employee_id).first()
+                    if contract_hours:
+                        # Verificar si se debe ajustar el horario según configuración
+                        check_in_original = record.check_in_time
+                        check_out_original = record.check_out_time
+                        
+                        adjusted_in, adjusted_out = contract_hours.calculate_adjusted_hours(
+                            check_in_original, check_out_original
+                        )
+                        
+                        # Si hay ajuste de salida, aplicarlo
+                        if adjusted_out and adjusted_out != check_out_original:
+                            record.check_out_time = adjusted_out
+                            record.notes += f" [R] Hora de salida ajustada de {check_out_original.strftime('%H:%M')} a {adjusted_out.strftime('%H:%M')} por límite de horas contrato."
                     
                     # Crear una incidencia
                     incident = CheckPointIncident(
