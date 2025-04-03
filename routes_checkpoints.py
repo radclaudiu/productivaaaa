@@ -828,7 +828,7 @@ def list_incidents():
     if resolved == 'yes':
         base_query = base_query.filter(CheckPointIncident.resolved == True)
     elif resolved == 'no':
-        base_query = base_query.filter(CheckPointIncident.resolved == False)
+        base_query = base_query.filter(CheckPointIncident.resolved.is_(False))
     
     if employee_id:
         base_query = base_query.filter(CheckPointRecord.employee_id == employee_id)
