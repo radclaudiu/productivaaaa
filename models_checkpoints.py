@@ -365,8 +365,9 @@ class EmployeeContractHours(db.Model):
             if self.allow_overtime:
                 max_hours = self.daily_hours + self.max_overtime_daily
                 
-            # Ajustamos la hora de entrada para que la duración sea igual a las horas permitidas
-            new_check_in_time = adjusted_out - timedelta(hours=max_hours)
-            return new_check_in_time, adjusted_out
+            # Ajustamos la hora de salida para que la duración sea igual a las horas permitidas
+            # En lugar de recortar la entrada, recortamos desde la salida
+            new_check_out_time = adjusted_in + timedelta(hours=max_hours)
+            return adjusted_in, new_check_out_time
             
         return adjusted_in, adjusted_out
