@@ -940,7 +940,7 @@ def view_original_records(slug):
     
     # Construir la consulta base con filtro de empresa para todos los registros
     if show_all == 'true':
-        # Consulta para todos los registros COMPLETOS, solo aquellos con hora de salida
+        # Consulta para todos los registros, incluyendo los que solo tienen hora de entrada
         query = db.session.query(
             CheckPointRecord, 
             Employee
@@ -948,8 +948,8 @@ def view_original_records(slug):
             Employee,
             CheckPointRecord.employee_id == Employee.id
         ).filter(
-            Employee.company_id == company_id,
-            CheckPointRecord.check_out_time.isnot(None)  # Solo registros con hora de salida
+            Employee.company_id == company_id
+            # Ya no filtramos por check_out_time para mostrar también registros con solo entrada
         ).outerjoin(
             CheckPointOriginalRecord,
             CheckPointOriginalRecord.record_id == CheckPointRecord.id
