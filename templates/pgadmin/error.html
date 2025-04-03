@@ -1,0 +1,31 @@
+{% extends 'pgadmin/base.html' %}
+
+{% block title %}Error{% endblock %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-danger text-white">
+                    <h5 class="mb-0"><i class="fas fa-exclamation-triangle"></i> Error</h5>
+                </div>
+                <div class="card-body">
+                    <p class="mb-0">{{ error }}</p>
+                    
+                    {% if table_name %}
+                    <hr>
+                    <p>Error al acceder a la tabla <strong>{{ table_name }}</strong>.</p>
+                    {% endif %}
+                    
+                    <div class="mt-4">
+                        <a href="{{ url_for('index') }}" class="btn btn-primary">
+                            <i class="fas fa-home"></i> Volver al Inicio
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

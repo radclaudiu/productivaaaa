@@ -1,0 +1,87 @@
+{% extends 'pgadmin/base.html' %}
+
+{% block title %}Consulta SQL{% endblock %}
+
+{% block content %}
+<div class="container-fluid mt-4">
+    <nav aria-label="breadcrumb">
+        <ol class="breadcrumb">
+            <li class="breadcrumb-item"><a href="{{ url_for('index') }}">Tablas</a></li>
+            <li class="breadcrumb-item active">Consulta SQL</li>
+        </ol>
+    </nav>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Consulta SQL</h5>
+        </div>
+        <div class="card-body">
+            <form action="{{ url_for('execute_query') }}" method="post">
+                <div class="form-group mb-3">
+                    <label for="query">Consulta SQL:</label>
+                    <textarea class="form-control font-monospace" id="query" name="query" rows="6" style="font-family: monospace;">{{ query }}</textarea>
+                    <small class="form-text text-muted">Introduzca una consulta SQL válida.</small>
+                </div>
+                <button type="submit" class="btn btn-primary">
+                    <i class="fas fa-play"></i> Ejecutar
+                </button>
+            </form>
+        </div>
+    </div>
+    
+    {% if error %}
+    <div class="alert alert-danger">
+        <i class="fas fa-exclamation-triangle"></i> <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+    
+    {% if affected_rows is not none %}
+    <div class="alert alert-success">
+        <i class="fas fa-check-circle"></i> Consulta ejecutada correctamente. {{ affected_rows }} filas afectadas.
+    </div>
+    {% endif %}
+    
+    {% if results %}
+    <div class="card shadow">
+        <div class="card-header bg-primary text-white">
+            <h5 class="mb-0">Resultados</h5>
+        </div>
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-sm mb-0">
+                    <thead class="table-light">
+                        <tr>
+                            {% for key in results[0].keys() %}
+                            <th>{{ key }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in results %}
+                        <tr>
+                            {% for key, value in row.items() %}
+                            <td>
+                                {% if value is none %}
+                                <span class="text-muted">NULL</span>
+                                {% elif value is boolean %}
+                                <span class="badge bg-{{ 'success' if value else 'danger' }}">
+                                    {{ 'Verdadero' if value else 'Falso' }}
+                                </span>
+                                {% else %}
+                                {{ value }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="card-footer text-muted">
+                {{ results|length }} filas encontradas
+            </div>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

@@ -32,3 +32,6 @@ openai==1.68.2
 # Development tools
 python-dotenv==1.0.0
 pytz
+pgadmin4
+pgadmin4
+jinja2

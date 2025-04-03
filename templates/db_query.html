@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+
+{% block title %}Consulta SQL{% endblock %}
+
+{% block content %}
+<div class="container my-4">
+    <h1 class="mb-4">Consulta SQL Directa</h1>
+    
+    <div class="card mb-4">
+        <div class="card-header">
+            <h5 class="mb-0">Ejecutar consulta</h5>
+        </div>
+        <div class="card-body">
+            <form method="post" action="{{ url_for('db_query') }}" class="mb-0">
+                <div class="form-group mb-3">
+                    <label for="query">Consulta SQL:</label>
+                    <textarea class="form-control font-monospace" id="query" name="query" rows="5" style="font-family: monospace;" required>{{ query }}</textarea>
+                    <small class="form-text text-muted">Ingrese una consulta SQL para ejecutar en la base de datos.</small>
+                </div>
+                <button type="submit" class="btn btn-primary">Ejecutar</button>
+            </form>
+        </div>
+    </div>
+    
+    {% if error %}
+    <div class="alert alert-danger">
+        <strong>Error:</strong> {{ error }}
+    </div>
+    {% endif %}
+    
+    {% if results %}
+    <div class="card">
+        <div class="card-header">
+            <h5 class="mb-0">Resultados</h5>
+        </div>
+        <div class="card-body">
+            {% if columns %}
+            <div class="table-responsive">
+                <table class="table table-bordered table-hover">
+                    <thead class="table-light">
+                        <tr>
+                            {% for column in columns %}
+                            <th>{{ column }}</th>
+                            {% endfor %}
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for row in results %}
+                        <tr>
+                            {% for cell in row %}
+                            <td>
+                                {% if cell is none %}
+                                <span class="text-muted">NULL</span>
+                                {% else %}
+                                {{ cell }}
+                                {% endif %}
+                            </td>
+                            {% endfor %}
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-2">
+                <small class="text-muted">{{ results|length }} filas encontradas</small>
+            </div>
+            {% else %}
+            <div class="alert alert-success mb-0">
+                {{ results }}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

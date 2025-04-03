@@ -10,7 +10,9 @@ from flask_migrate import Migrate
 from sqlalchemy.orm import DeclarativeBase
 
 # Configure logging (ya configurado en config.py)
+logging.basicConfig(level=logging.DEBUG)
 logger = logging.getLogger(__name__)
+logger.info("Initializing Flask application")
 
 # Initialize SQLAlchemy base class
 class Base(DeclarativeBase):
@@ -185,3 +187,63 @@ def docs_md():
 def docs_txt():
     """Sirve la documentación de texto de las funciones."""
     return send_file('funciones_documentadas.txt')
+
+# Ruta para pgAdmin
+@app.route('/pgadmin')
+def pgadmin_redirect():
+    """Redirige a pgAdmin."""
+    from flask import redirect
+    
+    # Obtener el puerto configurado para pgAdmin (por defecto 5050)
+    pgadmin_port = 5050
+    
+    # Construir la URL de pgAdmin en el mismo host pero diferente puerto
+    host = request.host.split(':')[0]  # Obtener solo el nombre del host sin el puerto
+    pgadmin_url = f'http://{host}:{pgadmin_port}'
+    
+    return redirect(pgadmin_url)
+
+# Ruta simplificada para consultas de base de datos directamente en la aplicación principal
+@app.route('/db/query', methods=['GET', 'POST'])
+def db_query():
+    """Ejecuta consultas SQL directamente en la aplicación principal."""
+    import psycopg2
+    from psycopg2 import sql
+    import os
+    
+    results = None
+    columns = None
+    error = None
+    query_text = ''
+    
+    if request.method == 'POST':
+        query_text = request.form.get('query', '')
+        
+        try:
+            # Establecer conexión a la base de datos
+            DATABASE_URL = os.environ.get('DATABASE_URL')
+            conn = psycopg2.connect(DATABASE_URL)
+            cursor = conn.cursor()
+            
+            cursor.execute(query_text)
+            
+            # Si la consulta fue un SELECT, obtener resultados
+            if cursor.description:
+                columns = [desc[0] for desc in cursor.description]
+                results = cursor.fetchall()
+            else:
+                # Si no fue un SELECT, solo mostrar el conteo de filas afectadas
+                conn.commit()
+                results = f"Consulta ejecutada correctamente. Filas afectadas: {cursor.rowcount}"
+            
+            cursor.close()
+            conn.close()
+            
+        except Exception as e:
+            error = str(e)
+    
+    return render_template('db_query.html', 
+                          results=results, 
+                          columns=columns, 
+                          error=error, 
+                          query=query_text)
