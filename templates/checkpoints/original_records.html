@@ -100,10 +100,10 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ record.original_check_in_time.strftime('%d/%m/%Y') }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ record.original_check_in_time.strftime('%d/%m/%Y') if record.original_check_in_time else '-' }}</p>
                                         </td>
                                         <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ record.original_check_in_time.strftime('%H:%M:%S') }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ record.original_check_in_time.strftime('%H:%M:%S') if record.original_check_in_time else '-' }}</p>
                                         </td>
                                         <td>
                                             <p class="text-xs font-weight-bold mb-0">
@@ -126,7 +126,7 @@
                                         <td>
                                             {% if record.has_original_record %}
                                             <div class="d-flex">
-                                                <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.original_check_in_time.strftime('%Y-%m-%d'), end_date=record.original_check_in_time.strftime('%Y-%m-%d')) }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
+                                                <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.original_check_in_time.strftime('%Y-%m-%d') if record.original_check_in_time else '', end_date=record.original_check_in_time.strftime('%Y-%m-%d') if record.original_check_in_time else '') }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
                                                     <i class="fas fa-exclamation-triangle"></i> Ver detalles
                                                 </a>
                                             </div>
@@ -149,10 +149,10 @@
                                             </div>
                                         </td>
                                         <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ original.original_check_in_time.strftime('%d/%m/%Y') }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ original.original_check_in_time.strftime('%d/%m/%Y') if original.original_check_in_time else '-' }}</p>
                                         </td>
                                         <td>
-                                            <p class="text-xs font-weight-bold mb-0">{{ original.original_check_in_time.strftime('%H:%M:%S') }}</p>
+                                            <p class="text-xs font-weight-bold mb-0">{{ original.original_check_in_time.strftime('%H:%M:%S') if original.original_check_in_time else '-' }}</p>
                                         </td>
                                         <td>
                                             <p class="text-xs font-weight-bold mb-0">
@@ -196,8 +196,8 @@
                                                         <div class="modal-body">
                                                             <p>¿Está seguro de que desea eliminar este registro original?</p>
                                                             <p><strong>Empleado:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
-                                                            <p><strong>Fecha:</strong> {{ original.original_check_in_time.strftime('%d/%m/%Y') }}</p>
-                                                            <p><strong>Entrada:</strong> {{ original.original_check_in_time.strftime('%H:%M:%S') }}</p>
+                                                            <p><strong>Fecha:</strong> {{ original.original_check_in_time.strftime('%d/%m/%Y') if original.original_check_in_time else '-' }}</p>
+                                                            <p><strong>Entrada:</strong> {{ original.original_check_in_time.strftime('%H:%M:%S') if original.original_check_in_time else '-' }}</p>
                                                             <p><strong>Salida:</strong> 
                                                                 {% if original.original_check_out_time %}
                                                                 {{ original.original_check_out_time.strftime('%H:%M:%S') }}
