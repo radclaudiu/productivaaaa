@@ -616,12 +616,14 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
         # Calcular horas trabajadas
         hours_original = 0
         if original.original_check_out_time and original.original_check_in_time:
-            hours_original = (original.original_check_out_time - original.original_check_in_time).total_seconds() / 3600
+            # Usando la función duration ya modificada para manejar correctamente los turnos nocturnos
+            hours_original = original.duration()
             employee_records[employee.id]['weeks'][week_key]['original_hours'] += hours_original
         
         hours_adjusted = 0
         if record.check_out_time and record.check_in_time:
-            hours_adjusted = (record.check_out_time - record.check_in_time).total_seconds() / 3600
+            # Usando la función duration ya modificada para manejar correctamente los turnos nocturnos
+            hours_adjusted = record.duration()
             employee_records[employee.id]['weeks'][week_key]['adjusted_hours'] += hours_adjusted
             
         # Guardar registro

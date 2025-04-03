@@ -108,7 +108,21 @@ class CheckPointRecord(db.Model):
         if not self.check_out_time:
             return None
         
-        delta = self.check_out_time - self.check_in_time
+        # Asegurarse de que ambas fechas tengan la misma información de zona horaria
+        from timezone_config import datetime_to_madrid
+        
+        # Convertir ambas fechas a aware con la misma zona horaria
+        check_in = datetime_to_madrid(self.check_in_time)
+        check_out = datetime_to_madrid(self.check_out_time)
+        
+        # Si la hora de salida es anterior a la de entrada, podría ser un turno nocturno
+        # En ese caso, asumimos que la salida corresponde al día siguiente
+        if check_out < check_in:
+            # Ajustar manualmente el día para calcular correctamente
+            delta = (check_out - check_in).total_seconds() + (24 * 3600)  # Sumar 24 horas en segundos
+            return delta / 3600  # Convertir a horas
+        
+        delta = check_out - check_in
         return delta.total_seconds() / 3600  # Convertir a horas
     
     @property
@@ -208,6 +222,13 @@ class CheckPointOriginalRecord(db.Model):
         # Convertir ambas fechas a aware con la misma zona horaria
         check_in = datetime_to_madrid(self.original_check_in_time)
         check_out = datetime_to_madrid(self.original_check_out_time)
+        
+        # Si la hora de salida es anterior a la de entrada, podría ser un turno nocturno
+        # En ese caso, asumimos que la salida corresponde al día siguiente
+        if check_out < check_in:
+            # Ajustar manualmente el día para calcular correctamente
+            delta = (check_out - check_in).total_seconds() + (24 * 3600)  # Sumar 24 horas en segundos
+            return delta / 3600  # Convertir a horas
         
         delta = check_out - check_in
         return delta.total_seconds() / 3600  # Convertir segundos a horas

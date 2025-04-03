@@ -81,6 +81,7 @@
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Fecha</th>
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Entrada Original</th>
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Salida Original</th>
+                                    <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Horas</th>
                                     <th class="text-uppercase text-xxs font-weight-bolder opacity-7">Acciones</th>
                                 </tr>
                             </thead>
@@ -108,6 +109,15 @@
                                             <p class="text-xs font-weight-bold mb-0">
                                                 {% if record.check_out_time %}
                                                 {{ record.check_out_time.strftime('%H:%M:%S') }}
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </p>
+                                        </td>
+                                        <td>
+                                            <p class="text-xs font-weight-bold mb-0">
+                                                {% if record.check_out_time %}
+                                                {{ "%.2f"|format(record.duration()) }} h
                                                 {% else %}
                                                 -
                                                 {% endif %}
@@ -148,6 +158,15 @@
                                             <p class="text-xs font-weight-bold mb-0">
                                                 {% if original.original_check_out_time %}
                                                 {{ original.original_check_out_time.strftime('%H:%M:%S') }}
+                                                {% else %}
+                                                -
+                                                {% endif %}
+                                            </p>
+                                        </td>
+                                        <td>
+                                            <p class="text-xs font-weight-bold mb-0">
+                                                {% if original.original_check_out_time %}
+                                                {{ "%.2f"|format(original.duration()) }} h
                                                 {% else %}
                                                 -
                                                 {% endif %}
