@@ -63,6 +63,85 @@ Sistema de Cierre Automático
                         </div>
                     </div>
                 </div>
+                
+                {% if service_status %}
+                <div class="card mb-4">
+                    <div class="card-header bg-{{ 'success' if service_status.active and service_status.running and service_status.thread_alive else 'danger' }}">
+                        <h5 class="mb-0 text-white">
+                            <i class="fas fa-{{ 'check-circle' if service_status.active and service_status.running and service_status.thread_alive else 'exclamation-triangle' }} me-2"></i> 
+                            Estado del Servicio en Segundo Plano
+                        </h5>
+                    </div>
+                    <div class="card-body">
+                        <div class="row">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="p-2 rounded-circle me-3 {{ 'bg-success' if service_status.active else 'bg-danger' }} text-white">
+                                            <i class="fas fa-{{ 'check' if service_status.active else 'times' }}"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Servicio activo</h6>
+                                            <small class="text-muted">{{ 'Sí' if service_status.active else 'No' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="p-2 rounded-circle me-3 {{ 'bg-success' if service_status.running else 'bg-danger' }} text-white">
+                                            <i class="fas fa-{{ 'check' if service_status.running else 'times' }}"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Servicio en ejecución</h6>
+                                            <small class="text-muted">{{ 'Sí' if service_status.running else 'No' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <div class="d-flex align-items-center">
+                                        <div class="p-2 rounded-circle me-3 {{ 'bg-success' if service_status.thread_alive else 'bg-danger' }} text-white">
+                                            <i class="fas fa-{{ 'check' if service_status.thread_alive else 'times' }}"></i>
+                                        </div>
+                                        <div>
+                                            <h6 class="mb-0">Hilo vivo</h6>
+                                            <small class="text-muted">{{ 'Sí' if service_status.thread_alive else 'No' }}</small>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mt-3">
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <h6><i class="far fa-clock me-2"></i>Última ejecución:</h6>
+                                    <p class="text-muted">{{ service_status.last_run }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <h6><i class="far fa-calendar-alt me-2"></i>Próxima ejecución:</h6>
+                                    <p class="text-muted">{{ service_status.next_run }}</p>
+                                </div>
+                            </div>
+                            
+                            <div class="col-md-4">
+                                <div class="mb-3">
+                                    <h6><i class="fas fa-hourglass-half me-2"></i>Intervalo:</h6>
+                                    <p class="text-muted">{{ service_status.check_interval_minutes }} minutos</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
             </div>
             
             <div class="card mb-4">

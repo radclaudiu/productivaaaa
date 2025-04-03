@@ -172,6 +172,8 @@ from flask_login import current_user
 # Create the application instance
 app = create_app()
 
+# El servicio de cierre automático se inicia en main.py
+
 # Rutas para documentación
 @app.route('/docs/html')
 def docs_html():

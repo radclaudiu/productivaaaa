@@ -1,8 +1,12 @@
 import os
 import json
+import logging
 from datetime import datetime, date, time, timedelta
 from functools import wraps
 from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
+
+# Configurar logging
+logger = logging.getLogger(__name__)
 
 from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, session
 from flask import current_app, abort, send_file
@@ -1981,6 +1985,14 @@ def verify_closures():
     # Detectar si es el primer inicio después de un redeploy
     is_first_startup = not os.path.exists(STARTUP_FILE)
     
+    # Intentar obtener el estado del servicio de cierre automático
+    service_status = None
+    try:
+        from checkpoint_closer_service import get_service_status
+        service_status = get_service_status()
+    except Exception as e:
+        current_app.logger.error(f"Error al obtener el estado del servicio de cierre automático: {str(e)}")
+    
     # Ejecutar la verificación y capturar la salida
     buffer = io.StringIO()
     result = "Iniciando verificación...\n"
@@ -1997,6 +2009,17 @@ def verify_closures():
             else:
                 print("Primer inicio después de redeploy (no existe archivo de startup)")
             
+            # Mostrar el estado del servicio
+            if service_status:
+                print(f"\nEstado del servicio de cierre automático:")
+                print(f"- Servicio activo: {'Sí' if service_status['active'] else 'No'}")
+                print(f"- Servicio en ejecución: {'Sí' if service_status['running'] else 'No'}")
+                print(f"- Hilo vivo: {'Sí' if service_status['thread_alive'] else 'No'}")
+                print(f"- Última ejecución: {service_status['last_run']}")
+                print(f"- Próxima ejecución: {service_status['next_run']}")
+                print(f"- Intervalo de verificación: {service_status['check_interval_minutes']} minutos")
+                print()
+            
             success = check_pending_records_after_hours()
             result = buffer.getvalue()
             
@@ -2012,7 +2035,8 @@ def verify_closures():
     return render_template('checkpoints/closer_results.html', 
                          result=result, 
                          timestamp=datetime.now(),
-                         is_first_startup=is_first_startup)
+                         is_first_startup=is_first_startup,
+                         service_status=service_status)
 
 def init_app(app):
     # Registrar el blueprint
