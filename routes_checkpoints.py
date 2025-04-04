@@ -1951,6 +1951,7 @@ def run_closer():
     Ejecuta manualmente el proceso de cierre automático de fichajes y muestra los resultados
     """
     from close_operation_hours import auto_close_pending_records, STARTUP_FILE
+    from app import create_app
     import os
     
     # Solo los administradores pueden ejecutar esta función
@@ -1981,7 +1982,11 @@ def run_closer():
             else:
                 print("Primer inicio del servicio (no existe archivo de startup)")
             
-            success = auto_close_pending_records()
+            # Crear un app context temporal para la ejecución
+            app = create_app()
+            with app.app_context():
+                success = auto_close_pending_records()
+                
             result = buffer.getvalue()
             
             if success is not None:
@@ -1992,8 +1997,9 @@ def run_closer():
             else:
                 flash('Proceso de cierre completado', 'info')
         except Exception as e:
-            result = f"Error durante el barrido: {str(e)}"
-            flash('Error al ejecutar el cierre automático', 'danger')
+            db.session.rollback()  # Asegurar rollback en caso de error
+            result = f"Error durante el barrido: {str(e)}\n{buffer.getvalue()}"
+            flash(f'Error al ejecutar el cierre automático: {str(e)}', 'danger')
     
     # Si no hay salida, proporcionar un mensaje informativo
     if not result or result.strip() == "Iniciando barrido...":
