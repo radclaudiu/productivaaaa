@@ -7,6 +7,7 @@ import sys
 import logging
 from datetime import datetime
 from app import db, create_app
+from sqlalchemy import text
 
 # Configurar logging
 logging.basicConfig(
@@ -84,7 +85,7 @@ def clean_database(confirm=False):
         for table_name in tables:
             try:
                 # Ejecutar SQL directo para eliminar todos los registros de la tabla
-                result = db.session.execute(f"DELETE FROM {table_name}")
+                result = db.session.execute(text(f"DELETE FROM {table_name}"))
                 deleted_count = result.rowcount
                 
                 if deleted_count > 0:
