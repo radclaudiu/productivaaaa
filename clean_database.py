@@ -7,7 +7,7 @@ import sys
 import logging
 from datetime import datetime
 from app import db, create_app
-from sqlalchemy import text
+from sqlalchemy import text, inspect
 
 # Configurar logging
 logging.basicConfig(
@@ -45,17 +45,35 @@ def clean_database(confirm=False):
     
     try:
         # Verificar las tablas existentes en la base de datos
-        db.session.rollback()
-        existing_tables_query = text("""
-            SELECT table_name 
-            FROM information_schema.tables 
-            WHERE table_schema = 'public'
-            AND table_type = 'BASE TABLE'
-        """)
-        existing_tables_result = db.session.execute(existing_tables_query).fetchall()
-        existing_tables = [row[0] for row in existing_tables_result]
-        
-        logger.info(f"Tablas encontradas en la base de datos: {existing_tables}")
+        try:
+            db.session.rollback()
+            existing_tables_query = text("""
+                SELECT table_name 
+                FROM information_schema.tables 
+                WHERE table_schema = 'public'
+                AND table_type = 'BASE TABLE'
+            """)
+            existing_tables_result = db.session.execute(existing_tables_query).fetchall()
+            existing_tables = [row[0] for row in existing_tables_result]
+            
+            logger.info(f"Tablas encontradas en la base de datos: {existing_tables}")
+        except Exception as e:
+            error_msg = f"Error al obtener la lista de tablas: {str(e)}"
+            logger.error(error_msg)
+            print(f"✗ {error_msg}")
+            # Intentar obtener tablas con otro método como fallback
+            try:
+                db.session.rollback()
+                # Usar SQLAlchemy para obtener la lista de tablas
+                # Ya tenemos el import de inspect en la línea 10
+                inspector = inspect(db.engine)
+                existing_tables = inspector.get_table_names()
+                logger.info(f"Tablas encontradas usando inspector: {existing_tables}")
+            except Exception as e2:
+                error_msg2 = f"Error al obtener la lista de tablas con el inspector: {str(e2)}"
+                logger.error(error_msg2)
+                print(f"✗ {error_msg2}")
+                existing_tables = []
         
         # Lista de tablas en el orden correcto para eliminar (inverso a las dependencias)
         all_possible_tables = [
@@ -84,7 +102,7 @@ def clean_database(confirm=False):
         ]
         
         # Filtrar solo las tablas que existen en la base de datos
-        tables = [table for table in all_possible_tables if table in existing_tables]
+        tables = [table for table in all_possible_tables if table.lower() in [t.lower() for t in existing_tables]]
         logger.info(f"Se intentará eliminar las siguientes tablas: {tables}")
         
         deleted_tables = []
@@ -107,6 +125,28 @@ def clean_database(confirm=False):
             # Asegurarse de iniciar una nueva transacción limpia para cada tabla
             db.session.rollback()
             
+            # Primera verificar la existencia de la tabla con una consulta segura
+            try:
+                check_table_query = text(f"""
+                    SELECT EXISTS (
+                        SELECT FROM information_schema.tables 
+                        WHERE table_schema = 'public' 
+                        AND table_name = :table_name
+                    )
+                """)
+                table_exists = db.session.execute(check_table_query, {"table_name": table_name}).scalar()
+                
+                if not table_exists:
+                    print(f"! Tabla {table_name} no existe en la base de datos, omitiendo...")
+                    logger.warning(f"Tabla {table_name} no existe en la base de datos, omitiendo...")
+                    continue
+            except Exception as e:
+                error_msg = f"Error al verificar existencia de la tabla {table_name}: {str(e)}"
+                print(f"✗ {error_msg}")
+                logger.error(error_msg)
+                db.session.rollback()
+                # Continuamos, asumiendo que la tabla puede existir
+            
             try:
                 # Ejecutar SQL directo para eliminar todos los registros de la tabla
                 sql = text(f"TRUNCATE TABLE {table_name} CASCADE")
@@ -115,20 +155,34 @@ def clean_database(confirm=False):
                 
                 # Como TRUNCATE no devuelve un recuento, asumimos que se eliminaron todos los registros
                 # y verificamos contando después
-                count_sql = text(f"SELECT COUNT(*) FROM {table_name}")
-                result = db.session.execute(count_sql).scalar()
-                
-                if result == 0:
-                    # Asumimos que se eliminaron registros (aunque no sabemos cuántos exactamente)
-                    deleted_tables.append(table_name)
-                    deleted_rows[table_name] = "Todos"  # No conocemos el número exacto
-                    total_deleted += 1  # Incrementamos al menos en 1 para indicar que hubo eliminación
+                try:
+                    count_sql = text(f"SELECT COUNT(*) FROM {table_name}")
+                    result = db.session.execute(count_sql).scalar()
                     
-                    print(f"✓ Tabla {table_name} vaciada correctamente")
-                    logger.info(f"Tabla {table_name} vaciada correctamente")
-                else:
-                    print(f"! Tabla {table_name} no se vació completamente ({result} registros restantes)")
-                    logger.warning(f"Tabla {table_name} no se vació completamente ({result} registros restantes)")
+                    if result == 0:
+                        # Asumimos que se eliminaron registros (aunque no sabemos cuántos exactamente)
+                        deleted_tables.append(table_name)
+                        deleted_rows[table_name] = "Todos"  # No conocemos el número exacto
+                        total_deleted += 1  # Incrementamos al menos en 1 para indicar que hubo eliminación
+                        
+                        print(f"✓ Tabla {table_name} vaciada correctamente")
+                        logger.info(f"Tabla {table_name} vaciada correctamente")
+                    else:
+                        print(f"! Tabla {table_name} no se vació completamente ({result} registros restantes)")
+                        logger.warning(f"Tabla {table_name} no se vació completamente ({result} registros restantes)")
+                except Exception as e_count:
+                    # Si hay error al contar, asumimos que el TRUNCATE funcionó
+                    error_msg = f"Error al verificar el conteo tras TRUNCATE en {table_name}: {str(e_count)}"
+                    logger.warning(error_msg)
+                    print(f"! {error_msg}")
+                    
+                    deleted_tables.append(table_name)
+                    deleted_rows[table_name] = "Desconocido"
+                    total_deleted += 1
+                    
+                    print(f"✓ Tabla {table_name} probablemente vaciada (no se pudo verificar)")
+                    logger.info(f"Tabla {table_name} probablemente vaciada (no se pudo verificar)")
+                    db.session.rollback()
                     
             except Exception as e:
                 error_msg = f"Error al vaciar la tabla {table_name}: {str(e)}"

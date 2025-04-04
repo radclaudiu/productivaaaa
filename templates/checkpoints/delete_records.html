@@ -1,4 +1,4 @@
-{% extends "base.html" %}
+{% extends "layout.html" %}
 
 {% block content %}
 <div class="container mt-5">
@@ -85,7 +85,7 @@
                         
                         <div class="row">
                             <div class="col-md-12 text-end">
-                                <a href="{{ url_for("checkpoints.dashboard") }}" class="btn btn-secondary">
+                                <a href="{{ url_for("checkpoints.index_company", slug=company.get_slug()) }}" class="btn btn-secondary">
                                     <i class="fas fa-times"></i> Cancelar
                                 </a>
                                 {{ form.submit(class="btn btn-danger") }}

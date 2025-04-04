@@ -21,9 +21,9 @@ from models_checkpoints import CheckPoint, CheckPointRecord, CheckPointIncident,
 from models_checkpoints import CheckPointStatus, CheckPointIncidentType, CheckPointOriginalRecord
 from forms_checkpoints import (CheckPointForm, CheckPointLoginForm, CheckPointEmployeePinForm, 
                              ContractHoursForm, CheckPointRecordAdjustmentForm,
-                             SignaturePadForm, ExportCheckPointRecordsForm)
+                             SignaturePadForm, ExportCheckPointRecordsForm, DeleteCheckPointRecordsForm)
 from utils import log_activity
-from utils_checkpoints import generate_pdf_report, draw_signature
+from utils_checkpoints import generate_pdf_report, draw_signature, delete_employee_records
 
 
 # Crear un Blueprint para las rutas de checkpoints
@@ -2090,11 +2090,16 @@ def delete_records():
     from utils_checkpoints import delete_employee_records
     from forms_checkpoints import DeleteCheckPointRecordsForm
     
-    # Obtener la empresa del usuario actual
-    company = current_user.company
-    if not company:
-        flash('No tienes una empresa asignada.', 'danger')
-        return redirect(url_for('index'))
+    # Obtener la empresa seleccionada
+    company_id = session.get('selected_company_id')
+    if not company_id:
+        flash('Primero debe seleccionar una empresa.', 'danger')
+        return redirect(url_for('checkpoints.select_company'))
+        
+    company = Company.query.get_or_404(company_id)
+    if not current_user.is_admin() and company not in current_user.companies:
+        flash('No tiene permiso para gestionar esta empresa.', 'danger')
+        return redirect(url_for('checkpoints.select_company'))
         
     # Crear el formulario
     form = DeleteCheckPointRecordsForm()
@@ -2129,7 +2134,7 @@ def delete_records():
             else:
                 flash(f'Error al eliminar registros: {result["message"]}', 'danger')
             
-            return redirect(url_for('checkpoints.dashboard'))
+            return redirect(url_for('checkpoints.index_company', slug=company.get_slug()))
             
         except Exception as e:
             flash(f'Error al procesar la solicitud: {str(e)}', 'danger')
