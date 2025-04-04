@@ -1,0 +1,73 @@
+{% extends "layout.html" %}
+
+{% block content %}
+<div class="container mt-4">
+    <div class="card border-danger mb-4 shadow">
+        <div class="card-header bg-danger text-white">
+            <h2 class="card-title m-0">
+                <i class="bi bi-exclamation-triangle-fill"></i> ADVERTENCIA: Limpieza de Base de Datos
+            </h2>
+        </div>
+        <div class="card-body">
+            <div class="alert alert-danger mb-4">
+                <h4 class="alert-heading">
+                    <i class="bi bi-exclamation-octagon-fill"></i> Esta es una operación destructiva e irreversible
+                </h4>
+                <p class="mb-0">
+                    Esta acción <strong>eliminará TODOS los datos</strong> de la base de datos, incluyendo:
+                </p>
+                <ul class="mb-0 mt-2">
+                    <li>Empresas</li>
+                    <li>Empleados</li>
+                    <li>Puntos de fichaje</li>
+                    <li>Registros de fichaje</li>
+                    <li>Tareas y etiquetas</li>
+                    <li>Horarios y vacaciones</li>
+                    <li>Archivos adjuntos</li>
+                </ul>
+                <p class="mt-3 mb-0">
+                    <strong>Esta operación no se puede deshacer.</strong> No se realiza ninguna copia de seguridad automática.
+                </p>
+            </div>
+
+            <form method="POST" onsubmit="return confirmDatabaseCleaning()">
+                <div class="mb-4">
+                    <label for="confirmation" class="form-label">
+                        <strong>Para confirmar, escriba exactamente "CONFIRMAR BORRAR TODO" en el campo de abajo:</strong>
+                    </label>
+                    <input type="text" id="confirmation" name="confirmation" 
+                           class="form-control form-control-lg border-danger" 
+                           placeholder="Escriba el texto exacto para confirmar" 
+                           autocomplete="off">
+                    <div class="form-text text-danger">
+                        Esta verificación distingue entre mayúsculas y minúsculas.
+                    </div>
+                </div>
+
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('main.dashboard') }}" class="btn btn-secondary btn-lg">
+                        <i class="bi bi-arrow-left"></i> Cancelar y volver
+                    </a>
+                    <button type="submit" class="btn btn-danger btn-lg">
+                        <i class="bi bi-trash3-fill"></i> Limpiar completamente la base de datos
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function confirmDatabaseCleaning() {
+    const confirmation = document.getElementById('confirmation').value;
+    if (confirmation !== 'CONFIRMAR BORRAR TODO') {
+        alert('La confirmación no es correcta. Por favor, escriba exactamente "CONFIRMAR BORRAR TODO".');
+        return false;
+    }
+    
+    return confirm('ÚLTIMA ADVERTENCIA: Esta acción eliminará TODOS los datos de la base de datos. ¿Está completamente seguro de que desea continuar?');
+}
+</script>
+{% endblock %}

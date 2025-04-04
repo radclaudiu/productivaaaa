@@ -20,6 +20,7 @@ from forms import (LoginForm, RegistrationForm, UserUpdateForm, PasswordChangeFo
 from utils import (save_file, log_employee_change, log_activity, can_manage_company, 
                   can_manage_employee, can_view_employee, get_dashboard_stats, generate_checkins_pdf,
                   export_company_employees_zip)
+from clean_database import clean_database
 
 # Create blueprints
 auth_bp = Blueprint('auth', __name__)
@@ -1700,3 +1701,27 @@ def delete_vacation(id):
     log_activity(f'Vacaciones eliminadas para {employee.first_name} {employee.last_name}')
     flash('Vacaciones eliminadas correctamente.', 'success')
     return redirect(url_for('vacation.list_vacations', employee_id=employee_id))
+
+# Ruta para limpiar la base de datos (solo administradores)
+@main_bp.route('/clean-database', methods=['GET', 'POST'])
+@admin_required
+def clean_database_route():
+    if request.method == 'POST':
+        # Verificar la confirmación del formulario
+        confirmation = request.form.get('confirmation')
+        
+        if confirmation == 'CONFIRMAR BORRAR TODO':
+            # Ejecutar la limpieza de base de datos
+            result = clean_database(confirm=True)
+            
+            if result['success']:
+                log_activity('Base de datos limpiada completamente')
+                flash('Base de datos limpiada completamente. Se han eliminado todos los registros.', 'success')
+            else:
+                flash(f'Error al limpiar la base de datos: {result.get("message", "Error desconocido")}', 'danger')
+                
+            return redirect(url_for('main.dashboard'))
+        else:
+            flash('La confirmación no es correcta. La base de datos NO ha sido limpiada.', 'warning')
+    
+    return render_template('clean_database.html', title='Limpiar Base de Datos')

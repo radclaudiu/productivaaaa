@@ -301,6 +301,12 @@
                                     <i class="bi bi-person-add"></i> Nuevo Usuario
                                 </a>
                             </div>
+                            
+                            <div class="col-md-3 mb-3">
+                                <a href="{{ url_for('main.clean_database_route') }}" class="btn btn-danger w-100">
+                                    <i class="bi bi-database-x"></i> Limpiar Base de Datos
+                                </a>
+                            </div>
                         {% endif %}
                         
                         <div class="col-md-3 mb-3">
