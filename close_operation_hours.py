@@ -163,6 +163,28 @@ def auto_close_pending_records():
                     record.notes = (record.notes or "") + f" [Cerrado automáticamente durante ventana de cierre {checkpoint.operation_start_time} - {checkpoint.operation_end_time}]"
                     record.adjusted = True
                     
+                    # Actualizar o crear registro original con nota de "sin salida"
+                    from models_checkpoints import CheckPointOriginalRecord
+                    existing_original = CheckPointOriginalRecord.query.filter_by(record_id=record.id).first()
+                    
+                    if existing_original:
+                        # Actualizar el registro existente
+                        existing_original.original_check_out_time = check_out_time
+                        existing_original.original_notes = (existing_original.original_notes or "") + " [sin salida]"
+                        existing_original.adjustment_reason = "Cierre automático durante ventana horaria"
+                        print(f"  ✓ Actualizado registro original ID {existing_original.id} para record ID {record.id} con nota [sin salida]")
+                    else:
+                        # Crear un nuevo registro original
+                        original_record = CheckPointOriginalRecord(
+                            record_id=record.id,
+                            original_check_in_time=record.check_in_time,
+                            original_check_out_time=check_out_time,
+                            original_notes="[sin salida]",
+                            adjustment_reason="Cierre automático durante ventana horaria"
+                        )
+                        db.session.add(original_record)
+                        print(f"  ✓ Creado nuevo registro original para record ID {record.id} con nota [sin salida]")
+                    
                     # Comprobar si el empleado tiene configuración de horas por contrato
                     contract_hours = EmployeeContractHours.query.filter_by(employee_id=record.employee_id).first()
                     if contract_hours:
