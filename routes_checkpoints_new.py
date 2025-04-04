@@ -476,37 +476,56 @@ def export_original_records(slug):
     return export_original_records_pdf(records, start_date, end_date, company)
 
 def export_original_records_pdf(records, start_date=None, end_date=None, company=None):
-    """Genera un PDF simple con los registros originales por empleado"""
+    """Genera un PDF con los registros originales por empleado agrupados por semanas"""
     import logging
     from fpdf import FPDF
     from tempfile import NamedTemporaryFile
+    from utils_checkpoints import get_iso_week_start_end, get_week_description
     
     # Crear un archivo temporal para guardar el PDF
     pdf_file = NamedTemporaryFile(delete=False, suffix='.pdf')
     pdf_file.close()
     
-    # Clase PDF personalizada con formato simple
-    class SimplePDF(FPDF):
+    # Clase PDF personalizada con formato mejorado
+    class WeeklyReportPDF(FPDF):
+        def __init__(self):
+            super().__init__()
+            # Colores corporativos
+            self.primary_color = (31, 79, 121)  # Azul oscuro
+            self.secondary_color = (82, 125, 162)  # Azul medio
+            self.accent_color = (236, 240, 245)  # Azul muy claro para fondos
+            
         def header(self):
-            # Título
+            # Fondo de cabecera
+            self.set_fill_color(*self.primary_color)
+            self.rect(0, 0, 210, 15, 'F')
+            
+            # Título con texto blanco
             self.set_font('Arial', 'B', 15)
+            self.set_text_color(255, 255, 255)
+            
             title = 'Registros Originales de Fichajes'
             if company:
                 title = f'Registros Originales de Fichajes - {company.name}'
+            
             self.cell(0, 10, title, 0, 1, 'C')
             
+            # Restaurar color de texto
+            self.set_text_color(0, 0, 0)
+            
             # Período
+            self.set_font('Arial', '', 10)
             if start_date and end_date:
-                period = f"{start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
+                period = f"Período: {start_date.strftime('%d/%m/%Y')} - {end_date.strftime('%d/%m/%Y')}"
             elif start_date:
-                period = f"Desde {start_date.strftime('%d/%m/%Y')}"
+                period = f"Desde: {start_date.strftime('%d/%m/%Y')}"
             elif end_date:
-                period = f"Hasta {end_date.strftime('%d/%m/%Y')}"
+                period = f"Hasta: {end_date.strftime('%d/%m/%Y')}"
             else:
                 period = "Todos los registros"
-                
-            self.set_font('Arial', '', 10)
-            self.cell(0, 10, f'Período: {period}', 0, 1, 'C')
+            
+            self.set_y(15)  # Posicionarse después de la barra
+            self.cell(0, 10, period, 0, 1, 'C')
             
             # Fecha de generación
             self.set_font('Arial', 'I', 8)
@@ -516,12 +535,18 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
         def footer(self):
             # Pie de página
             self.set_y(-15)
+            
+            # Línea divisoria
+            self.set_draw_color(*self.secondary_color)
+            self.line(10, self.get_y(), 200, self.get_y())
+            
+            # Número de página
             self.set_font('Arial', 'I', 8)
             self.cell(0, 10, f'Página {self.page_no()}/{{nb}}', 0, 0, 'C')
     
     try:
         # Crear PDF
-        pdf = SimplePDF()
+        pdf = WeeklyReportPDF()
         pdf.alias_nb_pages()
         pdf.add_page()
         pdf.set_auto_page_break(auto=True, margin=15)
@@ -546,68 +571,154 @@ def export_original_records_pdf(records, start_date=None, end_date=None, company
             
             # Encabezado de empleado
             pdf.set_font('Arial', 'B', 12)
-            pdf.cell(0, 10, f"Empleado: {employee.first_name} {employee.last_name} (DNI: {employee.dni})", 0, 1, 'L')
-            
-            # Encabezados de la tabla
-            pdf.set_fill_color(200, 220, 255)
-            pdf.set_font('Arial', 'B', 9)
-            pdf.cell(40, 7, 'Fecha', 1, 0, 'C', True)
-            pdf.cell(30, 7, 'Hora Entrada Original', 1, 0, 'C', True)
-            pdf.cell(30, 7, 'Hora Salida Original', 1, 0, 'C', True)
-            pdf.cell(30, 7, 'Horas Trabajadas', 1, 0, 'C', True)
-            pdf.cell(60, 7, 'Observaciones', 1, 1, 'C', True)
-            
-            # Datos de fichajes
-            pdf.set_font('Arial', '', 9)
-            total_hours = 0
+            pdf.set_fill_color(*pdf.secondary_color)
+            pdf.set_text_color(255, 255, 255)
+            pdf.rect(10, pdf.get_y(), 190, 10, 'F')
+            pdf.cell(0, 10, f"Empleado: {employee.first_name} {employee.last_name} (DNI: {employee.dni})", 0, 1, 'C')
+            pdf.set_text_color(0, 0, 0)  # Restaurar color de texto
+            pdf.ln(5)
             
             # Ordenar registros por fecha
             sorted_records = sorted(original_records, 
                                   key=lambda x: x.original_check_in_time if x.original_check_in_time else datetime.min)
             
+            # Agrupar registros por semana (de lunes a domingo)
+            weeks_records = {}
             for record in sorted_records:
-                # Fecha
-                fecha = record.original_check_in_time.strftime('%d/%m/%Y') if record.original_check_in_time else '-'
-                pdf.cell(40, 7, fecha, 1, 0, 'C')
+                if not record.original_check_in_time:
+                    continue
+                    
+                # Obtener el lunes de la semana para este registro
+                week_start, _ = get_iso_week_start_end(record.original_check_in_time)
+                week_key = week_start.strftime('%Y-%m-%d')
                 
-                # Hora de entrada original
-                entrada = record.original_check_in_time.strftime('%H:%M:%S') if record.original_check_in_time else '-'
-                pdf.cell(30, 7, entrada, 1, 0, 'C')
+                if week_key not in weeks_records:
+                    weeks_records[week_key] = {
+                        'week_start': week_start,
+                        'records': [],
+                        'total_hours': 0.0
+                    }
                 
-                # Hora de salida original
-                if record.original_check_out_time:
-                    salida = record.original_check_out_time.strftime('%H:%M:%S')
-                else:
-                    pdf.set_text_color(255, 0, 0)  # Rojo para destacar
-                    salida = 'SIN SALIDA'
-                pdf.cell(30, 7, salida, 1, 0, 'C')
-                pdf.set_text_color(0, 0, 0)  # Restaurar color negro
+                weeks_records[week_key]['records'].append(record)
                 
-                # Horas trabajadas
-                hours = record.duration() if record.original_check_out_time and record.original_check_in_time else '-'
+                # Sumar horas si el registro tiene duración
+                hours = record.duration() if record.original_check_out_time and record.original_check_in_time else 0
                 if isinstance(hours, (int, float)):
-                    total_hours += hours
-                    hours_str = f"{hours:.2f} h"
-                else:
-                    hours_str = hours
-                pdf.cell(30, 7, hours_str, 1, 0, 'C')
+                    weeks_records[week_key]['total_hours'] += hours
+            
+            # Ordenar las semanas por fecha de inicio
+            sorted_weeks = sorted(weeks_records.items(), key=lambda x: x[1]['week_start'])
+            
+            # Si no hay registros para mostrar
+            if not sorted_weeks:
+                pdf.set_font('Arial', 'B', 12)
+                pdf.ln(5)
+                pdf.cell(0, 10, "No se encontraron registros para este empleado", 0, 1, 'C')
+                continue
                 
-                # Observaciones
-                observaciones = ''
-                if record.adjustment_reason:
-                    if len(record.adjustment_reason) > 30:
-                        observaciones = record.adjustment_reason[:27] + '...'
+            # Para cada semana
+            employee_total_hours = 0
+            
+            for week_key, week_data in sorted_weeks:
+                week_start = week_data['week_start']
+                week_records = week_data['records']
+                week_total_hours = week_data['total_hours']
+                employee_total_hours += week_total_hours
+                
+                # Título de la semana
+                pdf.set_font('Arial', 'B', 11)
+                pdf.set_fill_color(*pdf.secondary_color)
+                pdf.set_text_color(255, 255, 255)
+                
+                # Asegurarse de que hay espacio para el título de la semana y la tabla
+                if pdf.get_y() > pdf.h - 40:  # Si queda poco espacio en la página
+                    pdf.add_page()
+                
+                pdf.rect(10, pdf.get_y(), 190, 8, 'F')
+                pdf.cell(0, 8, get_week_description(week_start), 0, 1, 'C', True)
+                
+                # Restaurar color de texto para la tabla
+                pdf.set_text_color(0, 0, 0)
+                
+                # Encabezados de la tabla
+                pdf.set_font('Arial', 'B', 9)
+                pdf.set_fill_color(230, 230, 230)
+                pdf.cell(40, 7, 'Fecha', 1, 0, 'C', True)
+                pdf.cell(30, 7, 'Entrada', 1, 0, 'C', True)
+                pdf.cell(30, 7, 'Salida', 1, 0, 'C', True)
+                pdf.cell(30, 7, 'Horas', 1, 0, 'C', True)
+                pdf.cell(60, 7, 'Observaciones', 1, 1, 'C', True)
+                
+                # Datos de fichajes de esta semana
+                pdf.set_font('Arial', '', 9)
+                
+                # Color alternado para las filas (efecto cebra)
+                row_count = 0
+                
+                for record in week_records:
+                    # Aplicar color alternado
+                    if row_count % 2 == 0:
+                        pdf.set_fill_color(255, 255, 255)  # Blanco
                     else:
-                        observaciones = record.adjustment_reason
-                pdf.cell(60, 7, observaciones, 1, 1, 'L')
+                        pdf.set_fill_color(*pdf.accent_color)  # Color claro
+                        
+                    # Fecha
+                    fecha = record.original_check_in_time.strftime('%d/%m/%Y') if record.original_check_in_time else '-'
+                    pdf.cell(40, 7, fecha, 1, 0, 'C', True)
+                    
+                    # Hora de entrada original
+                    entrada = record.original_check_in_time.strftime('%H:%M') if record.original_check_in_time else '-'
+                    pdf.cell(30, 7, entrada, 1, 0, 'C', True)
+                    
+                    # Hora de salida original
+                    if record.original_check_out_time:
+                        salida = record.original_check_out_time.strftime('%H:%M')
+                        pdf.cell(30, 7, salida, 1, 0, 'C', True)
+                    else:
+                        pdf.set_text_color(255, 0, 0)  # Rojo para destacar
+                        pdf.cell(30, 7, 'SIN SALIDA', 1, 0, 'C', True)
+                        pdf.set_text_color(0, 0, 0)  # Restaurar color negro
+                    
+                    # Horas trabajadas
+                    hours = record.duration() if record.original_check_out_time and record.original_check_in_time else '-'
+                    if isinstance(hours, (int, float)):
+                        hours_str = f"{hours:.2f} h"
+                    else:
+                        hours_str = hours
+                    pdf.cell(30, 7, hours_str, 1, 0, 'C', True)
+                    
+                    # Observaciones
+                    observaciones = ''
+                    if record.adjustment_reason:
+                        if len(record.adjustment_reason) > 30:
+                            observaciones = record.adjustment_reason[:27] + '...'
+                        else:
+                            observaciones = record.adjustment_reason
+                    pdf.cell(60, 7, observaciones, 1, 1, 'L', True)
+                    
+                    row_count += 1
+                
+                # Total de horas para esta semana
+                pdf.set_font('Arial', 'B', 10)
+                pdf.set_fill_color(*pdf.primary_color)
+                pdf.set_text_color(255, 255, 255)
+                pdf.cell(100, 8, 'TOTAL SEMANA:', 1, 0, 'R', True)
+                pdf.cell(90, 8, f"{week_total_hours:.2f} h", 1, 1, 'C', True)
+                pdf.set_text_color(0, 0, 0)  # Restaurar color de texto
+                
+                # Espacio después de cada tabla semanal
+                pdf.ln(5)
             
-            # Total de horas para este empleado
-            pdf.set_font('Arial', 'B', 10)
-            pdf.set_fill_color(230, 230, 230)
-            pdf.cell(100, 8, 'Total horas:', 1, 0, 'R', True)
-            pdf.cell(90, 8, f"{total_hours:.2f} h", 1, 1, 'C', True)
+            # Total general para este empleado
+            if len(sorted_weeks) > 1:
+                pdf.set_font('Arial', 'B', 12)
+                pdf.set_fill_color(*pdf.primary_color)
+                pdf.set_text_color(255, 255, 255)
+                pdf.rect(10, pdf.get_y(), 190, 10, 'F')
+                pdf.cell(0, 10, f"TOTAL GENERAL: {employee_total_hours:.2f} HORAS", 0, 1, 'C')
+                pdf.set_text_color(0, 0, 0)  # Restaurar color de texto
             
-            # Espaciado entre empleados o nueva página
+            # Nueva página para el siguiente empleado
             if list(employee_records.keys()).index(emp_id) < len(employee_records) - 1:
                 pdf.add_page()
         
