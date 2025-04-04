@@ -47,7 +47,9 @@ class CheckPoint(db.Model):
     enforce_contract_hours = db.Column(db.Boolean, default=False)
     auto_adjust_overtime = db.Column(db.Boolean, default=False)
     
-    # Configuración de horario de funcionamiento
+    # Configuración de ventana horaria para el cierre automático
+    # Estas horas definen el rango dentro del cual se ejecutará la función de cierre
+    # Por ejemplo, de 02:00 a 04:00 significa que solo se cerrarán fichajes si la hora actual está en ese rango
     operation_start_time = db.Column(db.Time, nullable=True)
     operation_end_time = db.Column(db.Time, nullable=True)
     enforce_operation_hours = db.Column(db.Boolean, default=False)

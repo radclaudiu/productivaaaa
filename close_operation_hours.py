@@ -1,9 +1,11 @@
 """
-Script para cerrar automáticamente los fichajes pendientes cuando llega
-la hora de fin de funcionamiento configurada en cada punto de fichaje.
+Script para cerrar automáticamente los fichajes pendientes durante la ventana horaria
+configurada en cada punto de fichaje.
 
-Este script debería ejecutarse periódicamente, por ejemplo, cada 5 minutos,
-para verificar si algún punto de fichaje debe cerrar sus registros pendientes.
+Este script debería ejecutarse periódicamente, por ejemplo, cada 10 minutos,
+para verificar si es momento de cerrar registros pendientes según la ventana horaria
+configurada (por ejemplo, solo entre 02:00-04:00). Solo se cerrarán los fichajes
+si la hora actual está dentro del rango definido para cada punto de fichaje.
 """
 import sys
 import os
@@ -32,8 +34,9 @@ STARTUP_FILE = '.checkpoint_closer_startup'
 
 def auto_close_pending_records():
     """
-    Cierra automáticamente todos los registros pendientes de los puntos de fichaje 
-    que han llegado a su hora de fin de funcionamiento configurada.
+    Cierra automáticamente todos los registros pendientes de los puntos de fichaje
+    cuando la hora actual está dentro de la ventana horaria configurada para el cierre
+    (entre operation_start_time y operation_end_time).
     """
     timestamp = datetime.now()
     
@@ -65,7 +68,7 @@ def auto_close_pending_records():
         logger.info(f"Iniciando barrido de cierre automático: {timestamp}")
     
     print(f"========== INICIO BARRIDO DE CIERRE AUTOMÁTICO: {timestamp} ==========")
-    print(f"Ejecutando verificación de cierre automático por fin de horario de funcionamiento: {timestamp}")
+    print(f"Ejecutando verificación de cierre automático dentro de la ventana horaria configurada: {timestamp}")
     
     try:
         # Obtener hora actual en la zona horaria configurada
@@ -74,28 +77,41 @@ def auto_close_pending_records():
         
         print(f"Hora actual (Madrid): {current_hour}")
         
-        # Buscar todos los puntos de fichaje con horario de funcionamiento activado
+        # Buscar todos los puntos de fichaje con horario de cierre automático activado
         checkpoints = CheckPoint.query.filter(
-            CheckPoint.enforce_operation_hours == True,  # Tiene configuración de horario activada
-            CheckPoint.operation_end_time.isnot(None),   # Tiene hora de fin configurada
-            CheckPoint.status == CheckPointStatus.ACTIVE  # Está activo
+            CheckPoint.enforce_operation_hours == True,          # Tiene configuración de horario activada
+            CheckPoint.operation_start_time.isnot(None),         # Tiene hora de inicio de ventana configurada
+            CheckPoint.operation_end_time.isnot(None),           # Tiene hora de fin de ventana configurada
+            CheckPoint.status == CheckPointStatus.ACTIVE          # Está activo
         ).all()
         
         if not checkpoints:
-            print("No hay puntos de fichaje con horario de funcionamiento configurado.")
+            print("No hay puntos de fichaje con ventana horaria de cierre configurada.")
             print(f"========== FIN BARRIDO DE CIERRE AUTOMÁTICO (sin puntos configurados) ==========")
             return True
             
-        print(f"Encontrados {len(checkpoints)} puntos de fichaje con horario configurado.")
+        print(f"Encontrados {len(checkpoints)} puntos de fichaje con ventana horaria configurada.")
         
         # Inicializamos contadores para el resumen final
         total_checkpoints_processed = 0
         total_records_closed = 0
         
-        # Para cada punto de fichaje, verificar si es hora de cerrar sus registros
+        # Para cada punto de fichaje, verificar si la hora actual está dentro de la ventana de cierre
         for checkpoint in checkpoints:
-            # Si la hora actual es mayor o igual a la hora de fin configurada, cerrar registros
-            if current_hour >= checkpoint.operation_end_time:
+            # Determinar si la hora actual está dentro del rango especificado
+            is_within_window = False
+            
+            # Caso normal: la ventana no cruza la medianoche (ejemplo: 02:00-04:00)
+            if checkpoint.operation_start_time <= checkpoint.operation_end_time:
+                is_within_window = (current_hour >= checkpoint.operation_start_time and 
+                                   current_hour <= checkpoint.operation_end_time)
+            # Caso especial: la ventana cruza la medianoche (ejemplo: 23:00-01:00)
+            else:
+                is_within_window = (current_hour >= checkpoint.operation_start_time or 
+                                   current_hour <= checkpoint.operation_end_time)
+            
+            # Solo procesar el punto de fichaje si estamos dentro de la ventana horaria de cierre
+            if is_within_window:
                 print(f"Procesando punto de fichaje: {checkpoint.name} (ID: {checkpoint.id}) - Hora de fin: {checkpoint.operation_end_time}")
                 total_checkpoints_processed += 1
                 
@@ -144,7 +160,7 @@ def auto_close_pending_records():
                     record.check_out_time = check_out_time
                     
                     # Marcar que fue cerrado automáticamente
-                    record.notes = (record.notes or "") + " [Cerrado automáticamente por fin de horario de funcionamiento]"
+                    record.notes = (record.notes or "") + f" [Cerrado automáticamente durante ventana de cierre {checkpoint.operation_start_time} - {checkpoint.operation_end_time}]"
                     record.adjusted = True
                     
                     # Comprobar si el empleado tiene configuración de horas por contrato
@@ -167,7 +183,7 @@ def auto_close_pending_records():
                     incident = CheckPointIncident(
                         record_id=record.id,
                         incident_type=CheckPointIncidentType.MISSED_CHECKOUT,
-                        description=f"Salida automática por fin de horario de funcionamiento ({checkpoint.operation_end_time})"
+                        description=f"Salida automática durante ventana horaria de cierre ({checkpoint.operation_start_time} - {checkpoint.operation_end_time})"
                     )
                     db.session.add(incident)
                 
@@ -181,7 +197,7 @@ def auto_close_pending_records():
                     db.session.rollback()
                     print(f"✗ Error al cerrar registros para el punto {checkpoint.name}: {e}")
             else:
-                print(f"• No es hora de cerrar los registros para {checkpoint.name}. Hora actual: {current_hour}, Hora fin: {checkpoint.operation_end_time}")
+                print(f"• No es hora de cerrar los registros para {checkpoint.name}. Hora actual: {current_hour}, Ventana de cierre: {checkpoint.operation_start_time} - {checkpoint.operation_end_time}")
         
         # Mostrar resumen final del barrido
         end_timestamp = datetime.now()
