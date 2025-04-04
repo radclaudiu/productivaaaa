@@ -129,10 +129,6 @@ def auto_close_pending_records():
                 
                 # Cerrar cada registro pendiente
                 for record in pending_records:
-                    # Crear una copia del registro original si es la primera modificación
-                    if not record.original_check_in_time:
-                        record.original_check_in_time = record.check_in_time
-                    
                     # Asegurarse de que la fecha de entrada tenga información de zona horaria
                     check_in_time = record.check_in_time
                     if not check_in_time:
@@ -155,8 +151,35 @@ def auto_close_pending_records():
                         check_out_date = check_in_date + timedelta(days=1)
                         check_out_time = datetime.combine(check_out_date, checkpoint.operation_end_time)
                         check_out_time = TIMEZONE.localize(check_out_time)
+                        
+                    # Guardar la hora de salida original antes de cualquier ajuste
+                    original_checkout = check_out_time
                     
-                    # Asignar la hora de salida calculada
+                    # Obtener o crear el registro original
+                    from models_checkpoints import CheckPointOriginalRecord
+                    
+                    # Buscar si ya existe un registro original
+                    existing_original = CheckPointOriginalRecord.query.filter_by(record_id=record.id).first()
+                    
+                    if existing_original:
+                        # Actualizar el registro existente con los datos de salida
+                        existing_original.original_check_out_time = original_checkout
+                        existing_original.adjustment_reason = "Registro original actualizado por cierre automático"
+                        db.session.add(existing_original)
+                        print(f"  ✓ Actualizado registro original ID {existing_original.id} para registro {record.id}")
+                    else:
+                        # Si no existe, crear uno nuevo
+                        original_record = CheckPointOriginalRecord(
+                            record_id=record.id,
+                            original_check_in_time=record.check_in_time,
+                            original_check_out_time=original_checkout,
+                            original_notes=record.notes,
+                            adjustment_reason="Registro original creado por cierre automático"
+                        )
+                        db.session.add(original_record)
+                        print(f"  ✓ Creado nuevo registro original para registro {record.id}")
+                    
+                    # Asignar la hora de salida calculada al registro principal
                     record.check_out_time = check_out_time
                     
                     # Marcar que fue cerrado automáticamente
