@@ -1,6 +1,6 @@
 # Sistema de Cierre Automático de Fichajes
 
-## Versión 1.1.0
+## Versión 1.2.0
 
 Este módulo implementa un sistema para cerrar automáticamente los registros de fichajes pendientes cuando se encuentra fuera del horario de operación configurado para cada punto de fichaje.
 
@@ -17,9 +17,11 @@ Este módulo implementa un sistema para cerrar automáticamente los registros de
 
 El sistema está compuesto por los siguientes archivos:
 
-- `scheduled_checkpoints_closer.py`: Servicio principal que ejecuta el cierre automático cada 10 minutos
+- `scheduled_checkpoints_closer.py`: Módulo principal que contiene la lógica del cierre automático
+- `checkpoint_closer_service.py`: Servicio que ejecuta el cierre automático cada 10 minutos
 - `close_operation_hours.py`: Lógica central para cerrar registros pendientes
-- `run_checkpoint_closer.py`: Herramienta para ejecución manual única
+- `run_checkpoint_closer.py`: Script para ejecutar el servicio como un proceso en segundo plano
+- `verify_checkpoint_closer.py`: Herramienta para verificar la configuración y estado del servicio
 - `install_checkpoint_closer_service.sh`: Script para instalar el servicio en el sistema
 
 ## Requisitos
@@ -108,3 +110,43 @@ El sistema realiza las siguientes operaciones en cada ciclo:
 - El sistema preserva los registros originales en campos separados
 - Marca claramente los registros que han sido modificados automáticamente
 - Registra cada cambio como una incidencia para auditoría
+## Novedades en la versión 1.2.0
+
+- **Arquitectura mejorada**: Refactorización del código para separar el servicio en módulos independientes
+- **Servicio en segundo plano**: Nuevo sistema de servicio que ejecuta el cierre automático cada 10 minutos
+- **Herramienta de verificación**: Script para comprobar el estado y configuración del sistema
+- **Ventana horaria configurable**: Posibilidad de establecer una ventana horaria específica para el cierre automático
+- **Preservación de registros originales**: Sistema mejorado para mantener los registros originales
+- **Instalación como servicio del sistema**: Script para instalar el servicio como un daemon de systemd
+- **Logs detallados**: Sistema de logs mejorado con información detallada sobre cada operación
+- **Indicador visual**: Marca clara de registros modificados automáticamente
+
+## Herramienta de Verificación
+
+Para verificar el estado y configuración del sistema, puede utilizar:
+
+```bash
+# Modo interactivo (preguntas)
+python verify_checkpoint_closer.py
+
+# Solo verificar estado
+python verify_checkpoint_closer.py --status
+
+# Iniciar el servicio
+python verify_checkpoint_closer.py --start
+
+# Detener el servicio
+python verify_checkpoint_closer.py --stop
+
+# Realizar un cierre manual
+python verify_checkpoint_closer.py --run
+
+# Realizar todas las operaciones
+python verify_checkpoint_closer.py --all
+```
+
+## Limitaciones Conocidas
+
+- La hora de fin de operación debe estar configurada en cada punto de fichaje
+- Si el servicio se reinicia durante un cierre, puede haber un retraso antes de la siguiente verificación
+- El cierre automático no aplicará reglas complejas de horarios (solo cierre al final del día)
