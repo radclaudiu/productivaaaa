@@ -89,6 +89,9 @@
                                 <a href="{{ url_for('checkpoints_slug.view_both_records', slug=company.get_slug()) }}" class="btn btn-outline-info">
                                     <i class="bi bi-file-earmark-text me-2"></i> Ver Todos los Fichajes (Con/Sin Salida)
                                 </a>
+                                <a href="{{ url_for('checkpoints.delete_records') }}" class="btn btn-outline-danger mt-2">
+                                    <i class="bi bi-trash me-2"></i> Eliminar Registros por Fechas
+                                </a>
                             </div>
                         </div>
                     </div>

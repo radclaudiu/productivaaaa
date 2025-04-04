@@ -1,11 +1,17 @@
 import os
 import tempfile
 import base64
+import logging
 from datetime import datetime, timedelta
 from io import BytesIO
 from PIL import Image
 from fpdf import FPDF
+from sqlalchemy import and_, func
+from app import db
+from models_checkpoints import CheckPointRecord, CheckPointOriginalRecord
 from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
+
+logger = logging.getLogger(__name__)
 
 class CheckPointPDF(FPDF):
     """Clase personalizada para generar PDFs de fichajes con cabecera y pie de página"""
@@ -350,5 +356,91 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
 # SISTEMA DE AUTO-CHECKOUT ELIMINADO
 # El sistema de auto-checkout ha sido eliminado por completo para evitar procesamiento
 # automático de los registros sin fichaje de salida.
+
+
+def delete_employee_records(employee_id, start_date, end_date, checkpoint_id=None):
+    """
+    Elimina los registros de fichaje de un empleado específico dentro de un rango de fechas.
     
-    return total_processed
+    Args:
+        employee_id: ID del empleado cuyos registros se eliminarán
+        start_date: Fecha de inicio del rango (datetime.date)
+        end_date: Fecha de fin del rango (datetime.date)
+        checkpoint_id: ID del punto de fichaje (opcional, si None se eliminan de todos los puntos)
+        
+    Returns:
+        dict: Diccionario con el resultado de la operación y estadísticas
+    """
+    timestamp = datetime.now()
+    logger.warning(f"ELIMINANDO REGISTROS DE EMPLEADO ID {employee_id} - PERIODO: {start_date} - {end_date}")
+    
+    try:
+        # Construir la consulta básica para encontrar registros de este empleado en el rango de fechas
+        records_query = db.session.query(CheckPointRecord).filter(
+            CheckPointRecord.employee_id == employee_id,
+            func.date(CheckPointRecord.check_in_time) >= start_date,
+            func.date(CheckPointRecord.check_in_time) <= end_date
+        )
+        
+        # Si se especifica un punto de fichaje, filtrar por él
+        if checkpoint_id:
+            records_query = records_query.filter(CheckPointRecord.checkpoint_id == checkpoint_id)
+        
+        # Obtener IDs de registros que se eliminarán (para eliminar también registros originales)
+        record_ids = [record.id for record in records_query.all()]
+        
+        # Número de registros encontrados
+        records_count = len(record_ids)
+        
+        # Si no hay registros, devolver resultado
+        if records_count == 0:
+            return {
+                "success": True,
+                "message": "No se encontraron registros para eliminar",
+                "records_deleted": 0,
+                "original_records_deleted": 0
+            }
+            
+        # Eliminar registros originales asociados
+        if record_ids:
+            original_deleted = db.session.query(CheckPointOriginalRecord).filter(
+                CheckPointOriginalRecord.record_id.in_(record_ids)
+            ).delete(synchronize_session=False)
+            
+            # Confirmar para que la eliminación de originales tenga efecto
+            db.session.commit()
+        else:
+            original_deleted = 0
+            
+        # Eliminar los registros principales
+        records_deleted = records_query.delete(synchronize_session=False)
+        
+        # Confirmar la eliminación
+        db.session.commit()
+        
+        end_timestamp = datetime.now()
+        duration = (end_timestamp - timestamp).total_seconds()
+        
+        logger.warning(f"ELIMINACIÓN COMPLETADA - {records_deleted} registros y {original_deleted} registros originales eliminados en {duration:.2f} segundos")
+        
+        return {
+            "success": True,
+            "timestamp": timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+            "duration_seconds": duration,
+            "records_deleted": records_deleted,
+            "original_records_deleted": original_deleted
+        }
+        
+    except Exception as e:
+        # Hacer rollback en caso de error
+        db.session.rollback()
+        
+        error_msg = f"ERROR CRÍTICO durante la eliminación de registros: {str(e)}"
+        logger.critical(error_msg)
+        
+        return {
+            "success": False,
+            "message": f"Error durante la eliminación: {str(e)}",
+            "records_deleted": 0,
+            "original_records_deleted": 0
+        }

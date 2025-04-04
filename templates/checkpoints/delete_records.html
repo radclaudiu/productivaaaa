@@ -1,0 +1,119 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container mt-5">
+    <div class="row">
+        <div class="col-md-10 offset-md-1">
+            <div class="card shadow-sm">
+                <div class="card-header bg-danger text-white">
+                    <h4 class="mb-0">
+                        <i class="fas fa-trash-alt"></i> {{ title }}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h5><i class="fas fa-exclamation-triangle"></i> Advertencia</h5>
+                        <p>Esta operación <strong>eliminará permanentemente</strong> todos los registros de fichaje del empleado seleccionado 
+                           en el rango de fechas especificado. Esta acción no se puede deshacer.</p>
+                    </div>
+                    
+                    <form method="POST" action="{{ url_for("checkpoints.delete_records") }}">
+                        {{ form.csrf_token }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.employee_id.label(class="form-label") }}
+                                    {{ form.employee_id(class="form-select", id="employee_id") }}
+                                    {% if form.employee_id.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.employee_id.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.start_date.label(class="form-label") }}
+                                    {{ form.start_date(class="form-control", type="date", id="start_date") }}
+                                    {% if form.start_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.start_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                            <div class="col-md-6">
+                                <div class="form-group">
+                                    {{ form.end_date.label(class="form-label") }}
+                                    {{ form.end_date(class="form-control", type="date", id="end_date") }}
+                                    {% if form.end_date.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.end_date.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <div class="form-group">
+                                    {{ form.confirmation.label(class="form-label") }}
+                                    <div class="input-group mb-3">
+                                        {{ form.confirmation(class="form-control", id="confirmation", placeholder="Escriba CONFIRMAR en mayúsculas") }}
+                                    </div>
+                                    {% if form.confirmation.errors %}
+                                        <div class="invalid-feedback d-block">
+                                            {% for error in form.confirmation.errors %}
+                                                {{ error }}
+                                            {% endfor %}
+                                        </div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row">
+                            <div class="col-md-12 text-end">
+                                <a href="{{ url_for("checkpoints.dashboard") }}" class="btn btn-secondary">
+                                    <i class="fas fa-times"></i> Cancelar
+                                </a>
+                                {{ form.submit(class="btn btn-danger") }}
+                            </div>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Establecer fecha de inicio como 30 días atrás por defecto
+    document.addEventListener("DOMContentLoaded", function() {
+        const today = new Date();
+        
+        // Fecha de fin = hoy
+        const endDateStr = today.toISOString().slice(0, 10);
+        document.getElementById("end_date").value = endDateStr;
+        
+        // Fecha de inicio = 30 días atrás
+        const startDate = new Date();
+        startDate.setDate(today.getDate() - 30);
+        const startDateStr = startDate.toISOString().slice(0, 10);
+        document.getElementById("start_date").value = startDateStr;
+    });
+</script>
+{% endblock %}

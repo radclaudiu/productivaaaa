@@ -148,3 +148,32 @@ class ExportCheckPointRecordsForm(FlaskForm):
                 raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio')
         except ValueError:
             raise ValidationError('Formato de fecha incorrecto. Use YYYY-MM-DD')
+
+
+class DeleteCheckPointRecordsForm(FlaskForm):
+    """Formulario para eliminar registros de fichaje de un empleado en un rango de fechas"""
+    start_date = StringField('Fecha de inicio', validators=[DataRequired()])
+    end_date = StringField('Fecha de fin', validators=[DataRequired()])
+    employee_id = SelectField('Empleado', coerce=int, validators=[DataRequired()])
+    confirmation = StringField('Escriba CONFIRMAR para eliminar', validators=[
+        DataRequired(),
+        Length(min=9, max=9, message='Debe escribir exactamente CONFIRMAR')
+    ])
+    
+    submit = SubmitField('Eliminar Fichajes')
+    
+    def validate_confirmation(self, field):
+        """Verifica que se haya escrito la confirmación correctamente"""
+        if field.data != 'CONFIRMAR':
+            raise ValidationError('Debe escribir exactamente CONFIRMAR para continuar')
+    
+    def validate_end_date(self, field):
+        """Verifica que la fecha de fin sea posterior a la de inicio"""
+        try:
+            start = datetime.strptime(self.start_date.data, '%Y-%m-%d')
+            end = datetime.strptime(field.data, '%Y-%m-%d')
+            
+            if end < start:
+                raise ValidationError('La fecha de fin debe ser posterior a la fecha de inicio')
+        except ValueError:
+            raise ValidationError('Formato de fecha incorrecto. Use YYYY-MM-DD')

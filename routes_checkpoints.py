@@ -2080,6 +2080,66 @@ def verify_closures():
                          is_first_startup=is_first_startup,
                          service_status=service_status)
 
+@checkpoints_bp.route('/delete_records', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def delete_records():
+    """
+    Ruta para eliminar registros de fichaje de un empleado específico en un rango de fechas.
+    """
+    from utils_checkpoints import delete_employee_records
+    from forms_checkpoints import DeleteCheckPointRecordsForm
+    
+    # Obtener la empresa del usuario actual
+    company = current_user.company
+    if not company:
+        flash('No tienes una empresa asignada.', 'danger')
+        return redirect(url_for('index'))
+        
+    # Crear el formulario
+    form = DeleteCheckPointRecordsForm()
+    
+    # Obtener los empleados de la empresa para el selector
+    employees = []
+    try:
+        employees = Employee.query.filter_by(company_id=company.id).order_by(Employee.first_name).all()
+        form.employee_id.choices = [(e.id, f"{e.first_name} {e.last_name} - {e.dni}") for e in employees]
+    except Exception as e:
+        flash(f'Error al cargar empleados: {str(e)}', 'danger')
+    
+    if form.validate_on_submit():
+        try:
+            # Convertir fechas a objetos date
+            start_date = datetime.strptime(form.start_date.data, '%Y-%m-%d').date()
+            end_date = datetime.strptime(form.end_date.data, '%Y-%m-%d').date()
+            employee_id = form.employee_id.data
+            
+            # Recuperar el empleado para el mensaje
+            employee = Employee.query.get(employee_id)
+            
+            # Ejecutar la eliminación de registros
+            result = delete_employee_records(employee_id, start_date, end_date)
+            
+            if result["success"]:
+                # Si no se eliminó ningún registro
+                if result["records_deleted"] == 0:
+                    flash(f'No se encontraron registros para eliminar.', 'info')
+                else:
+                    flash(f'Se eliminaron {result["records_deleted"]} registros de fichaje del empleado {employee.first_name} {employee.last_name}.', 'success')
+            else:
+                flash(f'Error al eliminar registros: {result["message"]}', 'danger')
+            
+            return redirect(url_for('checkpoints.dashboard'))
+            
+        except Exception as e:
+            flash(f'Error al procesar la solicitud: {str(e)}', 'danger')
+    
+    # Mostrar el formulario
+    return render_template('checkpoints/delete_records.html', 
+                          form=form,
+                          title='Eliminar Registros de Fichaje')
+
+
 def init_app(app):
     # Registrar el blueprint
     app.register_blueprint(checkpoints_bp)
