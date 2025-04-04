@@ -102,8 +102,47 @@ def draw_signature(pdf, signature_data, x, y, width=50, height=20):
         print(f"Error al dibujar la firma: {str(e)}")
 
 
+def get_iso_week_start_end(date_obj):
+    """
+    Obtiene el inicio (lunes) y fin (domingo) de la semana ISO para una fecha dada.
+    
+    Args:
+        date_obj: Objeto datetime.date o datetime.datetime
+        
+    Returns:
+        Tupla con (fecha_inicio_semana, fecha_fin_semana)
+    """
+    # Si es un datetime, convertir a date
+    if isinstance(date_obj, datetime):
+        date_obj = date_obj.date()
+    
+    # El día de la semana en formato ISO (1=lunes, 7=domingo)
+    iso_day = date_obj.isoweekday()
+    
+    # Calcular el lunes de esa semana
+    week_start = date_obj - timedelta(days=iso_day - 1)
+    
+    # El domingo es 6 días después del lunes
+    week_end = week_start + timedelta(days=6)
+    
+    return (week_start, week_end)
+
+def get_week_description(week_start):
+    """
+    Genera una descripción de la semana basada en su fecha de inicio.
+    
+    Args:
+        week_start: Fecha de inicio de la semana (lunes)
+        
+    Returns:
+        String con descripción de la semana (ej: "Semana 15 (10/04 - 16/04)")
+    """
+    week_end = week_start + timedelta(days=6)
+    week_num = week_start.isocalendar()[1]
+    return f"Semana {week_num} ({week_start.strftime('%d/%m')} - {week_end.strftime('%d/%m')})"
+
 def generate_pdf_report(records, start_date, end_date, include_signature=True):
-    """Genera un informe PDF de los registros de fichaje"""
+    """Genera un informe PDF de los registros de fichaje agrupados por semanas"""
     # Agrupar registros por empleado
     employees_records = {}
     
@@ -259,7 +298,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         
         # Posicionar el texto verticalmente centrado dentro de la barra (subir un poco)
         pdf.set_y(current_y + 2.5)  # 2.5mm para centrar el texto en la barra de 10mm de alto
-        pdf.cell(0, 5, 'REGISTROS DE FICHAJE', 0, 1, 'C')
+        pdf.cell(0, 5, 'REGISTROS DE FICHAJE POR SEMANAS', 0, 1, 'C')
         
         # Volver a la posición después del rectángulo y añadir espacio
         pdf.set_y(current_y + 10 + 5)  # 5mm de espacio adicional entre la barra y la tabla
@@ -277,68 +316,172 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
         
         # Calcular posición X para centrar la tabla
         table_x = (210 - table_width) / 2
-        pdf.set_x(table_x)
         
-        # Dibujar cabecera con color corporativo
-        pdf.set_fill_color(*pdf.secondary_color)
-        pdf.set_text_color(255, 255, 255)
-        pdf.set_draw_color(*pdf.primary_color)
-        pdf.set_line_width(0.3)
+        # Ordenar los registros por fecha de check-in
+        sorted_records = sorted(records, key=lambda r: r.check_in_time)
         
-        for i, col in enumerate(header):
-            pdf.cell(col_widths[i], 10, col, 1, 0, 'C', True)
-        pdf.ln()
-        
-        # Restaurar color de texto para las filas
-        pdf.set_text_color(0, 0, 0)
-        pdf.set_font('Arial', '', 10)
-        
-        # Color alternado para las filas (efecto cebra)
-        row_count = 0
-        
-        for record in records:
-            # Posicionar al inicio de la fila, centrado
-            pdf.set_x(table_x)
+        # Agrupar registros por semana (de lunes a domingo)
+        weeks_records = {}
+        for record in sorted_records:
+            # Obtener el lunes de la semana para este registro
+            week_start, _ = get_iso_week_start_end(record.check_in_time)
+            week_key = week_start.strftime('%Y-%m-%d')
             
-            # Cambiar color de fondo según fila par/impar
-            if row_count % 2 == 0:
-                pdf.set_fill_color(255, 255, 255)  # Blanco
-            else:
-                pdf.set_fill_color(*pdf.accent_color)  # Color claro
+            if week_key not in weeks_records:
+                weeks_records[week_key] = {
+                    'week_start': week_start,
+                    'records': [],
+                    'total_hours': 0.0
+                }
             
-            # Fecha
-            pdf.cell(col_widths[0], 10, record.check_in_time.strftime('%d/%m/%Y'), 1, 0, 'C', True)
+            weeks_records[week_key]['records'].append(record)
             
-            # Hora entrada
-            pdf.cell(col_widths[1], 10, record.check_in_time.strftime('%H:%M'), 1, 0, 'C', True)
-            
-            # Hora salida
-            if record.check_out_time:
-                pdf.cell(col_widths[2], 10, record.check_out_time.strftime('%H:%M'), 1, 0, 'C', True)
-            else:
-                pdf.cell(col_widths[2], 10, '-', 1, 0, 'C', True)
-            
-            # Horas trabajadas
+            # Sumar horas si el registro tiene duración
             duration = record.duration()
             if duration is not None:
-                hours_str = f"{duration:.2f}h"
-            else:
-                hours_str = '-'
-            pdf.cell(col_widths[3], 10, hours_str, 1, 0, 'C', True)
+                weeks_records[week_key]['total_hours'] += duration
+        
+        # Ordenar las semanas por fecha de inicio
+        sorted_weeks = sorted(weeks_records.items(), key=lambda x: x[1]['week_start'])
+        
+        # Para cada semana
+        for week_key, week_data in sorted_weeks:
+            week_start = week_data['week_start']
+            week_records = week_data['records']
+            week_total_hours = week_data['total_hours']
             
-            # Celda para firma
-            y_pos_before = pdf.get_y()
-            pdf.cell(col_widths[4], 10, '', 1, 0, 'C', True)
+            # Título de la semana
+            pdf.set_font('Arial', 'B', 11)
+            pdf.set_fill_color(*pdf.secondary_color)
+            pdf.set_text_color(255, 255, 255)
             
-            # Dibujar firma en la celda si existe
-            if include_signature and record.has_signature and record.signature_data:
-                # Guardar posición actual
-                x_pos = pdf.get_x() - col_widths[4]
-                # Dibujar la firma dentro de la celda
-                draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
+            # Calcular posición X para centrar el título de la semana
+            week_title_width = 170  # Ancho del título de la semana
+            week_title_x = (210 - week_title_width) / 2  # Centrado en la página
             
+            # Asegurarse de que hay espacio para el título de la semana y la tabla
+            if pdf.get_y() > pdf.h - 60:  # Si queda poco espacio en la página
+                pdf.add_page()
+                pdf.ln(8)  # 8mm de espacio después del encabezado
+            
+            pdf.set_y(pdf.get_y() + 5)  # Espacio antes del título de la semana
+            pdf.set_x(week_title_x)
+            pdf.rect(week_title_x, pdf.get_y(), week_title_width, 8, 'F')
+            pdf.cell(week_title_width, 8, get_week_description(week_start), 0, 1, 'C', True)
+            
+            # Restaurar color de texto para la tabla
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font('Arial', 'B', 10)
+            
+            # Cabecera de la tabla para esta semana
+            pdf.set_y(pdf.get_y() + 2)  # Espacio antes de la tabla
+            pdf.set_x(table_x)
+            
+            # Dibujar cabecera con color corporativo
+            pdf.set_fill_color(*pdf.secondary_color)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_draw_color(*pdf.primary_color)
+            pdf.set_line_width(0.3)
+            
+            for i, col in enumerate(header):
+                pdf.cell(col_widths[i], 10, col, 1, 0, 'C', True)
             pdf.ln()
-            row_count += 1
+            
+            # Restaurar color de texto para las filas
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font('Arial', '', 10)
+            
+            # Color alternado para las filas (efecto cebra)
+            row_count = 0
+            
+            for record in week_records:
+                # Posicionar al inicio de la fila, centrado
+                pdf.set_x(table_x)
+                
+                # Cambiar color de fondo según fila par/impar
+                if row_count % 2 == 0:
+                    pdf.set_fill_color(255, 255, 255)  # Blanco
+                else:
+                    pdf.set_fill_color(*pdf.accent_color)  # Color claro
+                
+                # Fecha
+                pdf.cell(col_widths[0], 10, record.check_in_time.strftime('%d/%m/%Y'), 1, 0, 'C', True)
+                
+                # Hora entrada
+                pdf.cell(col_widths[1], 10, record.check_in_time.strftime('%H:%M'), 1, 0, 'C', True)
+                
+                # Hora salida
+                if record.check_out_time:
+                    pdf.cell(col_widths[2], 10, record.check_out_time.strftime('%H:%M'), 1, 0, 'C', True)
+                else:
+                    pdf.cell(col_widths[2], 10, '-', 1, 0, 'C', True)
+                
+                # Horas trabajadas
+                duration = record.duration()
+                if duration is not None:
+                    hours_str = f"{duration:.2f}h"
+                else:
+                    hours_str = '-'
+                pdf.cell(col_widths[3], 10, hours_str, 1, 0, 'C', True)
+                
+                # Celda para firma
+                y_pos_before = pdf.get_y()
+                pdf.cell(col_widths[4], 10, '', 1, 0, 'C', True)
+                
+                # Dibujar firma en la celda si existe
+                if include_signature and record.has_signature and record.signature_data:
+                    # Guardar posición actual
+                    x_pos = pdf.get_x() - col_widths[4]
+                    # Dibujar la firma dentro de la celda
+                    draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
+                
+                pdf.ln()
+                row_count += 1
+            
+            # Añadir fila de total semanal
+            pdf.set_x(table_x)
+            pdf.set_fill_color(*pdf.primary_color)
+            pdf.set_text_color(255, 255, 255)
+            pdf.set_font('Arial', 'B', 10)
+            
+            # Columnas de fecha, entrada, salida combinadas para el total
+            combined_width = col_widths[0] + col_widths[1] + col_widths[2]
+            pdf.cell(combined_width, 10, 'TOTAL SEMANA', 1, 0, 'C', True)
+            
+            # Horas totales
+            pdf.cell(col_widths[3], 10, f"{week_total_hours:.2f}h", 1, 0, 'C', True)
+            
+            # Celda vacía para la firma
+            pdf.cell(col_widths[4], 10, '', 1, 1, 'C', True)
+            
+            # Restaurar color de texto
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font('Arial', '', 10)
+            
+            # Espacio después de cada tabla semanal
+            pdf.ln(5)
+        
+        # Añadir total general al final
+        if len(sorted_weeks) > 1:
+            total_hours = sum(week_data['total_hours'] for _, week_data in sorted_weeks)
+            
+            # Título del total general
+            pdf.set_font('Arial', 'B', 12)
+            pdf.set_fill_color(*pdf.primary_color)
+            pdf.set_text_color(255, 255, 255)
+            
+            # Calcular posición X para centrar el total general
+            total_title_width = 170  # Ancho del título del total
+            total_title_x = (210 - total_title_width) / 2  # Centrado en la página
+            
+            pdf.set_y(pdf.get_y() + 2)  # Espacio antes del total general
+            pdf.set_x(total_title_x)
+            pdf.rect(total_title_x, pdf.get_y(), total_title_width, 10, 'F')
+            pdf.cell(total_title_width, 10, f"TOTAL GENERAL: {total_hours:.2f} HORAS", 0, 1, 'C', True)
+            
+            # Restaurar color de texto
+            pdf.set_text_color(0, 0, 0)
+            pdf.set_font('Arial', '', 10)
     
     # Crear un archivo temporal en disco
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
