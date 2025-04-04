@@ -18,6 +18,7 @@ from models_checkpoints import (
     CheckPoint, CheckPointRecord, CheckPointIncident, 
     CheckPointIncidentType, CheckPointStatus, EmployeeContractHours
 )
+from models import Employee
 from timezone_config import get_current_time, datetime_to_madrid, TIMEZONE
 
 # Configurar logging
@@ -185,6 +186,17 @@ def auto_close_pending_records():
                     # Marcar que fue cerrado automáticamente
                     record.notes = (record.notes or "") + f" [Cerrado automáticamente durante ventana de cierre {checkpoint.operation_start_time} - {checkpoint.operation_end_time}]"
                     record.adjusted = True
+                    
+                    # Actualizar el estado del empleado a "fuera de turno"
+                    employee = Employee.query.get(record.employee_id)
+                    if employee and employee.is_on_shift:
+                        # Guardar estado previo para logging
+                        prev_state = employee.is_on_shift
+                        # Actualizar a "no en turno"
+                        employee.is_on_shift = False
+                        # Limpiar el ID del registro activo
+                        employee.current_record_id = None
+                        print(f"  ✓ Empleado ID {employee.id} actualizado a 'fuera de turno' (is_on_shift: {prev_state} → False)")
                     
                     # Comprobar si el empleado tiene configuración de horas por contrato
                     contract_hours = EmployeeContractHours.query.filter_by(employee_id=record.employee_id).first()
