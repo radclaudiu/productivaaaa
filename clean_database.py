@@ -73,26 +73,34 @@ def clean_database(confirm=False):
         deleted_rows = {}
         total_deleted = 0
         
-        # Usar una transacción para garantizar atomicidad
-        with db.session.begin():
-            # Iterar por las tablas y eliminar todos los registros
-            for table_name in tables:
-                try:
-                    # Ejecutar SQL directo para eliminar todos los registros de la tabla
-                    result = db.session.execute(f"DELETE FROM {table_name}")
-                    deleted_count = result.rowcount
+        # Asegurarse de que no hay una transacción activa
+        try:
+            # Intentamos hacer rollback por si hay una transacción activa
+            db.session.rollback()
+        except Exception as e:
+            logger.warning(f"Error al hacer rollback inicial: {str(e)}")
+            
+        # Iterar por las tablas y eliminar todos los registros
+        for table_name in tables:
+            try:
+                # Ejecutar SQL directo para eliminar todos los registros de la tabla
+                result = db.session.execute(f"DELETE FROM {table_name}")
+                deleted_count = result.rowcount
+                
+                if deleted_count > 0:
+                    deleted_tables.append(table_name)
+                    deleted_rows[table_name] = deleted_count
+                    total_deleted += deleted_count
                     
-                    if deleted_count > 0:
-                        deleted_tables.append(table_name)
-                        deleted_rows[table_name] = deleted_count
-                        total_deleted += deleted_count
-                        
-                    print(f"✓ Eliminados {deleted_count} registros de la tabla {table_name}")
-                    logger.info(f"Eliminados {deleted_count} registros de la tabla {table_name}")
-                except Exception as e:
-                    error_msg = f"Error al eliminar registros de {table_name}: {str(e)}"
-                    print(f"✗ {error_msg}")
-                    logger.error(error_msg)
+                print(f"✓ Eliminados {deleted_count} registros de la tabla {table_name}")
+                logger.info(f"Eliminados {deleted_count} registros de la tabla {table_name}")
+            except Exception as e:
+                error_msg = f"Error al eliminar registros de {table_name}: {str(e)}"
+                print(f"✗ {error_msg}")
+                logger.error(error_msg)
+                
+        # Confirmar los cambios
+        db.session.commit()
         
         # Crear resumen de la operación
         end_timestamp = datetime.now()
