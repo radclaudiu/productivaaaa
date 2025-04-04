@@ -112,7 +112,7 @@ def auto_close_pending_records():
             
             # Solo procesar el punto de fichaje si estamos dentro de la ventana horaria de cierre
             if is_within_window:
-                print(f"Procesando punto de fichaje: {checkpoint.name} (ID: {checkpoint.id}) - Hora de fin: {checkpoint.operation_end_time}")
+                print(f"Procesando punto de fichaje: {checkpoint.name} (ID: {checkpoint.id}) - Dentro de ventana de cierre: {checkpoint.operation_start_time} - {checkpoint.operation_end_time}")
                 total_checkpoints_processed += 1
                 
                 # Buscar registros pendientes de este punto de fichaje
