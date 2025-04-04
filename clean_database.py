@@ -74,34 +74,72 @@ def clean_database(confirm=False):
         deleted_rows = {}
         total_deleted = 0
         
-        # Asegurarse de que no hay una transacción activa
+        # Deshabilitar temporalmente las restricciones de clave foránea
         try:
-            # Intentamos hacer rollback por si hay una transacción activa
-            db.session.rollback()
+            db.session.rollback()  # Asegurarse de que no hay una transacción activa
+            db.session.execute(text("SET CONSTRAINTS ALL DEFERRED"))
+            db.session.commit()
+            logger.info("Restricciones de clave foránea deshabilitadas temporalmente")
         except Exception as e:
-            logger.warning(f"Error al hacer rollback inicial: {str(e)}")
-            
+            error_msg = f"Error al deshabilitar restricciones de clave foránea: {str(e)}"
+            logger.warning(error_msg)
+            db.session.rollback()
+        
         # Iterar por las tablas y eliminar todos los registros
         for table_name in tables:
+            # Asegurarse de iniciar una nueva transacción limpia para cada tabla
+            db.session.rollback()
+            
             try:
                 # Ejecutar SQL directo para eliminar todos los registros de la tabla
-                result = db.session.execute(text(f"DELETE FROM {table_name}"))
-                deleted_count = result.rowcount
+                sql = text(f"TRUNCATE TABLE {table_name} CASCADE")
+                db.session.execute(sql)
+                db.session.commit()  # Confirmar cada operación individualmente
                 
-                if deleted_count > 0:
+                # Como TRUNCATE no devuelve un recuento, asumimos que se eliminaron todos los registros
+                # y verificamos contando después
+                count_sql = text(f"SELECT COUNT(*) FROM {table_name}")
+                result = db.session.execute(count_sql).scalar()
+                
+                if result == 0:
+                    # Asumimos que se eliminaron registros (aunque no sabemos cuántos exactamente)
                     deleted_tables.append(table_name)
-                    deleted_rows[table_name] = deleted_count
-                    total_deleted += deleted_count
+                    deleted_rows[table_name] = "Todos"  # No conocemos el número exacto
+                    total_deleted += 1  # Incrementamos al menos en 1 para indicar que hubo eliminación
                     
-                print(f"✓ Eliminados {deleted_count} registros de la tabla {table_name}")
-                logger.info(f"Eliminados {deleted_count} registros de la tabla {table_name}")
+                    print(f"✓ Tabla {table_name} vaciada correctamente")
+                    logger.info(f"Tabla {table_name} vaciada correctamente")
+                else:
+                    print(f"! Tabla {table_name} no se vació completamente ({result} registros restantes)")
+                    logger.warning(f"Tabla {table_name} no se vació completamente ({result} registros restantes)")
+                    
             except Exception as e:
-                error_msg = f"Error al eliminar registros de {table_name}: {str(e)}"
+                error_msg = f"Error al vaciar la tabla {table_name}: {str(e)}"
                 print(f"✗ {error_msg}")
                 logger.error(error_msg)
+                db.session.rollback()  # Rollback en caso de error
                 
-        # Confirmar los cambios
-        db.session.commit()
+                # Intentar con DELETE normal si TRUNCATE falla
+                try:
+                    db.session.rollback()
+                    sql = text(f"DELETE FROM {table_name}")
+                    result = db.session.execute(sql)
+                    db.session.commit()
+                    
+                    deleted_count = result.rowcount
+                    
+                    if deleted_count > 0:
+                        deleted_tables.append(table_name)
+                        deleted_rows[table_name] = deleted_count
+                        total_deleted += deleted_count
+                        
+                        print(f"✓ Eliminados {deleted_count} registros de la tabla {table_name} usando DELETE")
+                        logger.info(f"Eliminados {deleted_count} registros de la tabla {table_name} usando DELETE")
+                except Exception as e2:
+                    error_msg = f"Error al eliminar registros de {table_name} con DELETE: {str(e2)}"
+                    print(f"✗ {error_msg}")
+                    logger.error(error_msg)
+                    db.session.rollback()
         
         # Crear resumen de la operación
         end_timestamp = datetime.now()

@@ -1,0 +1,150 @@
+2025-04-04 17:53:20.41
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de tasks: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.41
+bd6b458c
+User
+2025-04-04 17:53:20.41
+bd6b458c
+User
+[SQL: DELETE FROM tasks]
+2025-04-04 17:53:20.41
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.43
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de employee_contract_hours: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.43
+bd6b458c
+User
+2025-04-04 17:53:20.43
+bd6b458c
+User
+[SQL: DELETE FROM employee_contract_hours]
+2025-04-04 17:53:20.43
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.46
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de checkpoints: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.46
+bd6b458c
+User
+2025-04-04 17:53:20.46
+bd6b458c
+User
+[SQL: DELETE FROM checkpoints]
+2025-04-04 17:53:20.46
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.48
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de employees: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.48
+bd6b458c
+User
+2025-04-04 17:53:20.48
+bd6b458c
+User
+[SQL: DELETE FROM employees]
+2025-04-04 17:53:20.48
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.50
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de companies: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.50
+bd6b458c
+User
+2025-04-04 17:53:20.50
+bd6b458c
+User
+[SQL: DELETE FROM companies]
+2025-04-04 17:53:20.50
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.52
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de permissions: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.52
+bd6b458c
+User
+2025-04-04 17:53:20.52
+bd6b458c
+User
+[SQL: DELETE FROM permissions]
+2025-04-04 17:53:20.52
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.55
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de roles_permissions: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.55
+bd6b458c
+User
+2025-04-04 17:53:20.55
+bd6b458c
+User
+[SQL: DELETE FROM roles_permissions]
+2025-04-04 17:53:20.55
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.57
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de users_roles: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.57
+bd6b458c
+User
+2025-04-04 17:53:20.57
+bd6b458c
+User
+[SQL: DELETE FROM users_roles]
+2025-04-04 17:53:20.57
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.59
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de roles: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.59
+bd6b458c
+User
+2025-04-04 17:53:20.59
+bd6b458c
+User
+[SQL: DELETE FROM roles]
+2025-04-04 17:53:20.59
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
+2025-04-04 17:53:20.61
+bd6b458c
+User
+ERROR:database_cleaning:Error al eliminar registros de users: (psycopg2.errors.InFailedSqlTransaction) current transaction is aborted, commands ignored until end of transaction block
+2025-04-04 17:53:20.61
+bd6b458c
+User
+2025-04-04 17:53:20.61
+bd6b458c
+User
+[SQL: DELETE FROM users]
+2025-04-04 17:53:20.61
+bd6b458c
+User
+(Background on this error at: https://sqlalche.me/e/20/2j85)
