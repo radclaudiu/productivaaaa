@@ -754,11 +754,11 @@ def export_both_records_pdf(records, start_date=None, end_date=None, company=Non
             pdf.cell(35, 7, checkpoint.name if checkpoint else '-', 1)
             
             # Estado
-            if record.is_auto_closed:
+            if record.adjustment_reason and 'AUTO-CLOSE' in record.adjustment_reason:
                 pdf.set_text_color(255, 128, 0)  # Naranja para cierre automático
                 pdf.cell(55, 7, 'Cierre automático por fin de jornada', 1)
                 pdf.set_text_color(0, 0, 0)  # Restaurar color
-            elif hasattr(record, 'has_original_record') and record.has_original_record:
+            elif record.adjusted:
                 pdf.set_text_color(0, 0, 255)  # Azul para modificado
                 pdf.cell(55, 7, 'Registro modificado manualmente', 1)
                 pdf.set_text_color(0, 0, 0)  # Restaurar color
