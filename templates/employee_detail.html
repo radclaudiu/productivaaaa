@@ -84,11 +84,6 @@
                                 {% if employee.status_end_date %}
                                 <small class="d-block">Hasta: {{ employee.status_end_date.strftime('%d/%m/%Y') }}</small>
                                 {% endif %}
-                                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
-                                <a href="{{ url_for('employee.manage_status', id=employee.id) }}" class="btn btn-sm btn-outline-primary mt-2">
-                                    <i class="bi bi-arrow-repeat"></i> Cambiar Estado
-                                </a>
-                                {% endif %}
                             </dd>
                             
                             <dt class="col-sm-4">Activación:</dt>
@@ -117,22 +112,6 @@
                             <dt class="col-sm-4">Usuario Asociado:</dt>
                             <dd class="col-sm-8">{{ employee.user.username }}</dd>
                             {% endif %}
-                            
-                            <dt class="col-sm-4">Activación:</dt>
-                            <dd class="col-sm-8">
-                                <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                                    {{ 'Activo' if employee.is_active else 'Inactivo' }}
-                                </span>
-                                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
-                                <form action="{{ url_for('employee.toggle_employee_activation', id=employee.id) }}" method="post" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit" class="btn btn-sm btn-outline-{% if employee.is_active %}danger{% else %}success{% endif %} mt-2">
-                                        <i class="bi bi-{% if employee.is_active %}toggle-off{% else %}toggle-on{% endif %}"></i> 
-                                        {% if employee.is_active %}Desactivar{% else %}Activar{% endif %} Empleado
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </dd>
                         </dl>
                     </div>
                 </div>
@@ -256,11 +235,6 @@
                                         <a href="{{ url_for('checkin.list_checkins', employee_id=employee.id) }}" class="btn btn-info mt-auto">
                                             <i class="fas fa-user-clock"></i> Ver Fichajes
                                         </a>
-                                        {% if current_user.is_admin() or current_user.is_gerente() and employee.schedules %}
-                                        <a href="{{ url_for('checkin.generate_checkins', employee_id=employee.id) }}" class="btn btn-outline-secondary mt-2">
-                                            <i class="fas fa-magic"></i> Generar Fichajes
-                                        </a>
-                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -274,12 +248,18 @@
                                         Vacaciones
                                     </h5>
                                     <p class="card-text mb-4">
-                                        Gestión de periodos vacacionales y ausencias
+                                        Gestión de períodos de vacaciones y ausencias
                                     </p>
                                     <div class="d-grid gap-2">
-                                        <a href="{{ url_for('vacation.list_vacations', employee_id=employee.id) }}" class="btn btn-success mt-auto">
-                                            <i class="fas fa-calendar-check"></i> Ver Vacaciones
+                                        {% if current_user.is_admin() or current_user.is_gerente() %}
+                                        <a href="{{ url_for('vacation.manage_vacation', employee_id=employee.id) }}" class="btn btn-success mt-auto">
+                                            <i class="fas fa-calendar-plus"></i> Gestionar Vacaciones
                                         </a>
+                                        {% else %}
+                                        <a href="{{ url_for('vacation.view_vacation', employee_id=employee.id) }}" class="btn btn-success mt-auto">
+                                            <i class="fas fa-calendar-alt"></i> Ver Vacaciones
+                                        </a>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
@@ -289,114 +269,5 @@
             </div>
         </div>
     </div>
-
-    <!-- Notes and History Row -->
-    <div class="row">
-        <!-- Recent Notes -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold">Notas Recientes</h6>
-                    <a href="{{ url_for('employee.manage_notes', id=employee.id) }}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-journal-plus"></i> Gestionar Notas
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if employee.notes %}
-                        <div style="max-height: 300px; overflow-y: auto;">
-                            {% for note in employee.notes[:3] %}
-                                <div class="note-card">
-                                    <div class="card">
-                                        <div class="card-body">
-                                            <div class="d-flex justify-content-between">
-                                                <h6 class="card-title">
-                                                    <i class="bi bi-person-circle"></i> {{ note.created_by.username if note.created_by else 'Sistema' }}
-                                                </h6>
-                                                <span class="note-timestamp">{{ note.created_at.strftime('%d/%m/%Y %H:%M') }}</span>
-                                            </div>
-                                            <p class="card-text">{{ note.content }}</p>
-                                        </div>
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        {% if employee.notes|length > 3 %}
-                            <div class="text-center mt-3">
-                                <a href="{{ url_for('employee.manage_notes', id=employee.id) }}" class="btn btn-sm btn-secondary">
-                                    Ver todas las notas ({{ employee.notes|length }})
-                                </a>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-3">
-                            <i class="bi bi-journal-x fa-2x text-muted mb-2"></i>
-                            <p class="text-muted">No hay notas disponibles</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-
-        <!-- Recent History -->
-        <div class="col-lg-6 mb-4">
-            <div class="card shadow mb-4">
-                <div class="card-header py-3 d-flex justify-content-between align-items-center">
-                    <h6 class="m-0 font-weight-bold">Historial Reciente</h6>
-                    <a href="{{ url_for('employee.view_history', id=employee.id) }}" class="btn btn-sm btn-primary">
-                        <i class="bi bi-clock-history"></i> Ver Historial Completo
-                    </a>
-                </div>
-                <div class="card-body">
-                    {% if employee.history %}
-                        <div class="history-timeline">
-                            {% for item in employee.history[:5] %}
-                                <div class="history-item">
-                                    <div class="history-timestamp">
-                                        {{ item.changed_at.strftime('%d/%m/%Y %H:%M') }}
-                                    </div>
-                                    <div class="history-content">
-                                        <strong>{{ item.field_name }}</strong> cambiado de 
-                                        <span class="text-danger">{{ item.old_value or 'vacío' }}</span> a 
-                                        <span class="text-success">{{ item.new_value or 'vacío' }}</span>
-                                        {% if item.changed_by %}
-                                            por <span class="text-info">{{ item.changed_by.username }}</span>
-                                        {% endif %}
-                                    </div>
-                                </div>
-                            {% endfor %}
-                        </div>
-                        {% if employee.history|length > 5 %}
-                            <div class="text-center mt-3">
-                                <a href="{{ url_for('employee.view_history', id=employee.id) }}" class="btn btn-sm btn-secondary">
-                                    Ver historial completo ({{ employee.history|length }} cambios)
-                                </a>
-                            </div>
-                        {% endif %}
-                    {% else %}
-                        <div class="text-center py-3">
-                            <i class="bi bi-clock-history fa-2x text-muted mb-2"></i>
-                            <p class="text-muted">No hay historial de cambios disponible</p>
-                        </div>
-                    {% endif %}
-                </div>
-            </div>
-        </div>
-    </div>
 </div>
 {% endblock %}
-                            
-                            <dt class="col-sm-4">Activación:</dt>
-                            <dd class="col-sm-8">
-                                <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
-                                    {{ 'Activo' if employee.is_active else 'Inactivo' }}
-                                </span>
-                                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
-                                <form action="{{ url_for('employee.toggle_employee_activation', id=employee.id) }}" method="post" class="d-inline">
-                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
-                                    <button type="submit" class="btn btn-sm btn-outline-{% if employee.is_active %}danger{% else %}success{% endif %} mt-2">
-                                        <i class="bi bi-{% if employee.is_active %}toggle-off{% else %}toggle-on{% endif %}"></i> 
-                                        {% if employee.is_active %}Desactivar{% else %}Activar{% endif %} Empleado
-                                    </button>
-                                </form>
-                                {% endif %}
-                            </dd>
