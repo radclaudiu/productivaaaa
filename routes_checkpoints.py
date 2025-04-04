@@ -34,7 +34,7 @@ checkpoints_bp = Blueprint('checkpoints', __name__, url_prefix='/fichajes')
 def admin_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        if not current_user.is_authenticated or current_user.role != UserRole.ADMIN:
+        if not current_user.is_authenticated or not current_user.is_admin():
             flash('Acceso denegado. Se requieren permisos de administrador.', 'danger')
             return redirect(url_for('index'))
         return f(*args, **kwargs)
@@ -45,8 +45,8 @@ def manager_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or (
-            current_user.role != UserRole.ADMIN and 
-            current_user.role != UserRole.GERENTE
+            not current_user.is_admin() and 
+            not current_user.is_gerente()
         ):
             flash('Acceso denegado. Se requieren permisos de gerente o administrador.', 'danger')
             return redirect(url_for('index'))
@@ -2142,6 +2142,7 @@ def delete_records():
     # Mostrar el formulario
     return render_template('checkpoints/delete_records.html', 
                           form=form,
+                          company=company,
                           title='Eliminar Registros de Fichaje')
 
 
