@@ -1016,6 +1016,33 @@ def delete_note(note_id):
     flash('Nota eliminada correctamente.', 'success')
     return redirect(url_for('employee.manage_notes', id=employee.id))
 
+@employee_bp.route('/<int:id>/toggle-active', methods=['POST'])
+@login_required
+def toggle_employee_activation(id):
+    employee = Employee.query.get_or_404(id)
+    
+    # Check if user has permission to manage this employee
+    if not can_manage_employee(employee):
+        flash('No tienes permiso para cambiar el estado de este empleado.', 'danger')
+        return redirect(url_for('employee.list_employees'))
+    
+    # Toggle the is_active status
+    old_status = employee.is_active
+    employee.is_active = not employee.is_active
+    
+    # Log the change
+    log_employee_change(employee, 'is_active', str(old_status), str(employee.is_active))
+    employee.updated_at = datetime.utcnow()
+    
+    db.session.commit()
+    
+    status = 'activado' if employee.is_active else 'desactivado'
+    log_activity(f'Empleado {status}: {employee.first_name} {employee.last_name}')
+    flash(f'Empleado "{employee.first_name} {employee.last_name}" {status} correctamente.', 'success')
+    
+    # Redirect back to the appropriate page
+    return redirect(url_for('employee.view_employee', id=employee.id))
+
 @employee_bp.route('/<int:id>/history')
 @login_required
 def view_history(id):

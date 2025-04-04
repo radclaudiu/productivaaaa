@@ -91,6 +91,22 @@
                                 {% endif %}
                             </dd>
                             
+                            <dt class="col-sm-4">Activación:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                </span>
+                                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+                                <form action="{{ url_for('employee.toggle_employee_activation', id=employee.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" class="btn btn-sm btn-outline-{% if employee.is_active %}danger{% else %}success{% endif %} mt-2">
+                                        <i class="bi bi-{% if employee.is_active %}toggle-off{% else %}toggle-on{% endif %}"></i> 
+                                        {% if employee.is_active %}Desactivar{% else %}Activar{% endif %} Empleado
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </dd>
+                            
                             <dt class="col-sm-4">Fecha de Registro:</dt>
                             <dd class="col-sm-8">{{ employee.created_at.strftime('%d/%m/%Y') }}</dd>
                             
@@ -101,6 +117,22 @@
                             <dt class="col-sm-4">Usuario Asociado:</dt>
                             <dd class="col-sm-8">{{ employee.user.username }}</dd>
                             {% endif %}
+                            
+                            <dt class="col-sm-4">Activación:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                </span>
+                                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+                                <form action="{{ url_for('employee.toggle_employee_activation', id=employee.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" class="btn btn-sm btn-outline-{% if employee.is_active %}danger{% else %}success{% endif %} mt-2">
+                                        <i class="bi bi-{% if employee.is_active %}toggle-off{% else %}toggle-on{% endif %}"></i> 
+                                        {% if employee.is_active %}Desactivar{% else %}Activar{% endif %} Empleado
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </dd>
                         </dl>
                     </div>
                 </div>
@@ -352,3 +384,19 @@
     </div>
 </div>
 {% endblock %}
+                            
+                            <dt class="col-sm-4">Activación:</dt>
+                            <dd class="col-sm-8">
+                                <span class="badge {% if employee.is_active %}bg-success{% else %}bg-danger{% endif %}">
+                                    {{ 'Activo' if employee.is_active else 'Inactivo' }}
+                                </span>
+                                {% if current_user.is_admin() or (current_user.is_gerente() and current_user.company_id == employee.company_id) %}
+                                <form action="{{ url_for('employee.toggle_employee_activation', id=employee.id) }}" method="post" class="d-inline">
+                                    <input type="hidden" name="csrf_token" value="{{ csrf_token() }}" />
+                                    <button type="submit" class="btn btn-sm btn-outline-{% if employee.is_active %}danger{% else %}success{% endif %} mt-2">
+                                        <i class="bi bi-{% if employee.is_active %}toggle-off{% else %}toggle-on{% endif %}"></i> 
+                                        {% if employee.is_active %}Desactivar{% else %}Activar{% endif %} Empleado
+                                    </button>
+                                </form>
+                                {% endif %}
+                            </dd>
