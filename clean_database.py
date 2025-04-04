@@ -44,8 +44,21 @@ def clean_database(confirm=False):
     print(f"{'!' * 100}\n")
     
     try:
+        # Verificar las tablas existentes en la base de datos
+        db.session.rollback()
+        existing_tables_query = text("""
+            SELECT table_name 
+            FROM information_schema.tables 
+            WHERE table_schema = 'public'
+            AND table_type = 'BASE TABLE'
+        """)
+        existing_tables_result = db.session.execute(existing_tables_query).fetchall()
+        existing_tables = [row[0] for row in existing_tables_result]
+        
+        logger.info(f"Tablas encontradas en la base de datos: {existing_tables}")
+        
         # Lista de tablas en el orden correcto para eliminar (inverso a las dependencias)
-        tables = [
+        all_possible_tables = [
             # Primero tablas con más dependencias
             "checkpoint_incidents",
             "checkpoint_original_records",
@@ -69,6 +82,10 @@ def clean_database(confirm=False):
             "roles",
             "users"
         ]
+        
+        # Filtrar solo las tablas que existen en la base de datos
+        tables = [table for table in all_possible_tables if table in existing_tables]
+        logger.info(f"Se intentará eliminar las siguientes tablas: {tables}")
         
         deleted_tables = []
         deleted_rows = {}
