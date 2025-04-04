@@ -124,13 +124,49 @@
                                             </p>
                                         </td>
                                         <td>
-                                            {% if record.has_original_record %}
                                             <div class="d-flex">
-                                                <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.original_check_in_time.strftime('%Y-%m-%d') if record.original_check_in_time else '', end_date=record.original_check_in_time.strftime('%Y-%m-%d') if record.original_check_in_time else '') }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
-                                                    <i class="fas fa-exclamation-triangle"></i> Ver detalles
+                                                <a href="{{ url_for('checkpoints_slug.edit_original_record', slug=company.get_slug(), id=item[0].id) }}" class="btn btn-link text-info px-1 mb-0" title="Editar registro">
+                                                    <i class="fas fa-edit"></i>
                                                 </a>
+                                                <button type="button" class="btn btn-link text-danger px-1 mb-0" data-bs-toggle="modal" data-bs-target="#deleteModal{{ item[0].id }}" title="Eliminar registro">
+                                                    <i class="fas fa-trash"></i>
+                                                </button>
+                                                {% if record.has_original_record %}
+                                                <a href="{{ url_for('checkpoints_slug.view_original_records', slug=company.get_slug(), show_all='false', employee_id=employee.id, start_date=record.original_check_in_time.strftime('%Y-%m-%d') if record.original_check_in_time else '', end_date=record.original_check_in_time.strftime('%Y-%m-%d') if record.original_check_in_time else '') }}" class="btn btn-link text-warning px-1 mb-0" title="Ver registro original">
+                                                    <i class="fas fa-exclamation-triangle"></i>
+                                                </a>
+                                                {% endif %}
                                             </div>
-                                            {% endif %}
+                                            
+                                            <!-- Modal de confirmación para eliminar -->
+                                            <div class="modal fade" id="deleteModal{{ item[0].id }}" tabindex="-1" aria-labelledby="deleteModalLabel{{ item[0].id }}" aria-hidden="true">
+                                                <div class="modal-dialog">
+                                                    <div class="modal-content">
+                                                        <div class="modal-header">
+                                                            <h5 class="modal-title" id="deleteModalLabel{{ item[0].id }}">Confirmar eliminación</h5>
+                                                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                                                        </div>
+                                                        <div class="modal-body">
+                                                            <p>¿Está seguro de que desea eliminar este registro?</p>
+                                                            <p><strong>Empleado:</strong> {{ employee.first_name }} {{ employee.last_name }}</p>
+                                                            <p><strong>Fecha:</strong> {{ record.original_check_in_time.strftime('%d/%m/%Y') if record.original_check_in_time else '-' }}</p>
+                                                            <p><strong>Entrada:</strong> {{ record.original_check_in_time.strftime('%H:%M:%S') if record.original_check_in_time else '-' }}</p>
+                                                            <p><strong>Salida:</strong> 
+                                                                {% if record.original_check_out_time %}
+                                                                {{ record.original_check_out_time.strftime('%H:%M:%S') }}
+                                                                {% else %}
+                                                                -
+                                                                {% endif %}
+                                                            </p>
+                                                            <p class="text-danger">Esta acción no se puede deshacer.</p>
+                                                        </div>
+                                                        <div class="modal-footer">
+                                                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancelar</button>
+                                                            <a href="{{ url_for('checkpoints_slug.delete_original_record', slug=company.get_slug(), id=item[0].id) }}" class="btn btn-danger">Eliminar</a>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            </div>
                                         </td>
                                     </tr>
                                     {% endfor %}
