@@ -39,6 +39,18 @@
                             <dt class="col-sm-4">DNI/NIE:</dt>
                             <dd class="col-sm-8">{{ employee.dni }}</dd>
                             
+                            <dt class="col-sm-4">Nº Seguridad Social:</dt>
+                            <dd class="col-sm-8">{{ employee.social_security_number or 'No disponible' }}</dd>
+                            
+                            <dt class="col-sm-4">Email:</dt>
+                            <dd class="col-sm-8">{{ employee.email or 'No disponible' }}</dd>
+                            
+                            <dt class="col-sm-4">Teléfono:</dt>
+                            <dd class="col-sm-8">{{ employee.phone or 'No disponible' }}</dd>
+                            
+                            <dt class="col-sm-4">Dirección:</dt>
+                            <dd class="col-sm-8">{{ employee.address or 'No disponible' }}</dd>
+                            
                             <dt class="col-sm-4">Empresa:</dt>
                             <dd class="col-sm-8">
                                 <a href="{{ url_for('company.view_company', slug=employee.company.get_slug()) }}">

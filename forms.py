@@ -174,6 +174,10 @@ class EmployeeForm(FlaskForm):
     first_name = StringField('Nombre', validators=[DataRequired(), Length(max=64)])
     last_name = StringField('Apellidos', validators=[DataRequired(), Length(max=64)])
     dni = StringField('DNI/NIE', validators=[DataRequired(), Length(max=16)])
+    social_security_number = StringField('Número Seguridad Social', validators=[Optional(), Length(max=20)])
+    email = StringField('Email', validators=[Optional(), Email(), Length(max=120)])
+    address = StringField('Dirección', validators=[Optional(), Length(max=200)])
+    phone = StringField('Teléfono', validators=[Optional(), Length(max=20)])
     position = StringField('Puesto', validators=[Length(max=64)])
     contract_type = SelectField('Tipo de Contrato', 
                                choices=[(ct.value, ct.name.capitalize()) for ct in ContractType])

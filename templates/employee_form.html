@@ -50,6 +50,75 @@
                                         <div class="text-danger">{{ error }}</div>
                                     {% endfor %}
                                 </div>
+                                <div class="mb-3">
+                                    {{ form.dni.label(class="form-label required") }}
+                                    {{ form.dni(class="form-control") }}
+                                    {% for error in form.dni.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.social_security_number.label(class="form-label") }}
+                                    {{ form.social_security_number(class="form-control") }}
+                                    {% for error in form.social_security_number.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control") }}
+                                    {% for error in form.email.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control") }}
+                                    {% for error in form.phone.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.address.label(class="form-label") }}
+                                    {{ form.address(class="form-control") }}
+                                    {% for error in form.address.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.bank_account.label(class="form-label") }}
+                                    {{ form.bank_account(class="form-control") }}
+                                    {% for error in form.bank_account.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                    {{ form.email.label(class="form-label") }}
+                                    {{ form.email(class="form-control") }}
+                                    {% for error in form.email.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.phone.label(class="form-label") }}
+                                    {{ form.phone(class="form-control") }}
+                                    {% for error in form.phone.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
+                                
+                                <div class="mb-3">
+                                    {{ form.address.label(class="form-label") }}
+                                    {{ form.address(class="form-control") }}
+                                    {% for error in form.address.errors %}
+                                        <div class="text-danger">{{ error }}</div>
+                                    {% endfor %}
+                                </div>
                                 
                                 <div class="mb-3">
                                     {{ form.bank_account.label(class="form-label") }}

@@ -172,6 +172,10 @@ class Employee(db.Model):
     first_name = db.Column(db.String(64), nullable=False)
     last_name = db.Column(db.String(64), nullable=False)
     dni = db.Column(db.String(16), unique=True, nullable=False)
+    social_security_number = db.Column(db.String(20))  # Número de la Seguridad Social
+    email = db.Column(db.String(120))  # Email de contacto
+    address = db.Column(db.String(200))  # Dirección postal
+    phone = db.Column(db.String(20))  # Número de teléfono
     position = db.Column(db.String(64))
     contract_type = db.Column(Enum(ContractType), default=ContractType.INDEFINIDO)
     bank_account = db.Column(db.String(64))
@@ -208,6 +212,10 @@ class Employee(db.Model):
             'last_name': self.last_name,
             'full_name': f"{self.first_name} {self.last_name}",
             'dni': self.dni,
+            'social_security_number': self.social_security_number,
+            'email': self.email,
+            'address': self.address,
+            'phone': self.phone,
             'position': self.position,
             'contract_type': self.contract_type.value if self.contract_type else None,
             'bank_account': self.bank_account,

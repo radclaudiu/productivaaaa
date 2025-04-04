@@ -642,6 +642,10 @@ def create_employee():
             first_name=form.first_name.data,
             last_name=form.last_name.data,
             dni=form.dni.data,
+            social_security_number=form.social_security_number.data,
+            email=form.email.data,
+            address=form.address.data,
+            phone=form.phone.data,
             position=form.position.data,
             contract_type=ContractType(form.contract_type.data) if form.contract_type.data else None,
             bank_account=form.bank_account.data,
@@ -713,6 +717,22 @@ def edit_employee(id):
         if employee.dni != form.dni.data:
             log_employee_change(employee, 'dni', employee.dni, form.dni.data)
             employee.dni = form.dni.data
+            
+        if employee.social_security_number != form.social_security_number.data:
+            log_employee_change(employee, 'social_security_number', employee.social_security_number, form.social_security_number.data)
+            employee.social_security_number = form.social_security_number.data
+            
+        if employee.email != form.email.data:
+            log_employee_change(employee, 'email', employee.email, form.email.data)
+            employee.email = form.email.data
+            
+        if employee.address != form.address.data:
+            log_employee_change(employee, 'address', employee.address, form.address.data)
+            employee.address = form.address.data
+            
+        if employee.phone != form.phone.data:
+            log_employee_change(employee, 'phone', employee.phone, form.phone.data)
+            employee.phone = form.phone.data
             
         if employee.position != form.position.data:
             log_employee_change(employee, 'position', employee.position, form.position.data)
