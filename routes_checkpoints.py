@@ -1179,7 +1179,7 @@ def export_records_original():
                 flash('No se encontraron registros para el período seleccionado.', 'warning')
                 return redirect(url_for('checkpoints.export_records_original'))
             
-            # Generar PDF usando la función simple sin agrupación por semanas ni suma de horas (igual que /rrrrrr)
+            # Usar exactamente la misma función que usaba la ruta /rrrrrr/export
             pdf_file = generate_simple_pdf_report(
                 records=records, 
                 start_date=start_date, 
