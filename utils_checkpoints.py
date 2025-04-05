@@ -884,7 +884,7 @@ def delete_employee_records(employee_id, start_date, end_date, checkpoint_id=Non
         if checkpoint_id:
             records_query = records_query.filter(CheckPointRecord.checkpoint_id == checkpoint_id)
         
-        # Obtener IDs de registros que se eliminarán (para eliminar también registros originales)
+        # Obtener IDs de registros que se eliminarán (para eliminar también registros originales y incidencias)
         record_ids = [record.id for record in records_query.all()]
         
         # Número de registros encontrados
@@ -896,39 +896,63 @@ def delete_employee_records(employee_id, start_date, end_date, checkpoint_id=Non
                 "success": True,
                 "message": "No se encontraron registros para eliminar",
                 "records_deleted": 0,
-                "original_records_deleted": 0
+                "original_records_deleted": 0,
+                "incidents_deleted": 0
             }
             
-        # Eliminar registros originales asociados
-        if record_ids:
-            original_deleted = db.session.query(CheckPointOriginalRecord).filter(
-                CheckPointOriginalRecord.record_id.in_(record_ids)
-            ).delete(synchronize_session=False)
+        incidents_deleted = 0
+        original_deleted = 0
+        
+        # Iniciar una transacción para que todas las operaciones sean atómicas
+        try:
+            # 1. Primero eliminar las incidencias asociadas a estos registros
+            if record_ids:
+                # Importar aquí para evitar problemas de dependencia circular
+                from models_checkpoints import CheckPointIncident
+                
+                incidents_deleted = db.session.query(CheckPointIncident).filter(
+                    CheckPointIncident.record_id.in_(record_ids)
+                ).delete(synchronize_session=False)
+                
+                logger.info(f"Eliminadas {incidents_deleted} incidencias asociadas a los registros")
+                
+                # 2. Luego eliminar los registros originales asociados
+                original_deleted = db.session.query(CheckPointOriginalRecord).filter(
+                    CheckPointOriginalRecord.record_id.in_(record_ids)
+                ).delete(synchronize_session=False)
+                
+                logger.info(f"Eliminados {original_deleted} registros originales")
+                
+                # 3. Finalmente eliminar los registros principales
+                records_deleted = records_query.delete(synchronize_session=False)
+                
+                logger.info(f"Eliminados {records_deleted} registros principales")
+                
+                # Confirmar todas las eliminaciones
+                db.session.commit()
+                
+                end_timestamp = datetime.now()
+                duration = (end_timestamp - timestamp).total_seconds()
+                
+                logger.warning(
+                    f"ELIMINACIÓN COMPLETADA - {records_deleted} registros, "
+                    f"{original_deleted} registros originales y {incidents_deleted} incidencias "
+                    f"eliminados en {duration:.2f} segundos"
+                )
+                
+                return {
+                    "success": True,
+                    "timestamp": timestamp.strftime('%Y-%m-%d %H:%M:%S'),
+                    "duration_seconds": duration,
+                    "records_deleted": records_deleted,
+                    "original_records_deleted": original_deleted,
+                    "incidents_deleted": incidents_deleted
+                }
+        except Exception as inner_e:
+            # Si ocurre un error durante la eliminación, hacer rollback y relanzar
+            db.session.rollback()
+            raise inner_e
             
-            # Confirmar para que la eliminación de originales tenga efecto
-            db.session.commit()
-        else:
-            original_deleted = 0
-            
-        # Eliminar los registros principales
-        records_deleted = records_query.delete(synchronize_session=False)
-        
-        # Confirmar la eliminación
-        db.session.commit()
-        
-        end_timestamp = datetime.now()
-        duration = (end_timestamp - timestamp).total_seconds()
-        
-        logger.warning(f"ELIMINACIÓN COMPLETADA - {records_deleted} registros y {original_deleted} registros originales eliminados en {duration:.2f} segundos")
-        
-        return {
-            "success": True,
-            "timestamp": timestamp.strftime('%Y-%m-%d %H:%M:%S'),
-            "duration_seconds": duration,
-            "records_deleted": records_deleted,
-            "original_records_deleted": original_deleted
-        }
-        
     except Exception as e:
         # Hacer rollback en caso de error
         db.session.rollback()
@@ -940,5 +964,6 @@ def delete_employee_records(employee_id, start_date, end_date, checkpoint_id=Non
             "success": False,
             "message": f"Error durante la eliminación: {str(e)}",
             "records_deleted": 0,
-            "original_records_deleted": 0
+            "original_records_deleted": 0,
+            "incidents_deleted": 0
         }

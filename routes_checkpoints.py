@@ -2151,7 +2151,12 @@ def delete_records():
                 if result["records_deleted"] == 0:
                     flash(f'No se encontraron registros para eliminar.', 'info')
                 else:
-                    flash(f'Se eliminaron {result["records_deleted"]} registros de fichaje del empleado {employee.first_name} {employee.last_name}.', 'success')
+                    # Mostrar un mensaje detallado incluyendo las incidencias eliminadas
+                    message = (f'Se eliminaron {result["records_deleted"]} registros de fichaje, '
+                              f'{result["original_records_deleted"]} registros originales y '
+                              f'{result["incidents_deleted"]} incidencias del empleado '
+                              f'{employee.first_name} {employee.last_name}.')
+                    flash(message, 'success')
             else:
                 flash(f'Error al eliminar registros: {result["message"]}', 'danger')
             
