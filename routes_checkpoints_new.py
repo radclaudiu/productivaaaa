@@ -87,7 +87,15 @@ def view_original_records(slug):
     page = request.args.get('page', 1, type=int)
     start_date = request.args.get('start_date')
     end_date = request.args.get('end_date')
-    employee_id = request.args.get('employee_id', type=int)
+    
+    # Corregido: primero obtenemos el valor como string para poder validarlo correctamente
+    employee_id_str = request.args.get('employee_id')
+    try:
+        # Convertir a entero si es un valor válido
+        employee_id = int(employee_id_str) if employee_id_str and employee_id_str.strip() else None
+    except (ValueError, TypeError):
+        employee_id = None
+    
     show_all = request.args.get('show_all', 'false')
     
     # Obtener los IDs de los empleados de esta empresa
