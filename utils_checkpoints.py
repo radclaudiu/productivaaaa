@@ -711,11 +711,42 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
                 pdf.cell(col_widths[4], 10, '', 1, 0, 'C', True)
                 
                 # Dibujar firma en la celda si existe
-                if include_signature and record.has_signature and record.signature_data:
-                    # Guardar posición actual
-                    x_pos = pdf.get_x() - col_widths[4]
-                    # Dibujar la firma dentro de la celda
-                    draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
+                if include_signature:
+                    if record.has_signature and record.signature_data:
+                        # Guardar posición actual
+                        x_pos = pdf.get_x() - col_widths[4]
+                        # Guardar la fuente actual
+                        current_font = pdf.font_family
+                        current_style = pdf.font_style
+                        current_size = pdf.font_size_pt
+                        
+                        # Dibujar la firma dentro de la celda
+                        result = draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
+                        
+                        # Si falla, retroceder y mostrar texto indicativo
+                        if not result:
+                            # Retroceder a la posición de la celda
+                            pdf.set_xy(x_pos, y_pos_before)
+                            # Cambiar a fuente cursiva pequeña
+                            pdf.set_font('Arial', 'I', 8)
+                            # Mostrar mensaje de error
+                            pdf.cell(col_widths[4], 10, 'Error firma', 0, 0, 'C')
+                            # Restaurar fuente original
+                            pdf.set_font(current_font, current_style, current_size)
+                    else:
+                        # Si no hay firma, retroceder y mostrar texto indicativo
+                        x_pos = pdf.get_x() - col_widths[4]
+                        # Guardar la fuente actual
+                        current_font = pdf.font_family
+                        current_style = pdf.font_style
+                        current_size = pdf.font_size_pt
+                        # Cambiar a fuente cursiva pequeña
+                        pdf.set_xy(x_pos, y_pos_before)
+                        pdf.set_font('Arial', 'I', 8)
+                        # Mostrar texto de sin firma
+                        pdf.cell(col_widths[4], 10, 'Sin firma', 0, 0, 'C')
+                        # Restaurar fuente original
+                        pdf.set_font(current_font, current_style, current_size)
                 
                 pdf.ln()
                 row_count += 1

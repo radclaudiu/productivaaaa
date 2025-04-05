@@ -1030,16 +1030,30 @@ def export_records():
     form = ExportCheckPointRecordsForm()
     
     # Cargar empleados según los permisos del usuario
-    if current_user.is_admin():
-        employees = Employee.query.filter_by(is_active=True).all()
-    else:
-        company_ids = [company.id for company in current_user.companies]
-        employees = Employee.query.filter(
-            Employee.company_id.in_(company_ids), 
-            Employee.is_active == True
-        ).all()
-    
-    form.employee_id.choices = [(0, 'Todos los empleados')] + [(e.id, f"{e.first_name} {e.last_name}") for e in employees]
+    try:
+        if current_user.is_admin():
+            employees = Employee.query.filter_by(is_active=True).all()
+        else:
+            company_ids = [company.id for company in current_user.companies]
+            employees = Employee.query.filter(
+                Employee.company_id.in_(company_ids), 
+                Employee.is_active == True
+            ).all()
+        
+        # Imprimir los empleados para debug
+        print(f"Empleados encontrados: {len(employees)}")
+        for e in employees:
+            print(f"ID: {e.id}, Nombre: {e.first_name} {e.last_name}")
+        
+        # Configurar las opciones del formulario
+        choices = [(0, 'Todos los empleados')]
+        choices.extend([(e.id, f"{e.first_name} {e.last_name}") for e in employees])
+        form.employee_id.choices = choices
+        
+    except Exception as e:
+        # Manejo de errores para diagnóstico
+        print(f"ERROR al cargar los empleados: {str(e)}")
+        form.employee_id.choices = [(0, 'Todos los empleados')]
     
     if form.validate_on_submit():
         try:
