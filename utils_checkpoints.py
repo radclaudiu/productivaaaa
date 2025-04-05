@@ -98,8 +98,10 @@ def draw_signature(pdf, signature_data, x, y, width=50, height=20):
         # Eliminar el archivo temporal
         os.unlink(temp_file_path)
         
+        return True  # Indicar que se dibujó la firma correctamente
     except Exception as e:
         print(f"Error al dibujar la firma: {str(e)}")
+        return False  # Indicar que hubo un error al dibujar la firma
 
 
 def get_iso_week_start_end(date_obj):
@@ -387,12 +389,25 @@ def generate_simple_pdf_report(records, start_date, end_date, include_signature=
             if include_signature:
                 # Dibujar la firma o un espacio para la firma manual
                 if hasattr(record, 'signature_data') and record.signature_data:
+                    # Guardar posición actual
+                    firma_x = pdf.get_x()
+                    firma_y = pdf.get_y()
+                    
+                    # Crear celda para la firma
+                    pdf.cell(col_widths[3], 10, '', 1, 1, 'C', True)
+                    
                     # Si hay firma digital, intentar dibujarla
-                    draw_signature(pdf, record.signature_data, pdf.get_x() + 5, pdf.get_y() + 1, 30, 8)
-                    pdf.cell(col_widths[3], 10, '', 1, 1, 'C', True)
+                    result = draw_signature(pdf, record.signature_data, firma_x + 5, firma_y + 1, 30, 8)
+                    if not result:
+                        # Si falla, indicar que hay un problema con la firma
+                        current_y = pdf.get_y()
+                        pdf.set_xy(firma_x, firma_y)
+                        pdf.set_font('Arial', 'I', 8)
+                        pdf.cell(col_widths[3], 10, 'Error firma', 1, 1, 'C', True)
+                        pdf.set_font('Arial', '', 10)
                 else:
-                    # Espacio para firma
-                    pdf.cell(col_widths[3], 10, '', 1, 1, 'C', True)
+                    # Espacio para firma con texto indicativo
+                    pdf.cell(col_widths[3], 10, 'Sin firma', 1, 1, 'C', True)
             else:
                 # Si no se incluye firma, simplemente dejar un espacio o algún texto
                 pdf.cell(col_widths[3], 10, 'No requerido', 1, 1, 'C', True)
