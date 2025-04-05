@@ -10,7 +10,7 @@ si la hora actual está dentro del rango definido para cada punto de fichaje.
 import sys
 import os
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, date
 from sqlalchemy import func
 
 from app import db, create_app
@@ -141,6 +141,12 @@ def auto_close_pending_records():
                     
                     # Establecer la hora de salida como la hora de fin de funcionamiento
                     check_in_date = check_in_time.date()
+                    
+                    # Comprobar que operation_end_time no es None antes de usarlo
+                    if checkpoint.operation_end_time is None:
+                        print(f"  ⚠️ Advertencia: El punto de fichaje {checkpoint.id} no tiene hora de fin configurada")
+                        continue
+                        
                     check_out_time = datetime.combine(check_in_date, checkpoint.operation_end_time)
                     check_out_time = TIMEZONE.localize(check_out_time)
                     

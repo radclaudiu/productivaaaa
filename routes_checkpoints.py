@@ -1118,6 +1118,97 @@ def export_records():
     return render_template('checkpoints/export_form.html', form=form)
 
 
+@checkpoints_bp.route('/records/export/original', methods=['GET', 'POST'])
+@login_required
+@manager_required
+def export_records_original():
+    """Exporta registros de fichaje a PDF en formato original (sin agrupar por semanas)"""
+    form = ExportCheckPointRecordsForm()
+    
+    # Cargar todos los empleados activos e inactivos para que funcione el selector
+    try:
+        # Consulta directa para asegurar que se obtienen todos los empleados
+        employees_query = db.session.query(Employee)
+        
+        # Filtrar empleados según los permisos del usuario
+        if not current_user.is_admin():
+            # Para gerentes, solo mostrar empleados de sus empresas
+            company_ids = [company.id for company in current_user.companies]
+            employees_query = employees_query.filter(Employee.company_id.in_(company_ids))
+        
+        # Ejecutar la consulta (sin filtrar por is_active para obtener todos)
+        employees = employees_query.order_by(Employee.first_name).all()
+        
+        # Configurar las opciones del formulario
+        choices = [(0, 'Todos los empleados')]
+        for e in employees:
+            choices.append((e.id, f"{e.first_name} {e.last_name}"))
+        
+        form.employee_id.choices = choices
+        
+    except Exception as e:
+        # Manejo de errores para diagnóstico
+        print(f"ERROR al cargar los empleados: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        form.employee_id.choices = [(0, 'Todos los empleados')]
+    
+    if form.validate_on_submit():
+        try:
+            # Parsear fechas
+            start_date = datetime.strptime(form.start_date.data, '%Y-%m-%d').date()
+            end_date = datetime.strptime(form.end_date.data, '%Y-%m-%d').date()
+            
+            # Construir consulta
+            query = CheckPointRecord.query.filter(
+                func.date(CheckPointRecord.check_in_time) >= start_date,
+                func.date(CheckPointRecord.check_in_time) <= end_date
+            )
+            
+            # Filtrar por empleado si se especifica
+            if form.employee_id.data != 0:
+                query = query.filter(CheckPointRecord.employee_id == form.employee_id.data)
+            
+            # Ejecutar consulta
+            records = query.order_by(
+                CheckPointRecord.employee_id,
+                CheckPointRecord.check_in_time
+            ).all()
+            
+            if not records:
+                flash('No se encontraron registros para el período seleccionado.', 'warning')
+                return redirect(url_for('checkpoints.export_records_original'))
+            
+            # Generar PDF usando la función simple sin agrupación por semanas ni suma de horas (igual que /rrrrrr)
+            pdf_file = generate_simple_pdf_report(
+                records=records, 
+                start_date=start_date, 
+                end_date=end_date,
+                include_signature=form.include_signature.data
+            )
+            
+            # Guardar temporalmente y enviar
+            filename = f"fichajes_original_{start_date.strftime('%Y%m%d')}_{end_date.strftime('%Y%m%d')}.pdf"
+            return send_file(
+                pdf_file,
+                as_attachment=True,
+                download_name=filename,
+                mimetype='application/pdf'
+            )
+            
+        except Exception as e:
+            flash(f'Error al generar el informe original: {str(e)}', 'danger')
+    
+    # Establecer fechas predeterminadas si es la primera carga
+    if request.method == 'GET':
+        today = date.today()
+        # Por defecto, mostrar el mes actual
+        form.start_date.data = date(today.year, today.month, 1).strftime('%Y-%m-%d')
+        form.end_date.data = today.strftime('%Y-%m-%d')
+    
+    return render_template('checkpoints/export_original_form.html', form=form)
+
+
 # Rutas para puntos de fichaje (interfaz tablet/móvil)
 @checkpoints_bp.route('/login', methods=['GET', 'POST'])
 def login():
