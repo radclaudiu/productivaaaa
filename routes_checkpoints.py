@@ -1029,30 +1029,37 @@ def export_records():
     """Exporta registros de fichaje a PDF"""
     form = ExportCheckPointRecordsForm()
     
-    # Cargar empleados según los permisos del usuario
+    # Cargar todos los empleados activos e inactivos para que funcione el selector
     try:
-        if current_user.is_admin():
-            employees = Employee.query.filter_by(is_active=True).all()
-        else:
+        # Consulta directa para asegurar que se obtienen todos los empleados
+        employees_query = db.session.query(Employee)
+        
+        # Filtrar empleados según los permisos del usuario
+        if not current_user.is_admin():
+            # Para gerentes, solo mostrar empleados de sus empresas
             company_ids = [company.id for company in current_user.companies]
-            employees = Employee.query.filter(
-                Employee.company_id.in_(company_ids), 
-                Employee.is_active == True
-            ).all()
+            employees_query = employees_query.filter(Employee.company_id.in_(company_ids))
+        
+        # Ejecutar la consulta (sin filtrar por is_active para obtener todos)
+        employees = employees_query.order_by(Employee.first_name).all()
         
         # Imprimir los empleados para debug
         print(f"Empleados encontrados: {len(employees)}")
         for e in employees:
-            print(f"ID: {e.id}, Nombre: {e.first_name} {e.last_name}")
+            print(f"ID: {e.id}, Nombre: {e.first_name} {e.last_name}, Empresa: {e.company_id}")
         
         # Configurar las opciones del formulario
         choices = [(0, 'Todos los empleados')]
-        choices.extend([(e.id, f"{e.first_name} {e.last_name}") for e in employees])
+        for e in employees:
+            choices.append((e.id, f"{e.first_name} {e.last_name}"))
+        
         form.employee_id.choices = choices
         
     except Exception as e:
         # Manejo de errores para diagnóstico
         print(f"ERROR al cargar los empleados: {str(e)}")
+        import traceback
+        traceback.print_exc()
         form.employee_id.choices = [(0, 'Todos los empleados')]
     
     if form.validate_on_submit():

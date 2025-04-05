@@ -74,6 +74,47 @@ class CheckPointPDF(FPDF):
         self.cell(0, 4, f'Página {self.page_no()}', 0, 0, 'C')
 
 
+def set_font_safely(pdf, family, style='', size=12):
+    """
+    Función auxiliar para establecer la fuente de manera segura en el PDF.
+    Normaliza los valores de estilo para evitar errores de tipado.
+    
+    Args:
+        pdf: Objeto FPDF
+        family: Nombre de la familia de fuente (string)
+        style: Estilo de la fuente ('', 'B', 'I', 'U', etc.)
+        size: Tamaño de la fuente (integer)
+    """
+    # Mapa de estilos válidos
+    style_map = {
+        '': '', 
+        'B': 'B', 
+        'I': 'I', 
+        'U': 'U', 
+        'BU': 'BU', 
+        'UB': 'UB', 
+        'BI': 'BI', 
+        'IB': 'BI', 
+        'UI': 'UI', 
+        'IU': 'UI', 
+        'BUI': 'BUI', 
+        'BIU': 'BUI', 
+        'UBI': 'BUI', 
+        'UIB': 'BUI', 
+        'IBU': 'BUI', 
+        'IUB': 'BUI'
+    }
+    
+    # Normalizar el estilo
+    normalized_style = style_map.get(str(style), '')
+    
+    # Asegurar que el tamaño sea un entero
+    normalized_size = int(size)
+    
+    # Establecer la fuente
+    pdf.set_font(family, normalized_style, normalized_size)
+
+
 def draw_signature(pdf, signature_data, x, y, width=50, height=20):
     """Dibuja la firma en el PDF desde datos base64"""
     if not signature_data:
@@ -716,9 +757,10 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
                         # Guardar posición actual
                         x_pos = pdf.get_x() - col_widths[4]
                         # Guardar la fuente actual
+                        # Guardar el estado actual de la fuente
                         current_font = pdf.font_family
                         current_style = pdf.font_style
-                        current_size = pdf.font_size_pt
+                        current_size = int(pdf.font_size_pt)
                         
                         # Dibujar la firma dentro de la celda
                         result = draw_signature(pdf, record.signature_data, x_pos + 2, y_pos_before + 1, col_widths[4] - 4, 8)
@@ -728,25 +770,25 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
                             # Retroceder a la posición de la celda
                             pdf.set_xy(x_pos, y_pos_before)
                             # Cambiar a fuente cursiva pequeña
-                            pdf.set_font('Arial', 'I', 8)
+                            set_font_safely(pdf, 'Arial', 'I', 8)
                             # Mostrar mensaje de error
                             pdf.cell(col_widths[4], 10, 'Error firma', 0, 0, 'C')
-                            # Restaurar fuente original
-                            pdf.set_font(current_font, current_style, current_size)
+                            # Restaurar fuente original con los valores normalizados
+                            set_font_safely(pdf, current_font, current_style, current_size)
                     else:
                         # Si no hay firma, retroceder y mostrar texto indicativo
                         x_pos = pdf.get_x() - col_widths[4]
                         # Guardar la fuente actual
                         current_font = pdf.font_family
                         current_style = pdf.font_style
-                        current_size = pdf.font_size_pt
+                        current_size = int(pdf.font_size_pt)
                         # Cambiar a fuente cursiva pequeña
                         pdf.set_xy(x_pos, y_pos_before)
-                        pdf.set_font('Arial', 'I', 8)
+                        set_font_safely(pdf, 'Arial', 'I', 8)
                         # Mostrar texto de sin firma
                         pdf.cell(col_widths[4], 10, 'Sin firma', 0, 0, 'C')
-                        # Restaurar fuente original
-                        pdf.set_font(current_font, current_style, current_size)
+                        # Restaurar fuente original con los valores normalizados
+                        set_font_safely(pdf, current_font, current_style, current_size)
                 
                 pdf.ln()
                 row_count += 1
@@ -755,7 +797,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
             pdf.set_x(table_x)
             pdf.set_fill_color(*pdf.primary_color)
             pdf.set_text_color(255, 255, 255)
-            pdf.set_font('Arial', 'B', 10)
+            set_font_safely(pdf, 'Arial', 'B', 10)
             
             # Columnas de fecha, entrada, salida combinadas para el total
             combined_width = col_widths[0] + col_widths[1] + col_widths[2]
@@ -769,7 +811,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
             
             # Restaurar color de texto
             pdf.set_text_color(0, 0, 0)
-            pdf.set_font('Arial', '', 10)
+            set_font_safely(pdf, 'Arial', '', 10)
             
             # Espacio después de cada tabla semanal
             pdf.ln(5)
@@ -779,7 +821,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
             total_hours = sum(week_data['total_hours'] for _, week_data in sorted_weeks)
             
             # Título del total general
-            pdf.set_font('Arial', 'B', 12)
+            set_font_safely(pdf, 'Arial', 'B', 12)
             pdf.set_fill_color(*pdf.primary_color)
             pdf.set_text_color(255, 255, 255)
             
@@ -794,7 +836,7 @@ def generate_pdf_report(records, start_date, end_date, include_signature=True):
             
             # Restaurar color de texto
             pdf.set_text_color(0, 0, 0)
-            pdf.set_font('Arial', '', 10)
+            set_font_safely(pdf, 'Arial', '', 10)
     
     # Crear un archivo temporal en disco
     temp_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
