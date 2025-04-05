@@ -141,6 +141,273 @@ def get_week_description(week_start):
     week_num = week_start.isocalendar()[1]
     return f"Semana {week_num} ({week_start.strftime('%d/%m')} - {week_end.strftime('%d/%m')})"
 
+def generate_simple_pdf_report(records, start_date, end_date, include_signature=True):
+    """
+    Genera un informe PDF simple de los registros de fichaje sin agrupar por semanas y sin sumar horas.
+    Este formato es específico para la ruta 'fichajes/records/export'.
+    """
+    # Agrupar registros por empleado
+    employees_records = {}
+    
+    for record in records:
+        employee_id = record.employee_id
+        
+        if employee_id not in employees_records:
+            employees_records[employee_id] = {
+                'employee': record.employee,
+                'records': []
+            }
+            
+        employees_records[employee_id]['records'].append(record)
+        
+    # Crear PDF
+    pdf = CheckPointPDF(title=f'Informe de Fichajes: {start_date.strftime("%d/%m/%Y")} - {end_date.strftime("%d/%m/%Y")}')
+    pdf.set_auto_page_break(auto=True, margin=15)
+    
+    # Para cada empleado
+    for employee_id, data in employees_records.items():
+        employee = data['employee']
+        records = data['records']
+        company = employee.company
+        
+        # Añadir una nueva página para cada empleado
+        pdf.add_page()
+        
+        # Añadir espacio adicional después del encabezado para evitar solapamiento con la barra
+        pdf.ln(8)  # 8mm de espacio adicional
+        
+        # Calcular posiciones centradas (el ancho de la página es 210mm)
+        # Usaremos un margen de 20mm a cada lado
+        left_margin = 20
+        right_margin = 20
+        usable_width = 210 - left_margin - right_margin
+        block_width = 85  # Cada bloque tendrá 85mm de ancho
+        gap = 10          # 10mm de separación entre bloques
+        
+        # Posición X del primer bloque
+        block1_x = left_margin
+        # Posición X del segundo bloque
+        block2_x = block1_x + block_width + gap
+        
+        # Crear fondos de color para los bloques de información
+        # Bloque empleado (izquierda)
+        pdf.set_fill_color(*pdf.accent_color)
+        pdf.rect(block1_x, pdf.get_y(), block_width, 30, 'F')
+        
+        # Bloque empresa (derecha)
+        pdf.rect(block2_x, pdf.get_y(), block_width, 30, 'F')
+        
+        # Líneas de contorno con color corporativo
+        pdf.set_draw_color(*pdf.secondary_color)
+        pdf.rect(block1_x, pdf.get_y(), block_width, 30, 'D')
+        pdf.rect(block2_x, pdf.get_y(), block_width, 30, 'D')
+        
+        initial_y = pdf.get_y()
+        
+        # Títulos con fondo de color primario
+        pdf.set_fill_color(*pdf.secondary_color)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font('Arial', 'B', 10)
+        
+        # Título empleado
+        pdf.rect(block1_x, pdf.get_y(), block_width, 6, 'F')
+        pdf.set_xy(block1_x, pdf.get_y())
+        pdf.cell(block_width, 6, 'DATOS DEL EMPLEADO', 0, 0, 'C')
+        
+        # Título empresa
+        pdf.rect(block2_x, pdf.get_y(), block_width, 6, 'F')
+        pdf.set_xy(block2_x, pdf.get_y())
+        pdf.cell(block_width, 6, 'DATOS DE LA EMPRESA', 0, 1, 'C')
+        
+        # Restaurar color de texto
+        pdf.set_text_color(0, 0, 0)
+        
+        # Espacio para etiquetas y valores
+        label_width = 25
+        value_width = block_width - label_width - 5  # 5mm de margen interno
+        label_x1 = block1_x + 2  # 2mm de margen interno
+        value_x1 = label_x1 + label_width
+        label_x2 = block2_x + 2
+        value_x2 = label_x2 + label_width
+        
+        # Etiquetas en negrita
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_xy(label_x1, pdf.get_y() + 2)
+        pdf.cell(label_width, 5, 'Nombre:', 0, 0)
+        
+        pdf.set_xy(label_x2, pdf.get_y())
+        pdf.cell(label_width, 5, 'Nombre:', 0, 1)
+        
+        # Datos en texto normal
+        pdf.set_font('Arial', '', 9)
+        pdf.set_xy(value_x1, pdf.get_y() - 5)
+        pdf.cell(value_width, 5, f"{employee.first_name} {employee.last_name}", 0, 0)
+        
+        pdf.set_xy(value_x2, pdf.get_y())
+        pdf.cell(value_width, 5, f"{company.name}", 0, 1)
+        
+        # DNI
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_xy(label_x1, pdf.get_y() + 2)
+        pdf.cell(label_width, 5, 'DNI/NIE:', 0, 0)
+        
+        # CIF
+        pdf.set_xy(label_x2, pdf.get_y())
+        pdf.cell(label_width, 5, 'CIF:', 0, 1)
+        
+        pdf.set_font('Arial', '', 9)
+        pdf.set_xy(value_x1, pdf.get_y() - 5)
+        pdf.cell(value_width, 5, f"{employee.dni}", 0, 0)
+        
+        pdf.set_xy(value_x2, pdf.get_y())
+        pdf.cell(value_width, 5, f"{company.tax_id}", 0, 1)
+        
+        # Puesto
+        pdf.set_font('Arial', 'B', 9)
+        pdf.set_xy(label_x1, pdf.get_y() + 2)
+        pdf.cell(label_width, 5, 'Puesto:', 0, 0)
+        
+        # Dirección
+        pdf.set_xy(label_x2, pdf.get_y())
+        pdf.cell(label_width, 5, 'Dirección:', 0, 1)
+        
+        pdf.set_font('Arial', '', 9)
+        pdf.set_xy(value_x1, pdf.get_y() - 5)
+        pdf.cell(value_width, 5, f"{employee.position or '-'}", 0, 0)
+        
+        empresa_direccion = f"{company.address or ''}, {company.city or ''}"
+        if empresa_direccion.strip() == ',':
+            empresa_direccion = '-'
+        pdf.set_xy(value_x2, pdf.get_y())
+        pdf.cell(value_width, 5, empresa_direccion, 0, 1)
+        
+        # Asegurar que avanzamos correctamente después de los bloques
+        pdf.set_y(initial_y + 35)  # Espacio antes de la tabla
+        
+        # Título de la tabla con fondo corporativo
+        pdf.set_fill_color(*pdf.primary_color)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_font('Arial', 'B', 12)
+        
+        # Centrar el título de la tabla usando los mismos márgenes
+        title_width = 170  # Ancho del título
+        title_x = (210 - title_width) / 2  # Centrado en la página
+        
+        # Dibujar el rectángulo para el título
+        pdf.rect(title_x, pdf.get_y(), title_width, 10, 'F')
+        
+        # Guardar la posición Y actual
+        current_y = pdf.get_y()
+        
+        # Posicionar el texto verticalmente centrado dentro de la barra (subir un poco)
+        pdf.set_y(current_y + 2.5)  # 2.5mm para centrar el texto en la barra de 10mm de alto
+        pdf.cell(0, 5, 'REGISTROS DE FICHAJE', 0, 1, 'C')
+        
+        # Volver a la posición después del rectángulo y añadir espacio
+        pdf.set_y(current_y + 10 + 5)  # 5mm de espacio adicional entre la barra y la tabla
+        
+        # Restaurar color de texto
+        pdf.set_text_color(0, 0, 0)
+        
+        # Tabla de registros
+        pdf.set_font('Arial', 'B', 10)
+        
+        # Cabecera de tabla
+        col_widths = [35, 30, 30, 40]
+        header = ['Fecha', 'Entrada', 'Salida', 'Firma']
+        table_width = sum(col_widths)
+        
+        # Calcular posición X para centrar la tabla
+        table_x = (210 - table_width) / 2
+        
+        # Ordenar los registros por fecha de check-in
+        sorted_records = sorted(records, key=lambda r: r.check_in_time)
+        
+        # Cabecera de la tabla
+        pdf.set_y(pdf.get_y() + 2)  # Espacio antes de la tabla
+        pdf.set_x(table_x)
+        
+        # Dibujar cabecera con color corporativo
+        pdf.set_fill_color(*pdf.secondary_color)
+        pdf.set_text_color(255, 255, 255)
+        pdf.set_draw_color(*pdf.primary_color)
+        pdf.set_line_width(0.3)
+        
+        for i, col in enumerate(header):
+            pdf.cell(col_widths[i], 10, col, 1, 0, 'C', True)
+        pdf.ln()
+        
+        # Restaurar color de texto para las filas
+        pdf.set_text_color(0, 0, 0)
+        pdf.set_font('Arial', '', 10)
+        
+        # Color alternado para las filas (efecto cebra)
+        row_count = 0
+        
+        for record in sorted_records:
+            # Verificar si hay espacio en la página actual
+            if pdf.get_y() > pdf.h - 30:  # Si queda poco espacio para esta fila
+                pdf.add_page()
+                pdf.ln(8)  # Espacio después del encabezado
+                
+                # Volver a dibujar la cabecera de la tabla
+                pdf.set_x(table_x)
+                pdf.set_fill_color(*pdf.secondary_color)
+                pdf.set_text_color(255, 255, 255)
+                
+                for i, col in enumerate(header):
+                    pdf.cell(col_widths[i], 10, col, 1, 0, 'C', True)
+                pdf.ln()
+                
+                # Restaurar color de texto
+                pdf.set_text_color(0, 0, 0)
+            
+            # Posicionar al inicio de la fila, centrado
+            pdf.set_x(table_x)
+            
+            # Cambiar color de fondo según fila par/impar
+            if row_count % 2 == 0:
+                pdf.set_fill_color(255, 255, 255)  # Blanco
+            else:
+                pdf.set_fill_color(*pdf.accent_color)  # Color claro
+            
+            # Fecha
+            pdf.cell(col_widths[0], 10, record.check_in_time.strftime('%d/%m/%Y'), 1, 0, 'C', True)
+            
+            # Hora entrada
+            pdf.cell(col_widths[1], 10, record.check_in_time.strftime('%H:%M'), 1, 0, 'C', True)
+            
+            # Hora salida
+            if record.check_out_time:
+                pdf.cell(col_widths[2], 10, record.check_out_time.strftime('%H:%M'), 1, 0, 'C', True)
+            else:
+                pdf.cell(col_widths[2], 10, '-', 1, 0, 'C', True)
+            
+            # Firma si está habilitado
+            if include_signature:
+                # Dibujar la firma o un espacio para la firma manual
+                if hasattr(record, 'signature_data') and record.signature_data:
+                    # Si hay firma digital, intentar dibujarla
+                    draw_signature(pdf, record.signature_data, pdf.get_x() + 5, pdf.get_y() + 1, 30, 8)
+                    pdf.cell(col_widths[3], 10, '', 1, 1, 'C', True)
+                else:
+                    # Espacio para firma
+                    pdf.cell(col_widths[3], 10, '', 1, 1, 'C', True)
+            else:
+                # Si no se incluye firma, simplemente dejar un espacio o algún texto
+                pdf.cell(col_widths[3], 10, 'No requerido', 1, 1, 'C', True)
+            
+            row_count += 1
+        
+        # Espacio después de cada empleado
+        pdf.ln(10)
+    
+    # Crear archivo temporal para el PDF
+    pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix='.pdf')
+    pdf.output(pdf_file.name)
+    
+    return pdf_file.name
+
 def generate_pdf_report(records, start_date, end_date, include_signature=True):
     """Genera un informe PDF de los registros de fichaje agrupados por semanas"""
     # Agrupar registros por empleado

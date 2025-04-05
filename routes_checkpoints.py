@@ -23,7 +23,7 @@ from forms_checkpoints import (CheckPointForm, CheckPointLoginForm, CheckPointEm
                              ContractHoursForm, CheckPointRecordAdjustmentForm,
                              SignaturePadForm, ExportCheckPointRecordsForm, DeleteCheckPointRecordsForm)
 from utils import log_activity
-from utils_checkpoints import generate_pdf_report, draw_signature, delete_employee_records
+from utils_checkpoints import generate_pdf_report, generate_simple_pdf_report, draw_signature, delete_employee_records
 
 
 # Crear un Blueprint para las rutas de checkpoints
@@ -1067,8 +1067,8 @@ def export_records():
                 flash('No se encontraron registros para el período seleccionado.', 'warning')
                 return redirect(url_for('checkpoints.export_records'))
             
-            # Generar PDF
-            pdf_file = generate_pdf_report(
+            # Generar PDF usando la función simple sin agrupación por semanas ni suma de horas
+            pdf_file = generate_simple_pdf_report(
                 records=records, 
                 start_date=start_date, 
                 end_date=end_date,
