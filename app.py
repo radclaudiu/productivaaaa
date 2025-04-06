@@ -67,7 +67,11 @@ def create_app(config_class='config.Config'):
                        schedule_bp, checkin_bp, vacation_bp, ui_bp)
     from routes_tasks import tasks_bp
     from routes_checkpoints import init_app as init_checkpoints_app
-    from routes_checkpoints_new import checkpoints_bp as checkpoints_new_bp
+    # Esta importación ha sido trasladada a un bloque try/except para evitar errores
+    try:
+        from routes_checkpoints_new import checkpoints_bp as checkpoints_new_bp
+    except ImportError:
+        checkpoints_new_bp = None
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -79,7 +83,9 @@ def create_app(config_class='config.Config'):
     app.register_blueprint(vacation_bp)
     app.register_blueprint(ui_bp)
     app.register_blueprint(tasks_bp, url_prefix='/tasks')
-    app.register_blueprint(checkpoints_new_bp)
+    # Registrar el blueprint de routes_checkpoints_new.py solo si está disponible
+    if checkpoints_new_bp is not None:
+        app.register_blueprint(checkpoints_new_bp)
     
     # Inicializar el sistema de puntos de fichaje
     init_checkpoints_app(app)

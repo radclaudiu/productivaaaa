@@ -760,14 +760,13 @@ def list_records_all():
         page=page, per_page=20
     )
     
-    # Datos adicionales para el filtro
+    # Datos adicionales para el filtro - incluir tanto empleados activos como inactivos
     if current_user.is_admin():
-        filter_employees = Employee.query.filter_by(is_active=True).all()
+        filter_employees = Employee.query.all()  # Todos los empleados
     else:
         company_ids = [company.id for company in current_user.companies]
         filter_employees = Employee.query.filter(
-            Employee.company_id.in_(company_ids),
-            Employee.is_active == True
+            Employee.company_id.in_(company_ids)  # Todos los empleados de las empresas asignadas
         ).all()
     
     return render_template(
@@ -839,14 +838,13 @@ def list_incidents():
         page=page, per_page=20
     )
     
-    # Datos adicionales para el filtro
+    # Datos adicionales para el filtro - incluir tanto empleados activos como inactivos
     if current_user.is_admin():
-        filter_employees = Employee.query.filter_by(is_active=True).all()
+        filter_employees = Employee.query.all()  # Todos los empleados
     else:
         company_ids = [company.id for company in current_user.companies]
         filter_employees = Employee.query.filter(
-            Employee.company_id.in_(company_ids),
-            Employee.is_active == True
+            Employee.company_id.in_(company_ids)  # Todos los empleados de las empresas asignadas
         ).all()
     
     return render_template(
@@ -1004,8 +1002,8 @@ def view_original_records(slug):
             CheckPointOriginalRecord.adjusted_at.desc()
         ).paginate(page=page, per_page=20)
     
-    # Obtener la lista de empleados para el filtro (solo de esta empresa)
-    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
+    # Obtener la lista de empleados para el filtro (todos los empleados de esta empresa, activos e inactivos)
+    employees = Employee.query.filter_by(company_id=company_id).order_by(Employee.first_name).all()
     
     return render_template(
         'checkpoints/original_records.html',
