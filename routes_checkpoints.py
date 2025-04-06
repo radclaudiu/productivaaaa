@@ -594,10 +594,7 @@ def adjust_record(id):
         )
         db.session.add(original_record)
         
-        # También guardar los valores originales en el registro principal si es el primer ajuste
-        if not record.adjusted:
-            record.original_check_in_time = record.check_in_time
-            record.original_check_out_time = record.check_out_time
+        # Ya no guardamos valores originales en los campos original_* del registro principal
         
         # Actualizar con los nuevos valores
         check_in_date = datetime.strptime(form.check_in_date.data, '%Y-%m-%d').date()
