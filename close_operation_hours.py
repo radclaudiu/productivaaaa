@@ -212,7 +212,7 @@ def auto_close_pending_records():
                         # Si hay ajuste de salida, aplicarlo
                         if adjusted_out and adjusted_out != check_out_original:
                             record.check_out_time = adjusted_out
-                            record.notes += f" [R] Hora de salida ajustada de {check_out_original.strftime('%H:%M')} a {adjusted_out.strftime('%H:%M')} por límite de horas contrato."
+                            record.notes += f" [R] Hora de salida ajustada de {check_out_original.strftime('%H:%M:%S')} a {adjusted_out.strftime('%H:%M:%S')} por límite de horas contrato."
                     
                     # Crear una incidencia
                     incident = CheckPointIncident(

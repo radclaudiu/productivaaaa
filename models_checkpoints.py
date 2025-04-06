@@ -1,4 +1,5 @@
 import enum
+import random
 from datetime import datetime, date, time, timedelta
 from sqlalchemy import Enum
 from werkzeug.security import generate_password_hash, check_password_hash
@@ -369,7 +370,13 @@ class EmployeeContractHours(db.Model):
                 
             # Ajustamos la hora de salida para que la duración sea igual a las horas permitidas
             # En lugar de recortar la entrada, recortamos desde la salida
-            new_check_out_time = adjusted_in + timedelta(hours=max_hours)
+            
+            # Añadir entre 1 y 5 minutos aleatorios para que la hora de salida parezca más natural
+            random_minutes = random.randint(1, 5)
+            
+            # Calcular la nueva hora de salida con el tiempo exacto de horas máximas + minutos aleatorios
+            new_check_out_time = adjusted_in + timedelta(hours=max_hours, minutes=random_minutes)
+            
             return adjusted_in, new_check_out_time
             
         return adjusted_in, adjusted_out

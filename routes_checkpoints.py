@@ -1407,7 +1407,7 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
                     if adjusted_checkout and adjusted_checkout != original_checkout:
                         pending_record.check_out_time = adjusted_checkout
                         # Marcar con R en lugar de crear incidencia
-                        pending_record.notes = (pending_record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
+                        pending_record.notes = (pending_record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M:%S')} a {adjusted_checkout.strftime('%H:%M:%S')}"
                     
                     # Marcar como ajustado
                     pending_record.adjusted = True
@@ -1673,7 +1673,7 @@ def record_checkout(id):
                 if adjusted_checkout and adjusted_checkout != original_checkout:
                     record.check_out_time = adjusted_checkout
                     # Marcar con R en lugar de crear incidencia
-                    record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M')} a {adjusted_checkout.strftime('%H:%M')}"
+                    record.notes = (record.notes or "") + f" [R] Hora salida ajustada de {original_checkout.strftime('%H:%M:%S')} a {adjusted_checkout.strftime('%H:%M:%S')}"
                 
                 # Marcar como ajustado
                 record.adjusted = True
