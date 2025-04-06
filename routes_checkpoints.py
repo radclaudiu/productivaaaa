@@ -762,12 +762,16 @@ def list_records_all():
     
     # Datos adicionales para el filtro - incluir tanto empleados activos como inactivos
     if current_user.is_admin():
-        filter_employees = Employee.query.all()  # Todos los empleados
+        # Para administradores, todos los empleados
+        filter_employees = Employee.query.order_by(Employee.first_name).all()
+        print(f"Admin (list_records_all): Encontrados {len(filter_employees)} empleados totales")
     else:
+        # Para gerentes, los empleados de sus empresas asignadas
         company_ids = [company.id for company in current_user.companies]
         filter_employees = Employee.query.filter(
             Employee.company_id.in_(company_ids)  # Todos los empleados de las empresas asignadas
-        ).all()
+        ).order_by(Employee.first_name).all()
+        print(f"Gerente (list_records_all): Encontrados {len(filter_employees)} empleados para las empresas {company_ids}")
     
     return render_template(
         'checkpoints/all_records.html',
@@ -840,12 +844,16 @@ def list_incidents():
     
     # Datos adicionales para el filtro - incluir tanto empleados activos como inactivos
     if current_user.is_admin():
-        filter_employees = Employee.query.all()  # Todos los empleados
+        # Para administradores, todos los empleados
+        filter_employees = Employee.query.order_by(Employee.first_name).all()
+        print(f"Admin (list_incidents): Encontrados {len(filter_employees)} empleados totales")
     else:
+        # Para gerentes, los empleados de sus empresas asignadas
         company_ids = [company.id for company in current_user.companies]
         filter_employees = Employee.query.filter(
             Employee.company_id.in_(company_ids)  # Todos los empleados de las empresas asignadas
-        ).all()
+        ).order_by(Employee.first_name).all()
+        print(f"Gerente (list_incidents): Encontrados {len(filter_employees)} empleados para las empresas {company_ids}")
     
     return render_template(
         'checkpoints/incidents.html',
