@@ -199,8 +199,9 @@ def view_original_records(slug):
     # Crear objeto de paginación
     paginated_records = Pagination(page_records, page, per_page, total_records)
     
-    # Obtener la lista de empleados para el filtro (solo de esta empresa)
-    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
+    # Obtener la lista de empleados para el filtro (todos los empleados de esta empresa, activos e inactivos)
+    employees = Employee.query.filter_by(company_id=company_id).order_by(Employee.first_name, Employee.last_name).all()
+    logging.debug(f"Encontrados {len(employees)} empleados para el filtro de registros originales")
     
     # Si se solicita exportación
     export_format = request.args.get('export')
@@ -824,8 +825,9 @@ def view_both_records(slug):
         CheckPointRecord.check_in_time.desc()
     ).paginate(page=page, per_page=20)
     
-    # Obtener la lista de empleados para el filtro (solo de esta empresa)
-    employees = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.first_name).all()
+    # Obtener la lista de empleados para el filtro (todos los empleados de esta empresa, activos e inactivos)
+    employees = Employee.query.filter_by(company_id=company_id).order_by(Employee.first_name, Employee.last_name).all()
+    logging.debug(f"Encontrados {len(employees)} empleados para el filtro en all_records_by_company")
     
     # Si se solicita exportación
     export_format = request.args.get('export')
