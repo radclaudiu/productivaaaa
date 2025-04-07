@@ -1,145 +1,252 @@
-/* employee-cards.css - Estilos modernos para tarjetas de empleados */
+/* employee-cards.css - Estilos modernos y profesionales para tarjetas de empleados 2025 */
 
 /* Variables CSS para facilitar personalización */
 :root {
-  --card-primary: #2563eb;
+  /* Paleta de colores moderna */
+  --card-primary: #3b82f6;
   --card-secondary: #1e40af;
-  --card-bg: #111827;
-  --card-text: #ffffff;
-  --card-border: rgba(255, 255, 255, 0.15);
-  --card-highlight: rgba(255, 255, 255, 0.1);
-  --card-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+  --card-accent: #06b6d4;
+  --card-bg: #ffffff;
+  --card-bg-alt: #f8fafc;
+  --card-text: #0f172a;
+  --card-text-secondary: #475569;
+  --card-border: #e2e8f0;
+  --card-highlight: #dbeafe;
+  
+  /* Efectos y transiciones */
+  --card-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
   --card-hover-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
   --transition-speed: 0.3s;
+  
+  /* Tamaños y espacio */
+  --border-radius: 16px;
+  --spacing-sm: 8px;
+  --spacing-md: 16px;
+  --spacing-lg: 24px;
 }
 
 /* Contenedor para las tarjetas */
 .employee-cards-container {
-  padding: 1rem 0;
+  padding: 1.5rem 0;
 }
 
-/* Tarjeta base */
+/* Tarjeta base con diseño moderno de glassmorphism */
 .employee-card {
   position: relative;
-  height: 200px;
-  border-radius: 10px;
+  height: 220px;
+  border-radius: var(--border-radius);
   background-color: var(--card-bg);
+  background-image: linear-gradient(135deg, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.7));
   border: 1px solid var(--card-border);
   overflow: hidden;
-  transition: all var(--transition-speed) ease-in-out;
+  transition: all var(--transition-speed) cubic-bezier(0.25, 0.46, 0.45, 0.94);
   box-shadow: var(--card-shadow);
   margin-bottom: 1.5rem;
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
 }
 
 .employee-card:hover, .employee-card:focus {
-  transform: translateY(-5px);
+  transform: translateY(-8px) scale(1.02);
   box-shadow: var(--card-hover-shadow);
   border-color: var(--card-primary);
 }
 
-/* Capa de gradiente para mejorar legibilidad del texto */
+/* Efectos decorativos para las tarjetas */
+.employee-card::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+  background: linear-gradient(90deg, var(--card-primary), var(--card-accent));
+  z-index: 2;
+}
+
+/* Capa de decoración para el fondo */
 .employee-card::after {
   content: "";
   position: absolute;
-  bottom: 0;
+  top: 0;
   left: 0;
   right: 0;
-  height: 50%;
-  background: linear-gradient(to top, var(--card-bg), transparent);
+  bottom: 0;
+  background-image: 
+    radial-gradient(circle at 10% 10%, rgba(59, 130, 246, 0.1) 0%, transparent 50%),
+    radial-gradient(circle at 90% 90%, rgba(6, 182, 212, 0.1) 0%, transparent 50%);
   z-index: 1;
+  opacity: 0.5;
+  transition: opacity var(--transition-speed) ease;
+}
+
+.employee-card:hover::after {
+  opacity: 0.8;
 }
 
 /* Cuerpo de la tarjeta */
 .employee-card .card-body {
   height: 100%;
-  padding: 0;
+  padding: var(--spacing-md);
   position: relative;
   z-index: 2;
   display: flex;
   flex-direction: column;
-  justify-content: flex-end;
+  justify-content: center;
   align-items: center;
 }
 
-/* Avatar del empleado */
+/* Avatar del empleado con estilo moderno */
 .employee-avatar {
-  width: 95px;
-  height: 95px;
+  width: 100px;
+  height: 100px;
   border-radius: 50%;
   overflow: hidden;
-  margin-bottom: 0.5rem;
-  border: 3px solid white;
-  box-shadow: var(--card-shadow);
-  background-color: var(--card-secondary);
+  margin-bottom: 1rem;
+  border: 4px solid white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  background: linear-gradient(135deg, var(--card-primary), var(--card-accent));
   display: flex;
   justify-content: center;
   align-items: center;
   position: relative;
   z-index: 2;
-  margin-top: 1.5rem;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.employee-card:hover .employee-avatar {
+  transform: scale(1.05);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
 }
 
 .employee-avatar img {
   width: 100%;
   height: 100%;
   object-fit: cover;
+  transition: transform 0.5s ease;
+}
+
+.employee-card:hover .employee-avatar img {
+  transform: scale(1.1);
 }
 
 .avatar-text {
-  font-size: 2rem;
+  font-size: 2.2rem;
   font-weight: 700;
-  color: var(--card-text);
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.3);
+  color: white;
+  text-shadow: 1px 1px 3px rgba(0, 0, 0, 0.2);
+  letter-spacing: -1px;
 }
 
 /* Nombre del empleado */
 .employee-name {
   color: var(--card-text);
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 600;
   text-align: center;
-  margin: 0.25rem 0 1rem;
+  margin: 0.5rem 0;
   padding: 0 0.5rem;
   width: 100%;
   overflow: hidden;
   text-overflow: ellipsis;
   position: relative;
   z-index: 2;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+}
+
+/* Puesto o cargo del empleado (opcional) */
+.employee-position {
+  color: var(--card-text-secondary);
+  font-size: 0.9rem;
+  text-align: center;
+  margin-bottom: 0.5rem;
+}
+
+/* Estado del empleado */
+.employee-status {
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 4px 12px;
+  border-radius: 20px;
+  margin-top: 0.5rem;
+  background-color: #ecfdf5;
+  color: #059669;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.employee-status.inactive {
+  background-color: #f1f5f9;
+  color: #64748b;
 }
 
 /* Indicador de estado activo */
 .employee-card .status-indicator {
   position: absolute;
-  top: 10px;
-  right: 10px;
-  width: 12px;
-  height: 12px;
+  top: 15px;
+  right: 15px;
+  width: 14px;
+  height: 14px;
   border-radius: 50%;
   background-color: #10b981; /* Verde para activo */
   border: 2px solid white;
   z-index: 3;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  animation: pulse-green 2s infinite;
 }
 
 .employee-card .status-indicator.inactive {
-  background-color: #d1d5db; /* Gris para inactivo */
+  background-color: #94a3b8; /* Gris para inactivo */
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.2);
+  animation: none;
+}
+
+@keyframes pulse-green {
+  0% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0.4);
+  }
+  70% {
+    box-shadow: 0 0 0 6px rgba(16, 185, 129, 0);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(16, 185, 129, 0);
+  }
 }
 
 /* Diseño responsivo */
 @media (max-width: 1199.98px) {
   .employee-card {
-    height: 180px;
+    height: 200px;
+  }
+  
+  .employee-avatar {
+    width: 90px;
+    height: 90px;
+  }
+  
+  .employee-name {
+    font-size: 1.2rem;
+  }
+}
+
+@media (max-width: 991.98px) {
+  .employee-card {
+    height: 190px;
   }
   
   .employee-avatar {
     width: 85px;
     height: 85px;
   }
+  
+  .avatar-text {
+    font-size: 1.9rem;
+  }
 }
 
-@media (max-width: 991.98px) {
+@media (max-width: 767.98px) {
   .employee-card {
-    height: 170px;
+    height: 180px;
   }
   
   .employee-avatar {
@@ -147,58 +254,68 @@
     height: 80px;
   }
   
-  .avatar-text {
-    font-size: 1.8rem;
-  }
-}
-
-@media (max-width: 767.98px) {
-  .employee-card {
-    height: 160px;
-  }
-  
-  .employee-avatar {
-    width: 75px;
-    height: 75px;
-    margin-top: 1.2rem;
-  }
-  
   .employee-name {
-    font-size: 1rem;
+    font-size: 1.1rem;
+  }
+  
+  .employee-position {
+    font-size: 0.85rem;
   }
 }
 
 @media (max-width: 575.98px) {
   .employee-card {
-    height: 150px;
+    height: 170px;
   }
   
   .employee-avatar {
-    width: 70px;
-    height: 70px;
-    margin-top: 1rem;
+    width: 75px;
+    height: 75px;
   }
   
   .avatar-text {
-    font-size: 1.5rem;
+    font-size: 1.6rem;
+  }
+  
+  .employee-card .status-indicator {
+    width: 12px;
+    height: 12px;
+    top: 10px;
+    right: 10px;
   }
 }
 
-/* Animación de carga */
-@keyframes pulse {
+/* Animación de carga y efectos */
+@keyframes shimmer {
   0% {
-    opacity: 0.6;
-  }
-  50% {
-    opacity: 1;
+    background-position: -100% 0;
   }
   100% {
-    opacity: 0.6;
+    background-position: 100% 0;
   }
 }
 
 .employee-card-loading {
-  animation: pulse 1.5s infinite;
+  position: relative;
+  overflow: hidden;
+}
+
+.employee-card-loading::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.6) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+  z-index: 4;
 }
 
 /* Efectos de interacción táctil */
@@ -207,4 +324,25 @@
     transform: scale(0.98);
     background-color: var(--card-highlight);
   }
+}
+
+/* Borde de tarjeta decorativo moderno */
+.employee-card-border {
+  position: absolute;
+  inset: 0;
+  padding: 2px;
+  border-radius: var(--border-radius);
+  background: linear-gradient(135deg, var(--card-primary), var(--card-accent));
+  -webkit-mask: 
+    linear-gradient(#fff 0 0) content-box, 
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask-composite: exclude;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+}
+
+.employee-card:hover .employee-card-border {
+  opacity: 1;
 }
