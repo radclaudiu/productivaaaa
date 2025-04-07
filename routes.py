@@ -801,7 +801,17 @@ def edit_employee(id):
             employee.status = EmployeeStatus(form.status.data)
             
         employee.updated_at = datetime.utcnow()
+        
+        # Log de depuración justo antes del commit
+        print(f"DEBUG pre-commit - Employee {employee.id}: end_date = {employee.end_date}, tipo {type(employee.end_date)}")
+        log_activity(f"DEBUG pre-commit - Employee {employee.id}: end_date = {employee.end_date}, tipo {type(employee.end_date)}")
+        
         db.session.commit()
+        
+        # Log de depuración justo después del commit - recargamos el empleado para verificar
+        employee_post_commit = Employee.query.get(employee.id)
+        print(f"DEBUG post-commit - Employee {employee_post_commit.id}: end_date = {employee_post_commit.end_date}, tipo {type(employee_post_commit.end_date)}")
+        log_activity(f"DEBUG post-commit - Employee {employee_post_commit.id}: end_date = {employee_post_commit.end_date}, tipo {type(employee_post_commit.end_date)}")
         
         log_activity(f'Empleado actualizado: {employee.first_name} {employee.last_name}')
         flash(f'Empleado "{employee.first_name} {employee.last_name}" actualizado correctamente.', 'success')
