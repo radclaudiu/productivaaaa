@@ -1,0 +1,25 @@
+.employee-card .status-indicator {
+  position: absolute;
+  top: 15px;
+  right: 15px;
+  width: 14px;
+  height: 14px;
+  border-radius: 50%;
+  background-color: #10b981; /* Verde para activo */
+  border: 2px solid white;
+  z-index: 3;
+  box-shadow: 0 0 0 2px rgba(16, 185, 129, 0.2);
+  animation: pulse-green 2s infinite;
+}
+
+.employee-card .status-indicator.out-shift {
+  background-color: #ef4444; /* Rojo para fuera de jornada */
+  box-shadow: 0 0 0 2px rgba(239, 68, 68, 0.2);
+  animation: pulse-red 2s infinite;
+}
+
+.employee-card .status-indicator.inactive {
+  background-color: #94a3b8; /* Gris para inactivo */
+  box-shadow: 0 0 0 2px rgba(148, 163, 184, 0.2);
+  animation: none;
+}

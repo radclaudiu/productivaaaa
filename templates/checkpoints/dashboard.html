@@ -165,7 +165,11 @@
                                     <div class="employee-card">
                                         <div class="employee-card-border"></div>
                                         {% if employee.is_active %}
-                                        <div class="status-indicator"></div>
+                                            {% if employee.is_on_shift %}
+                                            <div class="status-indicator"></div>
+                                            {% else %}
+                                            <div class="status-indicator out-shift"></div>
+                                            {% endif %}
                                         {% else %}
                                         <div class="status-indicator inactive"></div>
                                         {% endif %}
