@@ -762,42 +762,32 @@ def edit_employee(id):
                               form.start_date.data.isoformat() if form.start_date.data else None)
             employee.start_date = form.start_date.data
             
-        # Log información detallada para depuración sobre end_date
-        print(f"DEBUG end_date - Original: {employee.end_date}, Formulario: {form.end_date.data}, Tipo: {type(form.end_date.data)}")
-        log_activity(f"DEBUG end_date - Original: {employee.end_date}, Formulario: {form.end_date.data}, Tipo: {type(form.end_date.data)}")
-        
-        # Enfoque completamente diferente para date_end - usar SQL directo
-        # Este enfoque evita cualquier problema con SQLAlchemy y ORM
+        # Manejar la fecha de baja (end_date)
         old_end_date = employee.end_date.isoformat() if employee.end_date else None
-        
-        # Capturar el valor del formulario
         new_end_date = form.end_date.data
         
-        # Log de valores para debugging
-        print(f"DEBUG end_date - Valor anterior: {old_end_date}, Nuevo valor: {new_end_date}")
-        log_activity(f"DEBUG end_date - Valor anterior: {old_end_date}, Nuevo valor: {new_end_date}")
-        
-        # Registrar el cambio en el historial
+        # Registrar el cambio en el historial si hay cambio
         if old_end_date != (new_end_date.isoformat() if new_end_date else None):
             log_employee_change(employee, 'end_date', old_end_date, 
                               new_end_date.isoformat() if new_end_date else None)
-        
-        # Asignar el valor y hacer commit parcial
-        employee.end_date = new_end_date
-        
-        # Ejecutar SQL directo para asegurar que el cambio se aplica
-        if new_end_date is not None:
-            # Si hay fecha, asignarla directamente con SQL
-            sql = "UPDATE employees SET end_date = :end_date WHERE id = :id"
-            db.session.execute(sql, {"end_date": new_end_date, "id": employee.id})
-            print(f"DEBUG SQL actualización: Estableciendo end_date a {new_end_date} para empleado {employee.id}")
-            log_activity(f"DEBUG SQL actualización: Estableciendo end_date a {new_end_date} para empleado {employee.id}")
-        else:
-            # Si no hay fecha, establecer NULL directamente con SQL
-            sql = "UPDATE employees SET end_date = NULL WHERE id = :id"
-            db.session.execute(sql, {"id": employee.id})
-            print(f"DEBUG SQL actualización: Estableciendo end_date a NULL para empleado {employee.id}")
-            log_activity(f"DEBUG SQL actualización: Estableciendo end_date a NULL para empleado {employee.id}")
+            
+            # Eliminar la asignación ORM que parece no funcionar correctamente
+            # employee.end_date = new_end_date
+            
+            # Ejecutar SQL directo para asegurar que el cambio se aplica
+            # Este paso es crítico - usamos SQL directo para evitar problemas con SQLAlchemy
+            if new_end_date is not None:
+                # Si hay fecha, asignarla directamente con SQL
+                sql = "UPDATE employees SET end_date = :end_date WHERE id = :id"
+                db.session.execute(sql, {"end_date": new_end_date, "id": employee.id})
+                print(f"Fecha de baja establecida a {new_end_date} para empleado {employee.id}")
+            else:
+                # Si no hay fecha, establecer NULL directamente con SQL
+                sql = "UPDATE employees SET end_date = NULL WHERE id = :id"
+                db.session.execute(sql, {"id": employee.id})
+                print(f"Fecha de baja eliminada (NULL) para empleado {employee.id}")
+            
+            # No hacemos commit aquí, se hará al final de la función
             
         if employee.company_id != form.company_id.data:
             old_company = Company.query.get(employee.company_id).name if employee.company_id else 'Ninguna'
