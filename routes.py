@@ -766,23 +766,38 @@ def edit_employee(id):
         print(f"DEBUG end_date - Original: {employee.end_date}, Formulario: {form.end_date.data}, Tipo: {type(form.end_date.data)}")
         log_activity(f"DEBUG end_date - Original: {employee.end_date}, Formulario: {form.end_date.data}, Tipo: {type(form.end_date.data)}")
         
-        # Forzar asignación directa del valor end_date sin comparación previa
-        # Este enfoque evita problemas de comparación None vs date que podrían estar causando el problema
-        if form.end_date.data is not None:
-            log_employee_change(employee, 'end_date', 
-                              employee.end_date.isoformat() if employee.end_date else None, 
-                              form.end_date.data.isoformat())
-            print(f"DEBUG end_date - Asignando fecha: {form.end_date.data}")
-            log_activity(f"DEBUG end_date - Asignando fecha: {form.end_date.data}")
+        # Enfoque completamente diferente para date_end - usar SQL directo
+        # Este enfoque evita cualquier problema con SQLAlchemy y ORM
+        old_end_date = employee.end_date.isoformat() if employee.end_date else None
+        
+        # Capturar el valor del formulario
+        new_end_date = form.end_date.data
+        
+        # Log de valores para debugging
+        print(f"DEBUG end_date - Valor anterior: {old_end_date}, Nuevo valor: {new_end_date}")
+        log_activity(f"DEBUG end_date - Valor anterior: {old_end_date}, Nuevo valor: {new_end_date}")
+        
+        # Registrar el cambio en el historial
+        if old_end_date != (new_end_date.isoformat() if new_end_date else None):
+            log_employee_change(employee, 'end_date', old_end_date, 
+                              new_end_date.isoformat() if new_end_date else None)
+        
+        # Asignar el valor y hacer commit parcial
+        employee.end_date = new_end_date
+        
+        # Ejecutar SQL directo para asegurar que el cambio se aplica
+        if new_end_date is not None:
+            # Si hay fecha, asignarla directamente con SQL
+            sql = "UPDATE employees SET end_date = :end_date WHERE id = :id"
+            db.session.execute(sql, {"end_date": new_end_date, "id": employee.id})
+            print(f"DEBUG SQL actualización: Estableciendo end_date a {new_end_date} para empleado {employee.id}")
+            log_activity(f"DEBUG SQL actualización: Estableciendo end_date a {new_end_date} para empleado {employee.id}")
         else:
-            log_employee_change(employee, 'end_date',
-                              employee.end_date.isoformat() if employee.end_date else None,
-                              None)
-            print(f"DEBUG end_date - Limpiando fecha (None)")
-            log_activity(f"DEBUG end_date - Limpiando fecha (None)")
-            
-        # Asignación directa del valor del formulario
-        employee.end_date = form.end_date.data
+            # Si no hay fecha, establecer NULL directamente con SQL
+            sql = "UPDATE employees SET end_date = NULL WHERE id = :id"
+            db.session.execute(sql, {"id": employee.id})
+            print(f"DEBUG SQL actualización: Estableciendo end_date a NULL para empleado {employee.id}")
+            log_activity(f"DEBUG SQL actualización: Estableciendo end_date a NULL para empleado {employee.id}")
             
         if employee.company_id != form.company_id.data:
             old_company = Company.query.get(employee.company_id).name if employee.company_id else 'Ninguna'
