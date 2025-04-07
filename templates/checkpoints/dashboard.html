@@ -1,475 +1,309 @@
-{% extends 'checkpoints/portal_layout.html' %}
-
-{% block title %}Punto de Fichaje - {{ checkpoint.name }}{% endblock %}
-
-{% block head %}
-{{ super() }}
-<link rel="stylesheet" href="{{ url_for('static', filename='css/employee-cards.css') }}">
-<meta name="csrf-token" content="{{ csrf_token() }}">
-<style>
-    /* Estilos modernos para el dashboard de fichajes 2025 */
-    :root {
-        --primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
-        --secondary-gradient: linear-gradient(135deg, #0f172a, #1e3a8a);
-        --accent-color: #06b6d4;
-        --text-light: #f8fafc;
-        --text-secondary: #cbd5e1;
-        --border-radius-lg: 20px;
-        --border-radius-sm: 12px;
-        --shadow-lg: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-        --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-        --transition-smooth: all 0.3s cubic-bezier(0.25, 0.46, 0.45, 0.94);
-    }
-    
-    body {
-        background-color: #f8fafc;
-        background-image: 
-            radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0, transparent 50%),
-            radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0, transparent 50%);
-        background-attachment: fixed;
-    }
-    
-    .clock-container {
-        position: relative;
-        padding: 1.5rem;
-        border-radius: var(--border-radius-sm);
-        backdrop-filter: blur(10px);
-        -webkit-backdrop-filter: blur(10px);
-        background-color: rgba(255, 255, 255, 0.7);
-        border: 1px solid rgba(255, 255, 255, 0.5);
-        box-shadow: var(--shadow-sm);
-        transition: var(--transition-smooth);
-        text-align: center;
-        margin-bottom: 2rem;
-    }
-    
-    .clock-container:hover {
-        box-shadow: var(--shadow-lg);
-        transform: translateY(-2px);
-    }
-    
-    .time-display {
-        font-size: 3.5rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        text-align: center;
-        color: #0f172a;
-        text-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
-        font-variant-numeric: tabular-nums;
-        letter-spacing: -1px;
-    }
-    
-    .date-display {
-        font-size: 1.4rem;
-        font-weight: 500;
-        margin-bottom: 0;
-        text-align: center;
-        color: #475569;
-    }
-    
-    .dashboard-header {
-        background: var(--secondary-gradient);
-        border-radius: var(--border-radius-lg);
-        margin-bottom: 2.5rem;
-        box-shadow: var(--shadow-lg);
-        overflow: hidden;
-        border: 1px solid rgba(255, 255, 255, 0.1);
-        position: relative;
-    }
-    
-    .dashboard-header::before {
-        content: "";
-        position: absolute;
-        top: 0;
-        left: 0;
-        width: 100%;
-        height: 100%;
-        background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='100' height='100' viewBox='0 0 100 100'%3E%3Cpath fill='%23ffffff' fill-opacity='0.05' d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z'%3E%3C/path%3E%3C/svg%3E");
-        opacity: 0.3;
-    }
-    
-    .checkpoint-title {
-        font-size: 2.2rem;
-        font-weight: 700;
-        margin-bottom: 0.5rem;
-        background-image: linear-gradient(90deg, #f8fafc, #e2e8f0);
-        -webkit-background-clip: text;
-        background-clip: text;
-        color: transparent;
-        text-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-    }
-    
-    .checkpoint-location {
-        font-size: 1.1rem;
-        color: var(--text-secondary);
-        margin-bottom: 1.5rem;
-        font-weight: 500;
-    }
-    
-    .refresh-button {
-        border-radius: 50%;
-        width: 48px;
-        height: 48px;
-        padding: 0;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: var(--transition-smooth);
-        box-shadow: var(--shadow-sm);
-        background: var(--primary-gradient);
-        border: none;
-        color: white;
-    }
-    
-    .refresh-button:hover {
-        transform: rotate(30deg) scale(1.1);
-        box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
-    }
-    
-    .selection-header {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 2rem;
-        padding: 1.5rem;
-        border-radius: var(--border-radius-sm);
-        background-color: white;
-        box-shadow: var(--shadow-sm);
-        border-left: 4px solid var(--accent-color);
-    }
-    
-    .selection-title {
-        font-weight: 600;
-        color: #0f172a;
-        margin: 0;
-        font-size: 1.5rem;
-    }
-    
-    .employee-grid-container {
-        background-color: white;
-        padding: 2rem;
-        border-radius: var(--border-radius-lg);
-        box-shadow: var(--shadow-sm);
-    }
-    
-    .alert-modern {
-        border-radius: var(--border-radius-sm);
-        box-shadow: var(--shadow-sm);
-        border: none;
-        padding: 1rem 1.5rem;
-    }
-    
-    .alert-success {
-        border-left: 4px solid #10b981;
-    }
-    
-    .alert-danger {
-        border-left: 4px solid #ef4444;
-    }
-    
-    .alert-warning {
-        border-left: 4px solid #f59e0b;
-    }
-    
-    .alert-info {
-        border-left: 4px solid #3b82f6;
-    }
-    
-    @media (max-width: 768px) {
-        .dashboard-header {
-            margin-bottom: 1.5rem;
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Punto de Fichaje</title>
+    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/employee-cards.css') }}">
+    <meta name="csrf-token" content="{{ csrf_token() }}">
+    <style>
+        /* Estilos simplificados para el dashboard minimalista */
+        :root {
+            --primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
+            --accent-color: #06b6d4;
+            --text-primary: #0f172a;
+            --border-radius-lg: 20px;
+            --border-radius-sm: 12px;
+            --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
         }
         
-        .time-display {
-            font-size: 2.5rem;
+        body {
+            min-height: 100vh;
+            background-color: #f8fafc;
+            background-image: 
+                radial-gradient(at 0% 0%, rgba(59, 130, 246, 0.1) 0, transparent 50%),
+                radial-gradient(at 100% 100%, rgba(6, 182, 212, 0.1) 0, transparent 50%);
+            background-attachment: fixed;
+            padding: 1.5rem 0;
+            max-width: 100%;
+            overflow-x: hidden;
         }
         
-        .date-display {
-            font-size: 1.1rem;
+        .refresh-button {
+            border-radius: 50%;
+            width: 48px;
+            height: 48px;
+            padding: 0;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: all 0.3s ease;
+            box-shadow: var(--shadow-sm);
+            background: var(--primary-gradient);
+            border: none;
+            color: white;
         }
         
-        .checkpoint-title {
-            font-size: 1.8rem;
+        .refresh-button:hover {
+            transform: rotate(30deg) scale(1.1);
+            box-shadow: 0 8px 15px rgba(37, 99, 235, 0.3);
+        }
+        
+        .selection-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+            padding: 1.5rem;
+            border-radius: var(--border-radius-sm);
+            background-color: white;
+            box-shadow: var(--shadow-sm);
+            border-left: 4px solid var(--accent-color);
         }
         
         .selection-title {
-            font-size: 1.3rem;
+            font-weight: 600;
+            color: var(--text-primary);
+            margin: 0;
+            font-size: 1.8rem;
         }
         
-        .selection-header, .employee-grid-container {
-            padding: 1rem;
+        .employee-grid-container {
+            background-color: white;
+            padding: 2rem;
+            border-radius: var(--border-radius-lg);
+            box-shadow: var(--shadow-sm);
         }
-    }
-    
-    /* Animación del gradiente de fondo */
-    @keyframes gradient-animation {
-        0% {
-            background-position: 0% 50%;
+        
+        .alert-modern {
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-sm);
+            border: none;
+            padding: 1rem 1.5rem;
+            margin-bottom: 1.5rem;
         }
-        50% {
-            background-position: 100% 50%;
+        
+        .alert-success { border-left: 4px solid #10b981; }
+        .alert-danger { border-left: 4px solid #ef4444; }
+        .alert-warning { border-left: 4px solid #f59e0b; }
+        .alert-info { border-left: 4px solid #3b82f6; }
+        
+        @media (max-width: 768px) {
+            .selection-title {
+                font-size: 1.5rem;
+            }
+            
+            .selection-header, .employee-grid-container {
+                padding: 1rem;
+            }
+            
+            body {
+                padding: 0.5rem 0;
+            }
         }
-        100% {
-            background-position: 0% 50%;
-        }
-    }
-    
-    .gradient-animation {
-        background-size: 200% 200%;
-        animation: gradient-animation 5s ease infinite;
-    }
-</style>
-{% endblock %}
-
-{% block content %}
-<div class="container mt-4">
-    <!-- Cabecera del dashboard con hora y fecha -->
-    <div class="row mb-4">
-        <div class="col-12">
-            <div class="card dashboard-header gradient-animation">
-                <div class="card-body p-4">
-                    <div class="row align-items-center">
-                        <div class="col-12 col-md-6 text-center text-md-start">
-                            <h1 class="checkpoint-title">{{ checkpoint.name }}</h1>
-                            <p class="checkpoint-location">
-                                <i class="bi bi-geo-alt-fill me-2"></i>{{ checkpoint.location }}
-                            </p>
-                        </div>
-                        <div class="col-12 col-md-6">
-                            <div class="clock-container">
-                                <div class="date-display" id="currentDate"></div>
-                                <div class="time-display" id="currentTime"></div>
+    </style>
+</head>
+<body>
+    <div class="container">
+        <!-- Mensajes de alerta -->
+        {% with messages = get_flashed_messages(with_categories=true) %}
+            {% if messages %}
+                {% for category, message in messages %}
+                    <div class="alert alert-{{ category }} alert-modern alert-dismissible fade show" role="alert">
+                        {% if category == 'success' %}
+                        <i class="bi bi-check-circle-fill me-2"></i>
+                        {% elif category == 'danger' %}
+                        <i class="bi bi-exclamation-triangle-fill me-2"></i>
+                        {% elif category == 'warning' %}
+                        <i class="bi bi-exclamation-circle-fill me-2"></i>
+                        {% elif category == 'info' %}
+                        <i class="bi bi-info-circle-fill me-2"></i>
+                        {% endif %}
+                        {{ message }}
+                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                    </div>
+                {% endfor %}
+            {% endif %}
+        {% endwith %}
+        
+        <!-- Sección de selección de empleados -->
+        <div class="row">
+            <div class="col-12">
+                <div class="selection-header">
+                    <h2 class="selection-title">
+                        <i class="bi bi-person-badge me-2"></i>Seleccione su Nombre
+                    </h2>
+                    <button type="button" id="refreshEmployees" class="btn refresh-button" title="Actualizar lista de empleados">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+                
+                <!-- Contenedor de tarjetas de empleados -->
+                <div class="employee-grid-container">
+                    <div class="employee-cards-container">
+                        <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4" id="employeesList">
+                            {% for employee in employees %}
+                            <div class="col">
+                                <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none">
+                                    <div class="employee-card">
+                                        <div class="employee-card-border"></div>
+                                        {% if employee.is_active %}
+                                        <div class="status-indicator"></div>
+                                        {% else %}
+                                        <div class="status-indicator inactive"></div>
+                                        {% endif %}
+                                        <div class="card-body">
+                                            <div class="employee-avatar">
+                                                {% if employee.photo_path %}
+                                                <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="{{ employee.first_name }}">
+                                                {% else %}
+                                                <div class="avatar-text">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</div>
+                                                {% endif %}
+                                            </div>
+                                            <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
+                                            {% if employee.position %}
+                                            <div class="employee-position">{{ employee.position }}</div>
+                                            {% endif %}
+                                            {% if employee.is_active %}
+                                            <div class="employee-status">
+                                                <i class="bi bi-check-circle-fill"></i> Activo
+                                            </div>
+                                            {% else %}
+                                            <div class="employee-status inactive">
+                                                <i class="bi bi-dash-circle-fill"></i> Inactivo
+                                            </div>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </a>
                             </div>
+                            {% endfor %}
                         </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-    
-    <!-- Mensajes de alerta -->
-    {% with messages = get_flashed_messages(with_categories=true) %}
-        {% if messages %}
-            {% for category, message in messages %}
-                <div class="alert alert-{{ category }} alert-modern alert-dismissible fade show" role="alert">
-                    {% if category == 'success' %}
-                    <i class="bi bi-check-circle-fill me-2"></i>
-                    {% elif category == 'danger' %}
-                    <i class="bi bi-exclamation-triangle-fill me-2"></i>
-                    {% elif category == 'warning' %}
-                    <i class="bi bi-exclamation-circle-fill me-2"></i>
-                    {% elif category == 'info' %}
-                    <i class="bi bi-info-circle-fill me-2"></i>
-                    {% endif %}
-                    {{ message }}
-                    <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                </div>
-            {% endfor %}
-        {% endif %}
-    {% endwith %}
-    
-    <!-- Sección de selección de empleados -->
-    <div class="row">
-        <div class="col-12">
-            <div class="selection-header">
-                <h2 class="selection-title">
-                    <i class="bi bi-person-badge me-2"></i>Seleccione su Nombre
-                </h2>
-                <button type="button" id="refreshEmployees" class="btn refresh-button" title="Actualizar lista de empleados">
-                    <i class="bi bi-arrow-clockwise"></i>
-                </button>
-            </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script>
+        // Función para cargar empleados a través de AJAX
+        function loadEmployees() {
+            // Mostrar indicador de carga
+            const employeesList = document.getElementById('employeesList');
+            const refreshButton = document.getElementById('refreshEmployees');
             
-            <!-- Contenedor de tarjetas de empleados -->
-            <div class="employee-grid-container">
-                <div class="employee-cards-container">
-                    <div class="row row-cols-2 row-cols-sm-2 row-cols-md-3 row-cols-lg-4 row-cols-xl-5 g-4" id="employeesList">
-                        {% for employee in employees %}
-                        <div class="col">
-                            <a href="{{ url_for('checkpoints.employee_pin', id=employee.id) }}" class="text-decoration-none">
+            if (refreshButton) {
+                // Deshabilitar el botón durante la carga y mostrar un spinner
+                refreshButton.disabled = true;
+                refreshButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
+            }
+            
+            // Realizar la petición AJAX con parámetro para evitar caché
+            const timestamp = new Date().getTime();
+            fetch(`{{ url_for("checkpoints.get_company_employees") }}?_=${timestamp}`)
+                .then(response => response.json())
+                .then(employees => {
+                    // Limpiar la lista actual
+                    employeesList.innerHTML = '';
+                    
+                    // Si no hay empleados, mostrar mensaje
+                    if (employees.length === 0) {
+                        employeesList.innerHTML = '<div class="col-12"><div class="alert alert-info">No hay empleados disponibles</div></div>';
+                        return;
+                    }
+                    
+                    // Crear las tarjetas de empleados
+                    employees.forEach(employee => {
+                        const employeeCard = document.createElement('div');
+                        employeeCard.className = 'col';
+                        // Construir la URL manualmente ya que el ID es dinámico
+                        const pinUrl = '{{ url_for("checkpoints.checkpoint_dashboard") }}'.replace('/dashboard', `/employee/${employee.id}/pin`);
+                        
+                        employeeCard.innerHTML = `
+                            <a href="${pinUrl}" class="text-decoration-none">
                                 <div class="employee-card">
                                     <div class="employee-card-border"></div>
-                                    {% if employee.is_active %}
-                                    <div class="status-indicator"></div>
-                                    {% else %}
-                                    <div class="status-indicator inactive"></div>
-                                    {% endif %}
+                                    <div class="status-indicator ${employee.is_active ? '' : 'inactive'}"></div>
                                     <div class="card-body">
                                         <div class="employee-avatar">
-                                            {% if employee.photo_path %}
-                                            <img src="{{ url_for('static', filename=employee.photo_path) }}" alt="{{ employee.first_name }}">
-                                            {% else %}
-                                            <div class="avatar-text">{{ employee.first_name[0] }}{{ employee.last_name[0] }}</div>
-                                            {% endif %}
+                                            <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
                                         </div>
-                                        <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
-                                        {% if employee.position %}
-                                        <div class="employee-position">{{ employee.position }}</div>
-                                        {% endif %}
-                                        {% if employee.is_active %}
-                                        <div class="employee-status">
-                                            <i class="bi bi-check-circle-fill"></i> Activo
-                                        </div>
-                                        {% else %}
-                                        <div class="employee-status inactive">
-                                            <i class="bi bi-dash-circle-fill"></i> Inactivo
-                                        </div>
-                                        {% endif %}
+                                        <h5 class="employee-name">${employee.name}</h5>
+                                        ${employee.position ? `<div class="employee-position">${employee.position}</div>` : ''}
+                                        ${employee.is_active ? 
+                                            `<div class="employee-status"><i class="bi bi-check-circle-fill"></i> Activo</div>` : 
+                                            `<div class="employee-status inactive"><i class="bi bi-dash-circle-fill"></i> Inactivo</div>`
+                                        }
                                     </div>
                                 </div>
                             </a>
-                        </div>
-                        {% endfor %}
-                    </div>
-                </div>
-            </div>
-        </div>
-    </div>
-</div>
-{% endblock %}
-
-{% block scripts %}
-<script>
-    // Función para actualizar la hora y fecha
-    function updateTime() {
-        const now = new Date();
-        
-        // Formatear la hora: HH:MM:SS
-        const hours = String(now.getHours()).padStart(2, '0');
-        const minutes = String(now.getMinutes()).padStart(2, '0');
-        const seconds = String(now.getSeconds()).padStart(2, '0');
-        document.getElementById('currentTime').textContent = `${hours}:${minutes}:${seconds}`;
-        
-        // Formatear la fecha: día de la semana, día mes, año
-        const days = ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado'];
-        const months = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
-        
-        const dayOfWeek = days[now.getDay()];
-        const day = now.getDate();
-        const month = months[now.getMonth()];
-        const year = now.getFullYear();
-        
-        document.getElementById('currentDate').textContent = `${dayOfWeek}, ${day} de ${month} de ${year}`;
-    }
-    
-    // Actualizar cada segundo
-    updateTime();
-    setInterval(updateTime, 1000);
-
-    // Función para cargar empleados a través de AJAX
-    function loadEmployees() {
-        // Mostrar indicador de carga
-        const employeesList = document.getElementById('employeesList');
-        const refreshButton = document.getElementById('refreshEmployees');
-        
-        if (refreshButton) {
-            // Deshabilitar el botón durante la carga y mostrar un spinner
-            refreshButton.disabled = true;
-            refreshButton.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true"></span>';
-        }
-        
-        // Realizar la petición AJAX con parámetro para evitar caché
-        const timestamp = new Date().getTime();
-        fetch(`{{ url_for("checkpoints.get_company_employees") }}?_=${timestamp}`)
-            .then(response => response.json())
-            .then(employees => {
-                // Limpiar la lista actual
-                employeesList.innerHTML = '';
-                
-                // Si no hay empleados, mostrar mensaje
-                if (employees.length === 0) {
-                    employeesList.innerHTML = '<div class="col-12"><div class="alert alert-info">No hay empleados disponibles</div></div>';
-                    return;
-                }
-                
-                // Crear las tarjetas de empleados
-                employees.forEach(employee => {
-                    const employeeCard = document.createElement('div');
-                    employeeCard.className = 'col';
-                    // Construir la URL manualmente ya que el ID es dinámico
-                    const pinUrl = '{{ url_for("checkpoints.checkpoint_dashboard") }}'.replace('/dashboard', `/employee/${employee.id}/pin`);
-                    
-                    employeeCard.innerHTML = `
-                        <a href="${pinUrl}" class="text-decoration-none">
-                            <div class="employee-card">
-                                <div class="employee-card-border"></div>
-                                <div class="status-indicator ${employee.is_active ? '' : 'inactive'}"></div>
-                                <div class="card-body">
-                                    <div class="employee-avatar">
-                                        <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
-                                    </div>
-                                    <h5 class="employee-name">${employee.name}</h5>
-                                    ${employee.position ? `<div class="employee-position">${employee.position}</div>` : ''}
-                                    ${employee.is_active ? 
-                                        `<div class="employee-status"><i class="bi bi-check-circle-fill"></i> Activo</div>` : 
-                                        `<div class="employee-status inactive"><i class="bi bi-dash-circle-fill"></i> Inactivo</div>`
-                                    }
-                                </div>
-                            </div>
-                        </a>
-                    `;
-                    employeesList.appendChild(employeeCard);
+                        `;
+                        employeesList.appendChild(employeeCard);
+                    });
+                })
+                .catch(error => {
+                    console.error('Error al cargar empleados:', error);
+                    employeesList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error al cargar empleados</div></div>';
+                })
+                .finally(() => {
+                    // Restaurar el botón
+                    if (refreshButton) {
+                        refreshButton.disabled = false;
+                        refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
+                    }
                 });
-            })
-            .catch(error => {
-                console.error('Error al cargar empleados:', error);
-                employeesList.innerHTML = '<div class="col-12"><div class="alert alert-danger">Error al cargar empleados</div></div>';
-            })
-            .finally(() => {
-                // Restaurar el botón
-                if (refreshButton) {
-                    refreshButton.disabled = false;
-                    refreshButton.innerHTML = '<i class="bi bi-arrow-clockwise"></i>';
-                }
-            });
-    }
+        }
 
-    // Asociar el evento click al botón de actualizar
-    document.addEventListener('DOMContentLoaded', function() {
-        const refreshButton = document.getElementById('refreshEmployees');
-        if (refreshButton) {
-            refreshButton.addEventListener('click', loadEmployees);
+        // Asociar el evento click al botón de actualizar
+        document.addEventListener('DOMContentLoaded', function() {
+            const refreshButton = document.getElementById('refreshEmployees');
+            if (refreshButton) {
+                refreshButton.addEventListener('click', loadEmployees);
+            }
+        });
+        
+        // Función para mostrar alertas
+        function showAlert(message, type) {
+            const alertContainer = document.createElement('div');
+            alertContainer.className = `alert alert-${type} alert-modern alert-dismissible fade show`;
+            alertContainer.role = 'alert';
+            
+            let icon = '';
+            switch(type) {
+                case 'success':
+                    icon = '<i class="bi bi-check-circle-fill me-2"></i>';
+                    break;
+                case 'danger':
+                    icon = '<i class="bi bi-exclamation-triangle-fill me-2"></i>';
+                    break;
+                case 'warning':
+                    icon = '<i class="bi bi-exclamation-circle-fill me-2"></i>';
+                    break;
+                case 'info':
+                    icon = '<i class="bi bi-info-circle-fill me-2"></i>';
+                    break;
+            }
+            
+            alertContainer.innerHTML = `
+                ${icon}${message}
+                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+            `;
+            
+            // Insertar al principio del contenedor
+            const container = document.querySelector('.container');
+            if (container) {
+                container.insertBefore(alertContainer, container.firstChild);
+            }
+            
+            // Auto-cerrar después de 5 segundos
+            setTimeout(() => {
+                alertContainer.classList.remove('show');
+                setTimeout(() => alertContainer.remove(), 500);
+            }, 5000);
         }
-    });
-    
-    // Función para mostrar alertas
-    function showAlert(message, type) {
-        const alertContainer = document.createElement('div');
-        alertContainer.className = `alert alert-${type} alert-modern alert-dismissible fade show`;
-        alertContainer.role = 'alert';
-        
-        let icon = '';
-        switch(type) {
-            case 'success':
-                icon = '<i class="bi bi-check-circle-fill me-2"></i>';
-                break;
-            case 'danger':
-                icon = '<i class="bi bi-exclamation-triangle-fill me-2"></i>';
-                break;
-            case 'warning':
-                icon = '<i class="bi bi-exclamation-circle-fill me-2"></i>';
-                break;
-            case 'info':
-                icon = '<i class="bi bi-info-circle-fill me-2"></i>';
-                break;
-        }
-        
-        alertContainer.innerHTML = `
-            ${icon}${message}
-            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-        `;
-        
-        // Insertar después de la cabecera del dashboard
-        const dashboardHeader = document.querySelector('.dashboard-header');
-        if (dashboardHeader) {
-            dashboardHeader.parentNode.insertBefore(alertContainer, dashboardHeader.nextSibling);
-        }
-        
-        // Auto-cerrar después de 5 segundos
-        setTimeout(() => {
-            alertContainer.classList.remove('show');
-            setTimeout(() => alertContainer.remove(), 500);
-        }, 5000);
-    }
-</script>
-{% endblock %}
+    </script>
+</body>
+</html>
