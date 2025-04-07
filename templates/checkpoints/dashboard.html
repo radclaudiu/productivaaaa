@@ -89,6 +89,23 @@
         .alert-danger { border-left: 4px solid #ef4444; }
         .alert-warning { border-left: 4px solid #f59e0b; }
         .alert-info { border-left: 4px solid #3b82f6; }
+        /* Estilo para empleados en jornada */
+        .employee-status.on-shift {
+            background-color: #0ea5e9;
+            color: white;
+            font-weight: 600;
+            border-radius: 4px;
+            padding: 2px 8px;
+        }
+        
+        /* Estilo para empleados en jornada */
+        .employee-status.on-shift {
+            background-color: #0ea5e9;
+            color: white;
+            font-weight: 600;
+            border-radius: 4px;
+            padding: 2px 8px;
+        }
         
         @media (max-width: 768px) {
             .selection-title {
@@ -167,9 +184,15 @@
                                             <div class="employee-position">{{ employee.position }}</div>
                                             {% endif %}
                                             {% if employee.is_active %}
-                                            <div class="employee-status">
-                                                <i class="bi bi-check-circle-fill"></i> Activo
-                                            </div>
+                                                {% if employee.is_on_shift %}
+                                                <div class="employee-status on-shift">
+                                                    <i class="bi bi-clock-fill me-1"></i> En jornada
+                                                </div>
+                                                {% else %}
+                                                <div class="employee-status">
+                                                    <i class="bi bi-check-circle-fill"></i> Activo
+                                                </div>
+                                                {% endif %}
                                             {% else %}
                                             <div class="employee-status inactive">
                                                 <i class="bi bi-dash-circle-fill"></i> Inactivo
@@ -226,14 +249,14 @@
                             <a href="${pinUrl}" class="text-decoration-none">
                                 <div class="employee-card">
                                     <div class="employee-card-border"></div>
-                                    <div class="status-indicator ${employee.is_active ? '' : 'inactive'}"></div>
+                                    <div class="status-indicator ${employee.is_active ? (employee.is_on_shift ? `<div class="employee-status on-shift"><i class="bi bi-clock-fill me-1"></i> En jornada</div>` : '' : 'inactive'}"></div>
                                     <div class="card-body">
                                         <div class="employee-avatar">
                                             <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
                                         </div>
                                         <h5 class="employee-name">${employee.name}</h5>
                                         ${employee.position ? `<div class="employee-position">${employee.position}</div>` : ''}
-                                        ${employee.is_active ? 
+                                        ${employee.is_active ? (employee.is_on_shift ? `<div class="employee-status on-shift"><i class="bi bi-clock-fill me-1"></i> En jornada</div>` : 
                                             `<div class="employee-status"><i class="bi bi-check-circle-fill"></i> Activo</div>` : 
                                             `<div class="employee-status inactive"><i class="bi bi-dash-circle-fill"></i> Inactivo</div>`
                                         }
