@@ -1225,11 +1225,11 @@ def checkpoint_dashboard():
     db.session.expire_all()  # Asegurarse de que todas las entidades se refresquen
     checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
     
-    # Obtener todos los empleados de la empresa asociada al punto de fichaje
-    # Mostramos todos los empleados sin filtrar por is_active para mantener consistencia
-    # con la vista de empleados en la sección de gestión de empresas
+    # Obtener solo los empleados ACTIVOS de la empresa asociada al punto de fichaje
+    # Filtramos por is_active=True para mostrar solo empleados activos en el punto de fichaje
     employees = Employee.query.filter_by(
-        company_id=checkpoint.company_id
+        company_id=checkpoint.company_id,
+        is_active=True
     ).order_by(Employee.first_name, Employee.last_name).all()
     
     return render_template('checkpoints/dashboard.html', 
@@ -1839,7 +1839,7 @@ def daily_report():
 @checkpoints_bp.route('/api/company-employees', methods=['GET'])
 @checkpoint_required
 def get_company_employees():
-    """Devuelve la lista de empleados de la empresa en formato JSON"""
+    """Devuelve la lista de empleados ACTIVOS de la empresa en formato JSON"""
     # Obtenemos la compañía del checkpoint actual en lugar de usar session['company_id']
     checkpoint_id = session.get('checkpoint_id')
     checkpoint = CheckPoint.query.get_or_404(checkpoint_id)
@@ -1848,10 +1848,11 @@ def get_company_employees():
     if not company_id:
         return jsonify([])
     
-    # Obtenemos todos los empleados de la empresa, sin filtrar por is_active
-    # para asegurar que coincida con la vista de empleados
+    # Obtenemos SOLO los empleados ACTIVOS de la empresa
+    # Filtramos por is_active=True para mostrar solo empleados activos en el punto de fichaje
     employees = Employee.query.filter_by(
-        company_id=company_id
+        company_id=company_id,
+        is_active=True
     ).order_by(Employee.first_name, Employee.last_name).all()
     
     employees_data = []
