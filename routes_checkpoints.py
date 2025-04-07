@@ -1490,10 +1490,7 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             print(f"✅ CHECKIN: Empleado ID {employee.id} - Estado: {old_status} → {employee.is_on_shift}")
             print(f"   Nuevo registro ID: {new_record.id}, Entrada: {new_record.check_in_time}")
             
-            # Notificar al usuario
-            flash(f'Jornada iniciada correctamente para {employee.first_name} {employee.last_name}', 'success')
-            
-            # Redirigir a la pantalla de empleados (dashboard)
+            # Redirigir a la pantalla de empleados (dashboard) sin notificación
             return redirect(url_for('checkpoints.checkpoint_dashboard'))
         
         # CASO 3: Estado inconsistente
