@@ -1761,13 +1761,10 @@ def checkpoint_record_signature(id):
             db.session.add(record)
             db.session.commit()
             
-            # Log detallado post-transacción
+            # Log detallado post-transacción (solo para el servidor, no visible para el usuario)
             print(f"✅ FIRMA REGISTRADA: Registro ID {record.id}, Empleado ID {record.employee_id}")
             
-            # Notificar al usuario (notificación que se mostrará en la pantalla de empleados)
-            flash('Jornada finalizada y firma registrada correctamente.', 'success')
-            
-            # Redirigir directamente a la pantalla de empleados (dashboard)
+            # Redirigir directamente a la pantalla de empleados (dashboard) sin mostrar notificación
             return redirect(url_for('checkpoints.checkpoint_dashboard'))
         except Exception as e:
             # Rollback en caso de error
