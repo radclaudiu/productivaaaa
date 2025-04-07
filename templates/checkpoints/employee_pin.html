@@ -73,15 +73,6 @@
             margin-bottom: 1.5rem;
         }
         
-        .employee-header img {
-            width: 120px;
-            height: 120px;
-            border-radius: 50%;
-            object-fit: cover;
-            margin-bottom: 15px;
-            border: 3px solid #007bff;
-        }
-        
         .employee-header h2 {
             margin-bottom: 0.5rem;
             font-weight: 600;
@@ -112,11 +103,6 @@
                 padding: 12px;
             }
             
-            .employee-header img {
-                width: 100px;
-                height: 100px;
-            }
-            
             .employee-header h2 {
                 font-size: 1.5rem;
             }
@@ -135,18 +121,7 @@
                         <div class="card-body">
                             <div class="card employee-card p-4">
                                 <div class="employee-header">
-                                    <img src="{{ url_for('static', filename='icons/user-circle.svg') }}" alt="Avatar" class="rounded-circle border border-2 border-primary">
                                     <h2>{{ employee.first_name }} {{ employee.last_name }}</h2>
-                                    
-                                    {% if employee.is_on_shift %}
-                                        <span class="badge bg-success">
-                                            <i class="bi bi-clock"></i> En jornada
-                                        </span>
-                                    {% else %}
-                                        <span class="badge bg-secondary">
-                                            <i class="bi bi-clock"></i> Fuera de jornada
-                                        </span>
-                                    {% endif %}
                                 </div>
                                 
                                 {% with messages = get_flashed_messages(with_categories=true) %}
