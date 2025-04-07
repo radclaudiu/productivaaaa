@@ -692,7 +692,15 @@ def edit_employee(id):
         flash('No tienes permiso para editar este empleado.', 'danger')
         return redirect(url_for('employee.list_employees'))
     
+    # Debug información del empleado antes de inicializar el formulario
+    print(f"DEBUG pre-form - Employee {employee.id}: end_date = {employee.end_date}, tipo {type(employee.end_date)}")
+    log_activity(f"DEBUG pre-form - Employee {employee.id}: end_date = {employee.end_date}, tipo {type(employee.end_date)}")
+    
     form = EmployeeForm(obj=employee)
+    
+    # Debug valores del formulario después de inicializar
+    print(f"DEBUG post-form - Form end_date = {form.end_date.data}, tipo {type(form.end_date.data)}")
+    log_activity(f"DEBUG post-form - Form end_date = {form.end_date.data}, tipo {type(form.end_date.data)}")
     
     # Get list of companies for the dropdown
     if current_user.is_admin():
@@ -754,11 +762,27 @@ def edit_employee(id):
                               form.start_date.data.isoformat() if form.start_date.data else None)
             employee.start_date = form.start_date.data
             
-        if employee.end_date != form.end_date.data:
+        # Log información detallada para depuración sobre end_date
+        print(f"DEBUG end_date - Original: {employee.end_date}, Formulario: {form.end_date.data}, Tipo: {type(form.end_date.data)}")
+        log_activity(f"DEBUG end_date - Original: {employee.end_date}, Formulario: {form.end_date.data}, Tipo: {type(form.end_date.data)}")
+        
+        # Forzar asignación directa del valor end_date sin comparación previa
+        # Este enfoque evita problemas de comparación None vs date que podrían estar causando el problema
+        if form.end_date.data is not None:
             log_employee_change(employee, 'end_date', 
                               employee.end_date.isoformat() if employee.end_date else None, 
-                              form.end_date.data.isoformat() if form.end_date.data else None)
-            employee.end_date = form.end_date.data
+                              form.end_date.data.isoformat())
+            print(f"DEBUG end_date - Asignando fecha: {form.end_date.data}")
+            log_activity(f"DEBUG end_date - Asignando fecha: {form.end_date.data}")
+        else:
+            log_employee_change(employee, 'end_date',
+                              employee.end_date.isoformat() if employee.end_date else None,
+                              None)
+            print(f"DEBUG end_date - Limpiando fecha (None)")
+            log_activity(f"DEBUG end_date - Limpiando fecha (None)")
+            
+        # Asignación directa del valor del formulario
+        employee.end_date = form.end_date.data
             
         if employee.company_id != form.company_id.data:
             old_company = Company.query.get(employee.company_id).name if employee.company_id else 'Ninguna'
