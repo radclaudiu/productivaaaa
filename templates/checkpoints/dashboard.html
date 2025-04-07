@@ -182,9 +182,6 @@
                                                 {% endif %}
                                             </div>
                                             <h5 class="employee-name">{{ employee.first_name }} {{ employee.last_name }}</h5>
-                                            {% if employee.position %}
-                                            <div class="employee-position">{{ employee.position }}</div>
-                                            {% endif %}
                                             {% if employee.is_active %}
                                                 {% if employee.is_on_shift %}
                                                 <div class="employee-status on-shift">
@@ -257,7 +254,6 @@
                                             <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
                                         </div>
                                         <h5 class="employee-name">${employee.name}</h5>
-                                        ${employee.position ? `<div class="employee-position">${employee.position}</div>` : ''}
                                         ${employee.is_active ? (employee.is_on_shift ? `<div class="employee-status on-shift"><i class="bi bi-clock-fill me-1"></i> ACTIVO</div>` : 
                                             `<div class="employee-status out-shift"><i class="bi bi-x-circle-fill"></i> OUT</div>` : 
                                             `<div class="employee-status inactive"><i class="bi bi-dash-circle-fill"></i> Inactivo</div>`
