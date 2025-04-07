@@ -1,0 +1,10 @@
+# Cambiar "En jornada" por "ACTIVO" 
+s/<i class="bi bi-clock-fill me-1"><\/i> En jornada/<i class="bi bi-clock-fill me-1"><\/i> ACTIVO/g
+
+# Cambiar el estado cuando no está en jornada para mostrar "OUT" en rojo
+s/<div class="employee-status">/<div class="employee-status out-shift">/g
+s/<i class="bi bi-check-circle-fill"><\/i> Activo/<i class="bi bi-x-circle-fill"><\/i> OUT/g
+
+# Añadir estilo CSS para el nuevo estado "out-shift"
+s/\.employee-status\.on-shift {/\.employee-status\.on-shift {\n            background-color: #0ea5e9;\n            color: white;\n            font-weight: 600;\n            border-radius: 4px;\n            padding: 2px 8px;\n        }\n        \n        \/* Estilo para empleados fuera de jornada *\/\n        .employee-status.out-shift {/g
+s/padding: 2px 8px;/padding: 2px 8px;\n            background-color: #ef4444;/g

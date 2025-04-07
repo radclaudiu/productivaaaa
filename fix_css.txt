@@ -1,0 +1,5 @@
+# Arreglar los estilos de los estados de empleados
+s/\.employee-status\.on-shift {.*}/.employee-status.on-shift {\n            background-color: #0ea5e9;\n            color: white;\n            font-weight: 600;\n            border-radius: 4px;\n            padding: 2px 8px;\n        }/
+
+# Añadir estilo para .out-shift justo después de .on-shift
+s/\.employee-status\.on-shift {.*}/& \n\n        \/* Estilo para empleados fuera de jornada *\/\n        .employee-status.out-shift {\n            background-color: #ef4444;\n            color: white;\n            font-weight: 600;\n            border-radius: 4px;\n            padding: 2px 8px;\n        }/

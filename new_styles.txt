@@ -1,0 +1,17 @@
+        /* Estilo para empleados en jornada */
+        .employee-status.on-shift {
+            background-color: #0ea5e9;
+            color: white;
+            font-weight: 600;
+            border-radius: 4px;
+            padding: 2px 8px;
+        }
+        
+        /* Estilo para empleados fuera de jornada */
+        .employee-status.out-shift {
+            background-color: #ef4444;
+            color: white;
+            font-weight: 600;
+            border-radius: 4px;
+            padding: 2px 8px;
+        }
