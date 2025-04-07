@@ -4,24 +4,43 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Verificar PIN - {{ employee.first_name }} {{ employee.last_name }}</title>
-    <link href="https://cdn.replit.com/agent/bootstrap-agent-dark-theme.min.css" rel="stylesheet">
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.3/font/bootstrap-icons.min.css">
     <style>
         body {
             min-height: 100vh;
             display: flex;
+            flex-direction: column;
+            background-color: #ffffff;
+        }
+        
+        .main-container {
+            flex: 1;
+            display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            background-color: var(--bs-body-bg);
         }
         
         .card {
-            border: none;
-            border-radius: 16px;
+            border-radius: 12px;
             box-shadow: 0 6px 20px rgba(0, 0, 0, 0.1);
-            max-width: 450px;
+            overflow: hidden;
             width: 100%;
+            max-width: 500px;
+            margin: 0 auto;
+        }
+        
+        .card-header {
+            background-color: #007bff;
+            color: white;
+            border-bottom: none;
+        }
+        
+        .employee-card {
+            border: 1px solid #dee2e6;
+            background-color: #ffffff;
+            color: #212529;
         }
         
         .pin-display {
@@ -55,17 +74,18 @@
         }
         
         .employee-header img {
-            width: 90px;
-            height: 90px;
+            width: 120px;
+            height: 120px;
             border-radius: 50%;
             object-fit: cover;
             margin-bottom: 15px;
-            border: 3px solid var(--bs-primary);
+            border: 3px solid #007bff;
         }
         
         .employee-header h2 {
             margin-bottom: 0.5rem;
             font-weight: 600;
+            color: #212529;
         }
         
         .btn-verify {
@@ -77,154 +97,165 @@
         
         .btn-verify:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 15px rgba(var(--bs-primary-rgb), 0.4);
+            box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
         }
         
-        .status-indicator {
-            display: inline-block;
-            padding: 6px 12px;
-            border-radius: 20px;
-            font-weight: 500;
-            margin-top: 10px;
-        }
-        
-        .status-active {
-            background-color: var(--bs-primary-bg-subtle);
-            color: var(--bs-primary);
-        }
-        
-        .status-inactive {
-            background-color: var(--bs-secondary-bg-subtle);
-            color: var(--bs-secondary);
+        /* Media queries para mejorar la visualización en móviles */
+        @media (max-width: 576px) {
+            .pin-display {
+                font-size: 2rem;
+                letter-spacing: 10px;
+            }
+            
+            .pin-button, #clear-pin, #delete-pin {
+                font-size: 1.2rem;
+                padding: 12px;
+            }
+            
+            .employee-header img {
+                width: 100px;
+                height: 100px;
+            }
+            
+            .employee-header h2 {
+                font-size: 1.5rem;
+            }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <div class="row justify-content-center">
-            <div class="col-12">
-                <div class="card">
-                    <div class="card-body p-4">
-                        <div class="employee-header">
-                            <img src="{{ url_for('static', filename='img/user-avatar.png') }}" alt="Avatar">
-                            <h2>{{ employee.first_name }} {{ employee.last_name }}</h2>
-                            
-                            {% if employee.is_on_shift %}
-                                <div class="status-indicator status-active">
-                                    <i class="bi bi-clock"></i> En jornada
-                                </div>
-                            {% else %}
-                                <div class="status-indicator status-inactive">
-                                    <i class="bi bi-clock"></i> No en jornada
-                                </div>
-                            {% endif %}
+    <div class="main-container">
+        <div class="container">
+            <div class="row justify-content-center">
+                <div class="col-md-8 col-lg-6">
+                    <div class="card">
+                        <div class="card-header bg-primary">
+                            <h4 class="mb-0 text-center text-white">Verificación de PIN</h4>
                         </div>
-                        
-                        {% with messages = get_flashed_messages(with_categories=true) %}
-                            {% if messages %}
-                                {% for category, message in messages %}
-                                    <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
-                                        {{ message }}
-                                        <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
-                                    </div>
-                                {% endfor %}
-                            {% endif %}
-                        {% endwith %}
-                        
-                        <form method="POST" class="needs-validation" novalidate>
-                            {{ form.csrf_token }}
-                            {{ form.employee_id }}
-                            
-                            <div id="pin-alert-container">
-                                <!-- Contenedor para mensajes de error de PIN -->
-                            </div>
-                            
-                            <div class="form-group mb-4">
-                                <div class="pin-container">
-                                    <div class="mb-3 text-center">
-                                        <div id="pin-display" class="pin-display">****</div>
-                                    </div>
+                        <div class="card-body">
+                            <div class="card employee-card p-4">
+                                <div class="employee-header">
+                                    <img src="{{ url_for('static', filename='icons/user-circle.svg') }}" alt="Avatar" class="rounded-circle border border-2 border-primary">
+                                    <h2>{{ employee.first_name }} {{ employee.last_name }}</h2>
                                     
-                                    {{ form.pin(class="form-control visually-hidden", id="pin-input", maxlength="4", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
-                                    
-                                    <div class="pin-pad">
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="1">1</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="2">2</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="3">3</button>
-                                            </div>
-                                        </div>
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="4">4</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="5">5</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="6">6</button>
-                                            </div>
-                                        </div>
-                                        <div class="row g-2 mb-2">
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="7">7</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="8">8</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="9">9</button>
-                                            </div>
-                                        </div>
-                                        <div class="row g-2">
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-danger w-100" id="clear-pin">C</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-secondary w-100 pin-button" data-value="0">0</button>
-                                            </div>
-                                            <div class="col-4">
-                                                <button type="button" class="btn btn-outline-primary w-100" id="delete-pin"><i class="bi bi-backspace"></i></button>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-                            </div>
-                            
-                            <div class="d-grid gap-2 mt-4">
-                                <div id="pin-entry-buttons">
-                                    <button type="button" id="validate-pin" class="btn btn-primary btn-lg w-100 btn-verify mb-2">Verificar PIN</button>
-                                    <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100">
-                                        Cancelar
-                                    </a>
-                                </div>
-                                
-                                <div id="action-buttons" class="d-none">
-                                    {% if pending_record %}
-                                        <button type="submit" name="action" value="checkout" class="btn btn-danger btn-lg w-100 mb-2" id="btn-checkout">Terminar Jornada</button>
+                                    {% if employee.is_on_shift %}
+                                        <span class="badge bg-success">
+                                            <i class="bi bi-clock"></i> En jornada
+                                        </span>
                                     {% else %}
-                                        <button type="submit" name="action" value="checkin" class="btn btn-success btn-lg w-100 mb-2" id="btn-checkin">Iniciar Jornada</button>
+                                        <span class="badge bg-secondary">
+                                            <i class="bi bi-clock"></i> Fuera de jornada
+                                        </span>
                                     {% endif %}
-                                    <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100 mb-2">
-                                        Volver a Empleados
-                                    </a>
                                 </div>
                                 
-                                <!-- Campo oculto para indicar que el PIN ha sido verificado -->
-                                <input type="hidden" name="pin_verified" id="pin-verified" value="0">
+                                {% with messages = get_flashed_messages(with_categories=true) %}
+                                    {% if messages %}
+                                        {% for category, message in messages %}
+                                            <div class="alert alert-{{ category }} alert-dismissible fade show" role="alert">
+                                                {{ message }}
+                                                <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+                                            </div>
+                                        {% endfor %}
+                                    {% endif %}
+                                {% endwith %}
+                                
+                                <form method="POST" class="needs-validation" novalidate>
+                                    {{ form.csrf_token }}
+                                    {{ form.employee_id }}
+                                    
+                                    <div id="pin-alert-container" class="text-center">
+                                        <!-- Contenedor para mensajes de error de PIN -->
+                                    </div>
+                                    
+                                    <div class="form-group mb-4">
+                                        <div class="pin-container">
+                                            <div class="mb-3 text-center">
+                                                <div id="pin-display" class="pin-display">****</div>
+                                            </div>
+                                            
+                                            {{ form.pin(class="form-control visually-hidden", id="pin-input", maxlength="4", autocomplete="off", inputmode="numeric", pattern="[0-9]*") }}
+                                            
+                                            <div class="pin-pad">
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="1">1</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="2">2</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="3">3</button>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="4">4</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="5">5</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="6">6</button>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2 mb-2">
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="7">7</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="8">8</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="9">9</button>
+                                                    </div>
+                                                </div>
+                                                <div class="row g-2">
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-danger w-100" id="clear-pin">C</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-dark w-100 pin-button" data-value="0">0</button>
+                                                    </div>
+                                                    <div class="col-4">
+                                                        <button type="button" class="btn btn-outline-primary w-100" id="delete-pin"><i class="bi bi-backspace"></i></button>
+                                                    </div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                    
+                                    <div class="d-grid gap-2 mt-4">
+                                        <div id="pin-entry-buttons">
+                                            <button type="button" id="validate-pin" class="btn btn-primary btn-lg w-100 btn-verify mb-2">Verificar PIN</button>
+                                            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100">
+                                                Cancelar
+                                            </a>
+                                        </div>
+                                        
+                                        <div id="action-buttons" class="d-none">
+                                            {% if pending_record %}
+                                                <button type="submit" name="action" value="checkout" class="btn btn-danger btn-lg w-100 mb-2" id="btn-checkout">Terminar Jornada</button>
+                                            {% else %}
+                                                <button type="submit" name="action" value="checkin" class="btn btn-success btn-lg w-100 mb-2" id="btn-checkin">Iniciar Jornada</button>
+                                            {% endif %}
+                                            <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100 mb-2">
+                                                Volver a Empleados
+                                            </a>
+                                        </div>
+                                        
+                                        <!-- Campo oculto para indicar que el PIN ha sido verificado -->
+                                        <input type="hidden" name="pin_verified" id="pin-verified" value="0">
+                                    </div>
+                                </form>
                             </div>
-                        </form>
+                        </div>
                     </div>
                 </div>
             </div>
         </div>
     </div>
-
+    
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
         document.addEventListener('DOMContentLoaded', function() {
