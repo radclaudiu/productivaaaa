@@ -1764,11 +1764,11 @@ def checkpoint_record_signature(id):
             # Log detallado post-transacción
             print(f"✅ FIRMA REGISTRADA: Registro ID {record.id}, Empleado ID {record.employee_id}")
             
-            # Notificar al usuario
-            flash('Firma registrada correctamente.', 'success')
+            # Notificar al usuario (notificación que se mostrará en la pantalla de empleados)
+            flash('Jornada finalizada y firma registrada correctamente.', 'success')
             
-            # Redirigir a detalles del registro
-            return redirect(url_for('checkpoints.record_details', id=record.id))
+            # Redirigir directamente a la pantalla de empleados (dashboard)
+            return redirect(url_for('checkpoints.checkpoint_dashboard'))
         except Exception as e:
             # Rollback en caso de error
             db.session.rollback()
