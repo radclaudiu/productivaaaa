@@ -1493,8 +1493,8 @@ def process_employee_action(employee, checkpoint_id, action, pending_record):
             # Notificar al usuario
             flash(f'Jornada iniciada correctamente para {employee.first_name} {employee.last_name}', 'success')
             
-            # Redirigir a la pantalla de PIN para terminar la jornada
-            return redirect(url_for('checkpoints.employee_pin', id=employee.id))
+            # Redirigir a la pantalla de empleados (dashboard)
+            return redirect(url_for('checkpoints.checkpoint_dashboard'))
         
         # CASO 3: Estado inconsistente
         else:
