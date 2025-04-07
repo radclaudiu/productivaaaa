@@ -210,9 +210,9 @@
                                         
                                         <div id="action-buttons" class="d-none">
                                             {% if pending_record %}
-                                                <button type="submit" name="action" value="checkout" class="btn btn-danger btn-lg w-100 mb-2" id="btn-checkout">Terminar Jornada</button>
+                                                <button type="submit" name="action" value="checkout" class="btn btn-primary btn-lg w-100 mb-2" id="btn-checkout">Terminar Jornada</button>
                                             {% else %}
-                                                <button type="submit" name="action" value="checkin" class="btn btn-success btn-lg w-100 mb-2" id="btn-checkin">Iniciar Jornada</button>
+                                                <button type="submit" name="action" value="checkin" class="btn btn-primary btn-lg w-100 mb-2" id="btn-checkin">Iniciar Jornada</button>
                                             {% endif %}
                                             <a href="{{ url_for('checkpoints.checkpoint_dashboard') }}" class="btn btn-outline-secondary w-100 mb-2">
                                                 Volver a Empleados

@@ -48,7 +48,7 @@
                         
                         <form method="POST" action="{{ url_for('checkpoints.record_checkout', id=record.id) }}" class="mt-4">
                             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-                            <button type="submit" class="btn btn-danger btn-lg">
+                            <button type="submit" class="btn btn-primary btn-lg">
                                 <i class="bi bi-box-arrow-right"></i> Finalizar Jornada
                             </button>
                         </form>
