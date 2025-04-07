@@ -175,6 +175,18 @@
   gap: 5px;
 }
 
+/* Estado ACTIVO con fondo verde */
+.employee-status.on-shift {
+  background-color: #10b981; /* Fondo verde para ACTIVO */
+  color: white;
+}
+
+/* Estado OUT con fondo rojo */
+.employee-status.out-shift {
+  background-color: #ef4444; /* Fondo rojo para OUT */
+  color: white;
+}
+
 .employee-status.inactive {
   background-color: #f1f5f9;
   color: #64748b;
