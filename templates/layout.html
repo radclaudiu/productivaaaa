@@ -35,6 +35,19 @@
             
             <div class="collapse navbar-collapse" id="navbarNav">
                 {% if current_user.is_authenticated %}
+                <ul class="navbar-nav me-auto">
+                    <li class="nav-item mx-1">
+                        <a class="btn btn-primary fw-bold" href="{{ url_for('company.list_companies') }}">
+                            <i class="bi bi-building"></i> Empresas
+                        </a>
+                    </li>
+                    <li class="nav-item mx-1">
+                        <a class="btn btn-success fw-bold" href="{{ url_for('checkpoints.select_company') }}">
+                            <i class="bi bi-clock-history"></i> Punto de Fichaje
+                        </a>
+                    </li>
+                </ul>
+                
                 <form class="d-flex ms-auto" id="searchForm" action="{{ url_for('main.search') }}" method="get">
                     <div class="input-group">
                         <input type="text" class="form-control" placeholder="Buscar..." name="query">
