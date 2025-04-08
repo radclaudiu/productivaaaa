@@ -63,7 +63,7 @@ def get_database_connection_params():
     database_url = Config.SQLALCHEMY_DATABASE_URI
     
     # Extraer los componentes de la URL de conexión PostgreSQL
-    # formato típico: postgresql://usuario:contraseña@host:puerto/nombre_db
+    # formato típico: postgresql://usuario:contraseña@host:puerto/nombre_db?param=valor
     if database_url.startswith('postgresql://'):
         # Eliminamos 'postgresql://' del inicio
         db_conn = database_url[13:]
@@ -79,13 +79,19 @@ def get_database_connection_params():
             user, password = '', ''
             rest = db_conn
         
-        # Extraer host, puerto y nombre de la base de datos
+        # Extraer host, puerto y nombre de la base de datos (y parámetros de consulta)
         if '/' in rest:
-            host_port, dbname = rest.split('/', 1)
+            host_port, dbname_params = rest.split('/', 1)
             if ':' in host_port:
                 host, port = host_port.split(':', 1)
             else:
                 host, port = host_port, '5432'  # Puerto predeterminado de PostgreSQL
+            
+            # Manejar parámetros de consulta en la URL (como ?sslmode=require)
+            if '?' in dbname_params:
+                dbname, _ = dbname_params.split('?', 1)
+            else:
+                dbname = dbname_params
         else:
             host, port = rest, '5432'
             dbname = ''
@@ -450,13 +456,9 @@ def check_database_status():
         db_params = get_database_connection_params()
         
         # Conectar a la base de datos
-        conn = psycopg2.connect(
-            dbname=db_params['dbname'],
-            user=db_params['user'],
-            password=db_params['password'],
-            host=db_params['host'],
-            port=db_params['port']
-        )
+        # Utilizar la URL completa para asegurar que se use sslmode=require
+        db_url = Config.SQLALCHEMY_DATABASE_URI
+        conn = psycopg2.connect(db_url)
         
         cursor = conn.cursor()
         
