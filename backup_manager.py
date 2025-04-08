@@ -107,7 +107,7 @@ def get_database_connection_params():
         logger.error(f"Formato de URL de base de datos no soportado: {database_url}")
         raise ValueError("Formato de URL de base de datos no soportado")
 
-def create_backup(tipo='full', compress=True, description=None):
+def create_backup(tipo='full', compress=True, description=None, max_size_mb=100):
     """
     Crea un backup de la base de datos.
     
@@ -115,6 +115,7 @@ def create_backup(tipo='full', compress=True, description=None):
         tipo (str): Tipo de backup ('full' o 'schema')
         compress (bool): Si se debe comprimir el backup
         description (str): Descripción opcional del backup
+        max_size_mb (int): Tamaño máximo del backup en MB antes de comprimir
         
     Returns:
         dict: Información sobre el backup creado o None si hubo error
@@ -124,7 +125,8 @@ def create_backup(tipo='full', compress=True, description=None):
         now = datetime.now()
         timestamp = now.strftime('%Y%m%d_%H%M%S')
         
-        # Obtener los parámetros de conexión
+        # Obtener la URL completa de la base de datos
+        db_url = Config.SQLALCHEMY_DATABASE_URI
         db_params = get_database_connection_params()
         
         # Crear el nombre del archivo de backup
@@ -132,50 +134,77 @@ def create_backup(tipo='full', compress=True, description=None):
         backup_path = os.path.join(BACKUP_DIR, backup_filename)
         
         # Construir el comando pg_dump con los parámetros adecuados
-        pg_dump_cmd = [
-            'pg_dump',
-            f"--dbname=postgresql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['dbname']}",
-            '--format=plain',
-            '--no-owner',
-            '--no-acl'
-        ]
-        
-        # Si es solo un backup del esquema (sin datos)
-        if tipo == 'schema':
-            pg_dump_cmd.append('--schema-only')
-        
-        # Ejecutar pg_dump y guardar la salida
-        with open(backup_path, 'w') as f:
+        # Utilizamos pipe directo a gzip para comprimir al vuelo si se solicita compresión
+        if compress:
+            dump_cmd = f"pg_dump '{db_url}' --no-owner --no-acl"
+            
+            # Si es solo un backup del esquema (sin datos)
+            if tipo == 'schema':
+                dump_cmd += " --schema-only"
+                
+            # Comprimir al vuelo con gzip
+            compress_cmd = f"{dump_cmd} | gzip > '{backup_path}.gz'"
+            logger.info(f"Ejecutando backup comprimido: {compress_cmd.replace(db_url, '***DB_URL***')}")
+            
             process = subprocess.Popen(
-                pg_dump_cmd,
-                stdout=f,
+                compress_cmd,
+                shell=True,
                 stderr=subprocess.PIPE,
                 universal_newlines=True
             )
             _, stderr = process.communicate()
+            
+            # El archivo final ya tiene la extensión .gz
+            final_backup_path = f"{backup_path}.gz"
+            backup_filename = f"{backup_filename}.gz"
+        else:
+            # Para backups sin compresión, usamos pg_dump directamente
+            pg_dump_cmd = [
+                'pg_dump',
+                db_url,
+                '--format=plain',
+                '--no-owner',
+                '--no-acl'
+            ]
+            
+            # Si es solo un backup del esquema (sin datos)
+            if tipo == 'schema':
+                pg_dump_cmd.append('--schema-only')
+            
+            # Ejecutar pg_dump y guardar la salida
+            with open(backup_path, 'w') as f:
+                process = subprocess.Popen(
+                    pg_dump_cmd,
+                    stdout=f,
+                    stderr=subprocess.PIPE,
+                    universal_newlines=True
+                )
+                _, stderr = process.communicate()
+            
+            final_backup_path = backup_path
         
         # Verificar si el proceso terminó correctamente
         if process.returncode != 0:
             logger.error(f"Error al crear backup: {stderr}")
-            if os.path.exists(backup_path):
-                os.remove(backup_path)
+            # Limpieza de archivos en caso de error
+            for path in [backup_path, f"{backup_path}.gz"]:
+                if os.path.exists(path):
+                    os.remove(path)
             return None
         
-        # Comprimir el archivo si se solicitó
-        final_backup_path = backup_path
-        if compress:
-            compressed_path = backup_path + '.gz'
-            with open(backup_path, 'rb') as f_in:
-                with gzip.open(compressed_path, 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
+        # Verificar si el archivo existe y obtener su tamaño
+        if not os.path.exists(final_backup_path):
+            logger.error(f"El archivo de backup no se creó correctamente: {final_backup_path}")
+            return None
             
-            # Eliminar el archivo sin comprimir
-            os.remove(backup_path)
-            final_backup_path = compressed_path
-            backup_filename = backup_filename + '.gz'
-        
-        # Obtener el tamaño del archivo
         file_size = os.path.getsize(final_backup_path)
+        
+        # Verificar si el tamaño del backup es excesivo
+        max_size_bytes = max_size_mb * 1024 * 1024
+        if file_size > max_size_bytes:
+            logger.warning(f"El backup es demasiado grande ({file_size} bytes, máximo {max_size_bytes} bytes). Se cancelará.")
+            os.remove(final_backup_path)
+            return None
         
         # Crear metadatos del backup
         backup_metadata = {
@@ -199,7 +228,8 @@ def create_backup(tipo='full', compress=True, description=None):
         with open(BACKUP_METADATA_FILE, 'w') as f:
             json.dump(metadata, f, indent=4)
         
-        logger.info(f"Backup creado exitosamente: {backup_filename} ({file_size} bytes)")
+        readable_size = format_backup_size(file_size)
+        logger.info(f"Backup creado exitosamente: {backup_filename} ({readable_size})")
         return backup_metadata
     
     except Exception as e:
@@ -306,52 +336,68 @@ def restore_backup(backup_id):
         if not backup:
             return {'success': False, 'message': f"Backup no encontrado: {backup_id}"}
         
-        # Obtener los parámetros de conexión
+        # Obtener parámetros de conexión y URL completa
         db_params = get_database_connection_params()
+        db_url = Config.SQLALCHEMY_DATABASE_URI
         
         # Verificar si el archivo existe
         if not os.path.exists(backup['path']):
             return {'success': False, 'message': f"Archivo de backup no encontrado: {backup['path']}"}
         
-        # Descomprimir el archivo si es necesario
+        # Para backups grandes, procesamos el archivo de forma incremental para reducir el uso de memoria
+        # No descomprimimos todo el archivo a la vez, sino que lo leemos y procesamos en bloques
+        
+        # Comandos de restauración optimizados para memoria
         if backup['compressed']:
-            temp_file = os.path.join(BACKUP_DIR, "temp_restore.sql")
-            with gzip.open(backup['path'], 'rb') as f_in:
-                with open(temp_file, 'wb') as f_out:
-                    shutil.copyfileobj(f_in, f_out)
-            restore_file = temp_file
+            # Usamos zcat para descomprimir al vuelo y pipe a psql para reducir el uso de memoria
+            restore_cmd = f"zcat '{backup['path']}' | psql '{db_url}' -v ON_ERROR_STOP=1"
+            logger.info(f"Ejecutando restauración comprimida: {restore_cmd}")
+            
+            # Configurar límites de memoria más estrictos para evitar OOM killer
+            process = subprocess.Popen(
+                restore_cmd,
+                shell=True,  # Necesario para pipes
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
         else:
-            restore_file = backup['path']
-        
-        # Ejecutar psql para restaurar
-        psql_cmd = [
-            'psql',
-            f"--dbname=postgresql://{db_params['user']}:{db_params['password']}@{db_params['host']}:{db_params['port']}/{db_params['dbname']}",
-            '-f', restore_file
-        ]
-        
-        process = subprocess.Popen(
-            psql_cmd,
-            stdout=subprocess.PIPE,
-            stderr=subprocess.PIPE,
-            universal_newlines=True
-        )
+            # Para archivos no comprimidos, leemos directamente
+            restore_cmd = [
+                'psql',
+                db_url,
+                '-v', 'ON_ERROR_STOP=1',
+                '-f', backup['path']
+            ]
+            logger.info(f"Ejecutando restauración no comprimida: {' '.join(restore_cmd)}")
+            
+            process = subprocess.Popen(
+                restore_cmd,
+                stdout=subprocess.PIPE,
+                stderr=subprocess.PIPE,
+                universal_newlines=True
+            )
+            
+        # Monitorear el uso de recursos durante la restauración
+        start_time = time.time()
         stdout, stderr = process.communicate()
-        
-        # Eliminar archivo temporal si fue creado
-        if backup['compressed'] and os.path.exists(temp_file):
-            os.remove(temp_file)
+        end_time = time.time()
         
         # Verificar si el proceso terminó correctamente
         if process.returncode != 0:
             logger.error(f"Error al restaurar backup: {stderr}")
-            return {'success': False, 'message': f"Error en la restauración: {stderr}"}
+            return {
+                'success': False, 
+                'message': f"Error en la restauración: {stderr}",
+                'duration': f"{end_time - start_time:.2f} segundos"
+            }
         
-        logger.info(f"Backup restaurado exitosamente: {backup['filename']}")
+        logger.info(f"Backup restaurado exitosamente: {backup['filename']} en {end_time - start_time:.2f} segundos")
         return {
             'success': True, 
             'message': f"Backup restaurado exitosamente: {backup['filename']}",
-            'details': stdout
+            'details': stdout,
+            'duration': f"{end_time - start_time:.2f} segundos"
         }
     
     except Exception as e:

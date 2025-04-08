@@ -26,7 +26,9 @@
                 <div class="card-body">
                     <div class="alert alert-danger">
                         <h4 class="alert-heading">¡Advertencia! Acción Potencialmente Peligrosa</h4>
-                        <p class="mb-0">Está a punto de restaurar la base de datos desde un backup. Esta acción sobrescribirá <strong>TODOS</strong> los datos actuales en la base de datos.</p>
+                        <p>Está a punto de restaurar la base de datos desde un backup. Esta acción sobrescribirá <strong>TODOS</strong> los datos actuales en la base de datos.</p>
+                        <hr>
+                        <p class="mb-0"><strong>Nota sobre uso de recursos:</strong> La restauración de backups grandes puede consumir mucha memoria. Si experimenta problemas, intente con backups más pequeños o durante periodos de baja actividad en el sistema.</p>
                     </div>
                     
                     <div class="mb-4">
@@ -113,6 +115,9 @@
                         </li>
                         <li class="list-group-item">
                             <i class="fas fa-check-circle text-success me-2"></i> Verificar la integridad de los datos después de la restauración
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-exclamation-circle text-warning me-2"></i> Preferir backups comprimidos y de <strong>menos de 50MB</strong> para evitar problemas de memoria
                         </li>
                     </ul>
                 </div>
