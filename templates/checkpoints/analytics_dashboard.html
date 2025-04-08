@@ -1,0 +1,574 @@
+{% extends "portal_layout.html" %}
+
+{% block title %}Dashboard Analítico de Fichajes{% endblock %}
+
+{% block custom_styles %}
+<style>
+    :root {
+        --primary-color: #3b82f6;
+        --secondary-color: #2563eb;
+        --accent-color: #06b6d4;
+        --success-color: #10b981;
+        --warning-color: #f59e0b;
+        --danger-color: #ef4444;
+        --text-primary: #0f172a;
+        --text-secondary: #64748b;
+        --bg-light: #f8fafc;
+        --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1);
+        --border-radius: 0.5rem;
+    }
+    
+    .dashboard-card {
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        transition: all 0.3s ease;
+        height: 100%;
+        border: none;
+        overflow: hidden;
+    }
+    
+    .dashboard-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+    }
+    
+    .dashboard-card-header {
+        color: white;
+        padding: 1rem;
+        border-radius: var(--border-radius) var(--border-radius) 0 0;
+    }
+    
+    .bg-gradient-primary {
+        background: linear-gradient(135deg, var(--primary-color), var(--secondary-color));
+    }
+    
+    .bg-gradient-success {
+        background: linear-gradient(135deg, #12b981, #059669);
+    }
+    
+    .bg-gradient-warning {
+        background: linear-gradient(135deg, #f59e0b, #d97706);
+    }
+    
+    .bg-gradient-danger {
+        background: linear-gradient(135deg, #ef4444, #b91c1c);
+    }
+    
+    .bg-gradient-info {
+        background: linear-gradient(135deg, #06b6d4, #0891b2);
+    }
+    
+    .stats-icon {
+        font-size: 2.5rem;
+        opacity: 0.8;
+    }
+    
+    .stats-value {
+        font-size: 2rem;
+        font-weight: 700;
+    }
+    
+    .stats-label {
+        font-size: 0.9rem;
+        color: var(--text-secondary);
+        text-transform: uppercase;
+        letter-spacing: 0.05rem;
+    }
+    
+    .stats-footer {
+        font-size: 0.8rem;
+        color: var(--text-secondary);
+        padding-top: 0.5rem;
+        border-top: 1px solid rgba(0,0,0,0.05);
+    }
+    
+    .employee-on-shift-card {
+        padding: 0.75rem;
+        border-radius: var(--border-radius);
+        margin-bottom: 0.5rem;
+        background-color: rgba(59, 130, 246, 0.1);
+        transition: all 0.2s ease;
+    }
+    
+    .employee-on-shift-card:hover {
+        background-color: rgba(59, 130, 246, 0.2);
+    }
+    
+    .filter-form {
+        background-color: white;
+        border-radius: var(--border-radius);
+        box-shadow: var(--shadow-sm);
+        padding: 1rem;
+        margin-bottom: 1.5rem;
+    }
+    
+    .company-badge {
+        background-color: var(--primary-color);
+        color: white;
+        font-size: 0.75rem;
+        border-radius: 1rem;
+        padding: 0.25rem 0.75rem;
+        margin-bottom: 1rem;
+    }
+    
+    .chart-container {
+        position: relative;
+        margin: auto;
+        height: 300px;
+    }
+    
+    /* Para móviles */
+    @media (max-width: 767.98px) {
+        .stats-value {
+            font-size: 1.5rem;
+        }
+        .stats-icon {
+            font-size: 2rem;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h1 class="h2 mb-4">
+                <i class="bi bi-graph-up-arrow"></i> Dashboard Analítico de Fichajes
+            </h1>
+            
+            <!-- Formulario de filtros -->
+            <div class="filter-form">
+                <form method="GET" action="{{ url_for('checkpoints.analytics_dashboard') }}" class="row align-items-end">
+                    <div class="col-md-3 mb-3">
+                        <label for="days_range" class="form-label">Rango de días</label>
+                        <select class="form-select" id="days_range" name="days_range">
+                            <option value="7" {% if days_range == 7 %}selected{% endif %}>Última semana</option>
+                            <option value="15" {% if days_range == 15 %}selected{% endif %}>Últimos 15 días</option>
+                            <option value="30" {% if days_range == 30 or not days_range %}selected{% endif %}>Último mes</option>
+                            <option value="90" {% if days_range == 90 %}selected{% endif %}>Último trimestre</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 mb-3">
+                        <label for="hourly_rate" class="form-label">Tarifa por hora (€)</label>
+                        <input type="number" class="form-control" id="hourly_rate" name="hourly_rate" value="{{ hourly_rate|default(10) }}" min="1" step="0.5">
+                    </div>
+                    
+                    {% if current_user.is_admin() %}
+                    <div class="col-md-3 mb-3">
+                        <label for="company_id" class="form-label">Empresa</label>
+                        <select class="form-select" id="company_id" name="company_id">
+                            <option value="">Todas las empresas</option>
+                            {% for company in companies %}
+                            <option value="{{ company.id }}" {% if company_id == company.id|string %}selected{% endif %}>{{ company.name }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    {% endif %}
+                    
+                    <div class="col-md-3 mb-3">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="bi bi-filter"></i> Aplicar filtros
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Tarjetas de estadísticas principales -->
+    <div class="row mb-4">
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header bg-gradient-primary">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <div class="stats-value text-white">{{ stats.total_hours_worked }}</div>
+                            <div class="stats-label text-white opacity-75">Horas trabajadas</div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-clock-history stats-icon text-white opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-1 text-muted small">Media diaria</div>
+                            <h6 class="mb-0">{{ stats.avg_hours_per_day }} h</h6>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="mb-1 text-muted small">Media/empleado</div>
+                            <h6 class="mb-0">{{ stats.avg_hours_per_employee }} h</h6>
+                        </div>
+                    </div>
+                    <div class="stats-footer mt-3 text-center">
+                        <div class="small text-muted">
+                            Datos de {{ stats.total_records }} fichajes y {{ stats.total_employees }} empleados
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header bg-gradient-success">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <div class="stats-value text-white">{{ stats.total_cost }}€</div>
+                            <div class="stats-label text-white opacity-75">Coste personal</div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-currency-euro stats-icon text-white opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-1 text-muted small">Tarifa aplicada</div>
+                            <h6 class="mb-0">{{ stats.hourly_rate }}€/h</h6>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="mb-1 text-muted small">Coste/día</div>
+                            <h6 class="mb-0">{{ (stats.total_cost / days_range)|round(2) }}€</h6>
+                        </div>
+                    </div>
+                    <div class="stats-footer mt-3 text-center">
+                        <div class="small text-muted">
+                            Periodo: últimos {{ days_range }} días
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header bg-gradient-warning">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <div class="stats-value text-white">{{ stats.overtime_count }}</div>
+                            <div class="stats-label text-white opacity-75">Horas extras</div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-alarm stats-icon text-white opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-1 text-muted small">% del total</div>
+                            <h6 class="mb-0">
+                                {% if stats.total_records > 0 %}
+                                    {{ ((stats.overtime_count / stats.total_records) * 100)|round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h6>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="mb-1 text-muted small">Por día</div>
+                            <h6 class="mb-0">{{ (stats.overtime_count / days_range)|round(1) }}</h6>
+                        </div>
+                    </div>
+                    <div class="stats-footer mt-3 text-center">
+                        <div class="small text-muted">
+                            Fichajes con más de 8 horas de trabajo
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-3 col-md-6 mb-4">
+            <div class="dashboard-card">
+                <div class="dashboard-card-header bg-gradient-danger">
+                    <div class="row align-items-center">
+                        <div class="col-8">
+                            <div class="stats-value text-white">{{ stats.missing_checkout_count }}</div>
+                            <div class="stats-label text-white opacity-75">Sin checkout</div>
+                        </div>
+                        <div class="col-4 text-end">
+                            <i class="bi bi-exclamation-triangle stats-icon text-white opacity-75"></i>
+                        </div>
+                    </div>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        <div class="col-6">
+                            <div class="mb-1 text-muted small">% del total</div>
+                            <h6 class="mb-0">
+                                {% if stats.total_records > 0 %}
+                                    {{ ((stats.missing_checkout_count / stats.total_records) * 100)|round(1) }}%
+                                {% else %}
+                                    0%
+                                {% endif %}
+                            </h6>
+                        </div>
+                        <div class="col-6 text-end">
+                            <div class="mb-1 text-muted small">Por día</div>
+                            <h6 class="mb-0">{{ (stats.missing_checkout_count / days_range)|round(1) }}</h6>
+                        </div>
+                    </div>
+                    <div class="stats-footer mt-3 text-center">
+                        <div class="small text-muted">
+                            Fichajes sin registro de salida
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Gráficos -->
+    <div class="row mb-4">
+        <div class="col-lg-8 mb-4">
+            <div class="dashboard-card">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-bar-chart"></i> Horas trabajadas por día</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="dailyHoursChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 mb-4">
+            <div class="dashboard-card">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-pie-chart"></i> Distribución semanal</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="weekdayDistributionChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="row mb-4">
+        <div class="col-lg-6 mb-4">
+            <div class="dashboard-card">
+                <div class="card-header bg-white py-3">
+                    <h5 class="mb-0"><i class="bi bi-people"></i> Top empleados por horas</h5>
+                </div>
+                <div class="card-body">
+                    <div class="chart-container">
+                        <canvas id="employeeHoursChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-6 mb-4">
+            <div class="dashboard-card">
+                <div class="card-header bg-white py-3 d-flex justify-content-between align-items-center">
+                    <h5 class="mb-0"><i class="bi bi-clock-history"></i> Empleados en jornada</h5>
+                    <span class="badge bg-success">{{ stats.employees_on_shift|selectattr("0")|list|length }} activos</span>
+                </div>
+                <div class="card-body" style="max-height: 350px; overflow-y: auto;">
+                    {% if stats.employees_on_shift %}
+                        {% for company_name, employees in stats.employees_on_shift.items() %}
+                            <div class="company-badge">{{ company_name }}</div>
+                            {% for employee in employees %}
+                                <div class="employee-on-shift-card">
+                                    <div class="d-flex justify-content-between align-items-center">
+                                        <div>
+                                            <h6 class="mb-1">{{ employee.name }}</h6>
+                                            <div class="small text-muted">{{ employee.position or "Sin posición" }}</div>
+                                        </div>
+                                        <div class="text-end">
+                                            {% if employee.check_in_time %}
+                                                <div class="small">Entrada: {{ employee.check_in_time }}</div>
+                                                {% if employee.hours_on_shift %}
+                                                    <div class="badge bg-primary">{{ employee.hours_on_shift }} horas</div>
+                                                {% endif %}
+                                            {% else %}
+                                                <span class="badge bg-warning">Sin entrada registrada</span>
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        {% endfor %}
+                    {% else %}
+                        <div class="text-center py-5">
+                            <i class="bi bi-clock text-muted" style="font-size: 3rem;"></i>
+                            <p class="text-muted mt-3">No hay empleados en jornada actualmente</p>
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Colores para gráficos
+        const colors = {
+            primary: '#3b82f6',
+            secondary: '#64748b',
+            success: '#10b981',
+            danger: '#ef4444',
+            warning: '#f59e0b',
+            info: '#06b6d4',
+            light: 'rgba(59, 130, 246, 0.2)',
+            dark: '#0f172a'
+        };
+        
+        // Gráfico de horas por día
+        const dailyHoursData = {{ stats.hours_by_day|tojson }};
+        if (document.getElementById('dailyHoursChart')) {
+            new Chart(document.getElementById('dailyHoursChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(dailyHoursData),
+                    datasets: [{
+                        label: 'Horas trabajadas',
+                        data: Object.values(dailyHoursData),
+                        backgroundColor: colors.primary,
+                        borderColor: colors.primary,
+                        borderWidth: 1,
+                        barPercentage: 0.6,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.y.toFixed(2)} horas`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 'h';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Gráfico de distribución por día de la semana
+        const weekdayData = {{ stats.hours_by_weekday|tojson }};
+        if (document.getElementById('weekdayDistributionChart')) {
+            new Chart(document.getElementById('weekdayDistributionChart'), {
+                type: 'pie',
+                data: {
+                    labels: Object.keys(weekdayData),
+                    datasets: [{
+                        data: Object.values(weekdayData),
+                        backgroundColor: [
+                            colors.primary,
+                            colors.success,
+                            colors.warning,
+                            colors.danger,
+                            colors.info,
+                            '#9333ea', // Morado
+                            '#f97316'  // Naranja
+                        ],
+                        borderWidth: 2,
+                        borderColor: '#ffffff'
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            position: 'right',
+                            labels: {
+                                padding: 15,
+                                usePointStyle: true,
+                                pointStyle: 'circle'
+                            }
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    const label = context.label || '';
+                                    const value = context.parsed || 0;
+                                    const total = context.dataset.data.reduce((a, b) => a + b, 0);
+                                    const percentage = total ? ((value / total) * 100).toFixed(1) + '%' : '0%';
+                                    return `${label}: ${value.toFixed(2)}h (${percentage})`;
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+        
+        // Gráfico de horas por empleado
+        const employeeHoursData = {{ stats.hours_by_employee|tojson }};
+        if (document.getElementById('employeeHoursChart')) {
+            new Chart(document.getElementById('employeeHoursChart'), {
+                type: 'bar',
+                data: {
+                    labels: Object.keys(employeeHoursData),
+                    datasets: [{
+                        label: 'Horas trabajadas',
+                        data: Object.values(employeeHoursData),
+                        backgroundColor: colors.info,
+                        borderColor: colors.info,
+                        borderWidth: 1,
+                        barPercentage: 0.7,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y',
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: {
+                            display: false
+                        },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return `${context.parsed.x.toFixed(2)} horas`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            beginAtZero: true,
+                            ticks: {
+                                callback: function(value) {
+                                    return value + 'h';
+                                }
+                            }
+                        }
+                    }
+                }
+            });
+        }
+    });
+</script>
+{% endblock %}

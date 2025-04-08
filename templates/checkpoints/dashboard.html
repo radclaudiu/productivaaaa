@@ -150,9 +150,16 @@
                     <h2 class="selection-title">
                         <i class="bi bi-person-badge me-2"></i>Seleccione su Nombre
                     </h2>
-                    <button type="button" id="refreshEmployees" class="btn refresh-button" title="Actualizar lista de empleados">
-                        <i class="bi bi-arrow-clockwise"></i>
-                    </button>
+                    <div class="d-flex">
+                        {% if current_user.is_authenticated and (current_user.is_admin or current_user.is_manager) %}
+                        <a href="{{ url_for('checkpoints.analytics_dashboard') }}" class="btn btn-primary me-2" title="Ver estadísticas de fichajes">
+                            <i class="bi bi-graph-up me-1"></i> Estadísticas
+                        </a>
+                        {% endif %}
+                        <button type="button" id="refreshEmployees" class="btn refresh-button" title="Actualizar lista de empleados">
+                            <i class="bi bi-arrow-clockwise"></i>
+                        </button>
+                    </div>
                 </div>
                 
                 <!-- Contenedor de tarjetas de empleados -->
