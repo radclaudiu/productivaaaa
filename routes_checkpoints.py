@@ -1237,44 +1237,6 @@ def checkpoint_dashboard():
                           employees=employees)
 
 
-@checkpoints_bp.route('/analytics')
-@login_required
-@manager_required
-def analytics_dashboard():
-    """Muestra el dashboard analítico con estadísticas de fichajes."""
-    # Obtener el ID de la empresa del usuario actual si no es administrador
-    company_id = request.args.get('company_id', type=int)
-    
-    # Si no se especifica empresa y el usuario no es admin, usar la empresa del usuario
-    if not company_id and not current_user.is_admin():
-        company_id = current_user.company_id
-    
-    # Configurar el rango de días para las estadísticas
-    days_range = request.args.get('days', 30, type=int)
-    # Configurar la tarifa por hora para cálculos de costes
-    hourly_rate = request.args.get('rate', 10.0, type=float)
-    
-    # Obtener las estadísticas del dashboard
-    from utils_checkpoints import get_checkpoint_dashboard_stats
-    stats = get_checkpoint_dashboard_stats(
-        company_id=company_id,
-        days_range=days_range,
-        hourly_rate=hourly_rate
-    )
-    
-    # Obtener la lista de empresas para el selector (solo para administradores)
-    companies = []
-    if current_user.is_admin():
-        companies = Company.query.order_by(Company.name).all()
-    
-    return render_template('checkpoints/analytics_dashboard.html',
-                           stats=stats,
-                           companies=companies,
-                           selected_company_id=company_id,
-                           days_range=days_range,
-                           hourly_rate=hourly_rate)
-
-
 @checkpoints_bp.route('/employee/<int:id>/pin', methods=['GET', 'POST'])
 @checkpoint_required
 def employee_pin(id):
