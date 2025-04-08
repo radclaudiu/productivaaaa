@@ -73,6 +73,12 @@ def create_app(config_class='config.Config'):
     except ImportError:
         checkpoints_new_bp = None
     
+    # Importar el blueprint de backup
+    try:
+        from routes_backup import register_blueprint as register_backup_blueprint
+    except ImportError:
+        register_backup_blueprint = None
+    
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
     app.register_blueprint(company_bp)
@@ -86,6 +92,10 @@ def create_app(config_class='config.Config'):
     # Registrar el blueprint de routes_checkpoints_new.py solo si está disponible
     if checkpoints_new_bp is not None:
         app.register_blueprint(checkpoints_new_bp)
+    
+    # Registrar el blueprint de backup si está disponible
+    if register_backup_blueprint is not None:
+        register_backup_blueprint(app)
     
     # Inicializar el sistema de puntos de fichaje
     init_checkpoints_app(app)

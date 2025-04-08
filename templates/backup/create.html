@@ -1,0 +1,116 @@
+{% extends "layout.html" %}
+
+{% block title %}Crear Backup{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('backup.backup_dashboard') }}">Backups</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Crear Backup</li>
+                </ol>
+            </nav>
+            <h1><i class="fas fa-plus-circle me-2"></i> Crear Nuevo Backup</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card">
+                <div class="card-header bg-primary text-white">
+                    <h5 class="mb-0">Configuración del Backup</h5>
+                </div>
+                <div class="card-body">
+                    <form method="post" action="{{ url_for('backup.create_backup') }}">
+                        <div class="mb-3">
+                            <label class="form-label">Tipo de Backup</label>
+                            <div class="form-check">
+                                <input class="form-check-input" type="radio" name="type" id="typeFull" value="full" checked>
+                                <label class="form-check-label" for="typeFull">
+                                    <strong>Completo (Esquema y Datos)</strong>
+                                    <div class="text-muted">Incluye toda la estructura de la base de datos y todos los datos.</div>
+                                </label>
+                            </div>
+                            <div class="form-check mt-2">
+                                <input class="form-check-input" type="radio" name="type" id="typeSchema" value="schema">
+                                <label class="form-check-label" for="typeSchema">
+                                    <strong>Solo Esquema</strong>
+                                    <div class="text-muted">Incluye solo la estructura de la base de datos, sin los datos.</div>
+                                </label>
+                            </div>
+                        </div>
+
+                        <div class="mb-3">
+                            <div class="form-check form-switch">
+                                <input class="form-check-input" type="checkbox" name="compress" value="true" id="compressSwitch" checked>
+                                <label class="form-check-label" for="compressSwitch">Comprimir Backup</label>
+                            </div>
+                            <div class="text-muted">El backup se comprimirá para ahorrar espacio en disco.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label for="description" class="form-label">Descripción (opcional)</label>
+                            <textarea class="form-control" id="description" name="description" rows="3" placeholder="Añade una descripción para identificar este backup..."></textarea>
+                            <div class="form-text">La descripción te ayudará a identificar este backup en el futuro.</div>
+                        </div>
+
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('backup.backup_dashboard') }}" class="btn btn-secondary me-md-2">Cancelar</a>
+                            <button type="submit" class="btn btn-primary">
+                                <i class="fas fa-database me-1"></i> Crear Backup
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Información</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-info">
+                        <h6 class="alert-heading">Tiempo de Ejecución</h6>
+                        <p class="mb-0">El tiempo necesario para crear un backup depende del tamaño de la base de datos.</p>
+                    </div>
+                    
+                    <h6 class="mt-4 mb-2">Recomendaciones</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item d-flex">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <strong>Backups Regulares</strong>
+                                <p class="mb-0 text-muted">Programa backups automáticos para proteger tus datos.</p>
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <strong>Compresión</strong>
+                                <p class="mb-0 text-muted">Habilita la compresión para ahorrar espacio en disco.</p>
+                            </div>
+                        </li>
+                        <li class="list-group-item d-flex">
+                            <div class="me-3 text-primary">
+                                <i class="fas fa-check-circle"></i>
+                            </div>
+                            <div>
+                                <strong>Descripciones Claras</strong>
+                                <p class="mb-0 text-muted">Añade descripciones que te ayuden a identificar el propósito del backup.</p>
+                            </div>
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,123 @@
+{% extends "layout.html" %}
+
+{% block title %}Restaurar Backup{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <nav aria-label="breadcrumb">
+                <ol class="breadcrumb">
+                    <li class="breadcrumb-item"><a href="{{ url_for('backup.backup_dashboard') }}">Backups</a></li>
+                    <li class="breadcrumb-item"><a href="{{ url_for('backup.view_backup', backup_id=backup.id) }}">Ver Backup</a></li>
+                    <li class="breadcrumb-item active" aria-current="page">Restaurar</li>
+                </ol>
+            </nav>
+            <h1 class="text-warning"><i class="fas fa-exclamation-triangle me-2"></i> Restaurar Backup</h1>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-8">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark">
+                    <h5 class="mb-0"><i class="fas fa-undo me-2"></i> Confirmación de Restauración</h5>
+                </div>
+                <div class="card-body">
+                    <div class="alert alert-danger">
+                        <h4 class="alert-heading">¡Advertencia! Acción Potencialmente Peligrosa</h4>
+                        <p class="mb-0">Está a punto de restaurar la base de datos desde un backup. Esta acción sobrescribirá <strong>TODOS</strong> los datos actuales en la base de datos.</p>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <h6 class="text-muted">Archivo de Backup a Restaurar</h6>
+                        <p class="lead">{{ backup.filename }}</p>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Fecha de Creación</h6>
+                            <p>{{ backup.date }}</p>
+                        </div>
+                        <div class="col-md-6">
+                            <h6 class="text-muted">Tipo</h6>
+                            <p>
+                                {% if backup.type == 'full' %}
+                                <span class="badge bg-primary">Completo (Esquema y Datos)</span>
+                                {% else %}
+                                <span class="badge bg-secondary">Solo Esquema</span>
+                                {% endif %}
+                            </p>
+                        </div>
+                    </div>
+                    
+                    <div class="row mb-4">
+                        <div class="col-md-12">
+                            <h6 class="text-muted">Descripción</h6>
+                            <p>{{ backup.description }}</p>
+                        </div>
+                    </div>
+                    
+                    <form method="post" action="{{ url_for('backup.restore_backup', backup_id=backup.id) }}">
+                        <div class="mb-4">
+                            <label for="confirm" class="form-label">Confirmación</label>
+                            <input type="text" class="form-control" id="confirm" name="confirm" required placeholder="Escriba RESTAURAR en mayúsculas para confirmar">
+                            <div class="form-text">Para confirmar que entiende las consecuencias, escriba "RESTAURAR" (en mayúsculas).</div>
+                        </div>
+                        
+                        <div class="mb-4">
+                            <label for="admin_password" class="form-label">Contraseña de Administrador</label>
+                            <input type="password" class="form-control" id="admin_password" name="admin_password" required>
+                            <div class="form-text">Ingrese su contraseña de administrador para autorizar esta operación.</div>
+                        </div>
+                        
+                        <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+                            <a href="{{ url_for('backup.view_backup', backup_id=backup.id) }}" class="btn btn-secondary me-md-2">
+                                <i class="fas fa-times me-1"></i> Cancelar
+                            </a>
+                            <button type="submit" class="btn btn-warning">
+                                <i class="fas fa-undo me-1"></i> Restaurar Backup
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-4">
+            <div class="card">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i> Información Importante</h5>
+                </div>
+                <div class="card-body">
+                    <h6 class="mb-3">Consecuencias de la Restauración</h6>
+                    <ul class="list-group mb-4">
+                        <li class="list-group-item list-group-item-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> Todos los datos actuales serán reemplazados
+                        </li>
+                        <li class="list-group-item list-group-item-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> Los cambios desde la fecha del backup se perderán
+                        </li>
+                        <li class="list-group-item list-group-item-danger">
+                            <i class="fas fa-exclamation-circle me-2"></i> Esta acción no se puede deshacer
+                        </li>
+                    </ul>
+                    
+                    <h6 class="mb-3">Recomendaciones</h6>
+                    <ul class="list-group">
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> Crear un backup del estado actual antes de restaurar
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> Asegurarse de que no haya usuarios activos en el sistema
+                        </li>
+                        <li class="list-group-item">
+                            <i class="fas fa-check-circle text-success me-2"></i> Verificar la integridad de los datos después de la restauración
+                        </li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
