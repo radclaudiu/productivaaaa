@@ -12,11 +12,15 @@
         /* Estilos simplificados para el dashboard minimalista */
         :root {
             --primary-gradient: linear-gradient(135deg, #3b82f6, #2563eb);
+            --secondary-gradient: linear-gradient(135deg, #10b981, #059669);
+            --warning-gradient: linear-gradient(135deg, #f59e0b, #d97706);
+            --danger-gradient: linear-gradient(135deg, #ef4444, #dc2626);
             --accent-color: #06b6d4;
             --text-primary: #0f172a;
             --border-radius-lg: 20px;
             --border-radius-sm: 12px;
             --shadow-sm: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+            --shadow-md: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.05);
         }
         
         body {
@@ -55,7 +59,7 @@
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 2rem;
+            margin-bottom: 1.5rem;
             padding: 1.5rem;
             border-radius: var(--border-radius-sm);
             background-color: white;
@@ -89,6 +93,7 @@
         .alert-danger { border-left: 4px solid #ef4444; }
         .alert-warning { border-left: 4px solid #f59e0b; }
         .alert-info { border-left: 4px solid #3b82f6; }
+        
         /* Estilo para empleados en jornada */
         .employee-status.on-shift {
             background-color: #0ea5e9;
@@ -106,6 +111,101 @@
             border-radius: 4px;
             padding: 2px 8px;
         }
+        
+        /* Estilos para las tarjetas de estadísticas */
+        .stat-card {
+            background-color: white;
+            border-radius: var(--border-radius-sm);
+            box-shadow: var(--shadow-sm);
+            padding: 1.5rem;
+            height: 100%;
+            transition: all 0.3s ease;
+            border-top: 4px solid transparent;
+        }
+        
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: var(--shadow-md);
+        }
+        
+        .stat-card.primary { border-top-color: #3b82f6; }
+        .stat-card.success { border-top-color: #10b981; }
+        .stat-card.warning { border-top-color: #f59e0b; }
+        .stat-card.danger { border-top-color: #ef4444; }
+        
+        .stat-card .stat-title {
+            font-size: 0.875rem;
+            font-weight: 600;
+            color: #64748b;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .stat-card .stat-title i {
+            margin-right: 0.5rem;
+        }
+        
+        .stat-card .stat-value {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #0f172a;
+            margin-bottom: 0.25rem;
+        }
+        
+        .stat-card .stat-description {
+            font-size: 0.875rem;
+            color: #64748b;
+        }
+
+        .section-title {
+            font-size: 1.25rem;
+            font-weight: 600;
+            color: #0f172a;
+            margin-bottom: 1rem;
+            display: flex;
+            align-items: center;
+        }
+        
+        .section-title i {
+            margin-right: 0.5rem;
+            color: #3b82f6;
+        }
+        
+        /* Estilos para las personas en turno */
+        .shift-badge {
+            display: inline-block;
+            background: #0ea5e9;
+            color: white;
+            padding: 0.25rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.75rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+        
+        .shift-list {
+            display: flex;
+            flex-wrap: wrap;
+            margin-top: 0.5rem;
+        }
+        
+        .cost-config {
+            display: flex;
+            align-items: center;
+            margin-top: 1rem;
+            padding: 0.75rem;
+            background-color: #f1f5f9;
+            border-radius: var(--border-radius-sm);
+        }
+        
+        .cost-config input {
+            max-width: 100px;
+            margin: 0 0.5rem;
+        }
+        
+        @media (max-width: 768px) {
             .selection-title {
                 font-size: 1.5rem;
             }
@@ -116,6 +216,10 @@
             
             body {
                 padding: 0.5rem 0;
+            }
+            
+            .stat-card {
+                margin-bottom: 1rem;
             }
         }
     </style>
@@ -142,6 +246,68 @@
                 {% endfor %}
             {% endif %}
         {% endwith %}
+        
+        <!-- Sección de estadísticas -->
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="selection-header">
+                    <h2 class="selection-title">
+                        <i class="bi bi-clipboard-data me-2"></i>Estadísticas
+                    </h2>
+                    <button type="button" id="refreshStats" class="btn refresh-button" title="Actualizar estadísticas">
+                        <i class="bi bi-arrow-clockwise"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-md-3 mb-3 mb-md-0">
+                <div class="stat-card primary">
+                    <div class="stat-title"><i class="bi bi-calendar-day"></i> Horas de hoy</div>
+                    <div class="stat-value">{{ statistics.today_hours }}</div>
+                    <div class="stat-description">Coste: {{ statistics.today_cost }}€</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3 mb-md-0">
+                <div class="stat-card success">
+                    <div class="stat-title"><i class="bi bi-calendar-week"></i> Horas esta semana</div>
+                    <div class="stat-value">{{ statistics.week_hours }}</div>
+                    <div class="stat-description">Coste: {{ statistics.week_cost }}€</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3 mb-md-0">
+                <div class="stat-card warning">
+                    <div class="stat-title"><i class="bi bi-calendar-month"></i> Horas este mes</div>
+                    <div class="stat-value">{{ statistics.month_hours }}</div>
+                    <div class="stat-description">Coste: {{ statistics.month_cost }}€</div>
+                </div>
+            </div>
+            <div class="col-md-3 mb-3 mb-md-0">
+                <div class="stat-card danger">
+                    <div class="stat-title"><i class="bi bi-people-fill"></i> Personal en turno</div>
+                    <div class="stat-value">{{ statistics.employees_on_shift_count }}</div>
+                    <div class="stat-description">
+                        <div class="shift-list">
+                            {% for emp in statistics.employees_on_shift %}
+                                <span class="shift-badge">{{ emp.first_name }}</span>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        
+        <div class="row mb-4">
+            <div class="col-12">
+                <div class="cost-config">
+                    <label for="hourlyCost"><i class="bi bi-cash-coin me-1"></i> Coste por hora:</label>
+                    <input type="number" id="hourlyCost" class="form-control" value="{{ statistics.hourly_cost }}" min="1" step="0.1">
+                    <span class="ms-1">€</span>
+                    <button class="btn btn-sm btn-primary ms-2" id="updateCost">Actualizar</button>
+                </div>
+            </div>
+        </div>
         
         <!-- Sección de selección de empleados -->
         <div class="row">
@@ -211,6 +377,24 @@
 
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
     <script>
+        // Variables globales
+        let hourlyCost = {{ statistics.hourly_cost }};
+        let todayHours = {{ statistics.today_hours }};
+        let weekHours = {{ statistics.week_hours }};
+        let monthHours = {{ statistics.month_hours }};
+        
+        // Función para actualizar los costes basados en la tarifa por hora
+        function updateCostsDisplay() {
+            const todayCost = (todayHours * hourlyCost).toFixed(2);
+            const weekCost = (weekHours * hourlyCost).toFixed(2);
+            const monthCost = (monthHours * hourlyCost).toFixed(2);
+            
+            // Actualizar los valores en las tarjetas
+            document.querySelectorAll('.stat-card')[0].querySelector('.stat-description').textContent = `Coste: ${todayCost}€`;
+            document.querySelectorAll('.stat-card')[1].querySelector('.stat-description').textContent = `Coste: ${weekCost}€`;
+            document.querySelectorAll('.stat-card')[2].querySelector('.stat-description').textContent = `Coste: ${monthCost}€`;
+        }
+        
         // Función para cargar empleados a través de AJAX
         function loadEmployees() {
             // Mostrar indicador de carga
@@ -248,14 +432,16 @@
                             <a href="${pinUrl}" class="text-decoration-none">
                                 <div class="employee-card">
                                     <div class="employee-card-border"></div>
-                                    <div class="status-indicator ${employee.is_active ? (employee.is_on_shift ? `<div class="employee-status on-shift"><i class="bi bi-clock-fill me-1"></i> ACTIVO</div>` : '' : 'inactive'}"></div>
+                                    <div class="status-indicator ${employee.is_active ? (employee.is_on_shift ? "" : "out-shift") : "inactive"}"></div>
                                     <div class="card-body">
                                         <div class="employee-avatar">
                                             <div class="avatar-text">${employee.name.charAt(0)}${employee.name.split(' ')[1]?.charAt(0) || ''}</div>
                                         </div>
                                         <h5 class="employee-name">${employee.name}</h5>
-                                        ${employee.is_active ? (employee.is_on_shift ? `<div class="employee-status on-shift"><i class="bi bi-clock-fill me-1"></i> ACTIVO</div>` : 
-                                            `<div class="employee-status out-shift"><i class="bi bi-x-circle-fill"></i> OUT</div>` : 
+                                        ${employee.is_active ? 
+                                            (employee.is_on_shift ? 
+                                                `<div class="employee-status on-shift"><i class="bi bi-clock-fill me-1"></i> ACTIVO</div>` : 
+                                                `<div class="employee-status out-shift"><i class="bi bi-x-circle-fill"></i> OUT</div>`) : 
                                             `<div class="employee-status inactive"><i class="bi bi-dash-circle-fill"></i> Inactivo</div>`
                                         }
                                     </div>
@@ -278,11 +464,38 @@
                 });
         }
 
-        // Asociar el evento click al botón de actualizar
+        // Asociar eventos cuando el DOM está cargado
         document.addEventListener('DOMContentLoaded', function() {
+            // Botón de actualizar empleados
             const refreshButton = document.getElementById('refreshEmployees');
             if (refreshButton) {
                 refreshButton.addEventListener('click', loadEmployees);
+            }
+            
+            // Actualizar coste por hora
+            const updateCostButton = document.getElementById('updateCost');
+            const hourlyCostInput = document.getElementById('hourlyCost');
+            
+            if (updateCostButton && hourlyCostInput) {
+                updateCostButton.addEventListener('click', function() {
+                    const newCost = parseFloat(hourlyCostInput.value);
+                    if (!isNaN(newCost) && newCost > 0) {
+                        hourlyCost = newCost;
+                        updateCostsDisplay();
+                        showAlert('Coste por hora actualizado correctamente', 'success');
+                    } else {
+                        showAlert('Por favor, introduce un valor válido', 'warning');
+                        hourlyCostInput.value = hourlyCost;
+                    }
+                });
+            }
+            
+            // Botón de actualizar estadísticas
+            const refreshStatsButton = document.getElementById('refreshStats');
+            if (refreshStatsButton) {
+                refreshStatsButton.addEventListener('click', function() {
+                    window.location.reload();
+                });
             }
         });
         

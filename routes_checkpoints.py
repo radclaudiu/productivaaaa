@@ -1219,7 +1219,7 @@ def logout():
 @checkpoints_bp.route('/dashboard')
 @checkpoint_required
 def checkpoint_dashboard():
-    """Dashboard principal del punto de fichaje"""
+    """Dashboard principal del punto de fichaje con estadísticas"""
     checkpoint_id = session.get('checkpoint_id')
     # Usamos refresh=True para asegurarnos de obtener los datos más actualizados
     db.session.expire_all()  # Asegurarse de que todas las entidades se refresquen
@@ -1232,9 +1232,66 @@ def checkpoint_dashboard():
         is_active=True
     ).order_by(Employee.first_name, Employee.last_name).all()
     
+    # Valor por hora predeterminado (configurable)
+    hourly_cost = 10.0
+    
+    # Calcular las fechas para las estadísticas
+    today = datetime.now().date()
+    start_of_day = datetime.combine(today, time.min)
+    start_of_week = today - timedelta(days=today.weekday())
+    start_of_week = datetime.combine(start_of_week, time.min)
+    start_of_month = datetime.combine(date(today.year, today.month, 1), time.min)
+    
+    # 1. Empleados actualmente en turno
+    employees_on_shift = [emp for emp in employees if emp.is_on_shift]
+    
+    # 2. Horas trabajadas hoy
+    today_records = CheckPointRecord.query.join(Employee).filter(
+        Employee.company_id == checkpoint.company_id,
+        CheckPointRecord.check_in_time >= start_of_day,
+        CheckPointRecord.check_out_time.isnot(None)
+    ).all()
+    
+    today_hours = sum(record.duration() or 0 for record in today_records)
+    today_cost = today_hours * hourly_cost
+    
+    # 3. Horas trabajadas esta semana
+    week_records = CheckPointRecord.query.join(Employee).filter(
+        Employee.company_id == checkpoint.company_id,
+        CheckPointRecord.check_in_time >= start_of_week,
+        CheckPointRecord.check_out_time.isnot(None)
+    ).all()
+    
+    week_hours = sum(record.duration() or 0 for record in week_records)
+    week_cost = week_hours * hourly_cost
+    
+    # 4. Horas trabajadas este mes
+    month_records = CheckPointRecord.query.join(Employee).filter(
+        Employee.company_id == checkpoint.company_id,
+        CheckPointRecord.check_in_time >= start_of_month,
+        CheckPointRecord.check_out_time.isnot(None)
+    ).all()
+    
+    month_hours = sum(record.duration() or 0 for record in month_records)
+    month_cost = month_hours * hourly_cost
+    
+    # Estadísticas para enviar al template
+    statistics = {
+        'employees_on_shift': employees_on_shift,
+        'employees_on_shift_count': len(employees_on_shift),
+        'today_hours': round(today_hours, 2),
+        'today_cost': round(today_cost, 2),
+        'week_hours': round(week_hours, 2),
+        'week_cost': round(week_cost, 2),
+        'month_hours': round(month_hours, 2),
+        'month_cost': round(month_cost, 2),
+        'hourly_cost': hourly_cost
+    }
+    
     return render_template('checkpoints/dashboard.html', 
                           checkpoint=checkpoint,
-                          employees=employees)
+                          employees=employees,
+                          statistics=statistics)
 
 
 @checkpoints_bp.route('/employee/<int:id>/pin', methods=['GET', 'POST'])
