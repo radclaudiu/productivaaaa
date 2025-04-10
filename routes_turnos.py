@@ -670,7 +670,20 @@ def asignar_horario_masivo(company_id):
     empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.last_name, Employee.first_name).all()
     
     # Obtener todos los turnos activos de la empresa
-    turnos = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
+    turnos_query = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
+    
+    # Convertir los turnos a diccionarios serializables
+    turnos = []
+    for turno in turnos_query:
+        turnos.append({
+            'id': turno.id,
+            'nombre': turno.nombre,
+            'hora_inicio': turno.hora_inicio.strftime('%H:%M'),
+            'hora_fin': turno.hora_fin.strftime('%H:%M'),
+            'color': turno.color,
+            'duracion_total': float(turno.duracion_total),
+            'horas_efectivas': float(turno.horas_efectivas)
+        })
     
     # Obtener los horarios ya asignados para esta fecha
     fecha_seleccionada = dias_semana_fechas[0]  # Por defecto, primer día de la semana
@@ -710,7 +723,7 @@ def asignar_horario_masivo(company_id):
         meses=meses,
         dias_semana_fechas=dias_semana_fechas,
         today=date.today(),
-        horarios_json=json.dumps(horarios_json),
+        horarios_json=horarios_json,
         eliminar_form=eliminar_form
     )
 

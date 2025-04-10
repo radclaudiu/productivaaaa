@@ -270,7 +270,7 @@
                              data-id="{{ turno.id }}"
                              data-start="{{ turno.hora_inicio.strftime('%H:%M') }}"
                              data-end="{{ turno.hora_fin.strftime('%H:%M') }}"
-                             data-duration="{{ (turno.duracion_total * 60 // 30)|int }}"
+                             data-duration="{{ turno.duracion_total * 2 }}"
                              data-color="{{ turno.color }}"
                              style="background-color: {{ turno.color }}20; border-left: 4px solid {{ turno.color }};">
                             <div class="shift-name">{{ turno.nombre }}</div>
