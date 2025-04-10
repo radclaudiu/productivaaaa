@@ -242,7 +242,7 @@ def calendario(company_id):
     semana_siguiente = inicio_semana + timedelta(days=7)
     
     # Obtener empleados de la empresa
-    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.last_name, Employee.first_name).all()
     
     # Obtener turnos de la empresa
     turnos = Turno.query.filter_by(company_id=company_id, is_active=True).all()
@@ -482,8 +482,8 @@ def asignar_horario(company_id):
     form = HorarioForm()
     
     # Obtener todos los empleados activos de la empresa
-    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
-    form.employee_id.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.last_name, Employee.first_name).all()
+    form.employee_id.choices = [(e.id, f"{e.first_name} {e.last_name}") for e in empleados]
     
     # Obtener todos los turnos activos de la empresa
     turnos = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
@@ -648,8 +648,8 @@ def asignar_horario_masivo(company_id):
     form = AsignacionMasivaForm()
     
     # Obtener todos los empleados activos de la empresa
-    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
-    form.employees.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.last_name, Employee.first_name).all()
+    form.employees.choices = [(e.id, f"{e.first_name} {e.last_name}") for e in empleados]
     
     # Obtener todos los turnos activos de la empresa
     turnos = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
@@ -804,8 +804,8 @@ def nueva_ausencia(company_id):
     form = AusenciaForm()
     
     # Obtener todos los empleados activos de la empresa
-    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
-    form.employee_id.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.last_name, Employee.first_name).all()
+    form.employee_id.choices = [(e.id, f"{e.first_name} {e.last_name}") for e in empleados]
     
     # Valores predeterminados para el formulario
     if request.method == 'GET':
@@ -877,8 +877,8 @@ def editar_ausencia(company_id, ausencia_id):
     form = AusenciaForm(obj=ausencia)
     
     # Obtener todos los empleados activos de la empresa
-    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
-    form.employee_id.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.last_name, Employee.first_name).all()
+    form.employee_id.choices = [(e.id, f"{e.first_name} {e.last_name}") for e in empleados]
     
     # Asignar valor del enum al formulario (solo para GET)
     if request.method == 'GET':
@@ -1028,7 +1028,7 @@ def informe_horarios(company_id):
                    Horario.fecha.between(fecha_inicio, fecha_fin),
                    Employee.is_active == True
                )
-               .order_by(Employee.nombre, Horario.fecha)
+               .order_by(Employee.last_name, Employee.first_name, Horario.fecha)
                .all())
     
     # Obtener ausencias para el período

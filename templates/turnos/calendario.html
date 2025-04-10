@@ -184,9 +184,9 @@
                         {% for employee_id, datos in datos_calendario.items() %}
                             <tr>
                                 <td class="calendar-employee-name bg-white">
-                                    {{ datos.empleado.nombre }}
-                                    {% if datos.empleado.apellidos %}
-                                        {{ datos.empleado.apellidos }}
+                                    {{ datos.empleado.first_name }}
+                                    {% if datos.empleado.last_name %}
+                                        {{ datos.empleado.last_name }}
                                     {% endif %}
                                 </td>
                                 
