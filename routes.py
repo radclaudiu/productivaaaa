@@ -135,7 +135,13 @@ def index():
 @login_required
 def dashboard():
     stats = get_dashboard_stats()
-    return render_template('dashboard.html', title='Dashboard', stats=stats, datetime=datetime)
+    
+    # Obtener la empresa del usuario actual para el botón de turnos
+    company_id = None
+    if current_user.companies and len(current_user.companies) > 0:
+        company_id = current_user.companies[0].id
+    
+    return render_template('dashboard.html', title='Dashboard', stats=stats, datetime=datetime, company_id=company_id)
 
 @main_bp.route('/profile', methods=['GET', 'POST'])
 @login_required
