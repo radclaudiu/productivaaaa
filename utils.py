@@ -12,10 +12,17 @@ from flask import current_app, flash, request, send_file
 from flask_login import current_user
 from fpdf import FPDF
 import shutil
-from flask import abort
+from flask import abort, current_app, flash, request, send_file
 
 from app import db
 from models import User, Employee, EmployeeHistory, UserRole, ActivityLog, EmployeeDocument, Company
+
+def get_company_or_404(company_id):
+    """Obtiene una empresa por su ID o devuelve error 404 si no existe."""
+    company = Company.query.get(company_id)
+    if not company:
+        abort(404)
+    return company
 
 def create_admin_user():
     """Create admin user if not exists."""
