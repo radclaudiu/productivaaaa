@@ -45,6 +45,29 @@ def init_app(app):
     """Inicializa el blueprint de turnos en la aplicación Flask."""
     app.register_blueprint(turnos_bp)
 
+# Rutas de selección de empresa
+@turnos_bp.route('/select')
+@login_required
+def select_company():
+    """Página de selección de empresa para el sistema de turnos"""
+    try:
+        # Obtener empresas según los permisos del usuario
+        if current_user.is_admin():
+            companies = Company.query.filter_by(is_active=True).all()
+        else:
+            companies = current_user.companies
+        
+        # Si solo hay una empresa o el usuario solo gestiona una, redirigir directamente
+        if len(companies) == 1:
+            company = companies[0]
+            return redirect(url_for('turnos.dashboard', company_id=company.id))
+        
+        return render_template('turnos/select_company.html', companies=companies)
+    except Exception as e:
+        current_app.logger.error(f"Error en turnos.select_company: {e}")
+        flash("Error al cargar la selección de empresas. Por favor, inténtelo de nuevo.", "danger")
+        return redirect(url_for('main.dashboard'))
+
 # Funciones auxiliares
 def get_semana_actual():
     """Obtiene la fecha del lunes de la semana actual."""
