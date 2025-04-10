@@ -23,12 +23,14 @@
         text-align: center;
         position: relative;
         padding: 0;
+        font-size: 0.8rem;
     }
     
     .time-grid th {
-        background-color: #f8f9fa;
+        background-color: #4a75b5;
+        color: white;
         font-weight: 600;
-        padding: 8px;
+        padding: 4px;
         position: sticky;
         top: 0;
         z-index: 10;
@@ -39,32 +41,54 @@
         position: sticky;
         left: 0;
         z-index: 20;
-        background-color: #f8f9fa;
+        background-color: #2c5282;
+        color: white;
     }
     
     .time-grid td.employee-name {
         position: sticky;
         left: 0;
-        background-color: #fff;
+        background-color: #edf2f7;
         width: 150px;
         z-index: 10;
         text-align: left;
-        padding: 6px;
+        padding: 4px 8px;
         font-weight: 500;
+        border-right: 2px solid #cbd5e0;
+    }
+    
+    .time-grid-hour {
+        background-color: #4e73df !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
     }
     
     .time-grid td.time-cell {
-        width: 60px;
+        width: 30px;
         cursor: pointer;
         user-select: none;
+        background-color: #e6f4f1;
     }
     
     .time-grid td.time-cell:hover {
-        background-color: #f1f3f9;
+        background-color: #e6fffa;
+    }
+    
+    /* Estilo personalizado para celdas */
+    .time-grid td.time-cell:nth-of-type(even) {
+        background-color: #e6f4f1;
+    }
+    
+    .time-grid td.time-cell:nth-of-type(odd) {
+        background-color: #d1e6e1;
     }
     
     .time-grid-time {
         white-space: nowrap;
+        background-color: #4e73df;
+        color: white;
+        font-size: 0.7rem;
     }
     
     .time-header-day {
@@ -371,11 +395,18 @@
                 <table class="time-grid" id="timeGrid">
                     <thead>
                         <tr>
-                            <th class="employee-col">Empleado</th>
-                            {% for hora in range(0, 24) %}
+                            <th class="employee-col" rowspan="2">Empleado</th>
+                            {% for hora in range(7, 22) %}
+                                <th colspan="2" class="time-grid-hour">
+                                    {{ '%02d:00'|format(hora) }}
+                                </th>
+                            {% endfor %}
+                        </tr>
+                        <tr>
+                            {% for hora in range(7, 22) %}
                                 {% for minuto in [0, 30] %}
                                     <th class="time-grid-time">
-                                        {{ '%02d:%02d'|format(hora, minuto) }}
+                                        {{ '%02d'|format(minuto) }}
                                     </th>
                                 {% endfor %}
                             {% endfor %}
@@ -387,7 +418,7 @@
                             <td class="employee-name">
                                 {{ employee.last_name }}, {{ employee.first_name }}
                             </td>
-                            {% for hora in range(0, 24) %}
+                            {% for hora in range(7, 22) %}
                                 {% for minuto in [0, 30] %}
                                     <td class="time-cell" 
                                         data-hour="{{ hora }}" 
