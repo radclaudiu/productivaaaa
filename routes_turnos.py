@@ -524,13 +524,13 @@ def asignar_horario(company_id):
                 horario_id=horario_existente.id,
                 user_id=current_user.id,
                 tipo_cambio="modificacion",
-                descripcion=f"Modificado turno de {horario_existente.employee.nombre} para el {form.fecha.data}"
+                descripcion=f"Modificado turno de {horario_existente.employee.first_name} para el {form.fecha.data}"
             )
             db.session.add(historial)
             db.session.commit()
             
-            log_activity(f"Modificado horario para empleado {horario_existente.employee.nombre} en fecha {form.fecha.data}")
-            flash(f'Turno para {horario_existente.employee.nombre} actualizado correctamente.', 'success')
+            log_activity(f"Modificado horario para empleado {horario_existente.employee.first_name} en fecha {form.fecha.data}")
+            flash(f'Turno para {horario_existente.employee.first_name} actualizado correctamente.', 'success')
         else:
             # Crear un nuevo horario
             horario = Horario(
@@ -550,13 +550,13 @@ def asignar_horario(company_id):
                 horario_id=horario.id,
                 user_id=current_user.id,
                 tipo_cambio="creacion",
-                descripcion=f"Asignado turno a {empleado.nombre} para el {form.fecha.data}"
+                descripcion=f"Asignado turno a {empleado.first_name} para el {form.fecha.data}"
             )
             db.session.add(historial)
             db.session.commit()
             
-            log_activity(f"Asignado horario para empleado {empleado.nombre} en fecha {form.fecha.data}")
-            flash(f'Turno para {empleado.nombre} asignado correctamente.', 'success')
+            log_activity(f"Asignado horario para empleado {empleado.first_name} en fecha {form.fecha.data}")
+            flash(f'Turno para {empleado.first_name} asignado correctamente.', 'success')
         
         # Redireccionar a la vista de calendario
         return redirect(url_for('turnos.calendario', company_id=company_id, semana=form.fecha.data))
@@ -589,7 +589,7 @@ def eliminar_horario(company_id):
             abort(403)
             
         # Guardar información para el mensaje
-        empleado_nombre = horario.employee.nombre
+        empleado_nombre = horario.employee.first_name
         fecha = horario.fecha
         
         # Registrar el cambio en el historial antes de eliminar
@@ -638,98 +638,169 @@ def api_turno_detalle(turno_id):
 @turnos_bp.route('/horarios/<int:company_id>/masivo', methods=['GET', 'POST'])
 @login_required
 def asignar_horario_masivo(company_id):
-    """Asigna turnos a múltiples empleados o en un rango de fechas."""
+    """Asignación masiva de horarios a empleados con interfaz de arrastre tipo Excel."""
     # Verificar acceso a la empresa
     company = get_company_or_404(company_id)
     if not puede_ver_empresa(company_id):
         abort(403)
-        
-    # Preparar el formulario
-    form = AsignacionMasivaForm()
+    
+    # Parámetros para la cuadrícula
+    fecha_str = request.args.get('fecha')
+    try:
+        fecha_base = datetime.strptime(fecha_str, '%Y-%m-%d').date() if fecha_str else date.today()
+    except ValueError:
+        fecha_base = date.today()
+    
+    # Obtener el inicio y fin de la semana
+    inicio_semana, fin_semana = get_rango_semana(fecha_base)
+    semana_anterior = inicio_semana - timedelta(days=7)
+    semana_siguiente = inicio_semana + timedelta(days=7)
+    
+    # Nombres de los días de la semana y meses
+    dias_semana = ['Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado', 'Domingo']
+    meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 
+             'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+    
+    # Generar las fechas para cada día de la semana
+    dias_semana_fechas = []
+    for i in range(7):
+        dias_semana_fechas.append(inicio_semana + timedelta(days=i))
     
     # Obtener todos los empleados activos de la empresa
     empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.last_name, Employee.first_name).all()
-    form.employees.choices = [(e.id, f"{e.first_name} {e.last_name}") for e in empleados]
     
     # Obtener todos los turnos activos de la empresa
     turnos = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
-    form.turno_id.choices = [(t.id, t.nombre) for t in turnos]
     
-    # Valores predeterminados para el formulario
-    if request.method == 'GET':
-        form.fecha_inicio.data = date.today()
-        form.fecha_fin.data = date.today() + timedelta(days=6)  # Una semana por defecto
-        form.dias_semana.data = [0, 1, 2, 3, 4]  # L-V por defecto
+    # Obtener los horarios ya asignados para esta fecha
+    fecha_seleccionada = dias_semana_fechas[0]  # Por defecto, primer día de la semana
+    horarios = (Horario.query
+                .join(Turno)
+                .filter(
+                    Horario.fecha == fecha_seleccionada,
+                    Turno.company_id == company_id
+                )
+                .all())
     
-    if form.validate_on_submit():
-        # Obtener los datos del formulario
-        fecha_inicio = form.fecha_inicio.data
-        fecha_fin = form.fecha_fin.data
-        dias_semana = form.dias_semana.data
-        turno_id = form.turno_id.data
-        employee_ids = form.employees.data
-        notas = form.notas.data
-        
-        # Contador de horarios creados
-        horarios_creados = 0
-        horarios_actualizados = 0
-        
-        # Iterar por cada día en el rango
-        fecha_actual = fecha_inicio
-        while fecha_actual <= fecha_fin:
-            # Verificar si el día de la semana está seleccionado
-            if fecha_actual.weekday() in dias_semana:
-                # Para cada empleado seleccionado
-                for employee_id in employee_ids:
-                    # Verificar si ya existe un horario
-                    horario_existente = Horario.query.filter_by(
-                        employee_id=employee_id,
-                        fecha=fecha_actual
-                    ).first()
-                    
-                    if horario_existente:
-                        # Actualizar el horario existente
-                        horario_existente.turno_id = turno_id
-                        horario_existente.notas = notas
-                        
-                        # Registrar el cambio en el historial
-                        historial = HistorialCambios(
-                            horario_id=horario_existente.id,
-                            user_id=current_user.id,
-                            tipo_cambio="modificacion",
-                            descripcion=f"Modificado turno en asignación masiva para {horario_existente.employee.nombre} - {fecha_actual}"
-                        )
-                        db.session.add(historial)
-                        
-                        horarios_actualizados += 1
-                    else:
-                        # Crear un nuevo horario
-                        horario = Horario(
-                            employee_id=employee_id,
-                            turno_id=turno_id,
-                            fecha=fecha_actual,
-                            notas=notas
-                        )
-                        db.session.add(horario)
-                        horarios_creados += 1
-            
-            # Avanzar al siguiente día
-            fecha_actual += timedelta(days=1)
-        
-        # Guardar cambios en la base de datos
-        db.session.commit()
-        
-        log_activity(f"Asignación masiva de horarios: {horarios_creados} creados, {horarios_actualizados} actualizados")
-        flash(f'Asignación masiva completada: {horarios_creados} nuevos horarios creados y {horarios_actualizados} actualizados.', 'success')
-        
-        # Redireccionar a la vista de calendario
-        return redirect(url_for('turnos.calendario', company_id=company_id, semana=fecha_inicio))
-        
+    # Preparar los datos de horarios para envío a la plantilla como JSON
+    horarios_json = []
+    for horario in horarios:
+        horarios_json.append({
+            'id': horario.id,
+            'employee_id': horario.employee_id,
+            'turno_id': horario.turno_id,
+            'hora_inicio': horario.turno.hora_inicio.strftime('%H:%M'),
+            'hora_fin': horario.turno.hora_fin.strftime('%H:%M'),
+            'color': horario.turno.color
+        })
+    
+    # Formulario para eliminar horarios
+    eliminar_form = EliminarHorarioForm()
+    
     return render_template(
-        'turnos/form_horario_masivo.html',
+        'turnos/asignar_horario_masivo.html',
         company=company,
-        form=form
+        empleados=empleados,
+        turnos=turnos,
+        inicio_semana=inicio_semana,
+        fin_semana=fin_semana,
+        semana_anterior=semana_anterior,
+        semana_siguiente=semana_siguiente,
+        dias_semana=dias_semana,
+        meses=meses,
+        dias_semana_fechas=dias_semana_fechas,
+        today=date.today(),
+        horarios_json=json.dumps(horarios_json),
+        eliminar_form=eliminar_form
     )
+
+@turnos_bp.route('/horarios/<int:company_id>/guardar_masivo', methods=['POST'])
+@login_required
+def guardar_asignacion_masiva(company_id):
+    """Guarda los horarios asignados mediante la interfaz de arrastre."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+    
+    # Obtener datos del formulario
+    asignaciones_json = request.form.get('asignaciones')
+    fecha_seleccionada_str = request.form.get('fecha_seleccionada')
+    
+    if not asignaciones_json or not fecha_seleccionada_str:
+        flash('No se recibieron datos válidos para guardar.', 'error')
+        return redirect(url_for('turnos.asignar_horario_masivo', company_id=company_id))
+    
+    try:
+        asignaciones = json.loads(asignaciones_json)
+        fecha_seleccionada = datetime.strptime(fecha_seleccionada_str, '%Y-%m-%d').date()
+    except (json.JSONDecodeError, ValueError):
+        flash('Error al procesar los datos recibidos.', 'error')
+        return redirect(url_for('turnos.asignar_horario_masivo', company_id=company_id))
+    
+    # Contador para estadísticas
+    horarios_creados = 0
+    horarios_actualizados = 0
+    
+    # Procesar cada asignación
+    for asignacion in asignaciones:
+        employee_id = int(asignacion['employee_id'])
+        turno_id = int(asignacion['turno_id'])
+        hora_inicio = asignacion['hora_inicio']
+        hora_fin = asignacion['hora_fin']
+        
+        # Verificar que el empleado pertenece a esta empresa
+        employee = Employee.query.filter_by(id=employee_id, company_id=company_id).first()
+        if not employee:
+            continue
+        
+        # Verificar que el turno pertenece a esta empresa
+        turno = Turno.query.filter_by(id=turno_id, company_id=company_id).first()
+        if not turno:
+            continue
+        
+        # Buscar si ya existe un horario para este empleado en esta fecha
+        horario_existente = Horario.query.filter_by(
+            employee_id=employee_id,
+            fecha=fecha_seleccionada
+        ).first()
+        
+        if horario_existente:
+            # Actualizar el horario existente
+            horario_existente.turno_id = turno_id
+            horario_existente.hora_inicio_manual = hora_inicio
+            horario_existente.hora_fin_manual = hora_fin
+            
+            # Registrar el cambio en el historial
+            historial = HistorialCambios(
+                horario_id=horario_existente.id,
+                user_id=current_user.id,
+                tipo_cambio="modificacion",
+                descripcion=f"Modificado horario en asignación masiva para {employee.first_name} {employee.last_name} - {fecha_seleccionada}"
+            )
+            db.session.add(historial)
+            
+            horarios_actualizados += 1
+        else:
+            # Crear nuevo horario
+            horario = Horario(
+                employee_id=employee_id,
+                turno_id=turno_id,
+                fecha=fecha_seleccionada,
+                hora_inicio_manual=hora_inicio,
+                hora_fin_manual=hora_fin
+            )
+            db.session.add(horario)
+            horarios_creados += 1
+    
+    # Guardar los cambios en la base de datos
+    db.session.commit()
+    
+    log_activity(f"Asignación masiva de horarios por arrastre: {horarios_creados} creados, {horarios_actualizados} actualizados")
+    flash(f'Asignación completada: {horarios_creados} nuevos horarios creados y {horarios_actualizados} actualizados.', 'success')
+    
+    # Redirigir a la misma página para continuar con la asignación
+    return redirect(url_for('turnos.asignar_horario_masivo', company_id=company_id, fecha=fecha_seleccionada_str))
 
 @turnos_bp.route('/ausencias/<int:company_id>')
 @login_required
@@ -845,8 +916,8 @@ def nueva_ausencia(company_id):
         # Obtener el empleado para el mensaje
         empleado = Employee.query.get(form.employee_id.data)
         
-        log_activity(f"Registrada ausencia para {empleado.nombre} del {form.fecha_inicio.data} al {form.fecha_fin.data}")
-        flash(f'Ausencia para {empleado.nombre} registrada correctamente.', 'success')
+        log_activity(f"Registrada ausencia para {empleado.first_name} del {form.fecha_inicio.data} al {form.fecha_fin.data}")
+        flash(f'Ausencia para {empleado.first_name} registrada correctamente.', 'success')
         
         # Redireccionar a la lista de ausencias
         return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
@@ -907,8 +978,8 @@ def editar_ausencia(company_id, ausencia_id):
         
         db.session.commit()
         
-        log_activity(f"Editada ausencia para {ausencia.employee.nombre} del {ausencia.fecha_inicio} al {ausencia.fecha_fin}")
-        flash(f'Ausencia para {ausencia.employee.nombre} actualizada correctamente.', 'success')
+        log_activity(f"Editada ausencia para {ausencia.employee.first_name} del {ausencia.fecha_inicio} al {ausencia.fecha_fin}")
+        flash(f'Ausencia para {ausencia.employee.first_name} actualizada correctamente.', 'success')
         
         # Redireccionar a la lista de ausencias
         return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
@@ -936,7 +1007,7 @@ def eliminar_ausencia(company_id, ausencia_id):
     ).first_or_404()
     
     # Guardar información para el mensaje
-    empleado_nombre = ausencia.employee.nombre
+    empleado_nombre = ausencia.employee.first_name
     fecha_inicio = ausencia.fecha_inicio
     fecha_fin = ausencia.fecha_fin
     
@@ -975,8 +1046,8 @@ def aprobar_ausencia(company_id, ausencia_id):
     ausencia.aprobado_por_id = current_user.id
     db.session.commit()
     
-    log_activity(f"Aprobada ausencia para {ausencia.employee.nombre} del {ausencia.fecha_inicio} al {ausencia.fecha_fin}")
-    flash(f'Ausencia para {ausencia.employee.nombre} aprobada correctamente.', 'success')
+    log_activity(f"Aprobada ausencia para {ausencia.employee.first_name} del {ausencia.fecha_inicio} al {ausencia.fecha_fin}")
+    flash(f'Ausencia para {ausencia.employee.first_name} aprobada correctamente.', 'success')
     
     # Redireccionar a la lista de ausencias
     return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
@@ -1096,7 +1167,7 @@ def generar_excel_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin
     row = 5
     for horario in horarios:
         # Empleado
-        ws.cell(row, 1).value = f"{horario.employee.nombre} {horario.employee.apellidos}"
+        ws.cell(row, 1).value = f"{horario.employee.first_name} {horario.employee.last_name}"
         
         # Fecha
         ws.cell(row, 2).value = horario.fecha.strftime('%d/%m/%Y')
@@ -1159,7 +1230,7 @@ def generar_excel_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin
         row = 5
         for ausencia in ausencias:
             # Empleado
-            ws_ausencias.cell(row, 1).value = f"{ausencia.employee.nombre} {ausencia.employee.apellidos}"
+            ws_ausencias.cell(row, 1).value = f"{ausencia.employee.first_name} {ausencia.employee.last_name}"
             
             # Tipo de ausencia
             ws_ausencias.cell(row, 2).value = ausencia.tipo.value
@@ -1280,7 +1351,7 @@ def generar_pdf_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin):
                 pdf.set_fill_color(255, 255, 255)  # Blanco
             
             # Empleado
-            pdf.cell(col_widths[0], 10, f"{empleado.nombre} {empleado.apellidos}", 1, 0, 'L', fill)
+            pdf.cell(col_widths[0], 10, f"{empleado.first_name} {empleado.last_name}", 1, 0, 'L', fill)
             
             # Fecha
             pdf.cell(col_widths[1], 10, horario.fecha.strftime('%d/%m/%Y'), 1, 0, 'C', fill)
@@ -1363,7 +1434,7 @@ def generar_pdf_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin):
                     pdf.set_fill_color(255, 255, 255)  # Blanco
                 
                 # Empleado
-                pdf.cell(col_widths_ausencias[0], 10, f"{empleado.nombre} {empleado.apellidos}", 1, 0, 'L', fill)
+                pdf.cell(col_widths_ausencias[0], 10, f"{empleado.first_name} {empleado.last_name}", 1, 0, 'L', fill)
                 
                 # Tipo
                 pdf.cell(col_widths_ausencias[1], 10, ausencia.tipo.value, 1, 0, 'L', fill)
