@@ -23,7 +23,7 @@ from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
 
 from app import db
-from models import Company, Employee, User, Activity, Role
+from models import Company, Employee, User, ActivityLog as Activity, UserRole as Role
 from models_turnos import (
     Turno, Horario, Ausencia, RequisitoPersonal, PlantillaHorario, 
     DetallePlantilla, AsignacionPlantilla, PreferenciaDisponibilidad,

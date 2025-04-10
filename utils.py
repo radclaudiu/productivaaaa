@@ -12,9 +12,10 @@ from flask import current_app, flash, request, send_file
 from flask_login import current_user
 from fpdf import FPDF
 import shutil
+from flask import abort
 
 from app import db
-from models import User, Employee, EmployeeHistory, UserRole, ActivityLog, EmployeeDocument
+from models import User, Employee, EmployeeHistory, UserRole, ActivityLog, EmployeeDocument, Company
 
 def create_admin_user():
     """Create admin user if not exists."""
