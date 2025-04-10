@@ -2,7 +2,7 @@ import os
 from datetime import datetime, time
 from functools import wraps
 
-from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, send_from_directory, send_file
+from flask import Blueprint, render_template, redirect, url_for, flash, request, abort, jsonify, send_from_directory, send_file, current_app
 from flask_login import login_user, logout_user, login_required, current_user
 from urllib.parse import urlparse
 from werkzeug.utils import secure_filename
@@ -138,8 +138,13 @@ def dashboard():
     
     # Obtener la empresa del usuario actual para el botón de turnos
     company_id = None
-    if current_user.companies and len(current_user.companies) > 0:
-        company_id = current_user.companies[0].id
+    try:
+        if hasattr(current_user, 'companies') and current_user.companies:
+            company_id = current_user.companies[0].id
+    except Exception as e:
+        # En caso de error con la transacción, hacemos rollback
+        db.session.rollback()
+        current_app.logger.error(f"Error al obtener companies: {str(e)}")
     
     return render_template('dashboard.html', title='Dashboard', stats=stats, datetime=datetime, company_id=company_id)
 
