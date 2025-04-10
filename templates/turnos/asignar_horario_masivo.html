@@ -1,33 +1,35 @@
 {% extends 'layout.html' %}
 
 {% block head %}
-<!-- Agregar bibliotecas para arrastrar/soltar y datepicker -->
+<!-- Bibliotecas para datepicker -->
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
 <style>
-    .time-grid-container {
+    /* Estilos para el contenedor de la cuadrícula */
+    .scheduler-container {
         overflow-x: auto;
         max-width: 100%;
         margin-bottom: 20px;
     }
     
-    .time-grid {
+    /* Estilos para la cuadrícula principal tipo Excel */
+    .scheduler-grid {
         min-width: 100%;
         border-collapse: collapse;
         table-layout: fixed;
         border: 2px solid #4e73df;
     }
     
-    .time-grid th,
-    .time-grid td {
-        border: 1px solid #e3e6f0;
+    .scheduler-grid th,
+    .scheduler-grid td {
+        border: 1px solid #ddd;
         height: 30px;
         text-align: center;
         position: relative;
         padding: 0;
-        font-size: 0.8rem;
+        font-size: 0.85rem;
     }
     
-    .time-grid th {
+    .scheduler-grid th {
         background-color: #4a75b5;
         color: white;
         font-weight: 600;
@@ -37,8 +39,9 @@
         z-index: 10;
     }
     
-    .time-grid th.employee-col {
-        width: 150px;
+    /* Columna fija de empleados */
+    .scheduler-grid th.employee-col {
+        width: 200px;
         position: sticky;
         left: 0;
         z-index: 20;
@@ -46,11 +49,11 @@
         color: white;
     }
     
-    .time-grid td.employee-name {
+    .scheduler-grid td.employee-name {
         position: sticky;
         left: 0;
         background-color: #edf2f7;
-        width: 150px;
+        width: 200px;
         z-index: 10;
         text-align: left;
         padding: 4px 8px;
@@ -58,57 +61,41 @@
         border-right: 2px solid #cbd5e0;
     }
     
-    .time-grid-hour {
+    /* Cabecera de horas */
+    .hour-header {
         background-color: #4e73df !important;
         color: white;
         font-weight: bold;
         text-align: center;
     }
     
-    .time-grid td.time-cell {
-        width: 30px;
+    /* Celdas de tiempo (franjas de 30 min) */
+    .scheduler-grid td.time-slot {
+        width: 45px;
         cursor: pointer;
         user-select: none;
-        background-color: #e6f4f1;
         transition: background-color 0.15s ease;
     }
     
-    .time-grid td.time-cell:hover {
-        background-color: #e6fffa;
-    }
-    
-    /* Estilo personalizado para celdas */
-    .time-grid td.time-cell:nth-of-type(even) {
+    .scheduler-grid td.time-slot:nth-of-type(odd) {
         background-color: #e6f4f1;
     }
     
-    .time-grid td.time-cell:nth-of-type(odd) {
+    .scheduler-grid td.time-slot:nth-of-type(even) {
         background-color: #d1e6e1;
     }
     
-    .time-grid-time {
-        white-space: nowrap;
-        background-color: #4e73df;
-        color: white;
-        font-size: 0.7rem;
+    .scheduler-grid td.time-slot:hover {
+        background-color: #b3e6d4;
     }
     
-    .time-header-day {
-        font-weight: bold;
-        display: block;
-    }
-    
-    .time-header-date {
-        font-size: 0.85em;
-        opacity: 0.8;
-    }
-    
-    .cell-selected {
+    /* Estados de selección */
+    .slot-selected {
         background-color: #b3e6d4 !important;
         box-shadow: inset 0 0 3px rgba(0, 0, 0, 0.2);
     }
     
-    .time-cell.shift-assigned {
+    .shift-assigned {
         position: relative;
     }
     
@@ -126,20 +113,24 @@
         font-size: 12px;
         padding: 0 4px;
         z-index: 5;
+        border-radius: 2px;
     }
     
-    .shift-controls {
+    /* Turnos disponibles */
+    .shift-options {
         margin-bottom: 20px;
+        display: flex;
+        flex-wrap: wrap;
+        gap: 10px;
     }
     
     .shift-option {
         display: inline-block;
-        margin-right: 10px;
-        margin-bottom: 10px;
         padding: 8px 12px;
         border-radius: 4px;
         cursor: pointer;
         transition: transform 0.2s;
+        border: 1px solid rgba(0,0,0,0.1);
     }
     
     .shift-option:hover {
@@ -150,121 +141,69 @@
         box-shadow: 0 0 0 2px #4e73df;
     }
     
-    .shift-option-label {
+    .shift-name {
         font-weight: 600;
         margin-bottom: 2px;
     }
     
-    .shift-option-time {
+    .shift-time {
         font-size: 0.8em;
         opacity: 0.8;
     }
     
-    .shift-actions {
-        margin-top: 10px;
+    /* Selector de días */
+    .weekday-selector {
+        display: flex;
+        gap: 5px;
+        margin-bottom: 15px;
+        flex-wrap: wrap;
     }
     
-    .selection-info {
+    .day-btn {
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        border: 1px solid #cbd5e0;
         background-color: #f8f9fa;
-        border-radius: 8px;
-        padding: 15px;
-        margin-bottom: 20px;
+        transition: all 0.2s;
     }
     
-    /* Botones flotantes de confirmación */
-    .floating-controls {
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 1000;
-        padding: 10px 20px;
-        background-color: rgba(255, 255, 255, 0.95);
-        border-radius: 8px;
-        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-        transition: all 0.3s;
+    .day-btn.active {
+        background-color: #4e73df;
+        color: white;
+        border-color: #4e73df;
     }
     
-    /* Estilos para representar la selección de arrastre */
-    .selection-overlay {
+    /* Estilos para la selección de arrastre */
+    .drag-selection {
         position: absolute;
         background-color: rgba(78, 115, 223, 0.3);
         border: 2px dashed #4e73df;
         pointer-events: none;
         z-index: 100;
-        box-shadow: 0 0 10px rgba(78, 115, 223, 0.5);
+        box-shadow: 0 0 10px rgba(78, 115, 223, 0.3);
         border-radius: 3px;
     }
     
-    .weekend-column {
-        background-color: #f8f9fb;
-    }
-    
-    .no-shifts-warning {
+    /* Estados de notificación */
+    .empty-state {
         padding: 40px;
         text-align: center;
         background-color: #f8f9fa;
         border-radius: 8px;
+        margin-bottom: 20px;
     }
     
-    /* Tooltips personalizados */
-    .custom-tooltip {
-        position: absolute;
-        background-color: #333;
-        color: #fff;
-        padding: 5px 10px;
-        border-radius: 4px;
-        font-size: 12px;
+    /* Botones flotantes */
+    .floating-actions {
+        position: fixed;
+        bottom: 20px;
+        right: 20px;
         z-index: 1000;
-        pointer-events: none;
-        white-space: nowrap;
-    }
-    
-    /* Contenedor para múltiples días */
-    .days-container {
-        display: flex;
-        flex-wrap: nowrap;
-        margin-bottom: 15px;
-        overflow-x: auto;
-        -webkit-overflow-scrolling: touch;
-        scrollbar-width: thin;
-    }
-    
-    .day-selector {
-        flex: 0 0 auto;
-        padding: 8px 15px;
-        margin-right: 5px;
-        border-radius: 20px;
-        cursor: pointer;
-        transition: all 0.2s;
-        white-space: nowrap;
-    }
-    
-    .day-selector.active {
-        background-color: #4e73df;
-        color: white;
-    }
-    
-    .day-selector:hover:not(.active) {
-        background-color: #eaecf4;
-    }
-    
-    /* Estilizar scrollbar para navegadores webkit */
-    .days-container::-webkit-scrollbar {
-        height: 5px;
-    }
-    
-    .days-container::-webkit-scrollbar-track {
-        background: #f1f1f1;
-        border-radius: 10px;
-    }
-    
-    .days-container::-webkit-scrollbar-thumb {
-        background: #c1c7d1;
-        border-radius: 10px;
-    }
-    
-    .days-container::-webkit-scrollbar-thumb:hover {
-        background: #a1a8b8;
+        padding: 15px;
+        background-color: rgba(255, 255, 255, 0.95);
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
     }
 </style>
 {% endblock %}
@@ -274,7 +213,7 @@
     <!-- Encabezado con título y navegación -->
     <div class="d-flex justify-content-between align-items-center mb-4">
         <h1 class="h3 mb-0">
-            <i class="bi bi-grid-3x3"></i> Asignación Masiva de Turnos
+            <i class="bi bi-calendar-week"></i> Creador de Horarios Semanales
         </h1>
         <div>
             <a href="{{ url_for('turnos.dashboard', company_id=company.id) }}" class="btn btn-outline-primary me-2">
@@ -286,34 +225,38 @@
         </div>
     </div>
     
-    <!-- Selector de fecha de la semana -->
+    <!-- Selección de fechas y controles -->
     <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Periodo y Controles</h6>
+        </div>
         <div class="card-body">
-            <form id="dateForm" class="row g-3 align-items-end">
+            <div class="row g-3">
                 <div class="col-md-4">
-                    <label for="fecha_semana" class="form-label">Seleccionar semana</label>
+                    <label for="week_date" class="form-label">Seleccionar semana</label>
                     <div class="input-group">
-                        <input type="text" class="form-control" id="fecha_semana" name="fecha_semana" placeholder="Seleccione fecha" value="{{ inicio_semana.strftime('%Y-%m-%d') }}">
-                        <button class="btn btn-outline-secondary" type="button" id="btn_hoy">Hoy</button>
+                        <input type="text" class="form-control" id="week_date" name="week_date" 
+                               value="{{ inicio_semana.strftime('%Y-%m-%d') }}">
+                        <button class="btn btn-outline-secondary" type="button" id="btn_today">Hoy</button>
                     </div>
                 </div>
                 <div class="col-md-8">
-                    <div class="days-container mb-0" id="daysSelector">
-                        {% for fecha in dias_semana_fechas %}
-                        <div class="day-selector {% if loop.index0 == 0 %}active{% endif %}" data-date="{{ fecha.strftime('%Y-%m-%d') }}" data-index="{{ loop.index0 }}">
-                            <span class="day-name">{{ dias_semana[loop.index0] }}</span>
-                            <span class="day-date">{{ fecha.strftime('%d/%m') }}</span>
-                        </div>
+                    <label class="form-label">Días</label>
+                    <div class="weekday-selector" id="weekdays">
+                        {% for i in range(dias_semana|length) %}
+                        <button type="button" class="day-btn {% if i == 0 %}active{% endif %}" 
+                                data-day="{{ i }}" data-date="{{ dias_semana_fechas[i].strftime('%Y-%m-%d') }}">
+                            {{ dias_semana[i] }} <small class="text-muted">{{ dias_semana_fechas[i].strftime('%d/%m') }}</small>
+                        </button>
                         {% endfor %}
                     </div>
                 </div>
-            </form>
+            </div>
         </div>
     </div>
     
-    <!-- Controles de turnos y acciones -->
+    <!-- Turnos disponibles y opciones -->
     <div class="row mb-4">
-        <!-- Panel de turnos disponibles -->
         <div class="col-lg-8">
             <div class="card shadow">
                 <div class="card-header py-3">
@@ -321,63 +264,57 @@
                 </div>
                 <div class="card-body">
                     {% if turnos %}
-                        <div class="shift-controls">
-                            {% for turno in turnos %}
-                            <div class="shift-option" 
-                                 data-shift-id="{{ turno.id }}" 
-                                 data-start="{{ turno.hora_inicio.strftime('%H:%M') }}" 
-                                 data-end="{{ turno.hora_fin.strftime('%H:%M') }}"
-                                 data-duration="{{ turno.duracion_minutos // 30 }}"
-                                 data-color="{{ turno.color }}"
-                                 style="background-color: {{ turno.color }}20; border-left: 4px solid {{ turno.color }};">
-                                <div class="shift-option-label">{{ turno.nombre }}</div>
-                                <div class="shift-option-time">{{ turno.hora_inicio.strftime('%H:%M') }} - {{ turno.hora_fin.strftime('%H:%M') }} ({{ turno.horas_efectivas }}h)</div>
-                            </div>
-                            {% endfor %}
+                    <div class="shift-options">
+                        {% for turno in turnos %}
+                        <div class="shift-option" 
+                             data-id="{{ turno.id }}"
+                             data-start="{{ turno.hora_inicio.strftime('%H:%M') }}"
+                             data-end="{{ turno.hora_fin.strftime('%H:%M') }}"
+                             data-duration="{{ (turno.duracion_total * 60 // 30)|int }}"
+                             data-color="{{ turno.color }}"
+                             style="background-color: {{ turno.color }}20; border-left: 4px solid {{ turno.color }};">
+                            <div class="shift-name">{{ turno.nombre }}</div>
+                            <div class="shift-time">{{ turno.hora_inicio.strftime('%H:%M') }} - {{ turno.hora_fin.strftime('%H:%M') }} ({{ turno.horas_efectivas }}h)</div>
                         </div>
-                    {% else %}
-                        <div class="no-shifts-warning">
-                            <i class="bi bi-exclamation-circle text-warning" style="font-size: 2rem;"></i>
-                            <p class="mt-3">No hay turnos configurados para esta empresa.</p>
-                            <a href="{{ url_for('turnos.nuevo_turno', company_id=company.id) }}" class="btn btn-primary mt-2">
-                                <i class="bi bi-plus-circle"></i> Crear Nuevo Turno
-                            </a>
-                        </div>
-                    {% endif %}
-                    
-                    <div class="shift-actions mt-4">
-                        <div class="form-check form-switch">
-                            <input class="form-check-input" type="checkbox" id="continuousAssignment">
-                            <label class="form-check-label" for="continuousAssignment">Asignación continua</label>
-                        </div>
-                        <small class="text-muted d-block mt-1">
-                            Al activar esta opción, podrás seleccionar múltiples celdas consecutivas para asignar el mismo turno.
-                        </small>
+                        {% endfor %}
                     </div>
+                    <div class="mt-3">
+                        <div class="form-check form-switch">
+                            <input class="form-check-input" type="checkbox" id="continuous_drag">
+                            <label class="form-check-label" for="continuous_drag">Modo arrastre continuo</label>
+                        </div>
+                        <small class="text-muted">Permite arrastrar para seleccionar varias celdas consecutivas</small>
+                    </div>
+                    {% else %}
+                    <div class="empty-state">
+                        <i class="bi bi-exclamation-circle text-warning" style="font-size: 2rem;"></i>
+                        <p class="mt-3">No hay turnos configurados para esta empresa.</p>
+                        <a href="{{ url_for('turnos.nuevo_turno', company_id=company.id) }}" class="btn btn-primary mt-2">
+                            <i class="bi bi-plus-circle"></i> Crear Nuevo Turno
+                        </a>
+                    </div>
+                    {% endif %}
                 </div>
             </div>
         </div>
         
-        <!-- Panel de información de selección -->
         <div class="col-lg-4">
             <div class="card shadow">
                 <div class="card-header py-3">
-                    <h6 class="m-0 font-weight-bold text-primary">Información de Selección</h6>
+                    <h6 class="m-0 font-weight-bold text-primary">Información</h6>
                 </div>
                 <div class="card-body">
-                    <div id="selectionInfo" class="selection-info">
-                        <p class="mb-3">No hay selección activa.</p>
-                        <p class="small text-muted mb-0">
-                            Selecciona un turno y arrastra sobre la cuadrícula para asignar horarios.
-                        </p>
+                    <div id="selection_info" class="mb-3">
+                        <p class="mb-2">No hay selección activa.</p>
+                        <p class="small text-muted">Selecciona un turno y haz clic (o arrastra) en la cuadrícula para asignar horarios.</p>
                     </div>
                     
                     <div class="d-grid gap-2">
-                        <button id="btnGuardar" class="btn btn-success" disabled>
+                        <button id="btn_save" class="btn btn-success" disabled>
                             <i class="bi bi-save"></i> Guardar Cambios
                         </button>
-                        <button id="btnLimpiar" class="btn btn-outline-danger">
-                            <i class="bi bi-eraser"></i> Limpiar Selección
+                        <button id="btn_clear" class="btn btn-outline-danger">
+                            <i class="bi bi-eraser"></i> Limpiar Todo
                         </button>
                     </div>
                 </div>
@@ -385,35 +322,29 @@
         </div>
     </div>
     
-    <!-- Cuadrícula de tiempo -->
-    <div class="card shadow">
+    <!-- Cuadrícula principal de horarios -->
+    <div class="card shadow mb-4">
         <div class="card-header py-3 d-flex justify-content-between align-items-center">
-            <h6 class="m-0 font-weight-bold text-primary">Cuadrícula de Asignación</h6>
-            
+            <h6 class="m-0 font-weight-bold text-primary">Horarios</h6>
             <div class="form-check form-switch">
-                <input class="form-check-input" type="checkbox" id="showAllHours" checked>
-                <label class="form-check-label" for="showAllHours">Mostrar todas las horas</label>
+                <input class="form-check-input" type="checkbox" id="show_all_hours" checked>
+                <label class="form-check-label" for="show_all_hours">Mostrar todas las horas</label>
             </div>
         </div>
         <div class="card-body p-0">
-            <div class="time-grid-container">
-                <table class="time-grid" id="timeGrid">
+            <div class="scheduler-container">
+                <table class="scheduler-grid" id="scheduler">
                     <thead>
                         <tr>
                             <th class="employee-col" rowspan="2">Empleado</th>
-                            {% for hora in range(7, 22) %}
-                                <th colspan="2" class="time-grid-hour">
-                                    {{ '%02d:00'|format(hora) }}
-                                </th>
+                            {% for hora in range(9, 22) %}
+                                <th colspan="2" class="hour-header">{{ '%02d:00'|format(hora) }}</th>
                             {% endfor %}
                         </tr>
                         <tr>
-                            {% for hora in range(7, 22) %}
-                                {% for minuto in [0, 30] %}
-                                    <th class="time-grid-time">
-                                        {{ '%02d'|format(minuto) }}
-                                    </th>
-                                {% endfor %}
+                            {% for hora in range(9, 22) %}
+                                <th class="minute-header">00</th>
+                                <th class="minute-header">30</th>
                             {% endfor %}
                         </tr>
                     </thead>
@@ -423,9 +354,9 @@
                             <td class="employee-name">
                                 {{ employee.last_name }}, {{ employee.first_name }}
                             </td>
-                            {% for hora in range(7, 22) %}
+                            {% for hora in range(9, 22) %}
                                 {% for minuto in [0, 30] %}
-                                    <td class="time-cell" 
+                                    <td class="time-slot" 
                                         data-hour="{{ hora }}" 
                                         data-minute="{{ minuto }}" 
                                         data-time="{{ '%02d:%02d'|format(hora, minuto) }}">
@@ -440,19 +371,19 @@
         </div>
     </div>
     
-    <!-- Controles flotantes para guardar -->
-    <div class="floating-controls d-none">
-        <button id="btnGuardarFlotante" class="btn btn-success">
-            <i class="bi bi-save"></i> Guardar Cambios (0)
+    <!-- Controles flotantes -->
+    <div class="floating-actions d-none" id="floating_save">
+        <button class="btn btn-success">
+            <i class="bi bi-save"></i> Guardar Cambios (<span id="changes_count">0</span>)
         </button>
     </div>
 </div>
 
-<!-- Formulario oculto para enviar los datos -->
-<form id="asignacionForm" method="POST" action="{{ url_for('turnos.guardar_asignacion_masiva', company_id=company.id) }}" style="display: none;">
+<!-- Formulario oculto para enviar datos -->
+<form id="schedule_form" method="POST" action="{{ url_for('turnos.guardar_asignacion_masiva', company_id=company.id) }}" style="display: none;">
     <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
-    <input type="hidden" name="asignaciones" id="asignacionesInput" value="">
-    <input type="hidden" name="fecha_seleccionada" id="fechaSeleccionadaInput" value="{{ dias_semana_fechas[0].strftime('%Y-%m-%d') }}">
+    <input type="hidden" name="asignaciones" id="assignments_data">
+    <input type="hidden" name="fecha_seleccionada" id="selected_date_input" value="{{ dias_semana_fechas[0].strftime('%Y-%m-%d') }}">
 </form>
 {% endblock %}
 
@@ -460,488 +391,445 @@
 <script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    // Inicialización de variables globales
+    // Variables globales
     let selectedShift = null;
-    let isSelecting = false;
+    let isDragging = false;
     let startCell = null;
     let endCell = null;
     let currentHoveredCell = null;
-    let selectionOverlay = null;
+    let dragOverlay = null;
     let selectedDate = "{{ dias_semana_fechas[0].strftime('%Y-%m-%d') }}";
-    let continuousMode = false;
+    let continuousDrag = false;
     let assignedShifts = {};
     let changesCount = 0;
     
     // Obtener los horarios ya asignados
-    const assignedHorarios = {{ horarios_json|safe }};
+    const assignedSchedules = {{ horarios_json|safe }};
+    const turnos = {{ turnos|tojson|safe }};
     
-    // Inicialización de componentes
-    inicializarDatepicker();
-    inicializarTurnos();
-    inicializarCuadricula();
-    cargarHorariosAsignados();
-    actualizarControlesGuardado();
-    inicializarSelectoresDias();
+    // Inicialización
+    initializeDatepicker();
+    initializeShifts();
+    initializeSchedulerGrid();
+    loadAssignedSchedules();
+    updateSaveControls();
+    initializeDayButtons();
     
     // Inicializa el selector de fecha
-    function inicializarDatepicker() {
-        const datepicker = flatpickr("#fecha_semana", {
+    function initializeDatepicker() {
+        const datepicker = flatpickr("#week_date", {
             dateFormat: "Y-m-d",
             onChange: function(selectedDates, dateStr) {
-                // Redirigir a la misma página con la nueva fecha
                 window.location.href = "{{ url_for('turnos.asignar_horario_masivo', company_id=company.id) }}" + "?fecha=" + dateStr;
             }
         });
         
-        // Configurar botón "Hoy"
-        document.getElementById('btn_hoy').addEventListener('click', function() {
+        // Botón Hoy
+        document.getElementById('btn_today').addEventListener('click', function() {
             const today = new Date();
-            const year = today.getFullYear();
-            const month = String(today.getMonth() + 1).padStart(2, '0');
-            const day = String(today.getDate()).padStart(2, '0');
-            const formattedDate = `${year}-${month}-${day}`;
-            
+            const formattedDate = today.toISOString().split('T')[0];
             datepicker.setDate(formattedDate);
             window.location.href = "{{ url_for('turnos.asignar_horario_masivo', company_id=company.id) }}";
         });
     }
     
-    // Inicializar los turnos seleccionables
-    function inicializarTurnos() {
-        const turnoOptions = document.querySelectorAll('.shift-option');
+    // Inicializar turnos seleccionables
+    function initializeShifts() {
+        const shiftOptions = document.querySelectorAll('.shift-option');
         
-        turnoOptions.forEach(option => {
+        shiftOptions.forEach(option => {
             option.addEventListener('click', function() {
-                // Deseleccionar el turno anterior
+                // Deseleccionar el anterior
                 document.querySelectorAll('.shift-option.selected').forEach(el => {
                     el.classList.remove('selected');
                 });
                 
-                // Seleccionar este turno
+                // Seleccionar este
                 this.classList.add('selected');
                 selectedShift = {
-                    id: this.dataset.shiftId,
+                    id: this.dataset.id,
                     start: this.dataset.start,
                     end: this.dataset.end,
-                    duration: parseInt(this.dataset.duration),
                     color: this.dataset.color
                 };
                 
-                actualizarInfoSeleccion();
+                updateSelectionInfo();
             });
         });
         
-        // Activar el modo de asignación continua
-        document.getElementById('continuousAssignment').addEventListener('change', function() {
-            continuousMode = this.checked;
+        // Activar modo arrastre continuo
+        document.getElementById('continuous_drag').addEventListener('change', function() {
+            continuousDrag = this.checked;
         });
         
-        // Configurar botones de limpiar y guardar
-        document.getElementById('btnLimpiar').addEventListener('click', limpiarSeleccion);
-        document.getElementById('btnGuardar').addEventListener('click', guardarAsignaciones);
-        document.getElementById('btnGuardarFlotante').addEventListener('click', guardarAsignaciones);
+        // Configurar botones
+        document.getElementById('btn_clear').addEventListener('click', clearAllAssignments);
+        document.getElementById('btn_save').addEventListener('click', saveAssignments);
+        document.querySelector('#floating_save button').addEventListener('click', saveAssignments);
     }
     
-    // Inicializar la cuadrícula de tiempo
-    function inicializarCuadricula() {
-        const timeGrid = document.getElementById('timeGrid');
+    // Inicializar cuadrícula
+    function initializeSchedulerGrid() {
+        const grid = document.getElementById('scheduler');
         
-        // Crear y adjuntar el overlay de selección
-        selectionOverlay = document.createElement('div');
-        selectionOverlay.className = 'selection-overlay';
-        selectionOverlay.style.display = 'none';
-        document.querySelector('.time-grid-container').appendChild(selectionOverlay);
+        // Crear overlay de selección
+        dragOverlay = document.createElement('div');
+        dragOverlay.className = 'drag-selection';
+        dragOverlay.style.display = 'none';
+        document.querySelector('.scheduler-container').appendChild(dragOverlay);
         
-        // Evento para iniciar la selección
-        timeGrid.addEventListener('mousedown', function(e) {
-            if (!selectedShift || !e.target.classList.contains('time-cell')) return;
+        // Evento mousedown - inicia la selección
+        grid.addEventListener('mousedown', function(e) {
+            if (!selectedShift || !e.target.classList.contains('time-slot')) return;
             
-            isSelecting = true;
+            isDragging = true;
             startCell = e.target;
             
-            // Si hay un shift asignado en esta celda, no permitir la selección
+            // Confirmar si hay un turno ya asignado
             if (startCell.querySelector('.shift-block')) {
                 if (!confirm('¿Deseas reemplazar el turno existente?')) {
-                    isSelecting = false;
+                    isDragging = false;
                     return;
                 }
             }
             
-            currentHoveredCell = startCell;
-            actualizarSeleccion();
+            positionOverlay(startCell, startCell);
+            document.querySelectorAll('.slot-selected').forEach(cell => cell.classList.remove('slot-selected'));
+            startCell.classList.add('slot-selected');
             
-            // Prevenir selección de texto
             e.preventDefault();
         });
         
-        // Evento para actualizar la selección al mover el mouse
+        // Evento mousemove - actualiza la selección
         document.addEventListener('mousemove', function(e) {
-            if (!isSelecting) return;
+            if (!isDragging) return;
             
-            // Encontrar la celda sobre la que está el cursor
             const elementUnderCursor = document.elementFromPoint(e.clientX, e.clientY);
             
-            if (elementUnderCursor && elementUnderCursor.classList.contains('time-cell') && 
-                elementUnderCursor.closest('tr') === startCell.closest('tr')) {
-                currentHoveredCell = elementUnderCursor;
-                actualizarSeleccion();
-            }
-        });
-        
-        // Evento para finalizar la selección
-        document.addEventListener('mouseup', function() {
-            if (!isSelecting) return;
-            
-            endCell = currentHoveredCell;
-            
-            if (startCell && endCell) {
-                isSelecting = false;
-                asignarTurno();
-            }
-        });
-        
-        // Mostrar u ocultar horas según la configuración
-        document.getElementById('showAllHours').addEventListener('change', function() {
-            const showAll = this.checked;
-            const table = document.getElementById('timeGrid');
-            
-            table.querySelectorAll('th.time-grid-time, td.time-cell').forEach(cell => {
-                if (!cell.classList.contains('employee-col') && !cell.classList.contains('employee-name')) {
-                    const hourData = cell.dataset.time;
-                    if (hourData) {
-                        const hour = parseInt(hourData.split(':')[0]);
-                        if (hour >= 22 || hour < 6) {
-                            cell.style.display = showAll ? 'table-cell' : 'none';
-                        }
-                    }
+            if (elementUnderCursor && 
+                elementUnderCursor.classList.contains('time-slot') && 
+                elementUnderCursor.parentElement.dataset.employeeId === startCell.parentElement.dataset.employeeId) {
+                
+                if (currentHoveredCell !== elementUnderCursor) {
+                    currentHoveredCell = elementUnderCursor;
+                    endCell = elementUnderCursor;
+                    
+                    // Actualizar selección visual
+                    document.querySelectorAll('.slot-selected').forEach(cell => cell.classList.remove('slot-selected'));
+                    
+                    const selectedCells = getSelectedCells(startCell, endCell);
+                    selectedCells.forEach(cell => cell.classList.add('slot-selected'));
+                    
+                    positionOverlay(startCell, endCell);
+                    updateSelectionInfo();
                 }
-            });
+            }
+        });
+        
+        // Evento mouseup - finaliza la selección
+        document.addEventListener('mouseup', function() {
+            if (isDragging) {
+                isDragging = false;
+                
+                if (startCell && endCell) {
+                    assignShiftToCells(startCell, endCell);
+                    updateSaveControls();
+                }
+            }
+        });
+        
+        // Mostrar/ocultar horas
+        document.getElementById('show_all_hours').addEventListener('change', function() {
+            const table = document.getElementById('scheduler');
+            
+            const hours = Array.from(table.querySelectorAll('thead tr:first-child th:not(.employee-col)'));
+            const minutes = Array.from(table.querySelectorAll('thead tr:last-child th'));
+            const cells = Array.from(table.querySelectorAll('tbody td.time-slot'));
+            
+            // Determinar qué columnas mostrar/ocultar
+            const showAll = this.checked;
+            const visibleHourRange = showAll ? [9, 21] : [10, 17];
+            
+            // Aplicar a las horas completas (que abarcan 2 columnas cada una)
+            for (let i = 0; i < hours.length; i++) {
+                const hourHeader = hours[i];
+                const hourText = hourHeader.textContent.trim();
+                const hour = parseInt(hourText);
+                
+                const isVisible = hour >= visibleHourRange[0] && hour <= visibleHourRange[1];
+                hourHeader.style.display = isVisible ? '' : 'none';
+                
+                // Aplicar a las columnas de minutos correspondientes
+                minutes[i*2].style.display = isVisible ? '' : 'none';
+                minutes[i*2+1].style.display = isVisible ? '' : 'none';
+                
+                // Aplicar a las celdas de cada fila
+                cells.forEach((cell, index) => {
+                    if (index % (hours.length * 2) === i*2 || index % (hours.length * 2) === i*2+1) {
+                        cell.style.display = isVisible ? '' : 'none';
+                    }
+                });
+            }
         });
     }
     
-    // Actualizar la visualización de la selección
-    function actualizarSeleccion() {
-        if (!startCell || !currentHoveredCell) return;
+    // Obtiene las celdas entre startCell y endCell
+    function getSelectedCells(startCell, endCell) {
+        const cells = [];
+        const row = startCell.parentElement;
         
-        const startIndex = getColumnIndex(startCell);
-        const currentIndex = getColumnIndex(currentHoveredCell);
+        const startIndex = Array.from(row.children).indexOf(startCell);
+        const endIndex = Array.from(row.children).indexOf(endCell);
         
-        // Determinar inicio y fin (permitiendo selección en ambas direcciones)
-        const minIndex = Math.min(startIndex, currentIndex);
-        const maxIndex = Math.min(Math.max(startIndex, currentIndex), minIndex + selectedShift.duration - 1);
-        
-        // Actualizar el overlay de selección
-        const employeeRow = startCell.closest('tr');
-        const minCell = employeeRow.cells[minIndex + 1]; // +1 por la columna de nombre
-        const maxCell = employeeRow.cells[maxIndex + 1];
-        
-        const minRect = minCell.getBoundingClientRect();
-        const maxRect = maxCell.getBoundingClientRect();
-        const tableContainer = document.querySelector('.time-grid-container');
-        const containerRect = tableContainer.getBoundingClientRect();
-        
-        selectionOverlay.style.left = (minRect.left - containerRect.left + tableContainer.scrollLeft) + 'px';
-        selectionOverlay.style.top = (minRect.top - containerRect.top + tableContainer.scrollTop) + 'px';
-        selectionOverlay.style.width = (maxRect.right - minRect.left) + 'px';
-        selectionOverlay.style.height = minRect.height + 'px';
-        selectionOverlay.style.backgroundColor = selectedShift.color + '40';
-        selectionOverlay.style.borderColor = selectedShift.color;
-        selectionOverlay.style.display = 'block';
-    }
-    
-    // Obtener el índice de columna de una celda
-    function getColumnIndex(cell) {
-        const timeData = cell.dataset.time.split(':');
-        const hour = parseInt(timeData[0]);
-        const minute = parseInt(timeData[1]);
-        return (hour * 2) + (minute === 30 ? 1 : 0);
-    }
-    
-    // Asignar un turno en la selección actual
-    function asignarTurno() {
-        if (!startCell || !endCell || !selectedShift) return;
-        
-        const startIndex = getColumnIndex(startCell);
-        const endIndex = getColumnIndex(endCell);
-        
-        // Determinar inicio y fin (permitiendo selección en ambas direcciones)
         const minIndex = Math.min(startIndex, endIndex);
-        const maxIndex = Math.min(Math.max(startIndex, endIndex), minIndex + selectedShift.duration - 1);
+        const maxIndex = Math.max(startIndex, endIndex);
         
-        // Obtener datos del empleado y la fila
-        const employeeRow = startCell.closest('tr');
-        const employeeId = employeeRow.dataset.employeeId;
-        
-        // Eliminar cualquier turno anterior en la misma posición
         for (let i = minIndex; i <= maxIndex; i++) {
-            const cellIndex = i + 1; // +1 por la columna de nombre
-            const cell = employeeRow.cells[cellIndex];
-            
-            if (cell.querySelector('.shift-block')) {
-                cell.innerHTML = '';
+            // Saltamos la primera celda que es el nombre del empleado
+            if (i > 0) {
+                cells.push(row.children[i]);
             }
         }
+        
+        return cells;
+    }
+    
+    // Posiciona el overlay encima de las celdas seleccionadas
+    function positionOverlay(startCell, endCell) {
+        const container = document.querySelector('.scheduler-container');
+        const containerRect = container.getBoundingClientRect();
+        
+        const startRect = startCell.getBoundingClientRect();
+        const endRect = endCell.getBoundingClientRect();
+        
+        const left = Math.min(startRect.left, endRect.left) - containerRect.left + container.scrollLeft;
+        const top = startRect.top - containerRect.top + container.scrollTop;
+        const width = Math.abs(endRect.left - startRect.left) + endRect.width;
+        const height = startRect.height;
+        
+        dragOverlay.style.left = `${left}px`;
+        dragOverlay.style.top = `${top}px`;
+        dragOverlay.style.width = `${width}px`;
+        dragOverlay.style.height = `${height}px`;
+        dragOverlay.style.display = 'block';
+    }
+    
+    // Asigna un turno a las celdas seleccionadas
+    function assignShiftToCells(startCell, endCell) {
+        if (!selectedShift) return;
+        
+        const selectedCells = getSelectedCells(startCell, endCell);
+        
+        // Eliminar turnos existentes en esta selección
+        selectedCells.forEach(cell => {
+            const existingBlock = cell.querySelector('.shift-block');
+            if (existingBlock) {
+                cell.classList.remove('shift-assigned');
+                existingBlock.remove();
+            }
+        });
         
         // Crear el bloque de turno
+        const firstCell = selectedCells[0];
+        const lastCell = selectedCells[selectedCells.length - 1];
+        
         const shiftBlock = document.createElement('div');
         shiftBlock.className = 'shift-block';
-        shiftBlock.style.backgroundColor = selectedShift.color + '90';
-        shiftBlock.style.color = getContrastColor(selectedShift.color);
-        shiftBlock.style.width = ((maxIndex - minIndex + 1) * 100) + '%';
-        shiftBlock.textContent = selectedShift.start + '-' + selectedShift.end;
         shiftBlock.dataset.shiftId = selectedShift.id;
-        shiftBlock.dataset.startTime = getCellTime(minIndex);
-        shiftBlock.dataset.endTime = getCellTime(maxIndex + 1); // +1 para incluir la última celda
+        shiftBlock.dataset.startTime = firstCell.dataset.time;
+        shiftBlock.dataset.endTime = lastCell.dataset.time;
+        shiftBlock.textContent = `${selectedShift.start}-${selectedShift.end}`;
+        shiftBlock.style.width = `${selectedCells.length * 100}%`;
+        shiftBlock.style.backgroundColor = selectedShift.color;
+        shiftBlock.style.color = getContrastColor(selectedShift.color);
         
-        // Agregar bloque a la primera celda
-        const startCellIndex = minIndex + 1; // +1 por la columna de nombre
-        employeeRow.cells[startCellIndex].appendChild(shiftBlock);
-        employeeRow.cells[startCellIndex].classList.add('shift-assigned');
+        firstCell.classList.add('shift-assigned');
+        firstCell.appendChild(shiftBlock);
         
-        // Guardar el turno asignado para enviarlo al servidor
-        if (!assignedShifts[employeeId]) {
-            assignedShifts[employeeId] = [];
+        // Guardar la asignación
+        const employeeId = firstCell.parentElement.dataset.employeeId;
+        const key = `${employeeId}_${selectedDate}`;
+        
+        if (!assignedShifts[key]) {
+            assignedShifts[key] = [];
         }
         
-        // Verificar si ya existe un turno en este rango y reemplazarlo
-        assignedShifts[employeeId] = assignedShifts[employeeId].filter(s => 
-            !(getCellTime(s.startIndex) === getCellTime(minIndex) && 
-              getCellTime(s.endIndex) === getCellTime(maxIndex)));
-        
-        // Agregar el nuevo turno
-        assignedShifts[employeeId].push({
-            shift_id: selectedShift.id,
+        assignedShifts[key].push({
             employee_id: employeeId,
+            turno_id: selectedShift.id,
             fecha: selectedDate,
-            hora_inicio: getCellTime(minIndex),
-            hora_fin: getCellTime(maxIndex + 1),
-            startIndex: minIndex,
-            endIndex: maxIndex
+            hora_inicio: firstCell.dataset.time,
+            hora_fin: lastCell.dataset.time
         });
         
-        // Actualizar contadores
         changesCount++;
-        actualizarControlesGuardado();
-        
-        // Ocultar el overlay
-        selectionOverlay.style.display = 'none';
-        
-        // Si estamos en modo continuo, seleccionar el siguiente empleado
-        if (continuousMode) {
-            const nextRow = employeeRow.nextElementSibling;
-            if (nextRow) {
-                startCell = nextRow.cells[startCellIndex];
-                currentHoveredCell = startCell;
-                isSelecting = true;
-                actualizarSeleccion();
-            }
-        }
-        
-        // Actualizar info de selección
-        actualizarInfoSeleccion();
     }
     
-    // Obtener el tiempo basado en el índice de la columna
-    function getCellTime(index) {
-        const hour = Math.floor(index / 2);
-        const minute = (index % 2) === 0 ? '00' : '30';
-        return `${hour.toString().padStart(2, '0')}:${minute}`;
-    }
-    
-    // Obtener un color de contraste (blanco o negro) basado en el color de fondo
-    function getContrastColor(hexColor) {
-        // Eliminar el # si existe
-        hexColor = hexColor.replace('#', '');
-        
-        // Convertir a RGB
-        const r = parseInt(hexColor.substr(0, 2), 16);
-        const g = parseInt(hexColor.substr(2, 2), 16);
-        const b = parseInt(hexColor.substr(4, 2), 16);
-        
-        // Calcular luminosidad
-        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
-        
-        // Retornar negro o blanco dependiendo de la luminosidad
-        return luminance > 0.5 ? '#000000' : '#FFFFFF';
-    }
-    
-    // Actualizar información de selección
-    function actualizarInfoSeleccion() {
-        const infoElement = document.getElementById('selectionInfo');
-        
-        if (selectedShift) {
-            infoElement.innerHTML = `
-                <div class="d-flex align-items-center mb-3">
-                    <div class="badge me-2" style="width: 20px; height: 20px; background-color: ${selectedShift.color};"></div>
-                    <div>
-                        <div class="font-weight-bold">Turno seleccionado: ${selectedShift.start} - ${selectedShift.end}</div>
-                        <div class="small">Duración: ${selectedShift.duration / 2} horas</div>
-                    </div>
-                </div>
-                <p class="mb-0">Haga clic y arrastre en la cuadrícula para asignar este turno a los empleados.</p>
-            `;
-        } else {
-            infoElement.innerHTML = `
-                <p class="mb-3">No hay turno seleccionado.</p>
-                <p class="small text-muted mb-0">
-                    Seleccione un turno de la lista para comenzar a asignar horarios.
-                </p>
-            `;
-        }
-    }
-    
-    // Limpiar la selección actual
-    function limpiarSeleccion() {
-        isSelecting = false;
-        startCell = null;
-        endCell = null;
-        selectionOverlay.style.display = 'none';
-        
-        if (confirm('¿Deseas limpiar todas las asignaciones realizadas?')) {
-            assignedShifts = {};
-            changesCount = 0;
-            actualizarControlesGuardado();
-            
-            // Eliminar todos los bloques de turno
-            document.querySelectorAll('.shift-block').forEach(block => {
-                block.closest('td').classList.remove('shift-assigned');
-                block.remove();
-            });
-        }
-    }
-    
-    // Guardar asignaciones
-    function guardarAsignaciones() {
-        if (changesCount === 0) {
-            alert('No hay cambios para guardar.');
-            return;
-        }
-        
-        // Preparar los datos para envío
-        const asignaciones = [];
-        
-        for (const employeeId in assignedShifts) {
-            assignedShifts[employeeId].forEach(shift => {
-                asignaciones.push({
-                    employee_id: employeeId,
-                    turno_id: shift.shift_id,
-                    fecha: selectedDate,
-                    hora_inicio: shift.hora_inicio,
-                    hora_fin: shift.hora_fin
-                });
-            });
-        }
-        
-        // Actualizar el campo oculto del formulario
-        document.getElementById('asignacionesInput').value = JSON.stringify(asignaciones);
-        document.getElementById('fechaSeleccionadaInput').value = selectedDate;
-        
-        // Enviar el formulario
-        document.getElementById('asignacionForm').submit();
-    }
-    
-    // Actualizar los controles de guardado
-    function actualizarControlesGuardado() {
-        const btnGuardar = document.getElementById('btnGuardar');
-        const btnGuardarFlotante = document.getElementById('btnGuardarFlotante');
-        const floatingControls = document.querySelector('.floating-controls');
-        
-        btnGuardar.disabled = changesCount === 0;
-        btnGuardarFlotante.innerHTML = `<i class="bi bi-save"></i> Guardar Cambios (${changesCount})`;
+    // Actualiza los controles de guardado
+    function updateSaveControls() {
+        const btnSave = document.getElementById('btn_save');
+        const floatingSave = document.getElementById('floating_save');
+        const changesCountDisplay = document.getElementById('changes_count');
         
         if (changesCount > 0) {
-            floatingControls.classList.remove('d-none');
+            btnSave.disabled = false;
+            floatingSave.classList.remove('d-none');
+            changesCountDisplay.textContent = changesCount;
         } else {
-            floatingControls.classList.add('d-none');
+            btnSave.disabled = true;
+            floatingSave.classList.add('d-none');
         }
     }
     
-    // Cargar los horarios ya asignados
-    function cargarHorariosAsignados() {
-        if (!assignedHorarios) return;
+    // Actualiza la información de selección
+    function updateSelectionInfo() {
+        const selectionInfo = document.getElementById('selection_info');
         
-        for (const horario of assignedHorarios) {
-            const employeeRow = document.querySelector(`tr[data-employee-id="${horario.employee_id}"]`);
-            if (!employeeRow) continue;
+        if (selectedShift) {
+            let infoHTML = `<p class="mb-1"><strong>Turno:</strong> ${selectedShift.start} - ${selectedShift.end}</p>`;
             
-            // Convertir horas de inicio y fin a índices
-            const startTimeParts = horario.hora_inicio.split(':');
-            const endTimeParts = horario.hora_fin.split(':');
-            
-            const startHour = parseInt(startTimeParts[0]);
-            const startMinute = parseInt(startTimeParts[1]);
-            const endHour = parseInt(endTimeParts[0]);
-            const endMinute = parseInt(endTimeParts[1]);
-            
-            const startIndex = (startHour * 2) + (startMinute === 30 ? 1 : 0);
-            let endIndex = (endHour * 2) + (endMinute === 30 ? 1 : 0) - 1;
-            
-            // Si la hora de fin es 00:00, ajustar al final del día
-            if (endHour === 0 && endMinute === 0) {
-                endIndex = 47; // 23:30
+            if (startCell && endCell) {
+                const employeeName = startCell.parentElement.querySelector('.employee-name').textContent.trim();
+                const startTime = startCell.dataset.time;
+                const endTime = endCell.dataset.time;
+                
+                infoHTML += `
+                    <p class="mb-1"><strong>Empleado:</strong> ${employeeName}</p>
+                    <p class="mb-1"><strong>Horario:</strong> ${startTime} - ${endTime}</p>
+                `;
             }
             
-            // Crear el bloque de turno
-            const shiftBlock = document.createElement('div');
-            shiftBlock.className = 'shift-block';
-            shiftBlock.style.backgroundColor = horario.color + '90';
-            shiftBlock.style.color = getContrastColor(horario.color);
-            shiftBlock.style.width = ((endIndex - startIndex + 1) * 100) + '%';
-            shiftBlock.textContent = horario.hora_inicio + '-' + horario.hora_fin;
-            shiftBlock.dataset.shiftId = horario.turno_id;
-            shiftBlock.dataset.startTime = horario.hora_inicio;
-            shiftBlock.dataset.endTime = horario.hora_fin;
-            
-            // Agregar bloque a la primera celda
-            const startCellIndex = startIndex + 1; // +1 por la columna de nombre
-            if (employeeRow.cells[startCellIndex]) {
-                employeeRow.cells[startCellIndex].appendChild(shiftBlock);
-                employeeRow.cells[startCellIndex].classList.add('shift-assigned');
-            }
-            
-            // Guardar el turno en la estructura de datos
-            if (!assignedShifts[horario.employee_id]) {
-                assignedShifts[horario.employee_id] = [];
-            }
-            
-            assignedShifts[horario.employee_id].push({
-                shift_id: horario.turno_id,
-                employee_id: horario.employee_id,
-                fecha: selectedDate,
-                hora_inicio: horario.hora_inicio,
-                hora_fin: horario.hora_fin,
-                startIndex: startIndex,
-                endIndex: endIndex
+            selectionInfo.innerHTML = infoHTML;
+        } else {
+            selectionInfo.innerHTML = `
+                <p class="mb-2">No hay selección activa.</p>
+                <p class="small text-muted">Selecciona un turno y haz clic (o arrastra) en la cuadrícula para asignar horarios.</p>
+            `;
+        }
+    }
+    
+    // Limpia todas las asignaciones
+    function clearAllAssignments() {
+        document.querySelectorAll('.slot-selected').forEach(cell => cell.classList.remove('slot-selected'));
+        document.querySelectorAll('.shift-block').forEach(block => {
+            block.parentElement.classList.remove('shift-assigned');
+            block.remove();
+        });
+        
+        dragOverlay.style.display = 'none';
+        assignedShifts = {};
+        changesCount = 0;
+        
+        updateSaveControls();
+    }
+    
+    // Guarda las asignaciones
+    function saveAssignments() {
+        const asignaciones = [];
+        
+        for (const key in assignedShifts) {
+            assignedShifts[key].forEach(asignacion => {
+                asignaciones.push(asignacion);
             });
         }
+        
+        document.getElementById('assignments_data').value = JSON.stringify(asignaciones);
+        document.getElementById('selected_date_input').value = selectedDate;
+        
+        document.getElementById('schedule_form').submit();
     }
     
-    // Inicializar selectores de días
-    function inicializarSelectoresDias() {
-        const daySelectors = document.querySelectorAll('.day-selector');
+    // Carga los horarios ya asignados
+    function loadAssignedSchedules() {
+        if (!assignedSchedules || !assignedSchedules.length) return;
         
-        daySelectors.forEach(selector => {
-            selector.addEventListener('click', function() {
-                // Cambiar la fecha seleccionada
-                selectedDate = this.dataset.date;
+        assignedSchedules.forEach(horario => {
+            const row = document.querySelector(`tr[data-employee-id="${horario.employee_id}"]`);
+            if (!row) return;
+            
+            // Convertir horas a formato de celda
+            const horaInicio = horario.hora_inicio.split(':');
+            const horaFin = horario.hora_fin.split(':');
+            
+            const inicioHora = parseInt(horaInicio[0]);
+            const inicioMinuto = parseInt(horaInicio[1]);
+            const finHora = parseInt(horaFin[0]);
+            const finMinuto = parseInt(horaFin[1]);
+            
+            // Encontrar celdas correspondientes
+            const celdaInicio = row.querySelector(`td[data-hour="${inicioHora}"][data-minute="${inicioMinuto}"]`);
+            const celdaFin = row.querySelector(`td[data-hour="${finHora}"][data-minute="${finMinuto}"]`);
+            
+            if (celdaInicio && celdaFin) {
+                // Encontrar información del turno
+                const turno = turnos.find(t => t.id == horario.turno_id);
+                if (!turno) return;
                 
-                // Actualizar UI
-                daySelectors.forEach(el => el.classList.remove('active'));
+                const selectedCells = getSelectedCells(celdaInicio, celdaFin);
+                
+                // Crear bloque de turno
+                const shiftBlock = document.createElement('div');
+                shiftBlock.className = 'shift-block';
+                shiftBlock.dataset.shiftId = horario.turno_id;
+                shiftBlock.dataset.startTime = `${inicioHora}:${inicioMinuto}`;
+                shiftBlock.dataset.endTime = `${finHora}:${finMinuto}`;
+                shiftBlock.textContent = `${turno.hora_inicio.substring(0, 5)}-${turno.hora_fin.substring(0, 5)}`;
+                shiftBlock.style.width = `${selectedCells.length * 100}%`;
+                shiftBlock.style.backgroundColor = turno.color;
+                shiftBlock.style.color = getContrastColor(turno.color);
+                
+                celdaInicio.classList.add('shift-assigned');
+                celdaInicio.appendChild(shiftBlock);
+                
+                // Guardar para referencia
+                const key = `${horario.employee_id}_${selectedDate}`;
+                
+                if (!assignedShifts[key]) {
+                    assignedShifts[key] = [];
+                }
+                
+                assignedShifts[key].push({
+                    employee_id: horario.employee_id,
+                    turno_id: horario.turno_id,
+                    fecha: selectedDate,
+                    hora_inicio: `${inicioHora}:${inicioMinuto}`,
+                    hora_fin: `${finHora}:${finMinuto}`
+                });
+            }
+        });
+    }
+    
+    // Inicializa los botones de días
+    function initializeDayButtons() {
+        const dayButtons = document.querySelectorAll('.day-btn');
+        
+        dayButtons.forEach(button => {
+            button.addEventListener('click', function() {
+                document.querySelector('.day-btn.active').classList.remove('active');
                 this.classList.add('active');
                 
-                // Actualizar input oculto
-                document.getElementById('fechaSeleccionadaInput').value = selectedDate;
+                selectedDate = this.dataset.date;
                 
-                // Limpiar la cuadrícula
+                // Limpiar y cargar para el nuevo día
                 document.querySelectorAll('.shift-block').forEach(block => {
-                    block.closest('td').classList.remove('shift-assigned');
+                    block.parentElement.classList.remove('shift-assigned');
                     block.remove();
                 });
                 
-                // Cargar los horarios para este día
-                cargarHorariosAsignados();
+                loadAssignedSchedules();
             });
         });
+    }
+    
+    // Determina el color de texto ideal según el color de fondo
+    function getContrastColor(hexColor) {
+        const r = parseInt(hexColor.substr(1, 2), 16);
+        const g = parseInt(hexColor.substr(3, 2), 16);
+        const b = parseInt(hexColor.substr(5, 2), 16);
+        
+        const luminance = (0.299 * r + 0.587 * g + 0.114 * b) / 255;
+        
+        return luminance > 0.5 ? '#000000' : '#ffffff';
     }
 });
 </script>
