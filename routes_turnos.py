@@ -1,1683 +1,1379 @@
 """
-Rutas para la gestión de turnos y horarios de empleados.
+Rutas para la gestión de turnos y horarios.
 
-Este módulo proporciona las rutas para:
-- Crear y editar turnos
+Este módulo proporciona las vistas y controladores para:
+- Gestionar turnos (creación, modificación, eliminación)
+- Visualizar el calendario de horarios
 - Asignar turnos a empleados
-- Gestionar ausencias
-- Crear plantillas de horarios
-- Visualizar horarios semanales
-- Generar informes
+- Gestionar ausencias de empleados
+- Visualizar estadísticas de turnos
 """
 
-from flask import (Blueprint, render_template, redirect, url_for, flash, 
-                  request, jsonify, current_app, send_file, abort, session)
+from flask import (Blueprint, render_template, redirect, url_for, request,
+                 flash, jsonify, abort, current_app, g, send_file)
 from flask_login import login_required, current_user
-from werkzeug.security import generate_password_hash
-from app import db
-from datetime import datetime, timedelta, date
-import calendar
-from models import Company, Employee, User, Activity, Role
-from models_turnos import (Turno, Horario, Ausencia, RequisitoPersonal, PlantillaHorario, 
-                         DetallePlantilla, AsignacionPlantilla, PreferenciaDisponibilidad,
-                         HistorialCambios, TipoTurno, TipoAusencia)
-from forms_turnos import (TurnoForm, HorarioForm, HorarioMasivoForm, EliminarHorarioForm, AusenciaForm, 
-                        AprobarAusenciaForm, RequisitoPersonalForm, PlantillaHorarioForm, 
-                        DetallePlantillaForm, AsignacionPlantillaForm, PreferenciaDisponibilidadForm,
-                        FiltroHorarioForm)
-import json
+from werkzeug.security import generate_password_hash, check_password_hash
+
+import os
+from datetime import datetime, date, time, timedelta
 import io
-import csv
+import json
+import calendar
 from openpyxl import Workbook
 from openpyxl.styles import Font, Alignment, PatternFill, Border, Side
-from sqlalchemy import or_, and_, func, extract
 
-# Crear el blueprint
+from app import db
+from models import Company, Employee, User, Activity, Role
+from models_turnos import (
+    Turno, Horario, Ausencia, RequisitoPersonal, PlantillaHorario, 
+    DetallePlantilla, AsignacionPlantilla, PreferenciaDisponibilidad,
+    HistorialCambios, TipoTurno, TipoAusencia
+)
+from forms_turnos import (
+    TurnoForm, HorarioForm, AusenciaForm, PlantillaHorarioForm,
+    DetallePlantillaForm, AsignacionPlantillaForm, AsignacionMasivaForm,
+    FiltroCalendarioForm, EliminarHorarioForm, PreferenciaDisponibilidadForm,
+    RequisitoPersonalForm
+)
+from utils import log_activity, get_company_or_404
+from sqlalchemy import or_, and_, extract, func, case, literal_column
+
+# Crear el blueprint de turnos
 turnos_bp = Blueprint('turnos', __name__, url_prefix='/turnos')
 
-# Variables de ayuda
-dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
-meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+def init_app(app):
+    """Inicializa el blueprint de turnos en la aplicación Flask."""
+    app.register_blueprint(turnos_bp)
 
 # Funciones auxiliares
-def puede_gestionar_empresa(company_id):
-    """Verifica si el usuario actual puede gestionar la empresa especificada."""
-    if current_user.is_admin():
-        return True
-    
-    if current_user.is_gerente():
-        for company in current_user.companies:
-            if company.id == company_id:
-                return True
-    
-    return False
-
-def registrar_cambio_horario(horario, tipo_cambio, descripcion):
-    """Registra un cambio en el historial de cambios de horarios."""
-    cambio = HistorialCambios(
-        tipo_cambio=tipo_cambio,
-        descripcion=descripcion,
-        horario_id=horario.id if horario else None,
-        user_id=current_user.id
-    )
-    db.session.add(cambio)
-    db.session.commit()
-
 def get_semana_actual():
-    """Obtiene la fecha de inicio (lunes) de la semana actual."""
-    hoy = date.today()
-    inicio_semana = hoy - timedelta(days=hoy.weekday())
-    return inicio_semana
+    """Obtiene la fecha del lunes de la semana actual."""
+    today = date.today()
+    # El lunes es 0, domingo es 6
+    dias_al_lunes = today.weekday()
+    return today - timedelta(days=dias_al_lunes)
 
-def get_empleados_empresa(company_id):
-    """Obtiene los empleados activos de una empresa."""
-    return Employee.query.filter_by(company_id=company_id, is_active=True).all()
-
-def get_turnos_empresa(company_id):
-    """Obtiene los turnos activos de una empresa."""
-    return Turno.query.filter_by(company_id=company_id, is_active=True).all()
-
-def get_plantillas_empresa(company_id):
-    """Obtiene las plantillas de horario activas de una empresa."""
-    return PlantillaHorario.query.filter_by(company_id=company_id, is_active=True).all()
-
-# Rutas para la selección de empresa
-@turnos_bp.route('/')
-@login_required
-def index():
-    """Página principal del módulo de turnos."""
-    if current_user.is_admin():
-        companies = Company.query.filter_by(is_active=True).all()
-    else:
-        companies = current_user.companies
+def get_rango_semana(fecha_base):
+    """
+    Calcula el rango de fechas para una semana, empezando en lunes.
     
-    return render_template('turnos/index.html', 
-                          title='Módulo de Turnos', 
-                          companies=companies)
-
-@turnos_bp.route('/select_company', methods=['GET', 'POST'])
-@login_required
-def select_company():
-    """Selección de empresa para el módulo de turnos."""
-    if request.method == 'POST':
-        company_id = request.form.get('company_id', type=int)
+    Args:
+        fecha_base: Una fecha dentro de la semana deseada.
         
-        if not company_id:
-            flash('Debe seleccionar una empresa.', 'danger')
-            return redirect(url_for('turnos.select_company'))
+    Returns:
+        Tupla con (fecha_inicio, fecha_fin) representando lunes y domingo.
+    """
+    # Asegurarse de que tenemos un objeto date
+    if isinstance(fecha_base, str):
+        fecha_base = datetime.strptime(fecha_base, '%Y-%m-%d').date()
         
-        if not puede_gestionar_empresa(company_id):
-            flash('No tiene permiso para gestionar esta empresa.', 'danger')
-            return redirect(url_for('turnos.select_company'))
-        
-        # Guardar la empresa seleccionada en la sesión
-        session['turnos_company_id'] = company_id
-        company = Company.query.get_or_404(company_id)
-        
-        return redirect(url_for('turnos.dashboard', company_id=company_id))
+    # Calcular el lunes (inicio de semana)
+    dias_al_lunes = fecha_base.weekday()
+    inicio_semana = fecha_base - timedelta(days=dias_al_lunes)
     
-    if current_user.is_admin():
-        companies = Company.query.filter_by(is_active=True).all()
-    else:
-        companies = current_user.companies
+    # Calcular el domingo (fin de semana)
+    fin_semana = inicio_semana + timedelta(days=6)
     
-    return render_template('turnos/select_company.html', 
-                          title='Seleccionar Empresa', 
-                          companies=companies)
+    return inicio_semana, fin_semana
 
-# Dashboard y visualización de horarios
+def puede_ver_empresa(company_id):
+    """
+    Verifica si el usuario actual puede ver la empresa especificada.
+    
+    Args:
+        company_id: ID de la empresa a verificar.
+        
+    Returns:
+        Boolean indicando si tiene acceso.
+    """
+    if current_user.is_admin:
+        return True
+        
+    # Obtener las empresas del usuario
+    if not current_user.companies:
+        return False
+        
+    # Verificar si la empresa solicitada está en las empresas del usuario
+    return any(str(company.id) == str(company_id) for company in current_user.companies)
+
+def get_nombre_mes(mes):
+    """Obtiene el nombre del mes en español."""
+    nombres_meses = [
+        "Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio",
+        "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"
+    ]
+    try:
+        return nombres_meses[mes - 1]
+    except IndexError:
+        return "Mes desconocido"
+
+def get_nombre_dia(dia):
+    """Obtiene el nombre del día en español."""
+    nombres_dias = [
+        "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"
+    ]
+    try:
+        return nombres_dias[dia]
+    except IndexError:
+        return "Día desconocido"
+
+# Rutas de turnos
 @turnos_bp.route('/dashboard/<int:company_id>')
 @login_required
 def dashboard(company_id):
-    """Dashboard principal del módulo de turnos."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
+    """Muestra el panel de control del sistema de turnos."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
     
-    # Guardar la empresa seleccionada en la sesión
-    session['turnos_company_id'] = company_id
-    company = Company.query.get_or_404(company_id)
+    # Obtener estadísticas
+    num_turnos = Turno.query.filter_by(company_id=company_id).count()
     
-    # Obtener estadísticas para el dashboard
-    empleados = get_empleados_empresa(company_id)
-    turnos = get_turnos_empresa(company_id)
-    inicio_semana = get_semana_actual()
-    fin_semana = inicio_semana + timedelta(days=6)
+    # Empleados de la empresa
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).all()
+    num_empleados = len(empleados)
     
-    # Contar horarios asignados para la semana actual
-    asignaciones_semana = Horario.query.join(Employee).filter(
-        Employee.company_id == company_id,
-        Horario.fecha >= inicio_semana,
-        Horario.fecha <= fin_semana,
-        Horario.is_active == True
-    ).count()
+    # Turnos activos en la semana actual
+    hoy = date.today()
+    lunes, domingo = get_rango_semana(hoy)
     
-    # Contar ausencias activas
-    ausencias_activas = Ausencia.query.join(Employee).filter(
-        Employee.company_id == company_id,
-        Ausencia.fecha_fin >= date.today(),
-        Ausencia.aprobado == True
-    ).count()
+    horarios_semana = (Horario.query
+                      .join(Turno)
+                      .join(Employee)
+                      .filter(
+                          Turno.company_id == company_id,
+                          Horario.fecha.between(lunes, domingo)
+                      )
+                      .count())
+    
+    # Ausencias activas
+    ausencias_activas = (Ausencia.query
+                         .join(Employee)
+                         .filter(
+                             Employee.company_id == company_id,
+                             Ausencia.fecha_inicio <= hoy,
+                             Ausencia.fecha_fin >= hoy
+                         )
+                         .count())
     
     # Últimos cambios en horarios
-    ultimos_cambios = HistorialCambios.query.join(
-        Horario, HistorialCambios.horario_id == Horario.id
-    ).join(
-        Employee, Horario.employee_id == Employee.id
-    ).filter(
-        Employee.company_id == company_id
-    ).order_by(HistorialCambios.fecha_cambio.desc()).limit(5).all()
+    cambios_recientes = (HistorialCambios.query
+                        .join(Horario)
+                        .join(Turno)
+                        .filter(Turno.company_id == company_id)
+                        .order_by(HistorialCambios.fecha_cambio.desc())
+                        .limit(5)
+                        .all())
     
-    return render_template('turnos/dashboard.html',
-                          title=f'Dashboard de Turnos - {company.name}',
-                          company=company,
-                          empleados_count=len(empleados),
-                          turnos_count=len(turnos),
-                          asignaciones_semana=asignaciones_semana,
-                          ausencias_activas=ausencias_activas,
-                          inicio_semana=inicio_semana,
-                          fin_semana=fin_semana,
-                          ultimos_cambios=ultimos_cambios)
+    # Próximos días con más turnos asignados
+    proximas_fechas_concurridas = db.session.query(
+        Horario.fecha,
+        func.count(Horario.id).label('num_turnos')
+    ).join(Turno).join(Employee).filter(
+        Turno.company_id == company_id,
+        Horario.fecha >= hoy,
+        Horario.fecha <= hoy + timedelta(days=30)
+    ).group_by(Horario.fecha).order_by(
+        func.count(Horario.id).desc()
+    ).limit(5).all()
+    
+    return render_template(
+        'turnos/dashboard.html',
+        company=company,
+        num_turnos=num_turnos,
+        num_empleados=num_empleados,
+        horarios_semana=horarios_semana,
+        ausencias_activas=ausencias_activas,
+        cambios_recientes=cambios_recientes,
+        proximas_fechas_concurridas=proximas_fechas_concurridas,
+        lunes=lunes,
+        domingo=domingo
+    )
 
 @turnos_bp.route('/calendario/<int:company_id>')
 @login_required
 def calendario(company_id):
-    """Vista de calendario semanal de turnos."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
+    """Muestra el calendario de turnos."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
     
-    company = Company.query.get_or_404(company_id)
+    # Obtener la semana a mostrar (por defecto la semana actual)
+    fecha_semana = request.args.get('semana')
     
-    # Obtener parámetros de fecha
-    semana_str = request.args.get('semana')
-    if semana_str:
+    if fecha_semana:
         try:
-            inicio_semana = datetime.strptime(semana_str, '%Y-%m-%d').date()
+            fecha_semana = datetime.strptime(fecha_semana, '%Y-%m-%d').date()
         except ValueError:
-            inicio_semana = get_semana_actual()
+            fecha_semana = get_semana_actual()
     else:
-        inicio_semana = get_semana_actual()
+        fecha_semana = get_semana_actual()
     
-    fin_semana = inicio_semana + timedelta(days=6)
+    # Calcular inicio y fin de semana
+    inicio_semana, fin_semana = get_rango_semana(fecha_semana)
+    
+    # Calcular semana anterior y siguiente
     semana_anterior = inicio_semana - timedelta(days=7)
     semana_siguiente = inicio_semana + timedelta(days=7)
     
-    # Obtener empleados y turnos
-    empleados = get_empleados_empresa(company_id)
-    turnos = get_turnos_empresa(company_id)
+    # Obtener empleados de la empresa
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
     
-    # Obtener horarios para la semana seleccionada
-    horarios = Horario.query.join(Employee).filter(
-        Employee.company_id == company_id,
-        Horario.fecha >= inicio_semana,
-        Horario.fecha <= fin_semana,
-        Horario.is_active == True
-    ).all()
+    # Obtener turnos de la empresa
+    turnos = Turno.query.filter_by(company_id=company_id, is_active=True).all()
     
-    # Organizar horarios por empleado y día
+    # Obtener horarios para la semana
+    horarios = (Horario.query
+               .join(Turno)
+               .join(Employee)
+               .filter(
+                   Turno.company_id == company_id,
+                   Horario.fecha.between(inicio_semana, fin_semana),
+                   Employee.is_active == True
+               )
+               .all())
+    
+    # Preparar los datos para el calendario
     datos_calendario = {}
+    
     for empleado in empleados:
         datos_calendario[empleado.id] = {
             'empleado': empleado,
-            'dias': {(inicio_semana + timedelta(days=i)): [] for i in range(7)}
+            'dias': {}
         }
-    
+        
+        # Inicializar los días de la semana
+        for i in range(7):
+            fecha_actual = inicio_semana + timedelta(days=i)
+            datos_calendario[empleado.id]['dias'][fecha_actual] = []
+            
+    # Añadir horarios a los días correspondientes
     for horario in horarios:
         if horario.employee_id in datos_calendario:
             datos_calendario[horario.employee_id]['dias'][horario.fecha].append(horario)
     
-    # Obtener ausencias para la semana seleccionada
-    ausencias = Ausencia.query.join(Employee).filter(
-        Employee.company_id == company_id,
-        Ausencia.fecha_inicio <= fin_semana,
-        Ausencia.fecha_fin >= inicio_semana,
-        Ausencia.aprobado == True
-    ).all()
+    # Obtener ausencias activas en esta semana
+    ausencias = (Ausencia.query
+                .join(Employee)
+                .filter(
+                    Employee.company_id == company_id,
+                    Employee.is_active == True,
+                    or_(
+                        and_(Ausencia.fecha_inicio <= fin_semana, Ausencia.fecha_fin >= inicio_semana)
+                    )
+                )
+                .all())
     
-    # Organizar ausencias por empleado y día
+    # Preparar datos de ausencias
     datos_ausencias = {}
     for ausencia in ausencias:
         if ausencia.employee_id not in datos_ausencias:
             datos_ausencias[ausencia.employee_id] = []
         datos_ausencias[ausencia.employee_id].append(ausencia)
     
-    # Calcular los días de la semana
-    dias_semana_fechas = [(inicio_semana + timedelta(days=i)) for i in range(7)]
+    # Preparar datos de fechas para la vista
+    dias_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
     
-    # Formulario para eliminar horario
+    dias_semana_fechas = []
+    for i in range(7):
+        dias_semana_fechas.append(inicio_semana + timedelta(days=i))
+    
+    # Formulario para eliminar un horario
     eliminar_form = EliminarHorarioForm()
     
-    return render_template('turnos/calendario.html',
-                          title=f'Calendario de Turnos - {company.name}',
-                          company=company,
-                          inicio_semana=inicio_semana,
-                          fin_semana=fin_semana,
-                          semana_anterior=semana_anterior,
-                          semana_siguiente=semana_siguiente,
-                          dias_semana=dias_semana,
-                          dias_semana_fechas=dias_semana_fechas,
-                          datos_calendario=datos_calendario,
-                          datos_ausencias=datos_ausencias,
-                          empleados=empleados,
-                          turnos=turnos,
-                          eliminar_form=eliminar_form,
-                          meses=meses)
+    # Obtener nombres de meses en español
+    meses = ["Enero", "Febrero", "Marzo", "Abril", "Mayo", "Junio", 
+            "Julio", "Agosto", "Septiembre", "Octubre", "Noviembre", "Diciembre"]
+    
+    return render_template(
+        'turnos/calendario.html',
+        company=company,
+        datos_calendario=datos_calendario,
+        datos_ausencias=datos_ausencias,
+        inicio_semana=inicio_semana,
+        fin_semana=fin_semana,
+        semana_anterior=semana_anterior,
+        semana_siguiente=semana_siguiente,
+        dias_semana=dias_semana,
+        dias_semana_fechas=dias_semana_fechas,
+        today=date.today(),
+        turnos=turnos,
+        eliminar_form=eliminar_form,
+        meses=meses
+    )
 
-# Gestión de turnos
 @turnos_bp.route('/turnos/<int:company_id>')
 @login_required
 def listar_turnos(company_id):
-    """Lista los turnos de una empresa."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
+    """Muestra la lista de tipos de turnos para una empresa."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Obtener todos los turnos de la empresa
+    turnos = Turno.query.filter_by(company_id=company_id).order_by(Turno.nombre).all()
     
-    company = Company.query.get_or_404(company_id)
-    turnos = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
-    
-    return render_template('turnos/listar_turnos.html',
-                          title=f'Turnos - {company.name}',
-                          company=company,
-                          turnos=turnos)
+    # Estadísticas de uso de turnos
+    estadisticas = {}
+    for turno in turnos:
+        # Contar cuántos horarios usan este turno
+        num_usos = Horario.query.filter_by(turno_id=turno.id).count()
+        estadisticas[turno.id] = {
+            'usos': num_usos,
+            'horas_efectivas': turno.horas_efectivas
+        }
+        
+    return render_template(
+        'turnos/listar_turnos.html',
+        company=company,
+        turnos=turnos,
+        estadisticas=estadisticas
+    )
 
 @turnos_bp.route('/turnos/<int:company_id>/nuevo', methods=['GET', 'POST'])
 @login_required
 def nuevo_turno(company_id):
-    """Crea un nuevo turno."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
+    """Crea un nuevo tipo de turno."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
     form = TurnoForm()
+    form.company_id.data = company_id
     
     if form.validate_on_submit():
+        # Convertir el tipo de enum de string a objeto TipoTurno
+        tipo_turno = TipoTurno[form.tipo.data]
+        
         turno = Turno(
             nombre=form.nombre.data,
-            tipo=TipoTurno[form.tipo.data],
+            tipo=tipo_turno,
             hora_inicio=form.hora_inicio.data,
             hora_fin=form.hora_fin.data,
             color=form.color.data,
-            descripcion=form.descripcion.data,
             descanso_inicio=form.descanso_inicio.data,
             descanso_fin=form.descanso_fin.data,
+            descripcion=form.descripcion.data,
             company_id=company_id
         )
         
         db.session.add(turno)
         db.session.commit()
         
-        flash(f'Turno "{turno.nombre}" creado correctamente.', 'success')
+        log_activity(f"Creado nuevo turno: {turno.nombre}")
+        flash(f'Turno {turno.nombre} creado correctamente.', 'success')
         return redirect(url_for('turnos.listar_turnos', company_id=company_id))
-    
-    form.company_id.data = company_id
-    
-    return render_template('turnos/form_turno.html',
-                          title=f'Nuevo Turno - {company.name}',
-                          company=company,
-                          form=form)
+        
+    return render_template(
+        'turnos/form_turno.html',
+        company=company,
+        form=form,
+        turno=None
+    )
 
 @turnos_bp.route('/turnos/<int:company_id>/editar/<int:turno_id>', methods=['GET', 'POST'])
 @login_required
 def editar_turno(company_id, turno_id):
-    """Edita un turno existente."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    turno = Turno.query.get_or_404(turno_id)
-    
-    if turno.company_id != company_id:
-        flash('El turno no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_turnos', company_id=company_id))
+    """Edita un tipo de turno existente."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Obtener el turno o devolver 404
+    turno = Turno.query.filter_by(id=turno_id, company_id=company_id).first_or_404()
     
     form = TurnoForm(obj=turno)
+    form.company_id.data = company_id
     
-    if form.validate_on_submit():
-        form.populate_obj(turno)
-        turno.tipo = TipoTurno[form.tipo.data]
-        
-        db.session.commit()
-        
-        flash(f'Turno "{turno.nombre}" actualizado correctamente.', 'success')
-        return redirect(url_for('turnos.listar_turnos', company_id=company_id))
-    
+    # Asignar valor del enum al formulario (solo para GET)
     if request.method == 'GET':
         form.tipo.data = turno.tipo.name
     
-    return render_template('turnos/form_turno.html',
-                          title=f'Editar Turno - {company.name}',
-                          company=company,
-                          form=form,
-                          turno=turno)
+    if form.validate_on_submit():
+        # Convertir el tipo de enum de string a objeto TipoTurno
+        tipo_turno = TipoTurno[form.tipo.data]
+        
+        turno.nombre = form.nombre.data
+        turno.tipo = tipo_turno
+        turno.hora_inicio = form.hora_inicio.data
+        turno.hora_fin = form.hora_fin.data
+        turno.color = form.color.data
+        turno.descanso_inicio = form.descanso_inicio.data
+        turno.descanso_fin = form.descanso_fin.data
+        turno.descripcion = form.descripcion.data
+        
+        db.session.commit()
+        
+        log_activity(f"Editado turno: {turno.nombre}")
+        flash(f'Turno {turno.nombre} actualizado correctamente.', 'success')
+        return redirect(url_for('turnos.listar_turnos', company_id=company_id))
+        
+    return render_template(
+        'turnos/form_turno.html',
+        company=company,
+        form=form,
+        turno=turno
+    )
 
 @turnos_bp.route('/turnos/<int:company_id>/eliminar/<int:turno_id>', methods=['POST'])
 @login_required
 def eliminar_turno(company_id, turno_id):
-    """Elimina un turno (marcar como inactivo)."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
+    """Elimina un tipo de turno."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Obtener el turno o devolver 404
+    turno = Turno.query.filter_by(id=turno_id, company_id=company_id).first_or_404()
     
-    turno = Turno.query.get_or_404(turno_id)
-    
-    if turno.company_id != company_id:
-        flash('El turno no pertenece a esta empresa.', 'danger')
+    # Verificar si el turno está en uso
+    num_usos = Horario.query.filter_by(turno_id=turno_id).count()
+    if num_usos > 0:
+        flash(f'No se puede eliminar el turno {turno.nombre} porque está asignado a {num_usos} horarios.', 'danger')
         return redirect(url_for('turnos.listar_turnos', company_id=company_id))
     
-    # Verificar si hay horarios asignados a este turno
-    horarios_count = Horario.query.filter_by(turno_id=turno.id, is_active=True).count()
-    if horarios_count > 0:
-        flash(f'No se puede eliminar el turno "{turno.nombre}" porque tiene {horarios_count} horarios asignados.', 'danger')
-        return redirect(url_for('turnos.listar_turnos', company_id=company_id))
-    
-    turno.is_active = False
+    # Eliminar el turno
+    db.session.delete(turno)
     db.session.commit()
     
-    flash(f'Turno "{turno.nombre}" eliminado correctamente.', 'success')
+    log_activity(f"Eliminado turno: {turno.nombre}")
+    flash(f'Turno {turno.nombre} eliminado correctamente.', 'success')
     return redirect(url_for('turnos.listar_turnos', company_id=company_id))
 
-# Gestión de horarios
 @turnos_bp.route('/horarios/<int:company_id>/asignar', methods=['GET', 'POST'])
 @login_required
 def asignar_horario(company_id):
-    """Asigna un turno a un empleado."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
+    """Asigna un turno a un empleado en una fecha específica."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Preparar el formulario
     form = HorarioForm()
     
-    # Cargar empleados y turnos para los select
-    empleados = get_empleados_empresa(company_id)
-    turnos = get_turnos_empresa(company_id)
-    
+    # Obtener todos los empleados activos de la empresa
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
     form.employee_id.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
+    
+    # Obtener todos los turnos activos de la empresa
+    turnos = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
     form.turno_id.choices = [(t.id, t.nombre) for t in turnos]
     
-    if form.validate_on_submit():
-        # Verificar si ya existe una asignación para este empleado en esta fecha
-        existe = Horario.query.filter_by(
-            employee_id=form.employee_id.data,
-            fecha=form.fecha.data,
-            is_active=True
-        ).first()
-        
-        if existe:
-            flash(f'El empleado ya tiene un turno asignado para esta fecha. Por favor, elimine el turno existente primero.', 'warning')
-            return redirect(url_for('turnos.asignar_horario', company_id=company_id))
-        
-        # Verificar si el empleado tiene ausencia en esta fecha
-        empleado = Employee.query.get(form.employee_id.data)
-        ausencia = Ausencia.query.filter(
-            Ausencia.employee_id == form.employee_id.data,
-            Ausencia.fecha_inicio <= form.fecha.data,
-            Ausencia.fecha_fin >= form.fecha.data,
-            Ausencia.aprobado == True
-        ).first()
-        
-        if ausencia:
-            flash(f'El empleado tiene una ausencia registrada para esta fecha ({ausencia.tipo.value}). ¿Desea asignar el turno de todas formas?', 'warning')
-            # Aquí podrías agregar una confirmación adicional o simplemente permitir la asignación
-        
-        horario = Horario(
-            fecha=form.fecha.data,
-            turno_id=form.turno_id.data,
-            employee_id=form.employee_id.data,
-            notas=form.notas.data
-        )
-        
-        db.session.add(horario)
-        db.session.commit()
-        
-        # Registrar el cambio en el historial
-        turno = Turno.query.get(form.turno_id.data)
-        registrar_cambio_horario(
-            horario,
-            "creacion",
-            f"Asignación de turno '{turno.nombre}' a {empleado.nombre} {empleado.apellidos} para el {form.fecha.data.strftime('%d/%m/%Y')}"
-        )
-        
-        flash(f'Turno asignado correctamente a {empleado.nombre} {empleado.apellidos}.', 'success')
-        
-        # Redirigir al calendario en la semana de la fecha asignada
-        inicio_semana = form.fecha.data - timedelta(days=form.fecha.data.weekday())
-        return redirect(url_for('turnos.calendario', company_id=company_id, semana=inicio_semana.strftime('%Y-%m-%d')))
-    
-    # Si viene de un día específico del calendario, pre-cargar la fecha
-    fecha_str = request.args.get('fecha')
-    if fecha_str:
-        try:
-            form.fecha.data = datetime.strptime(fecha_str, '%Y-%m-%d').date()
-        except ValueError:
-            form.fecha.data = date.today()
-    else:
-        form.fecha.data = date.today()
-    
-    # Si viene con un empleado preseleccionado
-    employee_id = request.args.get('employee_id', type=int)
-    if employee_id:
-        form.employee_id.data = employee_id
-    
-    return render_template('turnos/form_horario.html',
-                          title=f'Asignar Turno - {company.name}',
-                          company=company,
-                          form=form)
-
-@turnos_bp.route('/horarios/<int:company_id>/asignar_masivo', methods=['GET', 'POST'])
-@login_required
-def asignar_horario_masivo(company_id):
-    """Asigna turnos de forma masiva a varios empleados en un rango de fechas."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    form = HorarioMasivoForm()
-    
-    # Cargar empleados y turnos para los select
-    empleados = get_empleados_empresa(company_id)
-    turnos = get_turnos_empresa(company_id)
-    
-    form.employee_ids.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
-    form.turno_id.choices = [(t.id, t.nombre) for t in turnos]
-    
-    if form.validate_on_submit():
-        fecha_inicio = form.fecha_inicio.data
-        fecha_fin = form.fecha_fin.data
-        turno_id = form.turno_id.data
-        employee_ids = form.employee_ids.data
-        dias_semana = form.dias_semana.data
-        notas = form.notas.data
-        
-        # Crear horarios para cada combinación de empleado y fecha
-        horarios_creados = 0
-        horarios_omitidos = 0
-        
-        # Para cada fecha en el rango
-        fecha_actual = fecha_inicio
-        while fecha_actual <= fecha_fin:
-            # Verificar si el día de la semana está incluido
-            if fecha_actual.weekday() in dias_semana:
-                # Para cada empleado seleccionado
-                for employee_id in employee_ids:
-                    # Verificar si ya existe una asignación
-                    existe = Horario.query.filter_by(
-                        employee_id=employee_id,
-                        fecha=fecha_actual,
-                        is_active=True
-                    ).first()
-                    
-                    if not existe:
-                        horario = Horario(
-                            fecha=fecha_actual,
-                            turno_id=turno_id,
-                            employee_id=employee_id,
-                            notas=notas
-                        )
-                        
-                        db.session.add(horario)
-                        horarios_creados += 1
-                        
-                        # Registrar el cambio en el historial (esto puede generar muchos registros)
-                        # Por eficiencia, podríamos considerar registrar un único cambio masivo
-                        empleado = Employee.query.get(employee_id)
-                        turno = Turno.query.get(turno_id)
-                        registrar_cambio_horario(
-                            horario,
-                            "creacion",
-                            f"Asignación masiva de turno '{turno.nombre}' a {empleado.nombre} {empleado.apellidos} para el {fecha_actual.strftime('%d/%m/%Y')}"
-                        )
-                    else:
-                        horarios_omitidos += 1
-            
-            # Pasar al siguiente día
-            fecha_actual += timedelta(days=1)
-        
-        db.session.commit()
-        
-        mensaje = f'Se han creado {horarios_creados} asignaciones de horario correctamente.'
-        if horarios_omitidos > 0:
-            mensaje += f' Se omitieron {horarios_omitidos} asignaciones porque ya existían.'
-        
-        flash(mensaje, 'success')
-        
-        # Redirigir al calendario en la semana de la fecha inicial
-        inicio_semana = fecha_inicio - timedelta(days=fecha_inicio.weekday())
-        return redirect(url_for('turnos.calendario', company_id=company_id, semana=inicio_semana.strftime('%Y-%m-%d')))
-    
-    # Valores por defecto
+    # Valores predeterminados para el formulario
     if request.method == 'GET':
-        form.fecha_inicio.data = date.today()
-        form.fecha_fin.data = date.today() + timedelta(days=6)  # Una semana
-        form.dias_semana.data = [0, 1, 2, 3, 4]  # Lunes a viernes
+        # Si se proporciona fecha en la URL, usar esa fecha
+        fecha_param = request.args.get('fecha')
+        if fecha_param:
+            try:
+                form.fecha.data = datetime.strptime(fecha_param, '%Y-%m-%d').date()
+            except ValueError:
+                form.fecha.data = date.today()
+        else:
+            form.fecha.data = date.today()
+            
+        # Si se proporciona empleado en la URL, seleccionarlo
+        employee_id_param = request.args.get('employee_id')
+        if employee_id_param and any(e.id == int(employee_id_param) for e in empleados):
+            form.employee_id.data = int(employee_id_param)
     
-    return render_template('turnos/form_horario_masivo.html',
-                          title=f'Asignación Masiva de Turnos - {company.name}',
-                          company=company,
-                          form=form)
+    if form.validate_on_submit():
+        # Verificar si ya existe un horario para este empleado en esta fecha
+        horario_existente = Horario.query.filter_by(
+            employee_id=form.employee_id.data,
+            fecha=form.fecha.data
+        ).first()
+        
+        if horario_existente:
+            # Actualizar el horario existente
+            horario_existente.turno_id = form.turno_id.data
+            horario_existente.notas = form.notas.data
+            db.session.commit()
+            
+            # Registrar el cambio en el historial
+            historial = HistorialCambios(
+                horario_id=horario_existente.id,
+                user_id=current_user.id,
+                tipo_cambio="modificacion",
+                descripcion=f"Modificado turno de {horario_existente.employee.nombre} para el {form.fecha.data}"
+            )
+            db.session.add(historial)
+            db.session.commit()
+            
+            log_activity(f"Modificado horario para empleado {horario_existente.employee.nombre} en fecha {form.fecha.data}")
+            flash(f'Turno para {horario_existente.employee.nombre} actualizado correctamente.', 'success')
+        else:
+            # Crear un nuevo horario
+            horario = Horario(
+                employee_id=form.employee_id.data,
+                turno_id=form.turno_id.data,
+                fecha=form.fecha.data,
+                notas=form.notas.data
+            )
+            db.session.add(horario)
+            db.session.commit()
+            
+            # Obtener el empleado para el mensaje
+            empleado = Employee.query.get(form.employee_id.data)
+            
+            # Registrar el cambio en el historial
+            historial = HistorialCambios(
+                horario_id=horario.id,
+                user_id=current_user.id,
+                tipo_cambio="creacion",
+                descripcion=f"Asignado turno a {empleado.nombre} para el {form.fecha.data}"
+            )
+            db.session.add(historial)
+            db.session.commit()
+            
+            log_activity(f"Asignado horario para empleado {empleado.nombre} en fecha {form.fecha.data}")
+            flash(f'Turno para {empleado.nombre} asignado correctamente.', 'success')
+        
+        # Redireccionar a la vista de calendario
+        return redirect(url_for('turnos.calendario', company_id=company_id, semana=form.fecha.data))
+        
+    return render_template(
+        'turnos/form_horario.html',
+        company=company,
+        form=form
+    )
 
 @turnos_bp.route('/horarios/<int:company_id>/eliminar', methods=['POST'])
 @login_required
 def eliminar_horario(company_id):
-    """Elimina una asignación de horario."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
+    """Elimina un horario asignado."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
     form = EliminarHorarioForm()
     
     if form.validate_on_submit():
         horario_id = form.horario_id.data
+        
+        # Obtener el horario
         horario = Horario.query.get_or_404(horario_id)
         
-        # Verificar que el empleado pertenece a la empresa
-        empleado = Employee.query.get(horario.employee_id)
-        if empleado.company_id != company_id:
-            flash('El horario no pertenece a un empleado de esta empresa.', 'danger')
-            return redirect(url_for('turnos.calendario', company_id=company_id))
+        # Verificar que el horario pertenece a la empresa correcta
+        if horario.turno.company_id != company_id:
+            abort(403)
+            
+        # Guardar información para el mensaje
+        empleado_nombre = horario.employee.nombre
+        fecha = horario.fecha
         
-        # Guardar información para el historial antes de desactivar
-        descripcion = f"Eliminación de turno '{horario.turno.nombre}' asignado a {empleado.nombre} {empleado.apellidos} para el {horario.fecha.strftime('%d/%m/%Y')}"
+        # Registrar el cambio en el historial antes de eliminar
+        historial = HistorialCambios(
+            horario_id=None,  # El horario ya no existirá
+            user_id=current_user.id,
+            tipo_cambio="eliminacion",
+            descripcion=f"Eliminado turno de {empleado_nombre} para el {fecha}"
+        )
+        db.session.add(historial)
         
-        # Marcar como inactivo en lugar de eliminar
-        horario.is_active = False
+        # Eliminar el horario
+        db.session.delete(horario)
         db.session.commit()
         
-        # Registrar el cambio en el historial
-        registrar_cambio_horario(horario, "eliminacion", descripcion)
+        log_activity(f"Eliminado horario para empleado {empleado_nombre} en fecha {fecha}")
+        flash(f'Turno para {empleado_nombre} en fecha {fecha} eliminado correctamente.', 'success')
         
-        flash('Asignación de turno eliminada correctamente.', 'success')
-        
-        # Redirigir al calendario en la semana de la fecha del horario
-        inicio_semana = horario.fecha - timedelta(days=horario.fecha.weekday())
-        return redirect(url_for('turnos.calendario', company_id=company_id, semana=inicio_semana.strftime('%Y-%m-%d')))
+        # Redireccionar a la vista de calendario
+        return redirect(url_for('turnos.calendario', company_id=company_id, semana=fecha))
     
-    flash('No se pudo eliminar el horario.', 'danger')
+    # Si hay un error en el formulario
+    flash('Error al procesar la solicitud de eliminación.', 'danger')
     return redirect(url_for('turnos.calendario', company_id=company_id))
 
-# Gestión de ausencias
+@turnos_bp.route('/api/turno/<int:turno_id>')
+@login_required
+def api_turno_detalle(turno_id):
+    """API para obtener detalles de un turno."""
+    turno = Turno.query.get_or_404(turno_id)
+    
+    # Verificar acceso a la empresa
+    if not puede_ver_empresa(turno.company_id):
+        abort(403)
+        
+    return jsonify({
+        'id': turno.id,
+        'nombre': turno.nombre,
+        'tipo': turno.tipo.value,
+        'hora_inicio': turno.hora_inicio.strftime('%H:%M'),
+        'hora_fin': turno.hora_fin.strftime('%H:%M'),
+        'color': turno.color,
+        'horas_efectivas': turno.horas_efectivas
+    })
+
+@turnos_bp.route('/horarios/<int:company_id>/masivo', methods=['GET', 'POST'])
+@login_required
+def asignar_horario_masivo(company_id):
+    """Asigna turnos a múltiples empleados o en un rango de fechas."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Preparar el formulario
+    form = AsignacionMasivaForm()
+    
+    # Obtener todos los empleados activos de la empresa
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
+    form.employees.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
+    
+    # Obtener todos los turnos activos de la empresa
+    turnos = Turno.query.filter_by(company_id=company_id, is_active=True).order_by(Turno.nombre).all()
+    form.turno_id.choices = [(t.id, t.nombre) for t in turnos]
+    
+    # Valores predeterminados para el formulario
+    if request.method == 'GET':
+        form.fecha_inicio.data = date.today()
+        form.fecha_fin.data = date.today() + timedelta(days=6)  # Una semana por defecto
+        form.dias_semana.data = [0, 1, 2, 3, 4]  # L-V por defecto
+    
+    if form.validate_on_submit():
+        # Obtener los datos del formulario
+        fecha_inicio = form.fecha_inicio.data
+        fecha_fin = form.fecha_fin.data
+        dias_semana = form.dias_semana.data
+        turno_id = form.turno_id.data
+        employee_ids = form.employees.data
+        notas = form.notas.data
+        
+        # Contador de horarios creados
+        horarios_creados = 0
+        horarios_actualizados = 0
+        
+        # Iterar por cada día en el rango
+        fecha_actual = fecha_inicio
+        while fecha_actual <= fecha_fin:
+            # Verificar si el día de la semana está seleccionado
+            if fecha_actual.weekday() in dias_semana:
+                # Para cada empleado seleccionado
+                for employee_id in employee_ids:
+                    # Verificar si ya existe un horario
+                    horario_existente = Horario.query.filter_by(
+                        employee_id=employee_id,
+                        fecha=fecha_actual
+                    ).first()
+                    
+                    if horario_existente:
+                        # Actualizar el horario existente
+                        horario_existente.turno_id = turno_id
+                        horario_existente.notas = notas
+                        
+                        # Registrar el cambio en el historial
+                        historial = HistorialCambios(
+                            horario_id=horario_existente.id,
+                            user_id=current_user.id,
+                            tipo_cambio="modificacion",
+                            descripcion=f"Modificado turno en asignación masiva para {horario_existente.employee.nombre} - {fecha_actual}"
+                        )
+                        db.session.add(historial)
+                        
+                        horarios_actualizados += 1
+                    else:
+                        # Crear un nuevo horario
+                        horario = Horario(
+                            employee_id=employee_id,
+                            turno_id=turno_id,
+                            fecha=fecha_actual,
+                            notas=notas
+                        )
+                        db.session.add(horario)
+                        horarios_creados += 1
+            
+            # Avanzar al siguiente día
+            fecha_actual += timedelta(days=1)
+        
+        # Guardar cambios en la base de datos
+        db.session.commit()
+        
+        log_activity(f"Asignación masiva de horarios: {horarios_creados} creados, {horarios_actualizados} actualizados")
+        flash(f'Asignación masiva completada: {horarios_creados} nuevos horarios creados y {horarios_actualizados} actualizados.', 'success')
+        
+        # Redireccionar a la vista de calendario
+        return redirect(url_for('turnos.calendario', company_id=company_id, semana=fecha_inicio))
+        
+    return render_template(
+        'turnos/form_horario_masivo.html',
+        company=company,
+        form=form
+    )
+
 @turnos_bp.route('/ausencias/<int:company_id>')
 @login_required
 def listar_ausencias(company_id):
-    """Lista las ausencias de los empleados de una empresa."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    
-    # Filtros
-    estado = request.args.get('estado', 'activas')
+    """Muestra la lista de ausencias para una empresa."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Filtrar por tipo de ausencia
     tipo = request.args.get('tipo')
+    # Filtrar por estado (aprobado/pendiente)
+    estado = request.args.get('estado')
+    # Filtrar por rango de fechas
+    fecha_inicio = request.args.get('fecha_inicio')
+    fecha_fin = request.args.get('fecha_fin')
     
-    # Query base
-    query = Ausencia.query.join(Employee).filter(Employee.company_id == company_id)
+    # Construir la consulta base
+    query = (Ausencia.query
+            .join(Employee)
+            .filter(Employee.company_id == company_id))
     
     # Aplicar filtros
-    if estado == 'activas':
-        query = query.filter(Ausencia.fecha_fin >= date.today())
-    elif estado == 'pendientes':
-        query = query.filter(Ausencia.aprobado == False)
-    elif estado == 'aprobadas':
-        query = query.filter(Ausencia.aprobado == True)
-    
     if tipo:
-        query = query.filter(Ausencia.tipo == TipoAusencia[tipo])
+        try:
+            tipo_enum = TipoAusencia[tipo]
+            query = query.filter(Ausencia.tipo == tipo_enum)
+        except KeyError:
+            pass
     
-    # Ordenar por fecha de inicio (más recientes primero)
+    if estado:
+        if estado == 'aprobado':
+            query = query.filter(Ausencia.aprobado == True)
+        elif estado == 'pendiente':
+            query = query.filter(Ausencia.aprobado == False)
+    
+    if fecha_inicio:
+        try:
+            fecha_inicio_dt = datetime.strptime(fecha_inicio, '%Y-%m-%d').date()
+            query = query.filter(Ausencia.fecha_fin >= fecha_inicio_dt)
+        except ValueError:
+            pass
+    
+    if fecha_fin:
+        try:
+            fecha_fin_dt = datetime.strptime(fecha_fin, '%Y-%m-%d').date()
+            query = query.filter(Ausencia.fecha_inicio <= fecha_fin_dt)
+        except ValueError:
+            pass
+    
+    # Ordenar por fecha de inicio (más reciente primero)
     ausencias = query.order_by(Ausencia.fecha_inicio.desc()).all()
     
-    return render_template('turnos/listar_ausencias.html',
-                          title=f'Ausencias - {company.name}',
-                          company=company,
-                          ausencias=ausencias,
-                          estado=estado,
-                          tipo=tipo,
-                          tipos_ausencia=TipoAusencia)
+    return render_template(
+        'turnos/listar_ausencias.html',
+        company=company,
+        ausencias=ausencias,
+        tipos_ausencia=TipoAusencia
+    )
 
 @turnos_bp.route('/ausencias/<int:company_id>/nueva', methods=['GET', 'POST'])
 @login_required
 def nueva_ausencia(company_id):
     """Registra una nueva ausencia para un empleado."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Preparar el formulario
     form = AusenciaForm()
     
-    # Cargar empleados para el select
-    empleados = get_empleados_empresa(company_id)
+    # Obtener todos los empleados activos de la empresa
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
     form.employee_id.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
     
+    # Valores predeterminados para el formulario
+    if request.method == 'GET':
+        form.fecha_inicio.data = date.today()
+        form.fecha_fin.data = date.today()
+        
+        # Si el usuario es admin o gerente, la ausencia se marca como aprobada por defecto
+        if current_user.is_admin or current_user.role.name == 'gerente':
+            form.aprobado.data = True
+        
+        # Si se proporciona empleado en la URL, seleccionarlo
+        employee_id_param = request.args.get('employee_id')
+        if employee_id_param and any(e.id == int(employee_id_param) for e in empleados):
+            form.employee_id.data = int(employee_id_param)
+    
     if form.validate_on_submit():
+        # Convertir el tipo de enum de string a objeto TipoAusencia
+        tipo_ausencia = TipoAusencia[form.tipo.data]
+        
+        # Crear la ausencia
         ausencia = Ausencia(
+            employee_id=form.employee_id.data,
             fecha_inicio=form.fecha_inicio.data,
             fecha_fin=form.fecha_fin.data,
-            tipo=TipoAusencia[form.tipo.data],
+            tipo=tipo_ausencia,
             motivo=form.motivo.data,
-            employee_id=form.employee_id.data
+            aprobado=form.aprobado.data
         )
         
-        # Si el usuario es admin o gerente, aprobar automáticamente
-        if current_user.is_admin() or current_user.is_gerente():
-            ausencia.aprobado = True
+        # Si está aprobada, registrar quién la aprobó
+        if form.aprobado.data:
             ausencia.aprobado_por_id = current_user.id
         
         db.session.add(ausencia)
         db.session.commit()
         
+        # Obtener el empleado para el mensaje
         empleado = Employee.query.get(form.employee_id.data)
-        flash(f'Ausencia registrada correctamente para {empleado.nombre} {empleado.apellidos}.', 'success')
+        
+        log_activity(f"Registrada ausencia para {empleado.nombre} del {form.fecha_inicio.data} al {form.fecha_fin.data}")
+        flash(f'Ausencia para {empleado.nombre} registrada correctamente.', 'success')
+        
+        # Redireccionar a la lista de ausencias
         return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
-    
-    # Si viene con un empleado preseleccionado
-    employee_id = request.args.get('employee_id', type=int)
-    if employee_id:
-        form.employee_id.data = employee_id
-    
-    # Valores por defecto
-    if request.method == 'GET':
-        form.fecha_inicio.data = date.today()
-        form.fecha_fin.data = date.today()
-    
-    return render_template('turnos/form_ausencia.html',
-                          title=f'Nueva Ausencia - {company.name}',
-                          company=company,
-                          form=form)
+        
+    return render_template(
+        'turnos/form_ausencia.html',
+        company=company,
+        form=form,
+        ausencia=None
+    )
 
-@turnos_bp.route('/ausencias/<int:company_id>/aprobar', methods=['POST'])
+@turnos_bp.route('/ausencias/<int:company_id>/editar/<int:ausencia_id>', methods=['GET', 'POST'])
 @login_required
-def aprobar_ausencia(company_id):
-    """Aprueba o rechaza una ausencia."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
+def editar_ausencia(company_id, ausencia_id):
+    """Edita una ausencia existente."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Obtener la ausencia o devolver 404
+    ausencia = Ausencia.query.join(Employee).filter(
+        Ausencia.id == ausencia_id,
+        Employee.company_id == company_id
+    ).first_or_404()
     
-    form = AprobarAusenciaForm()
+    # Preparar el formulario
+    form = AusenciaForm(obj=ausencia)
+    
+    # Obtener todos los empleados activos de la empresa
+    empleados = Employee.query.filter_by(company_id=company_id, is_active=True).order_by(Employee.nombre).all()
+    form.employee_id.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
+    
+    # Asignar valor del enum al formulario (solo para GET)
+    if request.method == 'GET':
+        form.tipo.data = ausencia.tipo.name
     
     if form.validate_on_submit():
-        ausencia_id = form.ausencia_id.data
-        ausencia = Ausencia.query.get_or_404(ausencia_id)
+        # Convertir el tipo de enum de string a objeto TipoAusencia
+        tipo_ausencia = TipoAusencia[form.tipo.data]
         
-        # Verificar que el empleado pertenece a la empresa
-        empleado = Employee.query.get(ausencia.employee_id)
-        if empleado.company_id != company_id:
-            flash('La ausencia no pertenece a un empleado de esta empresa.', 'danger')
-            return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
+        # Actualizar los datos de la ausencia
+        ausencia.employee_id = form.employee_id.data
+        ausencia.fecha_inicio = form.fecha_inicio.data
+        ausencia.fecha_fin = form.fecha_fin.data
+        ausencia.tipo = tipo_ausencia
+        ausencia.motivo = form.motivo.data
         
-        ausencia.aprobado = form.aprobado.data
-        ausencia.aprobado_por_id = current_user.id
+        # Si el estado de aprobación ha cambiado
+        if ausencia.aprobado != form.aprobado.data:
+            ausencia.aprobado = form.aprobado.data
+            
+            # Si ahora está aprobada, registrar quién la aprobó
+            if form.aprobado.data:
+                ausencia.aprobado_por_id = current_user.id
+            else:
+                ausencia.aprobado_por_id = None
+        
         db.session.commit()
         
-        estado = "aprobada" if form.aprobado.data else "rechazada"
-        flash(f'Ausencia {estado} correctamente.', 'success')
-    else:
-        flash('No se pudo procesar la solicitud de ausencia.', 'danger')
-    
-    return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
+        log_activity(f"Editada ausencia para {ausencia.employee.nombre} del {ausencia.fecha_inicio} al {ausencia.fecha_fin}")
+        flash(f'Ausencia para {ausencia.employee.nombre} actualizada correctamente.', 'success')
+        
+        # Redireccionar a la lista de ausencias
+        return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
+        
+    return render_template(
+        'turnos/form_ausencia.html',
+        company=company,
+        form=form,
+        ausencia=ausencia
+    )
 
 @turnos_bp.route('/ausencias/<int:company_id>/eliminar/<int:ausencia_id>', methods=['POST'])
 @login_required
 def eliminar_ausencia(company_id, ausencia_id):
     """Elimina una ausencia."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    # Obtener la ausencia o devolver 404
+    ausencia = Ausencia.query.join(Employee).filter(
+        Ausencia.id == ausencia_id,
+        Employee.company_id == company_id
+    ).first_or_404()
     
-    ausencia = Ausencia.query.get_or_404(ausencia_id)
+    # Guardar información para el mensaje
+    empleado_nombre = ausencia.employee.nombre
+    fecha_inicio = ausencia.fecha_inicio
+    fecha_fin = ausencia.fecha_fin
     
-    # Verificar que el empleado pertenece a la empresa
-    empleado = Employee.query.get(ausencia.employee_id)
-    if empleado.company_id != company_id:
-        flash('La ausencia no pertenece a un empleado de esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
-    
+    # Eliminar la ausencia
     db.session.delete(ausencia)
     db.session.commit()
     
-    flash('Ausencia eliminada correctamente.', 'success')
+    log_activity(f"Eliminada ausencia para {empleado_nombre} del {fecha_inicio} al {fecha_fin}")
+    flash(f'Ausencia para {empleado_nombre} eliminada correctamente.', 'success')
+    
+    # Redireccionar a la lista de ausencias
     return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
 
-# Requisitos de personal
-@turnos_bp.route('/requisitos/<int:company_id>')
+@turnos_bp.route('/ausencias/<int:company_id>/aprobar/<int:ausencia_id>', methods=['POST'])
 @login_required
-def listar_requisitos(company_id):
-    """Lista los requisitos de personal de una empresa."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    requisitos = RequisitoPersonal.query.filter_by(company_id=company_id, is_active=True).order_by(
-        RequisitoPersonal.dia_semana, RequisitoPersonal.hora_inicio
-    ).all()
-    
-    return render_template('turnos/listar_requisitos.html',
-                          title=f'Requisitos de Personal - {company.name}',
-                          company=company,
-                          requisitos=requisitos,
-                          dias_semana=dias_semana)
-
-@turnos_bp.route('/requisitos/<int:company_id>/nuevo', methods=['GET', 'POST'])
-@login_required
-def nuevo_requisito(company_id):
-    """Crea un nuevo requisito de personal."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    form = RequisitoPersonalForm()
-    
-    if form.validate_on_submit():
-        requisito = RequisitoPersonal(
-            dia_semana=form.dia_semana.data,
-            hora_inicio=form.hora_inicio.data,
-            hora_fin=form.hora_fin.data,
-            num_empleados=form.num_empleados.data,
-            notas=form.notas.data,
-            company_id=company_id
-        )
+def aprobar_ausencia(company_id, ausencia_id):
+    """Aprueba una ausencia pendiente."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
         
-        db.session.add(requisito)
-        db.session.commit()
+    # Verificar que el usuario tiene permisos para aprobar (admin o gerente)
+    if not (current_user.is_admin or current_user.role.name == 'gerente'):
+        abort(403)
         
-        flash('Requisito de personal creado correctamente.', 'success')
-        return redirect(url_for('turnos.listar_requisitos', company_id=company_id))
+    # Obtener la ausencia o devolver 404
+    ausencia = Ausencia.query.join(Employee).filter(
+        Ausencia.id == ausencia_id,
+        Employee.company_id == company_id,
+        Ausencia.aprobado == False
+    ).first_or_404()
     
-    form.company_id.data = company_id
-    
-    return render_template('turnos/form_requisito.html',
-                          title=f'Nuevo Requisito de Personal - {company.name}',
-                          company=company,
-                          form=form)
-
-@turnos_bp.route('/requisitos/<int:company_id>/editar/<int:requisito_id>', methods=['GET', 'POST'])
-@login_required
-def editar_requisito(company_id, requisito_id):
-    """Edita un requisito de personal existente."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    requisito = RequisitoPersonal.query.get_or_404(requisito_id)
-    
-    if requisito.company_id != company_id:
-        flash('El requisito no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_requisitos', company_id=company_id))
-    
-    form = RequisitoPersonalForm(obj=requisito)
-    
-    if form.validate_on_submit():
-        form.populate_obj(requisito)
-        db.session.commit()
-        
-        flash('Requisito de personal actualizado correctamente.', 'success')
-        return redirect(url_for('turnos.listar_requisitos', company_id=company_id))
-    
-    form.company_id.data = company_id
-    
-    return render_template('turnos/form_requisito.html',
-                          title=f'Editar Requisito de Personal - {company.name}',
-                          company=company,
-                          form=form,
-                          requisito=requisito)
-
-@turnos_bp.route('/requisitos/<int:company_id>/eliminar/<int:requisito_id>', methods=['POST'])
-@login_required
-def eliminar_requisito(company_id, requisito_id):
-    """Elimina un requisito de personal (marcar como inactivo)."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    requisito = RequisitoPersonal.query.get_or_404(requisito_id)
-    
-    if requisito.company_id != company_id:
-        flash('El requisito no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_requisitos', company_id=company_id))
-    
-    requisito.is_active = False
+    # Aprobar la ausencia
+    ausencia.aprobado = True
+    ausencia.aprobado_por_id = current_user.id
     db.session.commit()
     
-    flash('Requisito de personal eliminado correctamente.', 'success')
-    return redirect(url_for('turnos.listar_requisitos', company_id=company_id))
+    log_activity(f"Aprobada ausencia para {ausencia.employee.nombre} del {ausencia.fecha_inicio} al {ausencia.fecha_fin}")
+    flash(f'Ausencia para {ausencia.employee.nombre} aprobada correctamente.', 'success')
+    
+    # Redireccionar a la lista de ausencias
+    return redirect(url_for('turnos.listar_ausencias', company_id=company_id))
 
-# Plantillas de horarios
-@turnos_bp.route('/plantillas/<int:company_id>')
-@login_required
-def listar_plantillas(company_id):
-    """Lista las plantillas de horarios de una empresa."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    plantillas = PlantillaHorario.query.filter_by(company_id=company_id, is_active=True).order_by(PlantillaHorario.nombre).all()
-    
-    return render_template('turnos/listar_plantillas.html',
-                          title=f'Plantillas de Horarios - {company.name}',
-                          company=company,
-                          plantillas=plantillas)
-
-@turnos_bp.route('/plantillas/<int:company_id>/nueva', methods=['GET', 'POST'])
-@login_required
-def nueva_plantilla(company_id):
-    """Crea una nueva plantilla de horarios."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    form = PlantillaHorarioForm()
-    
-    if form.validate_on_submit():
-        plantilla = PlantillaHorario(
-            nombre=form.nombre.data,
-            descripcion=form.descripcion.data,
-            company_id=company_id
-        )
-        
-        db.session.add(plantilla)
-        db.session.commit()
-        
-        flash(f'Plantilla "{plantilla.nombre}" creada correctamente.', 'success')
-        return redirect(url_for('turnos.editar_plantilla', company_id=company_id, plantilla_id=plantilla.id))
-    
-    form.company_id.data = company_id
-    
-    return render_template('turnos/form_plantilla.html',
-                          title=f'Nueva Plantilla de Horarios - {company.name}',
-                          company=company,
-                          form=form)
-
-@turnos_bp.route('/plantillas/<int:company_id>/ver/<int:plantilla_id>')
-@login_required
-def ver_plantilla(company_id, plantilla_id):
-    """Muestra los detalles de una plantilla de horarios."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    plantilla = PlantillaHorario.query.get_or_404(plantilla_id)
-    
-    if plantilla.company_id != company_id:
-        flash('La plantilla no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    # Organizar detalles por día de la semana
-    detalles_por_dia = {dia: [] for dia in range(7)}
-    for detalle in plantilla.detalles:
-        detalles_por_dia[detalle.dia_semana].append(detalle)
-    
-    # Obtener asignaciones de esta plantilla
-    asignaciones = AsignacionPlantilla.query.filter_by(plantilla_id=plantilla_id, is_active=True).all()
-    
-    return render_template('turnos/ver_plantilla.html',
-                          title=f'Plantilla: {plantilla.nombre} - {company.name}',
-                          company=company,
-                          plantilla=plantilla,
-                          detalles_por_dia=detalles_por_dia,
-                          dias_semana=dias_semana,
-                          asignaciones=asignaciones)
-
-@turnos_bp.route('/plantillas/<int:company_id>/editar/<int:plantilla_id>', methods=['GET', 'POST'])
-@login_required
-def editar_plantilla(company_id, plantilla_id):
-    """Edita una plantilla de horarios existente."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    plantilla = PlantillaHorario.query.get_or_404(plantilla_id)
-    
-    if plantilla.company_id != company_id:
-        flash('La plantilla no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    # Formulario para editar los datos básicos de la plantilla
-    form = PlantillaHorarioForm(obj=plantilla)
-    
-    if form.validate_on_submit():
-        form.populate_obj(plantilla)
-        db.session.commit()
-        
-        flash(f'Plantilla "{plantilla.nombre}" actualizada correctamente.', 'success')
-        return redirect(url_for('turnos.editar_plantilla', company_id=company_id, plantilla_id=plantilla.id))
-    
-    # Formulario para agregar un nuevo detalle a la plantilla
-    detalle_form = DetallePlantillaForm()
-    turnos = get_turnos_empresa(company_id)
-    detalle_form.turno_id.choices = [(t.id, t.nombre) for t in turnos]
-    detalle_form.plantilla_id.data = plantilla_id
-    
-    # Organizar detalles por día de la semana
-    detalles_por_dia = {dia: [] for dia in range(7)}
-    for detalle in plantilla.detalles:
-        detalles_por_dia[detalle.dia_semana].append(detalle)
-    
-    return render_template('turnos/editar_plantilla.html',
-                          title=f'Editar Plantilla: {plantilla.nombre} - {company.name}',
-                          company=company,
-                          plantilla=plantilla,
-                          form=form,
-                          detalle_form=detalle_form,
-                          detalles_por_dia=detalles_por_dia,
-                          dias_semana=dias_semana)
-
-@turnos_bp.route('/plantillas/<int:company_id>/agregar_detalle/<int:plantilla_id>', methods=['POST'])
-@login_required
-def agregar_detalle_plantilla(company_id, plantilla_id):
-    """Agrega un detalle a una plantilla de horarios."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    plantilla = PlantillaHorario.query.get_or_404(plantilla_id)
-    
-    if plantilla.company_id != company_id:
-        flash('La plantilla no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    form = DetallePlantillaForm()
-    turnos = get_turnos_empresa(company_id)
-    form.turno_id.choices = [(t.id, t.nombre) for t in turnos]
-    
-    if form.validate_on_submit():
-        # Verificar si ya existe un detalle para este día y turno
-        existe = DetallePlantilla.query.filter_by(
-            plantilla_id=plantilla_id,
-            dia_semana=form.dia_semana.data,
-            turno_id=form.turno_id.data
-        ).first()
-        
-        if existe:
-            flash('Ya existe este turno para este día en la plantilla.', 'warning')
-            return redirect(url_for('turnos.editar_plantilla', company_id=company_id, plantilla_id=plantilla_id))
-        
-        detalle = DetallePlantilla(
-            dia_semana=form.dia_semana.data,
-            turno_id=form.turno_id.data,
-            plantilla_id=plantilla_id
-        )
-        
-        db.session.add(detalle)
-        db.session.commit()
-        
-        flash('Turno agregado a la plantilla correctamente.', 'success')
-    else:
-        flash('Error al agregar el turno a la plantilla.', 'danger')
-    
-    return redirect(url_for('turnos.editar_plantilla', company_id=company_id, plantilla_id=plantilla_id))
-
-@turnos_bp.route('/plantillas/<int:company_id>/eliminar_detalle/<int:detalle_id>', methods=['POST'])
-@login_required
-def eliminar_detalle_plantilla(company_id, detalle_id):
-    """Elimina un detalle de una plantilla de horarios."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    detalle = DetallePlantilla.query.get_or_404(detalle_id)
-    plantilla_id = detalle.plantilla_id
-    plantilla = PlantillaHorario.query.get_or_404(plantilla_id)
-    
-    if plantilla.company_id != company_id:
-        flash('La plantilla no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    db.session.delete(detalle)
-    db.session.commit()
-    
-    flash('Turno eliminado de la plantilla correctamente.', 'success')
-    return redirect(url_for('turnos.editar_plantilla', company_id=company_id, plantilla_id=plantilla_id))
-
-@turnos_bp.route('/plantillas/<int:company_id>/eliminar/<int:plantilla_id>', methods=['POST'])
-@login_required
-def eliminar_plantilla(company_id, plantilla_id):
-    """Elimina una plantilla de horarios (marcar como inactiva)."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    plantilla = PlantillaHorario.query.get_or_404(plantilla_id)
-    
-    if plantilla.company_id != company_id:
-        flash('La plantilla no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    # Verificar si hay asignaciones activas de esta plantilla
-    asignaciones_count = AsignacionPlantilla.query.filter_by(plantilla_id=plantilla_id, is_active=True).count()
-    if asignaciones_count > 0:
-        flash(f'No se puede eliminar la plantilla "{plantilla.nombre}" porque tiene {asignaciones_count} asignaciones activas.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    plantilla.is_active = False
-    db.session.commit()
-    
-    flash(f'Plantilla "{plantilla.nombre}" eliminada correctamente.', 'success')
-    return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-
-# Asignación de plantillas
-@turnos_bp.route('/asignar_plantilla/<int:company_id>', methods=['GET', 'POST'])
-@login_required
-def asignar_plantilla(company_id):
-    """Asigna una plantilla de horarios a un empleado."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    form = AsignacionPlantillaForm()
-    
-    # Cargar empleados y plantillas para los select
-    empleados = get_empleados_empresa(company_id)
-    plantillas = get_plantillas_empresa(company_id)
-    
-    form.employee_id.choices = [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
-    form.plantilla_id.choices = [(p.id, p.nombre) for p in plantillas]
-    
-    if form.validate_on_submit():
-        asignacion = AsignacionPlantilla(
-            plantilla_id=form.plantilla_id.data,
-            employee_id=form.employee_id.data,
-            fecha_inicio=form.fecha_inicio.data,
-            fecha_fin=form.fecha_fin.data
-        )
-        
-        db.session.add(asignacion)
-        db.session.commit()
-        
-        empleado = Employee.query.get(form.employee_id.data)
-        plantilla = PlantillaHorario.query.get(form.plantilla_id.data)
-        flash(f'Plantilla "{plantilla.nombre}" asignada correctamente a {empleado.nombre} {empleado.apellidos}.', 'success')
-        
-        # Preguntar si desea generar los horarios ahora
-        return redirect(url_for('turnos.confirmar_generar_horarios', 
-                              company_id=company_id, 
-                              asignacion_id=asignacion.id))
-    
-    # Si viene con un empleado o plantilla preseleccionados
-    employee_id = request.args.get('employee_id', type=int)
-    if employee_id:
-        form.employee_id.data = employee_id
-    
-    plantilla_id = request.args.get('plantilla_id', type=int)
-    if plantilla_id:
-        form.plantilla_id.data = plantilla_id
-    
-    # Valores por defecto
-    if request.method == 'GET':
-        form.fecha_inicio.data = date.today()
-    
-    return render_template('turnos/form_asignar_plantilla.html',
-                          title=f'Asignar Plantilla de Horarios - {company.name}',
-                          company=company,
-                          form=form)
-
-@turnos_bp.route('/confirmar_generar_horarios/<int:company_id>/<int:asignacion_id>')
-@login_required
-def confirmar_generar_horarios(company_id, asignacion_id):
-    """Confirmación para generar horarios a partir de una asignación de plantilla."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    asignacion = AsignacionPlantilla.query.get_or_404(asignacion_id)
-    empleado = Employee.query.get(asignacion.employee_id)
-    plantilla = PlantillaHorario.query.get(asignacion.plantilla_id)
-    
-    if empleado.company_id != company_id:
-        flash('El empleado no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    return render_template('turnos/confirmar_generar_horarios.html',
-                          title=f'Generar Horarios - {company.name}',
-                          company=company,
-                          asignacion=asignacion,
-                          empleado=empleado,
-                          plantilla=plantilla)
-
-@turnos_bp.route('/generar_horarios/<int:company_id>/<int:asignacion_id>', methods=['POST'])
-@login_required
-def generar_horarios(company_id, asignacion_id):
-    """Genera horarios a partir de una asignación de plantilla."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    asignacion = AsignacionPlantilla.query.get_or_404(asignacion_id)
-    empleado = Employee.query.get(asignacion.employee_id)
-    plantilla = PlantillaHorario.query.get(asignacion.plantilla_id)
-    
-    if empleado.company_id != company_id:
-        flash('El empleado no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    # Obtener el rango de fechas desde el formulario
-    fecha_inicio_str = request.form.get('fecha_inicio')
-    fecha_fin_str = request.form.get('fecha_fin')
-    
-    try:
-        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
-        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date() if fecha_fin_str else None
-    except ValueError:
-        flash('Las fechas proporcionadas no son válidas.', 'danger')
-        return redirect(url_for('turnos.confirmar_generar_horarios', company_id=company_id, asignacion_id=asignacion_id))
-    
-    if fecha_fin and fecha_fin < fecha_inicio:
-        flash('La fecha de fin debe ser posterior a la fecha de inicio.', 'danger')
-        return redirect(url_for('turnos.confirmar_generar_horarios', company_id=company_id, asignacion_id=asignacion_id))
-    
-    # Si no se proporciona fecha de fin, usar 4 semanas como máximo
-    if not fecha_fin:
-        fecha_fin = fecha_inicio + timedelta(days=28)
-    
-    # Obtener detalles de la plantilla
-    detalles_por_dia = {}
-    for detalle in plantilla.detalles:
-        if detalle.dia_semana not in detalles_por_dia:
-            detalles_por_dia[detalle.dia_semana] = []
-        detalles_por_dia[detalle.dia_semana].append(detalle)
-    
-    # Generar horarios
-    horarios_creados = 0
-    horarios_omitidos = 0
-    
-    fecha_actual = fecha_inicio
-    while fecha_actual <= fecha_fin:
-        dia_semana = fecha_actual.weekday()
-        
-        # Si hay turnos definidos para este día de la semana
-        if dia_semana in detalles_por_dia:
-            for detalle in detalles_por_dia[dia_semana]:
-                # Verificar si ya existe una asignación para esta fecha
-                existe = Horario.query.filter_by(
-                    employee_id=empleado.id,
-                    fecha=fecha_actual,
-                    is_active=True
-                ).first()
-                
-                if not existe:
-                    horario = Horario(
-                        fecha=fecha_actual,
-                        turno_id=detalle.turno_id,
-                        employee_id=empleado.id,
-                        notas=f"Generado automáticamente desde plantilla '{plantilla.nombre}'"
-                    )
-                    
-                    db.session.add(horario)
-                    horarios_creados += 1
-                    
-                    # Registrar el cambio en el historial
-                    turno = Turno.query.get(detalle.turno_id)
-                    registrar_cambio_horario(
-                        horario,
-                        "creacion",
-                        f"Asignación automática de turno '{turno.nombre}' a {empleado.nombre} {empleado.apellidos} para el {fecha_actual.strftime('%d/%m/%Y')} desde plantilla '{plantilla.nombre}'"
-                    )
-                else:
-                    horarios_omitidos += 1
-        
-        fecha_actual += timedelta(days=1)
-    
-    db.session.commit()
-    
-    mensaje = f'Se han generado {horarios_creados} horarios correctamente a partir de la plantilla.'
-    if horarios_omitidos > 0:
-        mensaje += f' Se omitieron {horarios_omitidos} asignaciones porque ya existían.'
-    
-    flash(mensaje, 'success')
-    
-    # Redirigir al calendario en la semana de la fecha inicial
-    inicio_semana = fecha_inicio - timedelta(days=fecha_inicio.weekday())
-    return redirect(url_for('turnos.calendario', company_id=company_id, semana=inicio_semana.strftime('%Y-%m-%d')))
-
-@turnos_bp.route('/desasignar_plantilla/<int:company_id>/<int:asignacion_id>', methods=['POST'])
-@login_required
-def desasignar_plantilla(company_id, asignacion_id):
-    """Desasigna una plantilla de un empleado (marcar como inactiva)."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    asignacion = AsignacionPlantilla.query.get_or_404(asignacion_id)
-    empleado = Employee.query.get(asignacion.employee_id)
-    plantilla = PlantillaHorario.query.get(asignacion.plantilla_id)
-    
-    if empleado.company_id != company_id:
-        flash('El empleado no pertenece a esta empresa.', 'danger')
-        return redirect(url_for('turnos.listar_plantillas', company_id=company_id))
-    
-    asignacion.is_active = False
-    db.session.commit()
-    
-    flash(f'Plantilla "{plantilla.nombre}" desasignada correctamente de {empleado.nombre} {empleado.apellidos}.', 'success')
-    return redirect(url_for('turnos.ver_plantilla', company_id=company_id, plantilla_id=plantilla.id))
-
-# Informes y exportación
 @turnos_bp.route('/informes/<int:company_id>')
 @login_required
 def informes(company_id):
-    """Página de informes del módulo de turnos."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    
-    return render_template('turnos/informes.html',
-                          title=f'Informes de Turnos - {company.name}',
-                          company=company)
+    """Muestra la página de informes de turnos."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
+        
+    return render_template(
+        'turnos/informes.html',
+        company=company
+    )
 
-@turnos_bp.route('/informe_horarios/<int:company_id>', methods=['GET', 'POST'])
+@turnos_bp.route('/informes/<int:company_id>/horarios')
 @login_required
 def informe_horarios(company_id):
-    """Genera un informe de horarios."""
-    if not puede_gestionar_empresa(company_id):
-        flash('No tiene permiso para gestionar esta empresa.', 'danger')
-        return redirect(url_for('turnos.select_company'))
-    
-    company = Company.query.get_or_404(company_id)
-    form = FiltroHorarioForm()
-    
-    # Cargar empleados y turnos para los select
-    empleados = get_empleados_empresa(company_id)
-    turnos = get_turnos_empresa(company_id)
-    
-    form.employee_id.choices = [(-1, 'Todos los empleados')] + [(e.id, f"{e.nombre} {e.apellidos}") for e in empleados]
-    form.turno_id.choices = [(-1, 'Todos los turnos')] + [(t.id, t.nombre) for t in turnos]
-    
-    if form.validate_on_submit() or request.method == 'GET' and request.args.get('fecha_inicio'):
-        # Si es POST o GET con parámetros, procesar el informe
-        if request.method == 'GET' and request.args.get('fecha_inicio'):
-            # Obtener filtros de la URL
-            try:
-                fecha_inicio = datetime.strptime(request.args.get('fecha_inicio'), '%Y-%m-%d').date()
-                fecha_fin = datetime.strptime(request.args.get('fecha_fin'), '%Y-%m-%d').date() if request.args.get('fecha_fin') else None
-                employee_id = int(request.args.get('employee_id', -1))
-                turno_id = int(request.args.get('turno_id', -1))
-            except (ValueError, TypeError):
-                flash('Parámetros de filtro inválidos.', 'danger')
-                return redirect(url_for('turnos.informe_horarios', company_id=company_id))
-        else:
-            # Obtener filtros del formulario
-            fecha_inicio = form.fecha_inicio.data
-            fecha_fin = form.fecha_fin.data
-            employee_id = form.employee_id.data
-            turno_id = form.turno_id.data
+    """Genera un informe de horarios para un período específico."""
+    # Verificar acceso a la empresa
+    company = get_company_or_404(company_id)
+    if not puede_ver_empresa(company_id):
+        abort(403)
         
-        # Si no se proporciona fecha de fin, usar fecha de inicio + 30 días
-        if not fecha_fin:
-            fecha_fin = fecha_inicio + timedelta(days=30)
-        
-        # Construir la consulta base
-        query = Horario.query.join(Employee).filter(
-            Employee.company_id == company_id,
-            Horario.fecha >= fecha_inicio,
-            Horario.fecha <= fecha_fin,
-            Horario.is_active == True
-        )
-        
-        # Aplicar filtros adicionales si se seleccionaron
-        if employee_id > 0:
-            query = query.filter(Horario.employee_id == employee_id)
-        
-        if turno_id > 0:
-            query = query.filter(Horario.turno_id == turno_id)
-        
-        # Ordenar por fecha y empleado
-        horarios = query.order_by(Horario.fecha, Horario.employee_id).all()
-        
-        # Agrupar horarios por empleado
-        horarios_por_empleado = {}
-        for horario in horarios:
-            if horario.employee_id not in horarios_por_empleado:
-                horarios_por_empleado[horario.employee_id] = {
-                    'empleado': horario.employee,
-                    'horarios': [],
-                    'horas_totales': 0,
-                    'dias_trabajados': 0
-                }
-            
-            horarios_por_empleado[horario.employee_id]['horarios'].append(horario)
-            horarios_por_empleado[horario.employee_id]['horas_totales'] += horario.turno.horas_efectivas
-            horarios_por_empleado[horario.employee_id]['dias_trabajados'] += 1
-        
-        # Exportar si se solicita
-        formato = request.args.get('formato') or request.form.get('formato')
-        if formato:
-            return exportar_informe_horarios(
-                company, 
-                horarios, 
-                horarios_por_empleado, 
-                fecha_inicio, 
-                fecha_fin, 
-                formato
-            )
-        
-        # Valores para el formulario al redireccionar por GET
-        if request.method == 'GET' and request.args.get('fecha_inicio'):
-            form.fecha_inicio.data = fecha_inicio
-            form.fecha_fin.data = fecha_fin
-            form.employee_id.data = employee_id
-            form.turno_id.data = turno_id
-        
-        return render_template('turnos/informe_horarios.html',
-                              title=f'Informe de Horarios - {company.name}',
-                              company=company,
-                              form=form,
-                              horarios=horarios,
-                              horarios_por_empleado=horarios_por_empleado,
-                              fecha_inicio=fecha_inicio,
-                              fecha_fin=fecha_fin,
-                              hay_resultados=len(horarios) > 0)
-    
-    # Valores por defecto para el formulario
-    if request.method == 'GET' and not request.args.get('fecha_inicio'):
-        form.fecha_inicio.data = date.today().replace(day=1)  # Primer día del mes actual
-        form.fecha_fin.data = date.today().replace(day=calendar.monthrange(date.today().year, date.today().month)[1])  # Último día del mes
-        form.employee_id.data = -1  # Todos los empleados
-        form.turno_id.data = -1  # Todos los turnos
-    
-    return render_template('turnos/informe_horarios.html',
-                          title=f'Informe de Horarios - {company.name}',
-                          company=company,
-                          form=form,
-                          hay_resultados=False)
-
-def exportar_informe_horarios(company, horarios, horarios_por_empleado, fecha_inicio, fecha_fin, formato):
-    """Exporta un informe de horarios en el formato especificado."""
-    if formato == 'csv':
-        # Crear archivo CSV en memoria
-        output = io.StringIO()
-        writer = csv.writer(output)
-        
-        # Encabezados
-        writer.writerow(['Empleado', 'Fecha', 'Día', 'Turno', 'Hora Inicio', 'Hora Fin', 'Horas', 'Notas'])
-        
-        # Datos
-        for horario in horarios:
-            dia_semana = dias_semana[horario.fecha.weekday()]
-            writer.writerow([
-                f"{horario.employee.nombre} {horario.employee.apellidos}",
-                horario.fecha.strftime('%d/%m/%Y'),
-                dia_semana,
-                horario.turno.nombre,
-                horario.turno.hora_inicio.strftime('%H:%M'),
-                horario.turno.hora_fin.strftime('%H:%M'),
-                f"{horario.turno.horas_efectivas:.2f}",
-                horario.notas or ''
-            ])
-        
-        # Configurar respuesta
-        output.seek(0)
-        filename = f"horarios_{company.name}_{fecha_inicio.strftime('%Y%m%d')}_{fecha_fin.strftime('%Y%m%d')}.csv"
-        return send_file(
-            io.BytesIO(output.getvalue().encode('utf-8-sig')),
-            as_attachment=True,
-            download_name=filename,
-            mimetype='text/csv'
-        )
-    
-    elif formato == 'excel':
-        # Crear libro Excel en memoria
-        wb = Workbook()
-        ws = wb.active
-        ws.title = "Horarios"
-        
-        # Estilos
-        header_font = Font(bold=True, color="FFFFFF")
-        header_fill = PatternFill(start_color="003366", end_color="003366", fill_type="solid")
-        header_alignment = Alignment(horizontal="center", vertical="center")
-        
-        # Encabezados
-        headers = ['Empleado', 'Fecha', 'Día', 'Turno', 'Hora Inicio', 'Hora Fin', 'Horas', 'Notas']
-        for col, header in enumerate(headers, start=1):
-            cell = ws.cell(row=1, column=col, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-        
-        # Datos
-        row = 2
-        for horario in horarios:
-            dia_semana = dias_semana[horario.fecha.weekday()]
-            ws.cell(row=row, column=1, value=f"{horario.employee.nombre} {horario.employee.apellidos}")
-            ws.cell(row=row, column=2, value=horario.fecha.strftime('%d/%m/%Y'))
-            ws.cell(row=row, column=3, value=dia_semana)
-            ws.cell(row=row, column=4, value=horario.turno.nombre)
-            ws.cell(row=row, column=5, value=horario.turno.hora_inicio.strftime('%H:%M'))
-            ws.cell(row=row, column=6, value=horario.turno.hora_fin.strftime('%H:%M'))
-            ws.cell(row=row, column=7, value=round(horario.turno.horas_efectivas, 2))
-            ws.cell(row=row, column=8, value=horario.notas or '')
-            row += 1
-        
-        # Autajustar columnas
-        for col in ws.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            adjusted_width = max_length + 2
-            ws.column_dimensions[column].width = adjusted_width
-        
-        # Agregar hoja de resumen
-        ws_resumen = wb.create_sheet(title="Resumen")
-        
-        # Encabezados resumen
-        headers_resumen = ['Empleado', 'Días Trabajados', 'Horas Totales']
-        for col, header in enumerate(headers_resumen, start=1):
-            cell = ws_resumen.cell(row=1, column=col, value=header)
-            cell.font = header_font
-            cell.fill = header_fill
-            cell.alignment = header_alignment
-        
-        # Datos resumen
-        row = 2
-        for datos in horarios_por_empleado.values():
-            ws_resumen.cell(row=row, column=1, value=f"{datos['empleado'].nombre} {datos['empleado'].apellidos}")
-            ws_resumen.cell(row=row, column=2, value=datos['dias_trabajados'])
-            ws_resumen.cell(row=row, column=3, value=round(datos['horas_totales'], 2))
-            row += 1
-        
-        # Autajustar columnas resumen
-        for col in ws_resumen.columns:
-            max_length = 0
-            column = col[0].column_letter
-            for cell in col:
-                if cell.value:
-                    max_length = max(max_length, len(str(cell.value)))
-            adjusted_width = max_length + 2
-            ws_resumen.column_dimensions[column].width = adjusted_width
-        
-        # Guardar en memoria
-        output = io.BytesIO()
-        wb.save(output)
-        output.seek(0)
-        
-        # Configurar respuesta
-        filename = f"horarios_{company.name}_{fecha_inicio.strftime('%Y%m%d')}_{fecha_fin.strftime('%Y%m%d')}.xlsx"
-        return send_file(
-            output,
-            as_attachment=True,
-            download_name=filename,
-            mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
-        )
-    
-    elif formato == 'pdf':
-        from fpdf import FPDF
-        
-        class PDF(FPDF):
-            def header(self):
-                self.set_font('Arial', 'B', 12)
-                self.cell(0, 10, f'Informe de Horarios - {company.name}', 0, 1, 'C')
-                self.cell(0, 10, f'Período: {fecha_inicio.strftime("%d/%m/%Y")} - {fecha_fin.strftime("%d/%m/%Y")}', 0, 1, 'C')
-                self.ln(5)
-            
-            def footer(self):
-                self.set_y(-15)
-                self.set_font('Arial', 'I', 8)
-                self.cell(0, 10, f'Página {self.page_no()}', 0, 0, 'C')
-        
-        # Crear PDF
-        pdf = PDF()
-        pdf.add_page()
-        
-        # Resumen por empleado
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, 'Resumen por Empleado', 0, 1)
-        pdf.ln(2)
-        
-        # Tabla de resumen
-        pdf.set_font('Arial', 'B', 10)
-        pdf.cell(90, 7, 'Empleado', 1, 0, 'C')
-        pdf.cell(30, 7, 'Días', 1, 0, 'C')
-        pdf.cell(30, 7, 'Horas', 1, 1, 'C')
-        
-        pdf.set_font('Arial', '', 10)
-        for datos in horarios_por_empleado.values():
-            pdf.cell(90, 7, f"{datos['empleado'].nombre} {datos['empleado'].apellidos}", 1, 0)
-            pdf.cell(30, 7, str(datos['dias_trabajados']), 1, 0, 'C')
-            pdf.cell(30, 7, f"{datos['horas_totales']:.2f}", 1, 1, 'C')
-        
-        pdf.ln(10)
-        
-        # Detalle de horarios
-        pdf.set_font('Arial', 'B', 12)
-        pdf.cell(0, 10, 'Detalle de Horarios', 0, 1)
-        pdf.ln(2)
-        
-        # Agrupar por empleado para el detalle
-        for employee_id, datos in horarios_por_empleado.items():
-            pdf.set_font('Arial', 'B', 11)
-            pdf.cell(0, 7, f"{datos['empleado'].nombre} {datos['empleado'].apellidos}", 0, 1)
-            pdf.ln(2)
-            
-            # Tabla de horarios por empleado
-            pdf.set_font('Arial', 'B', 9)
-            pdf.cell(25, 7, 'Fecha', 1, 0, 'C')
-            pdf.cell(20, 7, 'Día', 1, 0, 'C')
-            pdf.cell(30, 7, 'Turno', 1, 0, 'C')
-            pdf.cell(20, 7, 'Inicio', 1, 0, 'C')
-            pdf.cell(20, 7, 'Fin', 1, 0, 'C')
-            pdf.cell(15, 7, 'Horas', 1, 0, 'C')
-            pdf.cell(60, 7, 'Notas', 1, 1, 'C')
-            
-            pdf.set_font('Arial', '', 8)
-            for horario in datos['horarios']:
-                dia_semana = dias_semana[horario.fecha.weekday()]
-                
-                # Comprobar si hay suficiente espacio en la página actual
-                if pdf.get_y() + 7 > pdf.page_break_trigger:
-                    pdf.add_page()
-                    
-                    # Repetir encabezados de la tabla
-                    pdf.set_font('Arial', 'B', 11)
-                    pdf.cell(0, 7, f"{datos['empleado'].nombre} {datos['empleado'].apellidos} (cont.)", 0, 1)
-                    pdf.ln(2)
-                    
-                    pdf.set_font('Arial', 'B', 9)
-                    pdf.cell(25, 7, 'Fecha', 1, 0, 'C')
-                    pdf.cell(20, 7, 'Día', 1, 0, 'C')
-                    pdf.cell(30, 7, 'Turno', 1, 0, 'C')
-                    pdf.cell(20, 7, 'Inicio', 1, 0, 'C')
-                    pdf.cell(20, 7, 'Fin', 1, 0, 'C')
-                    pdf.cell(15, 7, 'Horas', 1, 0, 'C')
-                    pdf.cell(60, 7, 'Notas', 1, 1, 'C')
-                    
-                    pdf.set_font('Arial', '', 8)
-                
-                pdf.cell(25, 7, horario.fecha.strftime('%d/%m/%Y'), 1, 0)
-                pdf.cell(20, 7, dia_semana, 1, 0)
-                pdf.cell(30, 7, horario.turno.nombre, 1, 0)
-                pdf.cell(20, 7, horario.turno.hora_inicio.strftime('%H:%M'), 1, 0, 'C')
-                pdf.cell(20, 7, horario.turno.hora_fin.strftime('%H:%M'), 1, 0, 'C')
-                pdf.cell(15, 7, f"{horario.turno.horas_efectivas:.2f}", 1, 0, 'C')
-                
-                # Gestionar texto largo en las notas
-                notas = horario.notas or ''
-                if len(notas) > 28:
-                    notas = notas[:25] + '...'
-                pdf.cell(60, 7, notas, 1, 1)
-            
-            pdf.ln(5)
-        
-        # Guardar en memoria
-        output = io.BytesIO()
-        output.write(pdf.output(dest='S').encode('latin1'))
-        output.seek(0)
-        
-        # Configurar respuesta
-        filename = f"horarios_{company.name}_{fecha_inicio.strftime('%Y%m%d')}_{fecha_fin.strftime('%Y%m%d')}.pdf"
-        return send_file(
-            output,
-            as_attachment=True,
-            download_name=filename,
-            mimetype='application/pdf'
-        )
-    
-    # Si el formato no es válido, redirigir al informe
-    flash('Formato de exportación no válido.', 'danger')
-    return redirect(url_for('turnos.informe_horarios', 
-                        company_id=company.id,
-                        fecha_inicio=fecha_inicio.strftime('%Y-%m-%d'),
-                        fecha_fin=fecha_fin.strftime('%Y-%m-%d')))
-
-# API para interacción en el frontend
-@turnos_bp.route('/api/horarios/<int:company_id>/<fecha>')
-@login_required
-def api_horarios_fecha(company_id, fecha):
-    """API para obtener horarios de una fecha específica."""
-    if not puede_gestionar_empresa(company_id):
-        return jsonify({'error': 'No tiene permiso para acceder a estos datos'}), 403
+    # Obtener parámetros de fechas
+    fecha_inicio_str = request.args.get('fecha_inicio')
+    fecha_fin_str = request.args.get('fecha_fin')
     
     try:
-        fecha_obj = datetime.strptime(fecha, '%Y-%m-%d').date()
-    except ValueError:
-        return jsonify({'error': 'Formato de fecha inválido'}), 400
+        fecha_inicio = datetime.strptime(fecha_inicio_str, '%Y-%m-%d').date()
+        fecha_fin = datetime.strptime(fecha_fin_str, '%Y-%m-%d').date()
+    except (ValueError, TypeError):
+        # Si no se proporcionan fechas válidas, usar la semana actual
+        fecha_inicio, fecha_fin = get_rango_semana(date.today())
     
-    # Obtener horarios para la fecha
-    horarios = Horario.query.join(Employee).filter(
-        Employee.company_id == company_id,
-        Horario.fecha == fecha_obj,
-        Horario.is_active == True
-    ).all()
+    # Limitar el rango a 31 días por rendimiento
+    if (fecha_fin - fecha_inicio).days > 31:
+        fecha_fin = fecha_inicio + timedelta(days=31)
     
-    # Formatear resultados
-    resultados = []
-    for horario in horarios:
-        resultados.append({
-            'id': horario.id,
-            'employee_id': horario.employee_id,
-            'employee_nombre': f"{horario.employee.nombre} {horario.employee.apellidos}",
-            'turno_id': horario.turno_id,
-            'turno_nombre': horario.turno.nombre,
-            'turno_color': horario.turno.color,
-            'hora_inicio': horario.turno.hora_inicio.strftime('%H:%M'),
-            'hora_fin': horario.turno.hora_fin.strftime('%H:%M'),
-            'notas': horario.notas
-        })
+    # Obtener horarios para el período
+    horarios = (Horario.query
+               .join(Turno)
+               .join(Employee)
+               .filter(
+                   Turno.company_id == company_id,
+                   Horario.fecha.between(fecha_inicio, fecha_fin),
+                   Employee.is_active == True
+               )
+               .order_by(Employee.nombre, Horario.fecha)
+               .all())
     
-    return jsonify(resultados)
+    # Obtener ausencias para el período
+    ausencias = (Ausencia.query
+                .join(Employee)
+                .filter(
+                    Employee.company_id == company_id,
+                    Employee.is_active == True,
+                    or_(
+                        and_(Ausencia.fecha_inicio <= fecha_fin, Ausencia.fecha_fin >= fecha_inicio)
+                    )
+                )
+                .all())
+    
+    # Formato solicitado: excel o pdf
+    formato = request.args.get('formato', 'web')
+    
+    if formato == 'excel':
+        return generar_excel_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin)
+    elif formato == 'pdf':
+        return generar_pdf_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin)
+    else:
+        # Vista web por defecto
+        return render_template(
+            'turnos/informe_horarios.html',
+            company=company,
+            horarios=horarios,
+            ausencias=ausencias,
+            fecha_inicio=fecha_inicio,
+            fecha_fin=fecha_fin
+        )
 
-def init_app(app):
-    """Inicializa la aplicación con este blueprint."""
-    app.register_blueprint(turnos_bp)
+def generar_excel_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin):
+    """Genera un informe en formato Excel de los horarios."""
+    # Crear un nuevo libro de Excel
+    wb = Workbook()
+    ws = wb.active
+    ws.title = "Horarios"
     
-    # Agrega el módulo de turnos a la navegación
-    @app.context_processor
-    def inject_turnos_nav():
-        return {
-            'show_turnos_nav': True
-        }
+    # Configurar estilos
+    header_font = Font(bold=True, color="FFFFFF")
+    header_fill = PatternFill(start_color="4472C4", end_color="4472C4", fill_type="solid")
+    
+    # Añadir título
+    ws.cell(1, 1).value = f"Informe de Horarios - {company.name}"
+    ws.cell(1, 1).font = Font(bold=True, size=14)
+    ws.merge_cells('A1:H1')
+    ws.cell(1, 1).alignment = Alignment(horizontal="center")
+    
+    # Añadir período del informe
+    ws.cell(2, 1).value = f"Período: {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}"
+    ws.merge_cells('A2:H2')
+    ws.cell(2, 1).alignment = Alignment(horizontal="center")
+    
+    # Añadir encabezados de columnas
+    headers = ["Empleado", "Fecha", "Día", "Turno", "Horario", "Horas", "Tipo", "Notas"]
+    for i, header in enumerate(headers, 1):
+        cell = ws.cell(4, i)
+        cell.value = header
+        cell.font = header_font
+        cell.fill = header_fill
+        cell.alignment = Alignment(horizontal="center")
+    
+    # Añadir datos de horarios
+    row = 5
+    for horario in horarios:
+        # Empleado
+        ws.cell(row, 1).value = f"{horario.employee.nombre} {horario.employee.apellidos}"
+        
+        # Fecha
+        ws.cell(row, 2).value = horario.fecha.strftime('%d/%m/%Y')
+        ws.cell(row, 2).alignment = Alignment(horizontal="center")
+        
+        # Día de la semana
+        dia_semana = horario.fecha.weekday()
+        dias = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"]
+        ws.cell(row, 3).value = dias[dia_semana]
+        
+        # Turno
+        ws.cell(row, 4).value = horario.turno.nombre
+        
+        # Horario
+        ws.cell(row, 5).value = f"{horario.turno.hora_inicio.strftime('%H:%M')} - {horario.turno.hora_fin.strftime('%H:%M')}"
+        ws.cell(row, 5).alignment = Alignment(horizontal="center")
+        
+        # Horas efectivas
+        ws.cell(row, 6).value = horario.turno.horas_efectivas
+        ws.cell(row, 6).alignment = Alignment(horizontal="center")
+        
+        # Tipo de turno
+        ws.cell(row, 7).value = horario.turno.tipo.value
+        
+        # Notas
+        ws.cell(row, 8).value = horario.notas
+        
+        row += 1
+    
+    # Ajustar ancho de columnas automáticamente
+    for i in range(1, 9):
+        column_letter = chr(64 + i)  # A, B, C, ...
+        ws.column_dimensions[column_letter].width = 15
+    
+    # Añadir una hoja para ausencias si hay alguna
+    if ausencias:
+        ws_ausencias = wb.create_sheet(title="Ausencias")
+        
+        # Añadir título
+        ws_ausencias.cell(1, 1).value = f"Informe de Ausencias - {company.name}"
+        ws_ausencias.cell(1, 1).font = Font(bold=True, size=14)
+        ws_ausencias.merge_cells('A1:F1')
+        ws_ausencias.cell(1, 1).alignment = Alignment(horizontal="center")
+        
+        # Añadir período del informe
+        ws_ausencias.cell(2, 1).value = f"Período: {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}"
+        ws_ausencias.merge_cells('A2:F2')
+        ws_ausencias.cell(2, 1).alignment = Alignment(horizontal="center")
+        
+        # Añadir encabezados de columnas
+        headers = ["Empleado", "Tipo", "Inicio", "Fin", "Días", "Motivo"]
+        for i, header in enumerate(headers, 1):
+            cell = ws_ausencias.cell(4, i)
+            cell.value = header
+            cell.font = header_font
+            cell.fill = header_fill
+            cell.alignment = Alignment(horizontal="center")
+        
+        # Añadir datos de ausencias
+        row = 5
+        for ausencia in ausencias:
+            # Empleado
+            ws_ausencias.cell(row, 1).value = f"{ausencia.employee.nombre} {ausencia.employee.apellidos}"
+            
+            # Tipo de ausencia
+            ws_ausencias.cell(row, 2).value = ausencia.tipo.value
+            
+            # Fecha inicio
+            ws_ausencias.cell(row, 3).value = ausencia.fecha_inicio.strftime('%d/%m/%Y')
+            ws_ausencias.cell(row, 3).alignment = Alignment(horizontal="center")
+            
+            # Fecha fin
+            ws_ausencias.cell(row, 4).value = ausencia.fecha_fin.strftime('%d/%m/%Y')
+            ws_ausencias.cell(row, 4).alignment = Alignment(horizontal="center")
+            
+            # Días totales
+            ws_ausencias.cell(row, 5).value = ausencia.dias_totales
+            ws_ausencias.cell(row, 5).alignment = Alignment(horizontal="center")
+            
+            # Motivo
+            ws_ausencias.cell(row, 6).value = ausencia.motivo
+            
+            row += 1
+        
+        # Ajustar ancho de columnas automáticamente
+        for i in range(1, 7):
+            column_letter = chr(64 + i)  # A, B, C, ...
+            ws_ausencias.column_dimensions[column_letter].width = 15
+    
+    # Guardar el archivo en memoria
+    output = io.BytesIO()
+    wb.save(output)
+    output.seek(0)
+    
+    # Configurar la respuesta
+    filename = f"horarios_{company.name}_{fecha_inicio.strftime('%Y%m%d')}_{fecha_fin.strftime('%Y%m%d')}.xlsx"
+    return send_file(
+        output,
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet'
+    )
+
+def generar_pdf_horarios(company, horarios, ausencias, fecha_inicio, fecha_fin):
+    """Genera un informe en formato PDF de los horarios."""
+    from fpdf import FPDF
+    
+    # Crear un nuevo documento PDF
+    pdf = FPDF()
+    pdf.add_page()
+    
+    # Configurar fuentes
+    pdf.set_font("Arial", 'B', 16)
+    
+    # Añadir título
+    pdf.cell(0, 10, f"Informe de Horarios - {company.name}", 0, 1, 'C')
+    
+    # Añadir período del informe
+    pdf.set_font("Arial", '', 12)
+    pdf.cell(0, 10, f"Período: {fecha_inicio.strftime('%d/%m/%Y')} - {fecha_fin.strftime('%d/%m/%Y')}", 0, 1, 'C')
+    
+    # Añadir tabla de horarios
+    pdf.ln(10)
+    pdf.set_font("Arial", 'B', 12)
+    pdf.cell(0, 10, "Horarios", 0, 1, 'L')
+    
+    # Definir anchos de columnas
+    col_widths = [50, 25, 25, 40, 30, 15]
+    
+    # Encabezados de la tabla
+    headers = ["Empleado", "Fecha", "Turno", "Horario", "Tipo", "Horas"]
+    pdf.set_fill_color(70, 114, 196)  # Azul para encabezados
+    pdf.set_text_color(255, 255, 255)  # Texto blanco
+    
+    for i, header in enumerate(headers):
+        pdf.cell(col_widths[i], 10, header, 1, 0, 'C', True)
+    pdf.ln()
+    
+    # Datos de la tabla
+    pdf.set_font("Arial", '', 10)
+    pdf.set_text_color(0, 0, 0)  # Texto negro
+    
+    # Agrupar horarios por empleado
+    horarios_por_empleado = {}
+    for horario in horarios:
+        employee_id = horario.employee_id
+        if employee_id not in horarios_por_empleado:
+            horarios_por_empleado[employee_id] = []
+        horarios_por_empleado[employee_id].append(horario)
+    
+    # Añadir datos agrupados por empleado
+    for employee_id, horarios_empleado in horarios_por_empleado.items():
+        # Ordenar horarios por fecha
+        horarios_empleado.sort(key=lambda h: h.fecha)
+        
+        # Obtener información del empleado
+        empleado = horarios_empleado[0].employee
+        
+        # Alternar colores de fondo para filas
+        fill = False
+        
+        for horario in horarios_empleado:
+            # Si es una nueva página, añadir encabezados nuevamente
+            if pdf.get_y() > 270:
+                pdf.add_page()
+                pdf.set_font("Arial", 'B', 12)
+                pdf.set_fill_color(70, 114, 196)
+                pdf.set_text_color(255, 255, 255)
+                
+                for i, header in enumerate(headers):
+                    pdf.cell(col_widths[i], 10, header, 1, 0, 'C', True)
+                pdf.ln()
+                
+                pdf.set_font("Arial", '', 10)
+                pdf.set_text_color(0, 0, 0)
+            
+            # Establecer color de fondo para filas alternas
+            if fill:
+                pdf.set_fill_color(240, 240, 240)  # Gris claro
+            else:
+                pdf.set_fill_color(255, 255, 255)  # Blanco
+            
+            # Empleado
+            pdf.cell(col_widths[0], 10, f"{empleado.nombre} {empleado.apellidos}", 1, 0, 'L', fill)
+            
+            # Fecha
+            pdf.cell(col_widths[1], 10, horario.fecha.strftime('%d/%m/%Y'), 1, 0, 'C', fill)
+            
+            # Turno
+            pdf.cell(col_widths[2], 10, horario.turno.nombre, 1, 0, 'L', fill)
+            
+            # Horario
+            pdf.cell(col_widths[3], 10, f"{horario.turno.hora_inicio.strftime('%H:%M')} - {horario.turno.hora_fin.strftime('%H:%M')}", 1, 0, 'C', fill)
+            
+            # Tipo
+            pdf.cell(col_widths[4], 10, horario.turno.tipo.value, 1, 0, 'L', fill)
+            
+            # Horas
+            pdf.cell(col_widths[5], 10, str(horario.turno.horas_efectivas), 1, 1, 'C', fill)
+            
+            # Alternar el valor de fill
+            fill = not fill
+    
+    # Añadir tabla de ausencias si hay alguna
+    if ausencias:
+        pdf.add_page()
+        pdf.set_font("Arial", 'B', 12)
+        pdf.cell(0, 10, "Ausencias", 0, 1, 'L')
+        
+        # Definir anchos de columnas para ausencias
+        col_widths_ausencias = [50, 30, 25, 25, 15, 45]
+        
+        # Encabezados de la tabla
+        headers = ["Empleado", "Tipo", "Inicio", "Fin", "Días", "Motivo"]
+        pdf.set_fill_color(70, 114, 196)  # Azul para encabezados
+        pdf.set_text_color(255, 255, 255)  # Texto blanco
+        
+        for i, header in enumerate(headers):
+            pdf.cell(col_widths_ausencias[i], 10, header, 1, 0, 'C', True)
+        pdf.ln()
+        
+        # Datos de la tabla
+        pdf.set_font("Arial", '', 10)
+        pdf.set_text_color(0, 0, 0)  # Texto negro
+        
+        # Agrupar ausencias por empleado
+        ausencias_por_empleado = {}
+        for ausencia in ausencias:
+            employee_id = ausencia.employee_id
+            if employee_id not in ausencias_por_empleado:
+                ausencias_por_empleado[employee_id] = []
+            ausencias_por_empleado[employee_id].append(ausencia)
+        
+        # Añadir datos agrupados por empleado
+        for employee_id, ausencias_empleado in ausencias_por_empleado.items():
+            # Ordenar ausencias por fecha de inicio
+            ausencias_empleado.sort(key=lambda a: a.fecha_inicio)
+            
+            # Obtener información del empleado
+            empleado = ausencias_empleado[0].employee
+            
+            # Alternar colores de fondo para filas
+            fill = False
+            
+            for ausencia in ausencias_empleado:
+                # Si es una nueva página, añadir encabezados nuevamente
+                if pdf.get_y() > 270:
+                    pdf.add_page()
+                    pdf.set_font("Arial", 'B', 12)
+                    pdf.set_fill_color(70, 114, 196)
+                    pdf.set_text_color(255, 255, 255)
+                    
+                    for i, header in enumerate(headers):
+                        pdf.cell(col_widths_ausencias[i], 10, header, 1, 0, 'C', True)
+                    pdf.ln()
+                    
+                    pdf.set_font("Arial", '', 10)
+                    pdf.set_text_color(0, 0, 0)
+                
+                # Establecer color de fondo para filas alternas
+                if fill:
+                    pdf.set_fill_color(240, 240, 240)  # Gris claro
+                else:
+                    pdf.set_fill_color(255, 255, 255)  # Blanco
+                
+                # Empleado
+                pdf.cell(col_widths_ausencias[0], 10, f"{empleado.nombre} {empleado.apellidos}", 1, 0, 'L', fill)
+                
+                # Tipo
+                pdf.cell(col_widths_ausencias[1], 10, ausencia.tipo.value, 1, 0, 'L', fill)
+                
+                # Inicio
+                pdf.cell(col_widths_ausencias[2], 10, ausencia.fecha_inicio.strftime('%d/%m/%Y'), 1, 0, 'C', fill)
+                
+                # Fin
+                pdf.cell(col_widths_ausencias[3], 10, ausencia.fecha_fin.strftime('%d/%m/%Y'), 1, 0, 'C', fill)
+                
+                # Días
+                pdf.cell(col_widths_ausencias[4], 10, str(ausencia.dias_totales), 1, 0, 'C', fill)
+                
+                # Motivo (truncado si es muy largo)
+                motivo = ausencia.motivo[:20] + "..." if ausencia.motivo and len(ausencia.motivo) > 20 else ausencia.motivo
+                pdf.cell(col_widths_ausencias[5], 10, motivo or "", 1, 1, 'L', fill)
+                
+                # Alternar el valor de fill
+                fill = not fill
+    
+    # Añadir pie de página con fecha de generación
+    pdf.set_y(-15)
+    pdf.set_font("Arial", 'I', 8)
+    pdf.cell(0, 10, f"Generado el {datetime.now().strftime('%d/%m/%Y %H:%M:%S')}", 0, 0, 'C')
+    
+    # Generar el archivo PDF en memoria
+    pdf_output = pdf.output(dest='S').encode('latin1')
+    
+    # Configurar la respuesta
+    filename = f"horarios_{company.name}_{fecha_inicio.strftime('%Y%m%d')}_{fecha_fin.strftime('%Y%m%d')}.pdf"
+    return send_file(
+        io.BytesIO(pdf_output),
+        as_attachment=True,
+        download_name=filename,
+        mimetype='application/pdf'
+    )

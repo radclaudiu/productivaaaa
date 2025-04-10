@@ -1,223 +1,200 @@
 {% extends 'layout.html' %}
 
 {% block head %}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css">
 <style>
-    .color-preview {
-        display: inline-block;
+    .color-sample {
         width: 30px;
         height: 30px;
-        border-radius: 50%;
-        margin-right: 10px;
+        display: inline-block;
+        border-radius: 4px;
+        margin-left: 10px;
         border: 1px solid #ddd;
-        vertical-align: middle;
     }
     
-    .color-picker-container {
+    .heading-with-line {
         display: flex;
         align-items: center;
-        margin-top: 10px;
+        margin: 20px 0;
+    }
+    
+    .heading-with-line h4 {
+        margin: 0;
+        margin-right: 15px;
+        white-space: nowrap;
+    }
+    
+    .heading-line {
+        flex-grow: 1;
+        height: 1px;
+        background-color: #e3e6f0;
+    }
+    
+    .time-fields {
+        display: flex;
+        gap: 15px;
+    }
+    
+    .time-fields .form-group {
+        flex: 1;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-primary text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-clock"></i> 
-                        {% if turno %}Editar Turno{% else %}Nuevo Turno{% endif %}
-                    </h4>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            {% if turno %}
+                <i class="bi bi-pencil-square"></i> Editar Turno
+            {% else %}
+                <i class="bi bi-plus-circle"></i> Nuevo Turno
+            {% endif %}
+        </h1>
+        <div>
+            <a href="{{ url_for('turnos.listar_turnos', company_id=company.id) }}" class="btn btn-outline-primary">
+                <i class="bi bi-arrow-left"></i> Volver a la lista
+            </a>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">
+                {% if turno %}
+                    Editando: {{ turno.nombre }}
+                {% else %}
+                    Datos del Turno
+                {% endif %}
+            </h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" novalidate>
+                {{ form.csrf_token }}
+                {{ form.company_id }}
+                
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            {{ form.nombre.label(class="form-label") }}
+                            {{ form.nombre(class="form-control" + (" is-invalid" if form.nombre.errors else "")) }}
+                            {% for error in form.nombre.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            {{ form.tipo.label(class="form-label") }}
+                            {{ form.tipo(class="form-select" + (" is-invalid" if form.tipo.errors else "")) }}
+                            {% for error in form.tipo.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">El tipo de turno determina su categoría para informes y estadísticas.</small>
+                        </div>
+                        
+                        <div class="form-group mb-3">
+                            {{ form.color.label(class="form-label") }}
+                            <div class="input-group">
+                                {{ form.color(class="form-control" + (" is-invalid" if form.color.errors else ""), type="color") }}
+                                <span class="input-group-text" id="colorSample">{{ form.color.data }}</span>
+                            </div>
+                            {% for error in form.color.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
+                            <small class="form-text text-muted">Este color se usará para visualizar el turno en el calendario.</small>
+                        </div>
+                    </div>
+                    
+                    <div class="col-md-6">
+                        <div class="heading-with-line">
+                            <h4>Horario</h4>
+                            <div class="heading-line"></div>
+                        </div>
+                        
+                        <div class="time-fields mb-3">
+                            <div class="form-group">
+                                {{ form.hora_inicio.label(class="form-label") }}
+                                {{ form.hora_inicio(class="form-control" + (" is-invalid" if form.hora_inicio.errors else ""), type="time") }}
+                                {% for error in form.hora_inicio.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="form-group">
+                                {{ form.hora_fin.label(class="form-label") }}
+                                {{ form.hora_fin(class="form-control" + (" is-invalid" if form.hora_fin.errors else ""), type="time") }}
+                                {% for error in form.hora_fin.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <small class="form-text text-muted mb-4 d-block">
+                            Si el turno cruza la medianoche (p.ej. 22:00 - 06:00), se considerará que finaliza al día siguiente.
+                        </small>
+                        
+                        <div class="heading-with-line mt-4">
+                            <h4>Descanso</h4>
+                            <div class="heading-line"></div>
+                        </div>
+                        
+                        <div class="time-fields mb-3">
+                            <div class="form-group">
+                                {{ form.descanso_inicio.label(class="form-label") }}
+                                {{ form.descanso_inicio(class="form-control" + (" is-invalid" if form.descanso_inicio.errors else ""), type="time") }}
+                                {% for error in form.descanso_inicio.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                            
+                            <div class="form-group">
+                                {{ form.descanso_fin.label(class="form-label") }}
+                                {{ form.descanso_fin(class="form-control" + (" is-invalid" if form.descanso_fin.errors else ""), type="time") }}
+                                {% for error in form.descanso_fin.errors %}
+                                    <div class="invalid-feedback">{{ error }}</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <small class="form-text text-muted mb-4 d-block">
+                            El tiempo de descanso se restará de las horas efectivas de trabajo. Déjalo vacío si no hay descanso.
+                        </small>
+                    </div>
                 </div>
-                <div class="card-body">
-                    <form method="post" class="needs-validation" novalidate>
-                        {{ form.csrf_token }}
-                        {{ form.company_id }}
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.nombre.id }}" class="form-label">{{ form.nombre.label.text }} <span class="text-danger">*</span></label>
-                                {{ form.nombre(class="form-control", required=true) }}
-                                {% if form.nombre.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.nombre.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label for="{{ form.tipo.id }}" class="form-label">{{ form.tipo.label.text }} <span class="text-danger">*</span></label>
-                                {{ form.tipo(class="form-select", required=true) }}
-                                {% if form.tipo.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.tipo.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.hora_inicio.id }}" class="form-label">{{ form.hora_inicio.label.text }} <span class="text-danger">*</span></label>
-                                {{ form.hora_inicio(class="form-control", required=true, type="time") }}
-                                {% if form.hora_inicio.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.hora_inicio.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label for="{{ form.hora_fin.id }}" class="form-label">{{ form.hora_fin.label.text }} <span class="text-danger">*</span></label>
-                                {{ form.hora_fin(class="form-control", required=true, type="time") }}
-                                {% if form.hora_fin.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.hora_fin.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                                <div class="form-text">
-                                    Si el turno cruza la medianoche, la hora de fin debe ser posterior a la hora de inicio del día siguiente.
-                                </div>
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-12">
-                                <label for="{{ form.color.id }}" class="form-label">{{ form.color.label.text }} <span class="text-danger">*</span></label>
-                                <div class="color-picker-container">
-                                    <div class="color-preview" id="color-preview" style="background-color: {{ form.color.data or '#3498db' }};"></div>
-                                    {{ form.color(class="form-control", required=true) }}
-                                    <button type="button" id="color-picker-btn" class="btn btn-outline-secondary ms-2">
-                                        <i class="bi bi-palette"></i> Elegir
-                                    </button>
-                                </div>
-                                {% if form.color.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.color.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.descanso_inicio.id }}" class="form-label">{{ form.descanso_inicio.label.text }}</label>
-                                {{ form.descanso_inicio(class="form-control", type="time") }}
-                                {% if form.descanso_inicio.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.descanso_inicio.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label for="{{ form.descanso_fin.id }}" class="form-label">{{ form.descanso_fin.label.text }}</label>
-                                {{ form.descanso_fin(class="form-control", type="time") }}
-                                {% if form.descanso_fin.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.descanso_fin.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.descripcion.id }}" class="form-label">{{ form.descripcion.label.text }}</label>
-                            {{ form.descripcion(class="form-control", rows=3) }}
-                            {% if form.descripcion.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.descripcion.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="border-top pt-3 d-flex justify-content-between">
-                            <a href="{{ url_for('turnos.listar_turnos', company_id=company.id) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver
-                            </a>
-                            
-                            <button type="submit" class="btn btn-primary">
-                                <i class="bi bi-save"></i> Guardar Turno
-                            </button>
-                        </div>
-                    </form>
+                
+                <div class="form-group mb-4">
+                    {{ form.descripcion.label(class="form-label") }}
+                    {{ form.descripcion(class="form-control" + (" is-invalid" if form.descripcion.errors else ""), rows=3) }}
+                    {% for error in form.descripcion.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                    <small class="form-text text-muted">
+                        Notas adicionales sobre este turno (opcional).
+                    </small>
                 </div>
-            </div>
+                
+                <div class="d-flex justify-content-between">
+                    <a href="{{ url_for('turnos.listar_turnos', company_id=company.id) }}" class="btn btn-light">Cancelar</a>
+                    <button type="submit" class="btn btn-primary">
+                        {% if turno %}
+                            <i class="bi bi-save"></i> Guardar Cambios
+                        {% else %}
+                            <i class="bi bi-plus-circle"></i> Crear Turno
+                        {% endif %}
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        const colorInput = document.getElementById('{{ form.color.id }}');
-        const colorPreview = document.getElementById('color-preview');
-        const colorPickerBtn = document.getElementById('color-picker-btn');
+        const colorInput = document.getElementById('color');
+        const colorSample = document.getElementById('colorSample');
         
-        // Actualizar el preview cuando cambia el input manualmente
+        // Actualizar la muestra de color cuando cambie el input
         colorInput.addEventListener('input', function() {
-            colorPreview.style.backgroundColor = this.value;
-        });
-        
-        // Inicializar el color picker
-        const pickr = Pickr.create({
-            el: colorPickerBtn,
-            theme: 'classic',
-            default: colorInput.value || '#3498db',
-            components: {
-                preview: true,
-                opacity: true,
-                hue: true,
-                interaction: {
-                    hex: true,
-                    rgba: true,
-                    hsla: false,
-                    hsva: false,
-                    cmyk: false,
-                    input: true,
-                    clear: false,
-                    save: true
-                }
-            }
-        });
-        
-        // Actualizar el input y el preview cuando se selecciona un color
-        pickr.on('save', (color, instance) => {
-            const hexColor = color.toHEXA().toString();
-            colorInput.value = hexColor;
-            colorPreview.style.backgroundColor = hexColor;
-            instance.hide();
-        });
-        
-        // Formulario de validación
-        const form = document.querySelector('form.needs-validation');
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
+            colorSample.textContent = colorInput.value;
         });
     });
 </script>

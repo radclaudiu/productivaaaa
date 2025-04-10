@@ -135,7 +135,7 @@ class Ausencia(db.Model):
     employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     employee = db.relationship('Employee', backref=db.backref('ausencias', lazy=True))
     
-    aprobado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
+    aprobado_por_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=True)
     aprobado_por = db.relationship('User')
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -260,7 +260,7 @@ class PreferenciaDisponibilidad(db.Model):
     hora_fin = db.Column(db.Time, nullable=False)
     preferencia = db.Column(db.Integer, nullable=False, default=0)  # -1: No disponible, 0: Neutro, 1: Preferido
     
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     employee = db.relationship('Employee', backref=db.backref('preferencias_disponibilidad', lazy=True))
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -287,7 +287,7 @@ class HistorialCambios(db.Model):
     horario_id = db.Column(db.Integer, db.ForeignKey('turnos_horario.id'), nullable=True)
     horario = db.relationship('Horario')
     
-    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
     user = db.relationship('User')
     
     def __repr__(self):
