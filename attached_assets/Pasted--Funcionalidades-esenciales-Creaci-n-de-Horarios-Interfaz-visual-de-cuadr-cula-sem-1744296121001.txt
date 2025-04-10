@@ -1,0 +1,40 @@
+**Funcionalidades esenciales:**
+
+* **Creación de Horarios:**
+    * Interfaz visual de cuadrícula semanal con franjas de 30 minutos.
+    * Arrastrar y soltar bloques para asignar empleados a turnos.
+    * Definición de diferentes tipos de turnos (ej: mañana, tarde, noche).
+    * Posibilidad de asignar múltiples empleados a un mismo bloque si es necesario.
+* **Modificación de Horarios:**
+    * Arrastrar y soltar bloques existentes para cambiar horarios.
+    * Posibilidad de eliminar turnos.
+    * Opción para copiar horarios de un día a otro o de una semana a otra.
+* **Navegación Semanal:**
+    * Controles claros para moverse fácilmente entre semanas (anterior, siguiente, semana actual).
+    * Visualización del calendario semanal actual.
+* **Informes:**
+    * Generación de informes semanales de horarios por empleado.
+    * Posibilidad de generar informes de horas trabajadas por empleado en un periodo específico.
+    * Opción para exportar informes en formato CSV o similar.
+* **Gestión de Empleados:**
+    * Registro y gestión de la información de los empleados (nombre, puesto, etc.).
+    * Posibilidad de definir la disponibilidad de cada empleado (opcional).
+* **Requisitos de Personal:**
+    * Opción para definir la cantidad de empleados necesarios por franja horaria (opcional).
+* **Gestión de Ausencias:**
+    * Permitir a los gerentes registrar vacaciones, bajas u otras ausencias de los empleados, reflejándose en el horario.
+* **Exportación:**
+    * Función para exportar el horario semanal actual en un formato legible (ej: PDF, hoja de cálculo).
+
+**Consideraciones de diseño:**
+
+* Interfaz clara y fácil de usar para gerentes sin necesidad de conocimientos técnicos avanzados.
+* Diseño responsive para que la aplicación sea accesible desde diferentes dispositivos (ordenador, tablet).
+
+**Funcionalidades adicionales (deseables):**
+
+* Sistema de notificaciones para comunicar los horarios a los empleados (vía email o dentro de la app).
+* Control de versiones de los horarios (historial de cambios).
+* Integración con otras herramientas de gestión (opcional).
+
+El objetivo es crear una herramienta eficiente y visual para la planificación de turnos laborales."

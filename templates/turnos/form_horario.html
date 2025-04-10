@@ -1,0 +1,178 @@
+{% extends 'layout.html' %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-success text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-calendar-plus"></i> Asignar Turno
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {{ form.csrf_token }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.fecha.id }}" class="form-label">{{ form.fecha.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.fecha(class="form-control", required=true, type="date") }}
+                                {% if form.fecha.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.fecha.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.employee_id.id }}" class="form-label">{{ form.employee_id.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.employee_id(class="form-select", required=true) }}
+                                {% if form.employee_id.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.employee_id.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.turno_id.id }}" class="form-label">{{ form.turno_id.label.text }} <span class="text-danger">*</span></label>
+                            <div class="row" id="turnos-container">
+                                {% for option in form.turno_id.choices %}
+                                    <div class="col-md-6 mb-2">
+                                        <div class="form-check custom-turno-option">
+                                            <input 
+                                                class="form-check-input" 
+                                                type="radio" 
+                                                name="{{ form.turno_id.name }}" 
+                                                id="turno_{{ option[0] }}" 
+                                                value="{{ option[0] }}"
+                                                {% if form.turno_id.data == option[0] %}checked{% endif %}
+                                                required>
+                                            <label class="form-check-label w-100" for="turno_{{ option[0] }}">
+                                                <span class="turno-option-content" data-turno-id="{{ option[0] }}">
+                                                    {{ option[1] }}
+                                                    <div class="turno-details small text-muted">Cargando detalles...</div>
+                                                </span>
+                                            </label>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            {% if form.turno_id.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.turno_id.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.notas.id }}" class="form-label">{{ form.notas.label.text }}</label>
+                            {{ form.notas(class="form-control", rows=2) }}
+                            {% if form.notas.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.notas.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="border-top pt-3 d-flex justify-content-between">
+                            <a href="{{ url_for('turnos.calendario', company_id=company.id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver al Calendario
+                            </a>
+                            
+                            <button type="submit" class="btn btn-success">
+                                <i class="bi bi-calendar-check"></i> Asignar Turno
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<style>
+    .custom-turno-option {
+        border: 1px solid #dee2e6;
+        border-radius: 8px;
+        padding: 10px;
+        transition: all 0.3s;
+    }
+    
+    .custom-turno-option:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .form-check-input:checked + .form-check-label .custom-turno-option {
+        border-color: #0d6efd;
+        background-color: #e9f2ff;
+    }
+    
+    .turno-option-content {
+        display: block;
+        font-weight: bold;
+    }
+    
+    .turno-details {
+        margin-top: 5px;
+    }
+    
+    .turno-color-indicator {
+        display: inline-block;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        margin-right: 5px;
+    }
+</style>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        // Formulario de validación
+        const form = document.querySelector('form.needs-validation');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+        
+        // Cargar detalles de turnos
+        const turnoElements = document.querySelectorAll('.turno-option-content');
+        turnoElements.forEach(element => {
+            const turnoId = element.getAttribute('data-turno-id');
+            fetch(`/api/turno/${turnoId}`)
+                .then(response => response.json())
+                .then(data => {
+                    const detailsElement = element.querySelector('.turno-details');
+                    if (detailsElement && data) {
+                        detailsElement.innerHTML = `
+                            <span class="turno-color-indicator" style="background-color: ${data.color};"></span>
+                            ${data.hora_inicio} - ${data.hora_fin} | ${data.tipo}
+                        `;
+                    }
+                })
+                .catch(error => {
+                    console.error('Error fetching turno details:', error);
+                    const detailsElement = element.querySelector('.turno-details');
+                    if (detailsElement) {
+                        detailsElement.innerHTML = 'No se pudieron cargar los detalles';
+                    }
+                });
+        });
+    });
+</script>
+{% endblock %}

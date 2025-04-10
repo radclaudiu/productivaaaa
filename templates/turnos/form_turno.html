@@ -1,0 +1,224 @@
+{% extends 'layout.html' %}
+
+{% block head %}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/themes/classic.min.css">
+<style>
+    .color-preview {
+        display: inline-block;
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        margin-right: 10px;
+        border: 1px solid #ddd;
+        vertical-align: middle;
+    }
+    
+    .color-picker-container {
+        display: flex;
+        align-items: center;
+        margin-top: 10px;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container py-4">
+    <div class="row justify-content-center">
+        <div class="col-md-8">
+            <div class="card shadow">
+                <div class="card-header bg-primary text-white">
+                    <h4 class="mb-0">
+                        <i class="bi bi-clock"></i> 
+                        {% if turno %}Editar Turno{% else %}Nuevo Turno{% endif %}
+                    </h4>
+                </div>
+                <div class="card-body">
+                    <form method="post" class="needs-validation" novalidate>
+                        {{ form.csrf_token }}
+                        {{ form.company_id }}
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.nombre.id }}" class="form-label">{{ form.nombre.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.nombre(class="form-control", required=true) }}
+                                {% if form.nombre.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.nombre.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.tipo.id }}" class="form-label">{{ form.tipo.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.tipo(class="form-select", required=true) }}
+                                {% if form.tipo.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.tipo.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.hora_inicio.id }}" class="form-label">{{ form.hora_inicio.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.hora_inicio(class="form-control", required=true, type="time") }}
+                                {% if form.hora_inicio.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.hora_inicio.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.hora_fin.id }}" class="form-label">{{ form.hora_fin.label.text }} <span class="text-danger">*</span></label>
+                                {{ form.hora_fin(class="form-control", required=true, type="time") }}
+                                {% if form.hora_fin.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.hora_fin.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                                <div class="form-text">
+                                    Si el turno cruza la medianoche, la hora de fin debe ser posterior a la hora de inicio del día siguiente.
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-12">
+                                <label for="{{ form.color.id }}" class="form-label">{{ form.color.label.text }} <span class="text-danger">*</span></label>
+                                <div class="color-picker-container">
+                                    <div class="color-preview" id="color-preview" style="background-color: {{ form.color.data or '#3498db' }};"></div>
+                                    {{ form.color(class="form-control", required=true) }}
+                                    <button type="button" id="color-picker-btn" class="btn btn-outline-secondary ms-2">
+                                        <i class="bi bi-palette"></i> Elegir
+                                    </button>
+                                </div>
+                                {% if form.color.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.color.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="row mb-3">
+                            <div class="col-md-6">
+                                <label for="{{ form.descanso_inicio.id }}" class="form-label">{{ form.descanso_inicio.label.text }}</label>
+                                {{ form.descanso_inicio(class="form-control", type="time") }}
+                                {% if form.descanso_inicio.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.descanso_inicio.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                            
+                            <div class="col-md-6">
+                                <label for="{{ form.descanso_fin.id }}" class="form-label">{{ form.descanso_fin.label.text }}</label>
+                                {{ form.descanso_fin(class="form-control", type="time") }}
+                                {% if form.descanso_fin.errors %}
+                                    <div class="invalid-feedback d-block">
+                                        {% for error in form.descanso_fin.errors %}
+                                            {{ error }}
+                                        {% endfor %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        
+                        <div class="mb-3">
+                            <label for="{{ form.descripcion.id }}" class="form-label">{{ form.descripcion.label.text }}</label>
+                            {{ form.descripcion(class="form-control", rows=3) }}
+                            {% if form.descripcion.errors %}
+                                <div class="invalid-feedback d-block">
+                                    {% for error in form.descripcion.errors %}
+                                        {{ error }}
+                                    {% endfor %}
+                                </div>
+                            {% endif %}
+                        </div>
+                        
+                        <div class="border-top pt-3 d-flex justify-content-between">
+                            <a href="{{ url_for('turnos.listar_turnos', company_id=company.id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-arrow-left"></i> Volver
+                            </a>
+                            
+                            <button type="submit" class="btn btn-primary">
+                                <i class="bi bi-save"></i> Guardar Turno
+                            </button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/@simonwep/pickr/dist/pickr.min.js"></script>
+<script>
+    document.addEventListener('DOMContentLoaded', function() {
+        const colorInput = document.getElementById('{{ form.color.id }}');
+        const colorPreview = document.getElementById('color-preview');
+        const colorPickerBtn = document.getElementById('color-picker-btn');
+        
+        // Actualizar el preview cuando cambia el input manualmente
+        colorInput.addEventListener('input', function() {
+            colorPreview.style.backgroundColor = this.value;
+        });
+        
+        // Inicializar el color picker
+        const pickr = Pickr.create({
+            el: colorPickerBtn,
+            theme: 'classic',
+            default: colorInput.value || '#3498db',
+            components: {
+                preview: true,
+                opacity: true,
+                hue: true,
+                interaction: {
+                    hex: true,
+                    rgba: true,
+                    hsla: false,
+                    hsva: false,
+                    cmyk: false,
+                    input: true,
+                    clear: false,
+                    save: true
+                }
+            }
+        });
+        
+        // Actualizar el input y el preview cuando se selecciona un color
+        pickr.on('save', (color, instance) => {
+            const hexColor = color.toHEXA().toString();
+            colorInput.value = hexColor;
+            colorPreview.style.backgroundColor = hexColor;
+            instance.hide();
+        });
+        
+        // Formulario de validación
+        const form = document.querySelector('form.needs-validation');
+        form.addEventListener('submit', function(event) {
+            if (!form.checkValidity()) {
+                event.preventDefault();
+                event.stopPropagation();
+            }
+            form.classList.add('was-validated');
+        });
+    });
+</script>
+{% endblock %}

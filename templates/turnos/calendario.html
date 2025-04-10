@@ -1,0 +1,305 @@
+{% extends 'layout.html' %}
+
+{% block head %}
+<style>
+    /* Estilos para el calendario de turnos */
+    .turno-cell {
+        padding: 5px;
+        border-radius: 4px;
+        margin-bottom: 4px;
+        font-size: 0.85rem;
+        position: relative;
+    }
+    
+    .calendar-cell {
+        min-height: 100px;
+        background-color: #f8f9fa;
+        border: 1px solid #dee2e6;
+        padding: 5px;
+    }
+    
+    .calendar-header {
+        background-color: #e9ecef;
+        border: 1px solid #dee2e6;
+        text-align: center;
+        padding: 8px;
+        font-weight: bold;
+    }
+    
+    .calendar-day-number {
+        font-size: 1.2em;
+        font-weight: bold;
+        margin-bottom: 5px;
+    }
+    
+    .empleado-row {
+        border-left: 4px solid #6c757d;
+        padding-left: 10px;
+        margin-bottom: 10px;
+    }
+    
+    .ausencia-badge {
+        position: absolute;
+        top: -5px;
+        right: -5px;
+        width: 12px;
+        height: 12px;
+        border-radius: 50%;
+        background-color: #dc3545;
+    }
+    
+    /* Estilos para la navegación del calendario */
+    .calendar-navigation {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 15px;
+    }
+    
+    .calendar-title {
+        font-size: 1.5rem;
+        font-weight: bold;
+    }
+    
+    .calendar-nav-buttons .btn {
+        margin-left: 5px;
+    }
+    
+    /* Hacer que el calendario sea responsive */
+    @media (max-width: 992px) {
+        .calendar-container {
+            overflow-x: auto;
+        }
+        
+        .calendar-grid {
+            min-width: 900px;
+        }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container-fluid py-4">
+    <!-- Cabecera con navegación del calendario -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="calendar-navigation">
+                        <div class="calendar-title">
+                            <span class="d-none d-md-inline">Semana del</span> {{ inicio_semana.strftime('%d') }} 
+                            {% if inicio_semana.month != fin_semana.month %}
+                                {{ meses[inicio_semana.month-1] }} - {{ fin_semana.strftime('%d') }} {{ meses[fin_semana.month-1] }} {{ fin_semana.year }}
+                            {% else %}
+                                al {{ fin_semana.strftime('%d') }} {{ meses[inicio_semana.month-1] }} {{ inicio_semana.year }}
+                            {% endif %}
+                        </div>
+                        <div class="calendar-nav-buttons">
+                            <a href="{{ url_for('turnos.dashboard', company_id=company.id) }}" class="btn btn-outline-secondary">
+                                <i class="bi bi-grid"></i> Dashboard
+                            </a>
+                            <a href="{{ url_for('turnos.calendario', company_id=company.id, semana=semana_anterior.strftime('%Y-%m-%d')) }}" class="btn btn-outline-primary">
+                                <i class="bi bi-chevron-left"></i> Semana Anterior
+                            </a>
+                            <a href="{{ url_for('turnos.calendario', company_id=company.id) }}" class="btn btn-primary">
+                                <i class="bi bi-calendar-week"></i> Semana Actual
+                            </a>
+                            <a href="{{ url_for('turnos.calendario', company_id=company.id, semana=semana_siguiente.strftime('%Y-%m-%d')) }}" class="btn btn-outline-primary">
+                                Semana Siguiente <i class="bi bi-chevron-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Acciones rápidas -->
+    <div class="row mb-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body">
+                    <div class="d-flex flex-wrap justify-content-between">
+                        <div class="mb-2">
+                            <a href="{{ url_for('turnos.asignar_horario', company_id=company.id) }}" class="btn btn-success">
+                                <i class="bi bi-plus-circle"></i> Asignar Turno
+                            </a>
+                            <a href="{{ url_for('turnos.asignar_horario_masivo', company_id=company.id) }}" class="btn btn-primary">
+                                <i class="bi bi-clipboard-plus"></i> Asignación Masiva
+                            </a>
+                            <div class="dropdown d-inline">
+                                <button class="btn btn-outline-secondary dropdown-toggle" type="button" id="dropdownMenuButton" data-bs-toggle="dropdown" aria-expanded="false">
+                                    <i class="bi bi-sliders"></i> Más Acciones
+                                </button>
+                                <ul class="dropdown-menu" aria-labelledby="dropdownMenuButton">
+                                    <li><a class="dropdown-item" href="{{ url_for('turnos.nueva_ausencia', company_id=company.id) }}">
+                                        <i class="bi bi-calendar-x"></i> Registrar Ausencia
+                                    </a></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('turnos.listar_ausencias', company_id=company.id) }}">
+                                        <i class="bi bi-list-check"></i> Gestionar Ausencias
+                                    </a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item" href="{{ url_for('turnos.informe_horarios', company_id=company.id, fecha_inicio=inicio_semana.strftime('%Y-%m-%d'), fecha_fin=fin_semana.strftime('%Y-%m-%d')) }}">
+                                        <i class="bi bi-file-earmark-text"></i> Informe de esta Semana
+                                    </a></li>
+                                </ul>
+                            </div>
+                        </div>
+                        <div class="mb-2">
+                            <form class="d-inline-flex" action="{{ url_for('turnos.calendario', company_id=company.id) }}" method="get">
+                                <input type="date" class="form-control me-2" name="semana" required>
+                                <button type="submit" class="btn btn-outline-primary">
+                                    <i class="bi bi-search"></i> Ir a Fecha
+                                </button>
+                            </form>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Calendario de Turnos -->
+    <div class="row">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-body calendar-container">
+                    <div class="calendar-grid">
+                        <!-- Encabezados de los días -->
+                        <div class="row mb-2">
+                            <div class="col-3">
+                                <div class="calendar-header">Empleado</div>
+                            </div>
+                            {% for i in range(7) %}
+                                <div class="col">
+                                    <div class="calendar-header">
+                                        {{ dias_semana[i] }}<br>
+                                        <span class="badge rounded-pill {% if dias_semana_fechas[i] == today %}bg-primary{% else %}bg-secondary{% endif %}">
+                                            {{ dias_semana_fechas[i].strftime('%d/%m') }}
+                                        </span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                        
+                        <!-- Filas de empleados -->
+                        {% for empleado_id, datos in datos_calendario.items() %}
+                            <div class="row mb-2">
+                                <!-- Nombre del empleado -->
+                                <div class="col-3">
+                                    <div class="calendar-cell empleado-row h-100 d-flex flex-column justify-content-center">
+                                        <div class="fw-bold">{{ datos.empleado.nombre }} {{ datos.empleado.apellidos }}</div>
+                                        <div class="small text-muted">{{ datos.empleado.puesto or '' }}</div>
+                                    </div>
+                                </div>
+                                
+                                <!-- Celdas de días -->
+                                {% for fecha, horarios_dia in datos.dias.items() %}
+                                    <div class="col">
+                                        <div class="calendar-cell h-100">
+                                            <!-- Acciones para este día/empleado -->
+                                            <div class="d-flex justify-content-end mb-2">
+                                                <a href="{{ url_for('turnos.asignar_horario', company_id=company.id, fecha=fecha.strftime('%Y-%m-%d'), employee_id=datos.empleado.id) }}" 
+                                                   class="btn btn-sm btn-outline-primary" title="Asignar turno">
+                                                    <i class="bi bi-plus-circle"></i>
+                                                </a>
+                                            </div>
+                                            
+                                            <!-- Turnos asignados -->
+                                            {% if horarios_dia %}
+                                                {% for horario in horarios_dia %}
+                                                    <div class="turno-cell" style="background-color: {{ horario.turno.color }}; color: {% if horario.turno.color|lower in ['#ffffff', '#f8f9fa', '#e9ecef', '#dee2e6', '#ced4da', '#adb5bd', '#f0f0f0'] %}#000000{% else %}#ffffff{% endif %}">
+                                                        <div class="d-flex justify-content-between align-items-start">
+                                                            <span class="fw-bold">{{ horario.turno.nombre }}</span>
+                                                            <form method="post" action="{{ url_for('turnos.eliminar_horario', company_id=company.id) }}" class="d-inline">
+                                                                {{ eliminar_form.csrf_token }}
+                                                                {{ eliminar_form.horario_id(value=horario.id) }}
+                                                                <button type="submit" class="btn btn-sm btn-link p-0 text-white" onclick="return confirm('¿Está seguro de que desea eliminar este turno?')">
+                                                                    <i class="bi bi-x-circle"></i>
+                                                                </button>
+                                                            </form>
+                                                        </div>
+                                                        <div>{{ horario.turno.hora_inicio.strftime('%H:%M') }} - {{ horario.turno.hora_fin.strftime('%H:%M') }}</div>
+                                                        {% if horario.notas %}
+                                                            <div class="small mt-1" title="{{ horario.notas }}">
+                                                                {{ horario.notas|truncate(20) }}
+                                                            </div>
+                                                        {% endif %}
+                                                        
+                                                        <!-- Indicador de ausencia -->
+                                                        {% if datos.empleado.id in datos_ausencias %}
+                                                            {% for ausencia in datos_ausencias[datos.empleado.id] %}
+                                                                {% if ausencia.fecha_inicio <= fecha and ausencia.fecha_fin >= fecha %}
+                                                                    <div class="ausencia-badge" title="{{ ausencia.tipo.value }}"></div>
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                        {% endif %}
+                                                    </div>
+                                                {% endfor %}
+                                            {% else %}
+                                                <!-- Indicador de ausencia sin turno -->
+                                                {% if datos.empleado.id in datos_ausencias %}
+                                                    {% for ausencia in datos_ausencias[datos.empleado.id] %}
+                                                        {% if ausencia.fecha_inicio <= fecha and ausencia.fecha_fin >= fecha %}
+                                                            <div class="alert alert-danger py-1 px-2 mb-0 small">
+                                                                <i class="bi bi-exclamation-triangle"></i> {{ ausencia.tipo.value }}
+                                                            </div>
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                {% endif %}
+                                            {% endif %}
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        {% else %}
+                            <div class="alert alert-info">
+                                <i class="bi bi-info-circle"></i> No hay empleados disponibles para mostrar en el calendario.
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Leyenda -->
+    <div class="row mt-3">
+        <div class="col-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-light">
+                    <h5 class="mb-0">Leyenda de Turnos</h5>
+                </div>
+                <div class="card-body">
+                    <div class="row">
+                        {% for turno in turnos %}
+                            <div class="col-md-3 col-sm-4 mb-2">
+                                <div class="d-flex align-items-center">
+                                    <div style="width: 20px; height: 20px; background-color: {{ turno.color }}; border-radius: 4px; margin-right: 10px;"></div>
+                                    <div>{{ turno.nombre }} ({{ turno.hora_inicio.strftime('%H:%M') }} - {{ turno.hora_fin.strftime('%H:%M') }})</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                        <div class="col-md-3 col-sm-4 mb-2">
+                            <div class="d-flex align-items-center">
+                                <div style="width: 20px; height: 20px; background-color: #dc3545; border-radius: 50%; margin-right: 10px;"></div>
+                                <div>Ausencia</div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    // Establecer fecha actual para resaltar en el calendario
+    document.addEventListener('DOMContentLoaded', function() {
+        const today = new Date().toISOString().split('T')[0];
+        window.today = today;
+    });
+</script>
+{% endblock %}
