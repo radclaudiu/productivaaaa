@@ -1,177 +1,220 @@
 {% extends 'layout.html' %}
 
+{% block head %}
+<style>
+    .turno-option {
+        display: flex;
+        border: 1px solid #e3e6f0;
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 10px;
+        cursor: pointer;
+        transition: all 0.2s;
+    }
+    
+    .turno-option:hover {
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
+        transform: translateY(-2px);
+    }
+    
+    .turno-option.selected {
+        border-color: #4e73df;
+        background-color: rgba(78, 115, 223, 0.05);
+        box-shadow: 0 0 0 1px #4e73df;
+    }
+    
+    .turno-color {
+        width: 20px;
+        height: 20px;
+        border-radius: 4px;
+        margin-right: 15px;
+        margin-top: 2px;
+    }
+    
+    .turno-info {
+        flex: 1;
+    }
+    
+    .turno-name {
+        font-weight: 600;
+        margin-bottom: 2px;
+    }
+    
+    .turno-time {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+    
+    .turno-hours {
+        font-size: 0.9rem;
+        font-weight: 600;
+        color: #4e73df;
+        margin-left: auto;
+        align-self: center;
+        padding-left: 15px;
+    }
+    
+    .radio-hidden {
+        position: absolute;
+        opacity: 0;
+        height: 0;
+        width: 0;
+    }
+    
+    .date-header {
+        background-color: #f8f9fa;
+        border-radius: 8px;
+        padding: 10px 15px;
+        margin-bottom: 20px;
+    }
+    
+    .date-title {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 5px;
+    }
+    
+    .date-subtitle {
+        font-size: 0.9rem;
+        color: #6c757d;
+    }
+</style>
+{% endblock %}
+
 {% block content %}
-<div class="container py-4">
-    <div class="row justify-content-center">
-        <div class="col-md-8">
-            <div class="card shadow">
-                <div class="card-header bg-success text-white">
-                    <h4 class="mb-0">
-                        <i class="bi bi-calendar-plus"></i> Asignar Turno
-                    </h4>
+<div class="container-fluid py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h1 class="h3 mb-0">
+            <i class="bi bi-calendar-plus"></i> Asignar Turno
+        </h1>
+        <div>
+            <a href="{{ url_for('turnos.calendario', company_id=company.id) }}" class="btn btn-outline-primary">
+                <i class="bi bi-calendar-week"></i> Volver al Calendario
+            </a>
+        </div>
+    </div>
+    
+    <div class="card shadow mb-4">
+        <div class="card-header py-3">
+            <h6 class="m-0 font-weight-bold text-primary">Datos del Horario</h6>
+        </div>
+        <div class="card-body">
+            <form method="POST" novalidate>
+                {{ form.csrf_token }}
+                
+                <div class="date-header mb-4">
+                    <div class="date-title">
+                        <i class="bi bi-calendar-date"></i> Fecha: {{ form.fecha.data.strftime('%d/%m/%Y') }}
+                    </div>
+                    <div class="date-subtitle">
+                        {% set dia_semana = ["Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado", "Domingo"] %}
+                        {{ dia_semana[form.fecha.data.weekday()] }}
+                    </div>
+                    {{ form.fecha(type="hidden") }}
+                    {% for error in form.fecha.errors %}
+                        <div class="text-danger mt-2">{{ error }}</div>
+                    {% endfor %}
                 </div>
-                <div class="card-body">
-                    <form method="post" class="needs-validation" novalidate>
-                        {{ form.csrf_token }}
-                        
-                        <div class="row mb-3">
-                            <div class="col-md-6">
-                                <label for="{{ form.fecha.id }}" class="form-label">{{ form.fecha.label.text }} <span class="text-danger">*</span></label>
-                                {{ form.fecha(class="form-control", required=true, type="date") }}
-                                {% if form.fecha.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.fecha.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
-                            
-                            <div class="col-md-6">
-                                <label for="{{ form.employee_id.id }}" class="form-label">{{ form.employee_id.label.text }} <span class="text-danger">*</span></label>
-                                {{ form.employee_id(class="form-select", required=true) }}
-                                {% if form.employee_id.errors %}
-                                    <div class="invalid-feedback d-block">
-                                        {% for error in form.employee_id.errors %}
-                                            {{ error }}
-                                        {% endfor %}
-                                    </div>
-                                {% endif %}
-                            </div>
+                
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <div class="form-group mb-3">
+                            {{ form.employee_id.label(class="form-label") }}
+                            {{ form.employee_id(class="form-select" + (" is-invalid" if form.employee_id.errors else "")) }}
+                            {% for error in form.employee_id.errors %}
+                                <div class="invalid-feedback">{{ error }}</div>
+                            {% endfor %}
                         </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.turno_id.id }}" class="form-label">{{ form.turno_id.label.text }} <span class="text-danger">*</span></label>
-                            <div class="row" id="turnos-container">
-                                {% for option in form.turno_id.choices %}
-                                    <div class="col-md-6 mb-2">
-                                        <div class="form-check custom-turno-option">
-                                            <input 
-                                                class="form-check-input" 
-                                                type="radio" 
-                                                name="{{ form.turno_id.name }}" 
-                                                id="turno_{{ option[0] }}" 
-                                                value="{{ option[0] }}"
-                                                {% if form.turno_id.data == option[0] %}checked{% endif %}
-                                                required>
-                                            <label class="form-check-label w-100" for="turno_{{ option[0] }}">
-                                                <span class="turno-option-content" data-turno-id="{{ option[0] }}">
-                                                    {{ option[1] }}
-                                                    <div class="turno-details small text-muted">Cargando detalles...</div>
-                                                </span>
-                                            </label>
-                                        </div>
-                                    </div>
-                                {% endfor %}
-                            </div>
-                            {% if form.turno_id.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.turno_id.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="mb-3">
-                            <label for="{{ form.notas.id }}" class="form-label">{{ form.notas.label.text }}</label>
-                            {{ form.notas(class="form-control", rows=2) }}
-                            {% if form.notas.errors %}
-                                <div class="invalid-feedback d-block">
-                                    {% for error in form.notas.errors %}
-                                        {{ error }}
-                                    {% endfor %}
-                                </div>
-                            {% endif %}
-                        </div>
-                        
-                        <div class="border-top pt-3 d-flex justify-content-between">
-                            <a href="{{ url_for('turnos.calendario', company_id=company.id) }}" class="btn btn-outline-secondary">
-                                <i class="bi bi-arrow-left"></i> Volver al Calendario
-                            </a>
-                            
-                            <button type="submit" class="btn btn-success">
-                                <i class="bi bi-calendar-check"></i> Asignar Turno
-                            </button>
-                        </div>
-                    </form>
+                    </div>
                 </div>
-            </div>
+                
+                <div class="form-group mb-4">
+                    <label class="form-label">{{ form.turno_id.label }}</label>
+                    
+                    <div class="turnos-container">
+                        {% for choice in form.turno_id.choices %}
+                            {% set turno_id = choice[0] %}
+                            {% set turno_nombre = choice[1] %}
+                            
+                            <div class="turno-option-container">
+                                <input type="radio" 
+                                       name="{{ form.turno_id.name }}" 
+                                       value="{{ turno_id }}" 
+                                       id="turno_{{ turno_id }}" 
+                                       class="radio-hidden"
+                                       {% if turno_id == form.turno_id.data|int %}checked{% endif %}>
+                                
+                                <label for="turno_{{ turno_id }}" class="turno-option w-100 {% if turno_id == form.turno_id.data|int %}selected{% endif %}">
+                                    <div class="turno-color" id="color_{{ turno_id }}"></div>
+                                    <div class="turno-info">
+                                        <div class="turno-name">{{ turno_nombre }}</div>
+                                        <div class="turno-time" id="time_{{ turno_id }}"></div>
+                                    </div>
+                                    <div class="turno-hours" id="hours_{{ turno_id }}"></div>
+                                </label>
+                            </div>
+                        {% endfor %}
+                    </div>
+                    
+                    {% for error in form.turno_id.errors %}
+                        <div class="text-danger mt-2">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="form-group mb-4">
+                    {{ form.notas.label(class="form-label") }}
+                    {{ form.notas(class="form-control" + (" is-invalid" if form.notas.errors else ""), rows=3, placeholder="Notas opcionales sobre este horario") }}
+                    {% for error in form.notas.errors %}
+                        <div class="invalid-feedback">{{ error }}</div>
+                    {% endfor %}
+                </div>
+                
+                <div class="d-flex justify-content-between mt-4">
+                    <a href="{{ url_for('turnos.calendario', company_id=company.id, semana=form.fecha.data.strftime('%Y-%m-%d')) }}" class="btn btn-light">
+                        <i class="bi bi-x-circle"></i> Cancelar
+                    </a>
+                    <button type="submit" class="btn btn-primary">
+                        <i class="bi bi-save"></i> Guardar Horario
+                    </button>
+                </div>
+            </form>
         </div>
     </div>
 </div>
 {% endblock %}
 
 {% block scripts %}
-<style>
-    .custom-turno-option {
-        border: 1px solid #dee2e6;
-        border-radius: 8px;
-        padding: 10px;
-        transition: all 0.3s;
-    }
-    
-    .custom-turno-option:hover {
-        background-color: #f8f9fa;
-    }
-    
-    .form-check-input:checked + .form-check-label .custom-turno-option {
-        border-color: #0d6efd;
-        background-color: #e9f2ff;
-    }
-    
-    .turno-option-content {
-        display: block;
-        font-weight: bold;
-    }
-    
-    .turno-details {
-        margin-top: 5px;
-    }
-    
-    .turno-color-indicator {
-        display: inline-block;
-        width: 12px;
-        height: 12px;
-        border-radius: 50%;
-        margin-right: 5px;
-    }
-</style>
-
 <script>
     document.addEventListener('DOMContentLoaded', function() {
-        // Formulario de validación
-        const form = document.querySelector('form.needs-validation');
-        form.addEventListener('submit', function(event) {
-            if (!form.checkValidity()) {
-                event.preventDefault();
-                event.stopPropagation();
-            }
-            form.classList.add('was-validated');
-        });
-        
-        // Cargar detalles de turnos
-        const turnoElements = document.querySelectorAll('.turno-option-content');
-        turnoElements.forEach(element => {
-            const turnoId = element.getAttribute('data-turno-id');
-            fetch(`/api/turno/${turnoId}`)
+        // Cargar detalles de turnos via AJAX
+        {% for choice in form.turno_id.choices %}
+            fetch('{{ url_for("turnos.api_turno_detalle", turno_id=choice[0]) }}')
                 .then(response => response.json())
                 .then(data => {
-                    const detailsElement = element.querySelector('.turno-details');
-                    if (detailsElement && data) {
-                        detailsElement.innerHTML = `
-                            <span class="turno-color-indicator" style="background-color: ${data.color};"></span>
-                            ${data.hora_inicio} - ${data.hora_fin} | ${data.tipo}
-                        `;
-                    }
-                })
-                .catch(error => {
-                    console.error('Error fetching turno details:', error);
-                    const detailsElement = element.querySelector('.turno-details');
-                    if (detailsElement) {
-                        detailsElement.innerHTML = 'No se pudieron cargar los detalles';
-                    }
+                    // Actualizar color
+                    document.getElementById('color_{{ choice[0] }}').style.backgroundColor = data.color;
+                    
+                    // Actualizar horario
+                    document.getElementById('time_{{ choice[0] }}').textContent = `${data.hora_inicio} - ${data.hora_fin}`;
+                    
+                    // Actualizar horas
+                    document.getElementById('hours_{{ choice[0] }}').textContent = `${data.horas_efectivas}h`;
                 });
+        {% endfor %}
+        
+        // Manejar selección de turnos
+        document.querySelectorAll('.turno-option').forEach(option => {
+            option.addEventListener('click', function() {
+                // Marcar como seleccionado visualmente
+                document.querySelectorAll('.turno-option').forEach(opt => {
+                    opt.classList.remove('selected');
+                });
+                this.classList.add('selected');
+                
+                // Marcar el radio button correspondiente
+                const radioId = this.getAttribute('for');
+                document.getElementById(radioId).checked = true;
+            });
         });
     });
 </script>
