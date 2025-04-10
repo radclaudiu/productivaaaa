@@ -48,7 +48,7 @@ class Turno(db.Model):
     descanso_inicio = db.Column(db.Time, nullable=True)
     descanso_fin = db.Column(db.Time, nullable=True)
     
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     company = db.relationship('Company', backref=db.backref('turnos', lazy=True))
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -106,7 +106,7 @@ class Horario(db.Model):
     turno_id = db.Column(db.Integer, db.ForeignKey('turnos_turno.id'), nullable=False)
     turno = db.relationship('Turno', backref=db.backref('asignaciones', lazy=True))
     
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     employee = db.relationship('Employee', backref=db.backref('horarios', lazy=True))
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -132,7 +132,7 @@ class Ausencia(db.Model):
     motivo = db.Column(db.Text)
     aprobado = db.Column(db.Boolean, default=False)
     
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     employee = db.relationship('Employee', backref=db.backref('ausencias', lazy=True))
     
     aprobado_por_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=True)
@@ -166,7 +166,7 @@ class RequisitoPersonal(db.Model):
     num_empleados = db.Column(db.Integer, nullable=False, default=1)
     notas = db.Column(db.Text)
     
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     company = db.relationship('Company', backref=db.backref('requisitos_personal', lazy=True))
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -190,7 +190,7 @@ class PlantillaHorario(db.Model):
     nombre = db.Column(db.String(100), nullable=False)
     descripcion = db.Column(db.Text)
     
-    company_id = db.Column(db.Integer, db.ForeignKey('company.id'), nullable=False)
+    company_id = db.Column(db.Integer, db.ForeignKey('companies.id'), nullable=False)
     company = db.relationship('Company', backref=db.backref('plantillas_horario', lazy=True))
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
@@ -236,7 +236,7 @@ class AsignacionPlantilla(db.Model):
     plantilla_id = db.Column(db.Integer, db.ForeignKey('turnos_plantilla_horario.id'), nullable=False)
     plantilla = db.relationship('PlantillaHorario')
     
-    employee_id = db.Column(db.Integer, db.ForeignKey('employee.id'), nullable=False)
+    employee_id = db.Column(db.Integer, db.ForeignKey('employees.id'), nullable=False)
     employee = db.relationship('Employee', backref=db.backref('asignaciones_plantilla', lazy=True))
     
     created_at = db.Column(db.DateTime, default=datetime.utcnow)
