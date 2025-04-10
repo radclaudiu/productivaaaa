@@ -81,9 +81,10 @@ def create_app(config_class='config.Config'):
     
     # Importar el blueprint de turnos
     try:
-        from routes_turnos import init_app as init_turnos_app
+        from routes_turnos import turnos_bp
+        turnos_loaded = True
     except ImportError:
-        init_turnos_app = None
+        turnos_loaded = False
     
     app.register_blueprint(auth_bp)
     app.register_blueprint(main_bp)
@@ -106,9 +107,9 @@ def create_app(config_class='config.Config'):
     # Inicializar el sistema de puntos de fichaje
     init_checkpoints_app(app)
     
-    # Inicializar el sistema de turnos si está disponible
-    if init_turnos_app is not None:
-        init_turnos_app(app)
+    # Registrar el blueprint de turnos si está disponible
+    if turnos_loaded:
+        app.register_blueprint(turnos_bp)
     
     # Register error handlers
     @app.errorhandler(403)
