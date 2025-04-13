@@ -32,17 +32,30 @@ class Schedule(db.Model):
     
     def to_dict(self):
         """Convierte el horario a un diccionario para la API JSON"""
-        return {
-            'id': self.id,
-            'name': self.name,
-            'start_date': self.start_date.isoformat() if self.start_date else None,
-            'end_date': self.end_date.isoformat() if self.end_date else None,
-            'published': self.published,
-            'company_id': self.company_id,
-            'company_name': self.company.name if self.company else None,
-            'created_at': self.created_at.isoformat() if self.created_at else None,
-            'updated_at': self.updated_at.isoformat() if self.updated_at else None
-        }
+        try:
+            return {
+                'id': self.id,
+                'name': self.name,
+                'start_date': self.start_date.isoformat() if self.start_date else None,
+                'end_date': self.end_date.isoformat() if self.end_date else None,
+                'published': self.published,
+                'company_id': self.company_id,
+                'company_name': self.company.name if self.company else None,
+                'created_at': self.created_at.isoformat() if self.created_at else None,
+                'updated_at': self.updated_at.isoformat() if self.updated_at else None
+            }
+        except Exception as e:
+            from flask import current_app
+            current_app.logger.error(f"Error en to_dict de Schedule {self.id}: {str(e)}")
+            # Versión simplificada en caso de error
+            return {
+                'id': self.id,
+                'name': self.name,
+                'start_date': str(self.start_date) if self.start_date else None,
+                'end_date': str(self.end_date) if self.end_date else None,
+                'published': self.published,
+                'company_id': self.company_id
+            }
 
 class ScheduleAssignment(db.Model):
     """

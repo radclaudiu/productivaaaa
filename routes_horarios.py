@@ -100,23 +100,33 @@ def create_schedule():
     """
     Crea un nuevo horario semanal.
     """
+    current_app.logger.info(f"API create_schedule: Petición recibida de usuario: {current_user.username}")
+    
     if not current_user.is_admin() and not current_user.is_gerente():
+        current_app.logger.warning(f"API create_schedule: Usuario {current_user.username} no tiene permisos suficientes")
         abort(403)  # Forbidden
     
     data = request.json
+    current_app.logger.info(f"API create_schedule: Datos recibidos: {data}")
     
     if not data or not data.get('company_id') or not data.get('name'):
+        current_app.logger.warning(f"API create_schedule: Datos incompletos: {data}")
         return jsonify({"error": "Datos incompletos"}), 400
     
     # Verificar permisos para la empresa
     company_id = data.get('company_id')
+    current_app.logger.info(f"API create_schedule: Verificando acceso a empresa ID: {company_id}")
+    
     if not current_user.is_admin() and not current_user.has_company_access(company_id):
+        current_app.logger.warning(f"API create_schedule: Usuario {current_user.username} no tiene acceso a la empresa {company_id}")
         abort(403)
     
     try:
         # Convertir fechas de string a objetos date
         start_date = datetime.strptime(data.get('start_date'), '%Y-%m-%d').date() if data.get('start_date') else date.today()
         end_date = datetime.strptime(data.get('end_date'), '%Y-%m-%d').date() if data.get('end_date') else (start_date + timedelta(days=6))
+        
+        current_app.logger.info(f"API create_schedule: Creando horario desde {start_date} hasta {end_date}")
         
         # Crear nuevo horario
         schedule = Schedule(
@@ -130,11 +140,15 @@ def create_schedule():
         db.session.add(schedule)
         db.session.commit()
         
-        return jsonify(schedule.to_dict()), 201
+        current_app.logger.info(f"API create_schedule: Horario creado exitosamente con ID: {schedule.id}")
+        result = schedule.to_dict()
+        current_app.logger.info(f"API create_schedule: Respuesta enviada: {result}")
+        
+        return jsonify(result), 201
     
     except Exception as e:
         db.session.rollback()
-        current_app.logger.error(f"Error al crear horario: {e}")
+        current_app.logger.error(f"API create_schedule: Error al crear horario: {e}")
         return jsonify({"error": f"Error al crear horario: {str(e)}"}), 500
 
 # API para obtener un horario específico
