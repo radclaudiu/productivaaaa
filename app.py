@@ -47,8 +47,15 @@ def create_app(config_class='config.Config'):
     # Import models to ensure they're registered with SQLAlchemy
     with app.app_context():
         from models import (User, Company, Employee, ActivityLog, EmployeeDocument,
-                           EmployeeNote, EmployeeHistory, EmployeeSchedule, 
+                           EmployeeNote, EmployeeHistory, EmployeeSchedule,
                            EmployeeCheckIn, EmployeeVacation)
+        
+        # Importar modelos de horarios
+        try:
+            from models_horarios import Schedule, ScheduleAssignment
+            logger.info("Modelos de horarios importados correctamente")
+        except ImportError:
+            logger.warning("Modelos de horarios no disponibles")
         # Import task models
         from models_tasks import (Location, LocalUser, Task, TaskSchedule, TaskCompletion, 
                                 TaskPriority, TaskFrequency, TaskStatus, WeekDay, TaskGroup,

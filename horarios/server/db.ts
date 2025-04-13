@@ -1,7 +1,16 @@
-// Funciones para acceder a la base de datos (PostgreSQL)
-// Nota: Esto sería reemplazado por un ORM como Drizzle o Prisma en la implementación real
+// Funciones para acceder a la API de Flask
+// Este archivo maneja la comunicación entre el frontend React y el backend Flask
 
 import { Schedule, ScheduleAssignment, Employee } from '../shared/schema';
+
+// Utility function to handle API responses
+async function handleApiResponse<T>(response: Response): Promise<T> {
+  if (!response.ok) {
+    const errorData = await response.json().catch(() => ({}));
+    throw new Error(errorData.error || `Error ${response.status}: ${response.statusText}`);
+  }
+  return response.json();
+}
 
 /**
  * Obtiene un horario por su ID
@@ -9,31 +18,66 @@ import { Schedule, ScheduleAssignment, Employee } from '../shared/schema';
  * @returns Promesa con el horario o null si no existe
  */
 export async function getSchedule(scheduleId: number): Promise<Schedule | null> {
-  // En una implementación real, se accedería a la base de datos PostgreSQL
-  // usando Drizzle, Prisma o TypeORM
-  
-  // Datos de ejemplo para mostrar el funcionamiento
-  if (scheduleId === 1) {
-    return {
-      id: 1,
-      name: "Horario Semana 15-21 Abril",
-      startDate: "2025-04-15",
-      endDate: "2025-04-21",
-      published: true,
-      locationId: 1
-    };
-  } else if (scheduleId === 2) {
-    return {
-      id: 2,
-      name: "Horario Semana 22-28 Abril",
-      startDate: "2025-04-22",
-      endDate: "2025-04-28",
-      published: false,
-      locationId: 1
-    };
+  try {
+    const response = await fetch(`/horarios/api/schedules/${scheduleId}`);
+    return await handleApiResponse<Schedule>(response);
+  } catch (error) {
+    console.error("Error al obtener horario:", error);
+    return null;
   }
-  
-  return null;
+}
+
+/**
+ * Obtiene todos los horarios
+ * @returns Promesa con array de horarios
+ */
+export async function getSchedules(): Promise<Schedule[]> {
+  try {
+    const response = await fetch('/horarios/api/schedules');
+    return await handleApiResponse<Schedule[]>(response);
+  } catch (error) {
+    console.error("Error al obtener horarios:", error);
+    return [];
+  }
+}
+
+/**
+ * Crea un nuevo horario
+ * @param schedule Datos del horario a crear
+ * @returns Promesa con el horario creado
+ */
+export async function createSchedule(schedule: Omit<Schedule, 'id'>): Promise<Schedule | null> {
+  try {
+    const response = await fetch('/horarios/api/schedules', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(schedule)
+    });
+    return await handleApiResponse<Schedule>(response);
+  } catch (error) {
+    console.error("Error al crear horario:", error);
+    return null;
+  }
+}
+
+/**
+ * Actualiza un horario existente
+ * @param scheduleId ID del horario
+ * @param scheduleData Datos a actualizar
+ * @returns Promesa con el horario actualizado
+ */
+export async function updateSchedule(scheduleId: number, scheduleData: Partial<Schedule>): Promise<Schedule | null> {
+  try {
+    const response = await fetch(`/horarios/api/schedules/${scheduleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(scheduleData)
+    });
+    return await handleApiResponse<Schedule>(response);
+  } catch (error) {
+    console.error("Error al actualizar horario:", error);
+    return null;
+  }
 }
 
 /**
@@ -42,68 +86,64 @@ export async function getSchedule(scheduleId: number): Promise<Schedule | null> 
  * @returns Promesa con un array de asignaciones
  */
 export async function getScheduleAssignments(scheduleId: number): Promise<ScheduleAssignment[]> {
-  // Datos de ejemplo
-  if (scheduleId === 1) {
-    return [
-      {
-        id: 1,
-        scheduleId: 1,
-        employeeId: 1,
-        day: "2025-04-15",
-        startTime: "09:00",
-        endTime: "17:00",
-        breakDuration: 60
-      },
-      {
-        id: 2,
-        scheduleId: 1,
-        employeeId: 2,
-        day: "2025-04-15",
-        startTime: "14:00",
-        endTime: "22:00",
-        breakDuration: 30
-      }
-    ];
+  try {
+    const response = await fetch(`/horarios/api/schedules/${scheduleId}/assignments`);
+    return await handleApiResponse<ScheduleAssignment[]>(response);
+  } catch (error) {
+    console.error("Error al obtener asignaciones:", error);
+    return [];
   }
-  
-  return [];
 }
 
 /**
  * Obtiene todos los empleados disponibles para asignar a horarios
- * @param locationId ID de la ubicación/local
  * @returns Promesa con array de empleados
  */
-export async function getEmployees(locationId: number): Promise<Employee[]> {
-  // Datos de ejemplo
-  return [
-    { id: 1, firstName: "Ana", lastName: "García", position: "Cajera", department: "Ventas", contractedHours: 40 },
-    { id: 2, firstName: "Carlos", lastName: "Martínez", position: "Reponedor", department: "Logística", contractedHours: 30 },
-    { id: 3, firstName: "Elena", lastName: "López", position: "Dependienta", department: "Atención al Cliente", contractedHours: 25 },
-    { id: 4, firstName: "Miguel", lastName: "Fernández", position: "Encargado", department: "Dirección", contractedHours: 40 }
-  ];
+export async function getEmployees(): Promise<Employee[]> {
+  try {
+    const response = await fetch('/horarios/api/employees');
+    return await handleApiResponse<Employee[]>(response);
+  } catch (error) {
+    console.error("Error al obtener empleados:", error);
+    return [];
+  }
 }
 
 /**
  * Guarda asignaciones de horario
+ * @param scheduleId ID del horario
  * @param assignments Array de asignaciones a guardar
- * @returns Número de asignaciones guardadas
+ * @returns Respuesta de la API con el resultado
  */
-export async function saveScheduleAssignments(assignments: ScheduleAssignment[]): Promise<number> {
-  // En una implementación real, se guardarían en la base de datos
-  console.log("Guardando asignaciones:", assignments);
-  return assignments.length;
+export async function saveScheduleAssignments(scheduleId: number, assignments: Partial<ScheduleAssignment>[]): Promise<{message: string, assignments: ScheduleAssignment[]}> {
+  try {
+    const response = await fetch(`/horarios/api/schedules/${scheduleId}/assignments`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(assignments)
+    });
+    return await handleApiResponse<{message: string, assignments: ScheduleAssignment[]}>(response);
+  } catch (error) {
+    console.error("Error al guardar asignaciones:", error);
+    throw error;
+  }
 }
 
 /**
  * Elimina todas las asignaciones de un horario
  * @param scheduleId ID del horario
- * @returns Número de asignaciones eliminadas
+ * @returns Resultado de la operación
  */
-export async function clearScheduleAssignments(scheduleId: number): Promise<number> {
-  // En una implementación real, se eliminarían de la base de datos
-  console.log(`Eliminando todas las asignaciones del horario ${scheduleId}`);
-  return 0;
+export async function clearScheduleAssignments(scheduleId: number): Promise<{message: string, count: number}> {
+  try {
+    const response = await fetch(`/horarios/api/schedules/${scheduleId}/assignments`, {
+      method: 'DELETE'
+    });
+    return await handleApiResponse<{message: string, count: number}>(response);
+  } catch (error) {
+    console.error("Error al eliminar asignaciones:", error);
+    throw error;
+  }
 }
 
 /**
@@ -113,7 +153,18 @@ export async function clearScheduleAssignments(scheduleId: number): Promise<numb
  * @returns Si la operación fue exitosa
  */
 export async function updateSchedulePublishStatus(scheduleId: number, published: boolean): Promise<boolean> {
-  // En una implementación real, se actualizaría en la base de datos
-  console.log(`Actualizando estado de publicación del horario ${scheduleId} a ${published}`);
-  return true;
+  try {
+    const response = await fetch(`/horarios/api/schedules/${scheduleId}`, {
+      method: 'PUT',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ published })
+    });
+    if (response.ok) {
+      return true;
+    }
+    return false;
+  } catch (error) {
+    console.error("Error al actualizar estado de publicación:", error);
+    return false;
+  }
 }
