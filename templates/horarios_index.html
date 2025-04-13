@@ -452,9 +452,20 @@
     
     // Función para cargar horarios de una empresa
     function loadSchedules(companyId) {
-        fetch(`${API_CONFIG.apiBaseUrl}/schedules?company_id=${companyId}`)
-            .then(response => response.json())
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules?company_id=${companyId}`)
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.error('Error de autenticación al cargar horarios. Redirigiendo al login...');
+                        window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+                        return null;
+                    }
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                if (!data) return;
                 renderSchedulesList(data);
             })
             .catch(error => console.error('Error al cargar horarios:', error));
@@ -506,9 +517,20 @@
     
     // Función para cargar un horario específico
     function loadSchedule(scheduleId) {
-        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${scheduleId}`)
-            .then(response => response.json())
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules/${scheduleId}`)
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.error('Error de autenticación al cargar horario. Redirigiendo al login...');
+                        window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+                        return null;
+                    }
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(schedule => {
+                if (!schedule) return;
                 currentSchedule = schedule;
                 updateScheduleHeader();
                 loadAssignments(scheduleId);
@@ -530,9 +552,20 @@
     
     // Función para cargar asignaciones de un horario
     function loadAssignments(scheduleId) {
-        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${scheduleId}/assignments`)
-            .then(response => response.json())
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules/${scheduleId}/assignments`)
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.error('Error de autenticación al cargar asignaciones. Redirigiendo al login...');
+                        window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+                        return null;
+                    }
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                if (!data) return;
                 assignments = data;
                 renderScheduleTable();
             })
@@ -726,12 +759,8 @@
         }
         
         // Enviar solicitud
-        fetch(url, {
+        fetchWithCSRF(url, {
             method: method,
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': API_CONFIG.csrfToken
-            },
             body: JSON.stringify(assignmentData)
         })
         .then(response => {
