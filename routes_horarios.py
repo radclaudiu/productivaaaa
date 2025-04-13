@@ -619,7 +619,7 @@ def create_schedule_request():
     employee = Employee.query.get_or_404(employee_id)
     
     # Si es gerente, verificar acceso a la empresa
-    if current_user.is_gerente and not current_user.has_company_access(employee.company_id):
+    if current_user.is_gerente() and not current_user.has_company_access(employee.company_id):
         abort(403)
     
     try:

@@ -824,16 +824,24 @@
             end_date: endInput.value
         };
         
+        console.log('Enviando datos para crear horario:', scheduleData);
+        
         // Enviar solicitud
         fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules`, {
             method: 'POST',
             body: JSON.stringify(scheduleData)
         })
         .then(response => {
-            if (response.ok) return response.json();
-            throw new Error('Error al crear horario');
+            console.log('Respuesta recibida:', response);
+            if (!response.ok) {
+                return response.json().then(err => {
+                    throw new Error(`Error al crear horario: ${err.error || response.statusText}`);
+                });
+            }
+            return response.json();
         })
         .then(data => {
+            console.log('Horario creado exitosamente:', data);
             // Cargar el nuevo horario
             currentSchedule = data;
             updateScheduleHeader();
