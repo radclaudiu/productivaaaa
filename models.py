@@ -78,9 +78,11 @@ class User(UserMixin, db.Model):
         Returns:
             Lista de objetos Company
         """
-        from app import db
         if self.is_admin():
-            return db.session.query(Company).filter_by(is_active=True).all()
+            # Usando self.companies.__class__ para obtener la clase Company sin importarla
+            from app import db
+            # No usar import Company para evitar importación circular
+            return db.session.query(self.companies.__class__).filter_by(is_active=True).all()
         return self.companies
     
     def has_company_access(self, company_id):
@@ -122,13 +124,17 @@ class User(UserMixin, db.Model):
         # Si es gerente, verificar si el empleado pertenece a una de sus empresas
         if self.is_gerente():
             from app import db
-            from models import Employee
             
-            employee = db.session.query(Employee).get(employee_id)
-            if not employee:
+            # Usando SQL directo en lugar de importar Employee para evitar importación circular
+            result = db.session.execute(db.text(
+                "SELECT company_id FROM employees WHERE id = :employee_id"
+            ), {"employee_id": employee_id}).fetchone()
+            
+            if not result:
                 return False
                 
-            return self.has_company_access(employee.company_id)
+            company_id = result[0]
+            return self.has_company_access(company_id)
             
         return False
     
