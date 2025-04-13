@@ -48,7 +48,7 @@ def index():
     Ruta principal del módulo de horarios. Renderiza la plantilla que contiene la app React.
     """
     # Verificar si el usuario tiene permisos para ver horarios
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)  # Forbidden
     
     return render_template('horarios_index.html')
@@ -58,7 +58,7 @@ def index():
 @login_required
 def get_companies():
     """Obtiene las empresas disponibles para el usuario actual"""
-    if current_user.is_admin:
+    if current_user.is_admin():
         companies = Company.query.filter_by(is_active=True).all()
     else:
         # Obtener solo las empresas asignadas al usuario
@@ -86,7 +86,7 @@ def get_schedules():
         return jsonify({"error": "Se requiere el ID de la empresa"}), 400
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(company_id):
         abort(403)  # Forbidden
     
     schedules = Schedule.query.filter_by(company_id=company_id).order_by(Schedule.start_date.desc()).all()
@@ -100,7 +100,7 @@ def create_schedule():
     """
     Crea un nuevo horario semanal.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)  # Forbidden
     
     data = request.json
@@ -110,7 +110,7 @@ def create_schedule():
     
     # Verificar permisos para la empresa
     company_id = data.get('company_id')
-    if not current_user.is_admin and not current_user.has_company_access(company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(company_id):
         abort(403)
     
     try:
@@ -147,7 +147,7 @@ def get_schedule(schedule_id):
     schedule = Schedule.query.get_or_404(schedule_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     return jsonify(schedule.to_dict())
@@ -159,13 +159,13 @@ def update_schedule(schedule_id):
     """
     Actualiza un horario existente.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     schedule = Schedule.query.get_or_404(schedule_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     data = request.json
@@ -203,13 +203,13 @@ def delete_schedule(schedule_id):
     """
     Elimina un horario existente.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     schedule = Schedule.query.get_or_404(schedule_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     try:
@@ -237,7 +237,7 @@ def get_schedule_assignments(schedule_id):
     schedule = Schedule.query.get_or_404(schedule_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     assignments = ScheduleAssignment.query.filter_by(schedule_id=schedule_id).all()
@@ -251,13 +251,13 @@ def create_assignment(schedule_id):
     """
     Crea una nueva asignación en un horario.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     schedule = Schedule.query.get_or_404(schedule_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     data = request.json
@@ -301,14 +301,14 @@ def update_assignment(assignment_id):
     """
     Actualiza una asignación existente.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     assignment = ScheduleAssignment.query.get_or_404(assignment_id)
     
     # Verificar permisos para la empresa
     schedule = Schedule.query.get_or_404(assignment.schedule_id)
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     data = request.json
@@ -353,14 +353,14 @@ def delete_assignment(assignment_id):
     """
     Elimina una asignación existente.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     assignment = ScheduleAssignment.query.get_or_404(assignment_id)
     
     # Verificar permisos para la empresa
     schedule = Schedule.query.get_or_404(assignment.schedule_id)
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     try:
@@ -382,7 +382,7 @@ def get_company_employees(company_id):
     Obtiene todos los empleados activos de una empresa específica.
     """
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(company_id):
         abort(403)
     
     employees = Employee.query.filter_by(company_id=company_id, is_active=True).all()
@@ -409,7 +409,7 @@ def get_templates():
         return jsonify({"error": "Se requiere el ID de la empresa"}), 400
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(company_id):
         abort(403)
     
     templates = ScheduleTemplate.query.filter(
@@ -426,7 +426,7 @@ def create_template():
     """
     Crea una nueva plantilla de horario.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     data = request.json
@@ -436,7 +436,7 @@ def create_template():
     
     # Verificar permisos para la empresa
     company_id = data.get('company_id')
-    if not current_user.is_admin and not current_user.has_company_access(company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(company_id):
         abort(403)
     
     try:
@@ -469,7 +469,7 @@ def view_schedule(schedule_id):
     Renderiza la vista para un horario específico.
     """
     # Verificar permisos
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)  # Forbidden
     
     return render_template('horarios_index.html')
@@ -484,7 +484,7 @@ def get_employee_availability(employee_id):
     employee = Employee.query.get_or_404(employee_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(employee.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(employee.company_id):
         abort(403)
     
     availability = EmployeeAvailability.query.filter_by(employee_id=employee_id).all()
@@ -498,13 +498,13 @@ def set_employee_availability(employee_id):
     """
     Establece o actualiza la disponibilidad para un empleado específico.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     employee = Employee.query.get_or_404(employee_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(employee.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(employee.company_id):
         abort(403)
     
     data = request.json
@@ -552,7 +552,7 @@ def get_company_rules(company_id):
     Obtiene las reglas de horario para una empresa específica.
     """
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(company_id):
         abort(403)
     
     rules = ScheduleRule.query.filter_by(company_id=company_id).all()
@@ -571,7 +571,7 @@ def get_schedule_requests():
         return jsonify({"error": "Se requiere el ID de la empresa"}), 400
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(company_id):
         abort(403)
     
     # Obtener empleados de la empresa
@@ -611,7 +611,7 @@ def create_schedule_request():
     employee_id = data.get('employee_id')
     
     # Si no es admin o gerente, solo puede crear solicitudes para sí mismo
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         # Verificar si el empleado está asociado al usuario actual
         if not current_user.has_employee_access(employee_id):
             abort(403)
@@ -659,14 +659,14 @@ def update_schedule_request(request_id):
     """
     Actualiza el estado de una solicitud de cambio de horario.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     request_obj = ScheduleRequest.query.get_or_404(request_id)
     employee = Employee.query.get_or_404(request_obj.employee_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(employee.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(employee.company_id):
         abort(403)
     
     data = request.json
@@ -696,7 +696,7 @@ def employee_schedules():
     Renderiza la vista para ver los horarios de los empleados.
     """
     # Verificar permisos
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)  # Forbidden
     
     return render_template('horarios_index.html')
@@ -709,13 +709,13 @@ def export_schedule(schedule_id):
     Exporta un horario a formato PDF.
     """
     # Verificar permisos
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)  # Forbidden
     
     schedule = Schedule.query.get_or_404(schedule_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(schedule.company_id):
         abort(403)
     
     # Esta función se implementará posteriormente, por ahora devuelve un mensaje
@@ -728,13 +728,13 @@ def copy_schedule(source_id):
     """
     Copia un horario existente a una nueva semana.
     """
-    if not current_user.is_admin and not current_user.is_gerente:
+    if not current_user.is_admin() and not current_user.is_gerente():
         abort(403)
     
     source_schedule = Schedule.query.get_or_404(source_id)
     
     # Verificar permisos para la empresa
-    if not current_user.is_admin and not current_user.has_company_access(source_schedule.company_id):
+    if not current_user.is_admin() and not current_user.has_company_access(source_schedule.company_id):
         abort(403)
     
     data = request.json
