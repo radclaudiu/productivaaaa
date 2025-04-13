@@ -303,7 +303,7 @@
     // Configuración de la API
     const API_CONFIG = {
         baseUrl: "{{ url_for('horarios.index') }}",
-        apiBaseUrl: "{{ url_for('horarios.index') }}api",
+        apiBaseUrl: "{{ url_for('horarios.index') }}api/",
         csrfToken: "{{ csrf_token() }}",
         userId: {{ current_user.id }}
     };
@@ -392,9 +392,20 @@
     
     // Función para cargar empleados de una empresa
     function loadEmployees(companyId) {
-        fetch(`${API_CONFIG.apiBaseUrl}/companies/${companyId}/employees`)
-            .then(response => response.json())
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}companies/${companyId}/employees`)
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.error('Error de autenticación al cargar empleados. Redirigiendo al login...');
+                        window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+                        return null;
+                    }
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
             .then(data => {
+                if (!data) return;
                 employees = data;
                 renderEmployeeList();
             })

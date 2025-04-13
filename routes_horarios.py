@@ -69,8 +69,9 @@ def get_companies():
     return jsonify([{
         'id': company.id,
         'name': company.name,
-        'description': company.description,
-        'logo_url': company.logo_url
+        'address': company.address,
+        'city': company.city,
+        'sector': company.sector
     } for company in companies])
 
 # API para obtener los horarios
@@ -391,7 +392,7 @@ def get_company_employees(company_id):
         'name': f"{employee.first_name} {employee.last_name}",
         'first_name': employee.first_name,
         'last_name': employee.last_name,
-        'role': employee.role,
+        'position': employee.position,  # Cambiado de role a position
         'email': employee.email,
         'phone': employee.phone
     } for employee in employees])
