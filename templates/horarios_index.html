@@ -1,99 +1,52 @@
 {% extends "layout.html" %}
 
-{% block title %}Nuevo Sistema de Horarios{% endblock %}
+{% block title %}Gestión de Horarios{% endblock %}
+
+{% block styles %}
+<style>
+    /* Estilos específicos para el módulo de horarios */
+    #horarios-app {
+        width: 100%;
+        min-height: 80vh;
+        padding: 20px 0;
+    }
+    
+    .loading-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 300px;
+    }
+    
+    .loading-spinner {
+        border: 5px solid #f3f3f3;
+        border-top: 5px solid #3498db;
+        border-radius: 50%;
+        width: 50px;
+        height: 50px;
+        animation: spin 1s linear infinite;
+        margin-bottom: 20px;
+    }
+    
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+</style>
+{% endblock %}
 
 {% block content %}
-<div class="container mt-4">
+<div class="container-fluid">
     <div class="row">
-        <div class="col-12">
-            <h1 class="mb-4">Nuevo Sistema de Horarios</h1>
+        <div class="col-md-12">
+            <h1 class="my-4">Gestión de Horarios</h1>
             
-            <div class="card">
-                <div class="card-header bg-primary text-white">
-                    <h5 class="card-title mb-0">App de Horarios - Versión Beta</h5>
-                </div>
-                <div class="card-body">
-                    {% if schedule_id %}
-                    <h3>Horario #{{ schedule_id }}</h3>
-                    <div id="schedule-detail" data-schedule-id="{{ schedule_id }}">
-                        <p>Cargando información del horario...</p>
-                    </div>
-                    {% else %}
-                    <div id="schedules-list">
-                        <div class="alert alert-info">
-                            <h4 class="alert-heading">¡Nueva aplicación de horarios!</h4>
-                            <p>Estamos trabajando en una nueva aplicación para gestionar los horarios de manera más eficiente.</p>
-                        </div>
-
-                        <h3>Horarios Disponibles</h3>
-                        <div class="table-responsive">
-                            <table class="table table-striped">
-                                <thead>
-                                    <tr>
-                                        <th>#</th>
-                                        <th>Nombre</th>
-                                        <th>Fecha inicio</th>
-                                        <th>Fecha fin</th>
-                                        <th>Estado</th>
-                                        <th>Acciones</th>
-                                    </tr>
-                                </thead>
-                                <tbody id="schedules-table-body">
-                                    <tr>
-                                        <td colspan="6" class="text-center">Cargando horarios...</td>
-                                    </tr>
-                                </tbody>
-                            </table>
-                        </div>
-
-                        <div class="my-4">
-                            <h3>Crear nuevo horario</h3>
-                            <form id="new-schedule-form" class="needs-validation" novalidate>
-                                <div class="row mb-3">
-                                    <div class="col-md-6">
-                                        <label for="scheduleName" class="form-label">Nombre del horario</label>
-                                        <input type="text" class="form-control" id="scheduleName" required>
-                                        <div class="invalid-feedback">
-                                            Por favor ingresa un nombre para el horario.
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="startDate" class="form-label">Fecha inicio</label>
-                                        <input type="date" class="form-control" id="startDate" required>
-                                        <div class="invalid-feedback">
-                                            Por favor selecciona una fecha de inicio.
-                                        </div>
-                                    </div>
-                                    <div class="col-md-3">
-                                        <label for="endDate" class="form-label">Fecha fin</label>
-                                        <input type="date" class="form-control" id="endDate" required>
-                                        <div class="invalid-feedback">
-                                            Por favor selecciona una fecha de fin.
-                                        </div>
-                                    </div>
-                                </div>
-                                <div class="row">
-                                    <div class="col-12">
-                                        <button type="submit" class="btn btn-primary">Crear Horario</button>
-                                    </div>
-                                </div>
-                            </form>
-                        </div>
-                    </div>
-                    {% endif %}
-                    
-                    <div class="mt-4">
-                        <hr>
-                        <div class="d-flex justify-content-between">
-                            <a href="{{ url_for('dashboard') }}" class="btn btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Volver al Dashboard
-                            </a>
-                            
-                            <div id="status-indicator" class="text-muted">
-                                <small>Estado de la API: <span id="api-status">Verificando...</span></small>
-                            </div>
-                        </div>
-                    </div>
+            <!-- Contenedor para la app de React -->
+            <div id="horarios-app">
+                <div class="loading-container">
+                    <div class="loading-spinner"></div>
+                    <p>Cargando aplicación de horarios...</p>
                 </div>
             </div>
         </div>
@@ -103,274 +56,23 @@
 
 {% block scripts %}
 <script>
-// Función para cargar los horarios
-function loadSchedules() {
-    fetch('/horarios/api/schedules')
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Error al cargar los horarios');
-            }
-            document.getElementById('api-status').textContent = 'Conectado';
-            document.getElementById('api-status').className = 'text-success';
-            return response.json();
-        })
-        .then(data => {
-            const tableBody = document.getElementById('schedules-table-body');
-            
-            if (data.length === 0) {
-                tableBody.innerHTML = '<tr><td colspan="6" class="text-center">No hay horarios disponibles</td></tr>';
-                return;
-            }
-            
-            tableBody.innerHTML = '';
-            
-            data.forEach(schedule => {
-                const row = document.createElement('tr');
-                
-                // Formatear fechas
-                const startDate = new Date(schedule.start_date);
-                const endDate = new Date(schedule.end_date);
-                
-                const startDateFormatted = startDate.toLocaleDateString('es-ES');
-                const endDateFormatted = endDate.toLocaleDateString('es-ES');
-                
-                // Estado
-                const statusBadge = schedule.published 
-                    ? '<span class="badge bg-success">Publicado</span>' 
-                    : '<span class="badge bg-warning text-dark">Borrador</span>';
-                
-                row.innerHTML = `
-                    <td>${schedule.id}</td>
-                    <td>${schedule.name}</td>
-                    <td>${startDateFormatted}</td>
-                    <td>${endDateFormatted}</td>
-                    <td>${statusBadge}</td>
-                    <td>
-                        <a href="/horarios/schedule/${schedule.id}" class="btn btn-sm btn-primary">
-                            <i class="fas fa-eye"></i> Ver
-                        </a>
-                        <button class="btn btn-sm btn-danger delete-schedule" data-id="${schedule.id}">
-                            <i class="fas fa-trash"></i>
-                        </button>
-                    </td>
-                `;
-                
-                tableBody.appendChild(row);
-            });
-            
-            // Añadir event listeners a los botones de eliminar
-            document.querySelectorAll('.delete-schedule').forEach(button => {
-                button.addEventListener('click', function() {
-                    const scheduleId = this.getAttribute('data-id');
-                    if (confirm('¿Estás seguro de que deseas eliminar este horario?')) {
-                        deleteSchedule(scheduleId);
-                    }
-                });
-            });
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('api-status').textContent = 'Error de conexión';
-            document.getElementById('api-status').className = 'text-danger';
-            document.getElementById('schedules-table-body').innerHTML = 
-                `<tr><td colspan="6" class="text-center text-danger">Error al cargar los horarios: ${error.message}</td></tr>`;
-        });
-}
-
-// Función para cargar un horario específico
-function loadScheduleDetail(scheduleId) {
-    const detailContainer = document.getElementById('schedule-detail');
-    
-    fetch(`/horarios/api/schedules/${scheduleId}`)
-        .then(response => {
-            if (!response.ok) {
-                throw new Error('Horario no encontrado');
-            }
-            document.getElementById('api-status').textContent = 'Conectado';
-            document.getElementById('api-status').className = 'text-success';
-            return response.json();
-        })
-        .then(schedule => {
-            // Formatear fechas
-            const startDate = new Date(schedule.start_date);
-            const endDate = new Date(schedule.end_date);
-            
-            const startDateFormatted = startDate.toLocaleDateString('es-ES');
-            const endDateFormatted = endDate.toLocaleDateString('es-ES');
-            
-            // Estado
-            const statusBadge = schedule.published 
-                ? '<span class="badge bg-success">Publicado</span>' 
-                : '<span class="badge bg-warning text-dark">Borrador</span>';
-            
-            detailContainer.innerHTML = `
-                <div class="card mb-4">
-                    <div class="card-header bg-light">
-                        <div class="d-flex justify-content-between align-items-center">
-                            <h5 class="mb-0">${schedule.name}</h5>
-                            ${statusBadge}
-                        </div>
-                    </div>
-                    <div class="card-body">
-                        <div class="row">
-                            <div class="col-md-6">
-                                <p><strong>Fecha de inicio:</strong> ${startDateFormatted}</p>
-                            </div>
-                            <div class="col-md-6">
-                                <p><strong>Fecha de fin:</strong> ${endDateFormatted}</p>
-                            </div>
-                        </div>
-                        
-                        <hr>
-                        
-                        <h5 class="mt-3">Asignaciones de horario</h5>
-                        <div class="alert alert-info">
-                            <p class="mb-0">La herramienta para editar asignaciones estará disponible próximamente.</p>
-                        </div>
-                    </div>
-                    <div class="card-footer">
-                        <div class="d-flex justify-content-between">
-                            <button id="btn-toggle-publish" class="btn btn-sm btn-primary" data-published="${schedule.published}">
-                                ${schedule.published ? 'Despublicar' : 'Publicar'}
-                            </button>
-                            <a href="/horarios" class="btn btn-sm btn-secondary">
-                                <i class="fas fa-arrow-left"></i> Volver a la lista
-                            </a>
-                        </div>
-                    </div>
-                </div>
-            `;
-            
-            // Añadir event listener al botón de publicar/despublicar
-            document.getElementById('btn-toggle-publish').addEventListener('click', function() {
-                const isPublished = this.getAttribute('data-published') === 'true';
-                updateSchedulePublishStatus(scheduleId, !isPublished);
-            });
-        })
-        .catch(error => {
-            console.error('Error:', error);
-            document.getElementById('api-status').textContent = 'Error de conexión';
-            document.getElementById('api-status').className = 'text-danger';
-            detailContainer.innerHTML = `
-                <div class="alert alert-danger">
-                    <h4 class="alert-heading">Error</h4>
-                    <p>${error.message}</p>
-                    <hr>
-                    <a href="/horarios" class="btn btn-primary">Volver a la lista</a>
-                </div>
-            `;
-        });
-}
-
-// Función para eliminar un horario
-function deleteSchedule(scheduleId) {
-    fetch(`/horarios/api/schedules/${scheduleId}`, {
-        method: 'DELETE'
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error al eliminar el horario');
-        }
-        return response.json();
-    })
-    .then(data => {
-        alert(data.message);
-        loadSchedules();
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(`Error: ${error.message}`);
-    });
-}
-
-// Función para actualizar el estado de publicación de un horario
-function updateSchedulePublishStatus(scheduleId, published) {
-    fetch(`/horarios/api/schedules/${scheduleId}`, {
-        method: 'PUT',
-        headers: {
-            'Content-Type': 'application/json'
-        },
-        body: JSON.stringify({
-            published: published
-        })
-    })
-    .then(response => {
-        if (!response.ok) {
-            throw new Error('Error al actualizar el horario');
-        }
-        return response.json();
-    })
-    .then(schedule => {
-        loadScheduleDetail(scheduleId);
-    })
-    .catch(error => {
-        console.error('Error:', error);
-        alert(`Error: ${error.message}`);
-    });
-}
-
-// Inicializar la página
-document.addEventListener('DOMContentLoaded', function() {
-    // Comprobar si estamos en la vista de detalle o en la lista
-    const scheduleDetail = document.getElementById('schedule-detail');
-    if (scheduleDetail) {
-        const scheduleId = scheduleDetail.getAttribute('data-schedule-id');
-        loadScheduleDetail(scheduleId);
-    } else {
-        loadSchedules();
-        
-        // Configurar el formulario de creación de horarios
-        const newScheduleForm = document.getElementById('new-schedule-form');
-        newScheduleForm.addEventListener('submit', function(event) {
-            event.preventDefault();
-            
-            // Validar formulario
-            if (!newScheduleForm.checkValidity()) {
-                event.stopPropagation();
-                newScheduleForm.classList.add('was-validated');
-                return;
-            }
-            
-            // Obtener valores del formulario
-            const name = document.getElementById('scheduleName').value;
-            const startDate = document.getElementById('startDate').value;
-            const endDate = document.getElementById('endDate').value;
-            
-            // Enviar solicitud para crear horario
-            fetch('/horarios/api/schedules', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    name: name,
-                    start_date: startDate,
-                    end_date: endDate
-                })
-            })
-            .then(response => {
-                if (!response.ok) {
-                    throw new Error('Error al crear el horario');
-                }
-                return response.json();
-            })
-            .then(data => {
-                // Limpiar formulario
-                newScheduleForm.reset();
-                newScheduleForm.classList.remove('was-validated');
-                
-                // Recargar lista de horarios
-                loadSchedules();
-                
-                // Mostrar mensaje de éxito
-                alert('Horario creado correctamente');
-            })
-            .catch(error => {
-                console.error('Error:', error);
-                alert(`Error: ${error.message}`);
-            });
-        });
-    }
-});
+    // Datos para la API que se pasarán a la aplicación React
+    window.APP_CONFIG = {
+        apiBaseUrl: "{{ url_for('horarios.index') }}api",
+        csrfToken: "{{ csrf_token() }}",
+        userRole: "{{ current_user.role }}",
+        userId: {{ current_user.id }},
+        userName: "{{ current_user.username }}",
+        baseUrl: "{{ url_for('horarios.index') }}"
+    };
 </script>
+
+<!-- Los scripts de React se incluirán aquí dependiendo del entorno -->
+{% if config.ENV == 'development' %}
+    <!-- En desarrollo, carga desde el servidor de desarrollo -->
+    <script src="http://localhost:3000/horarios/static/js/main.js"></script>
+{% else %}
+    <!-- En producción, carga desde el directorio estático -->
+    <script src="{{ url_for('static', filename='horarios/js/main.js') }}"></script>
+{% endif %}
 {% endblock %}
