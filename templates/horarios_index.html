@@ -359,7 +359,43 @@
             finalOptions.headers = { ...defaultOptions.headers, ...options.headers };
         }
         
-        return fetch(url, finalOptions);
+        console.log(`[fetchWithCSRF] Enviando petición a ${url}`, {
+            method: finalOptions.method || 'GET',
+            body: finalOptions.body
+        });
+        
+        return fetch(url, finalOptions)
+            .then(response => {
+                console.log(`[fetchWithCSRF] Respuesta de ${url}:`, {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+                
+                // Clonar la respuesta para poder leer el cuerpo y también devolverla 
+                const clone = response.clone();
+                
+                // Intentar leer el body como JSON (solo para depuración)
+                clone.text().then(text => {
+                    try {
+                        if (text) {
+                            const data = JSON.parse(text);
+                            console.log(`[fetchWithCSRF] Datos de ${url}:`, data);
+                        }
+                    } catch (error) {
+                        console.error(`[fetchWithCSRF] Error al parsear respuesta JSON de ${url}:`, error);
+                        console.log(`[fetchWithCSRF] Respuesta texto:`, text);
+                    }
+                }).catch(error => {
+                    console.error(`[fetchWithCSRF] Error al leer respuesta de ${url}:`, error);
+                });
+                
+                return response;
+            })
+            .catch(error => {
+                console.error(`[fetchWithCSRF] Error en petición a ${url}:`, error);
+                throw error;
+            });
     }
     
     // Función para cargar empresas
@@ -824,7 +860,13 @@
             end_date: endInput.value
         };
         
-        console.log('Enviando datos para crear horario:', scheduleData);
+        console.log('[createNewSchedule] Enviando datos para crear horario:', scheduleData);
+        console.log('[createNewSchedule] URL:', `${API_CONFIG.apiBaseUrl}schedules`);
+        console.log('[createNewSchedule] Método: POST');
+        
+        // Verificar que el API_CONFIG.apiBaseUrl esté correctamente formado
+        console.log('[createNewSchedule] API Base URL:', API_CONFIG.apiBaseUrl);
+        console.log('[createNewSchedule] CSRF Token:', API_CONFIG.csrfToken ? 'Presente' : 'Ausente');
         
         // Enviar solicitud
         fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules`, {
@@ -832,16 +874,47 @@
             body: JSON.stringify(scheduleData)
         })
         .then(response => {
-            console.log('Respuesta recibida:', response);
+            console.log('[createNewSchedule] Respuesta recibida:', {
+                status: response.status,
+                statusText: response.statusText,
+                ok: response.ok
+            });
+            
+            if (response.status === 401 || response.status === 403) {
+                console.error('[createNewSchedule] Error de autenticación o permisos');
+                alert('No tiene permisos para crear horarios. Compruebe su sesión.');
+                window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+                throw new Error('Error de autenticación');
+            }
+            
             if (!response.ok) {
-                return response.json().then(err => {
-                    throw new Error(`Error al crear horario: ${err.error || response.statusText}`);
+                console.error('[createNewSchedule] Error HTTP:', response.status);
+                return response.text().then(text => {
+                    let errorMsg = `Error al crear horario: ${response.statusText}`;
+                    try {
+                        const errorData = JSON.parse(text);
+                        errorMsg = errorData.error || errorMsg;
+                    } catch (e) {
+                        console.error('[createNewSchedule] Error al parsear respuesta de error:', e);
+                        console.log('[createNewSchedule] Texto de respuesta:', text);
+                    }
+                    throw new Error(errorMsg);
                 });
             }
-            return response.json();
+            
+            return response.json().catch(err => {
+                console.error('[createNewSchedule] Error al parsear respuesta JSON:', err);
+                throw new Error('Error al procesar la respuesta del servidor');
+            });
         })
         .then(data => {
-            console.log('Horario creado exitosamente:', data);
+            console.log('[createNewSchedule] Horario creado exitosamente:', data);
+            
+            if (!data || !data.id) {
+                console.error('[createNewSchedule] Datos incompletos en la respuesta');
+                throw new Error('La respuesta del servidor no contiene los datos esperados');
+            }
+            
             // Cargar el nuevo horario
             currentSchedule = data;
             updateScheduleHeader();
