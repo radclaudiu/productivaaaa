@@ -111,6 +111,15 @@ def create_app(config_class='config.Config'):
     if turnos_loaded:
         app.register_blueprint(turnos_bp)
     
+    # Registrar el blueprint de horarios
+    try:
+        from routes_horarios import horarios_bp, init_app as init_horarios_app
+        app.register_blueprint(horarios_bp)
+        init_horarios_app(app)
+        logger.info("Módulo de horarios registrado correctamente")
+    except ImportError:
+        logger.warning("Módulo de horarios no disponible")
+    
     # Register error handlers
     @app.errorhandler(403)
     def forbidden_page(error):
