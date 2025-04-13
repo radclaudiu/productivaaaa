@@ -364,7 +364,7 @@
     
     // Función para cargar empresas
     function loadCompanies() {
-        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}/companies`)
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}companies`)
             .then(response => {
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
@@ -786,11 +786,8 @@
             return;
         }
         
-        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${scheduleId}`, {
-            method: 'DELETE',
-            headers: {
-                'X-CSRFToken': API_CONFIG.csrfToken
-            }
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules/${scheduleId}`, {
+            method: 'DELETE'
         })
         .then(response => {
             if (response.ok) {
@@ -828,12 +825,8 @@
         };
         
         // Enviar solicitud
-        fetch(`${API_CONFIG.apiBaseUrl}/schedules`, {
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules`, {
             method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': API_CONFIG.csrfToken
-            },
             body: JSON.stringify(scheduleData)
         })
         .then(response => {
@@ -867,12 +860,8 @@
             return;
         }
         
-        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${currentSchedule.id}`, {
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules/${currentSchedule.id}`, {
             method: 'PUT',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-CSRFToken': API_CONFIG.csrfToken
-            },
             body: JSON.stringify({
                 published: true
             })
