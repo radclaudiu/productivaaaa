@@ -9,7 +9,7 @@ import json
 from datetime import datetime
 from flask import Blueprint, render_template, jsonify, request, redirect, url_for, abort, current_app
 from flask_login import login_required, current_user
-from werkzeug.urls import url_parse
+from urllib.parse import urlparse
 
 # Crear el blueprint
 horarios_bp = Blueprint('horarios', __name__, url_prefix='/horarios')
