@@ -68,6 +68,70 @@ class User(UserMixin, db.Model):
     def is_empleado(self):
         return self.role == UserRole.EMPLEADO
     
+    def get_companies(self):
+        """
+        Obtiene todas las empresas a las que tiene acceso el usuario.
+        
+        Si es admin, tiene acceso a todas las empresas.
+        Si es gerente o empleado, solo a las empresas asignadas.
+        
+        Returns:
+            Lista de objetos Company
+        """
+        from app import db
+        if self.is_admin():
+            return db.session.query(Company).filter_by(is_active=True).all()
+        return self.companies
+    
+    def has_company_access(self, company_id):
+        """
+        Verifica si el usuario tiene acceso a una empresa específica.
+        
+        Args:
+            company_id: ID de la empresa a verificar
+            
+        Returns:
+            Boolean: True si tiene acceso, False en caso contrario
+        """
+        if self.is_admin():
+            return True
+            
+        for company in self.companies:
+            if company.id == company_id:
+                return True
+        return False
+    
+    def has_employee_access(self, employee_id):
+        """
+        Verifica si el usuario tiene acceso a un empleado específico.
+        
+        Args:
+            employee_id: ID del empleado a verificar
+            
+        Returns:
+            Boolean: True si tiene acceso, False en caso contrario
+        """
+        # Si es el usuario asociado al empleado
+        if self.employee and self.employee.id == employee_id:
+            return True
+            
+        # Si es admin, tiene acceso a todos los empleados
+        if self.is_admin():
+            return True
+            
+        # Si es gerente, verificar si el empleado pertenece a una de sus empresas
+        if self.is_gerente():
+            from app import db
+            from models import Employee
+            
+            employee = db.session.query(Employee).get(employee_id)
+            if not employee:
+                return False
+                
+            return self.has_company_access(employee.company_id)
+            
+        return False
+    
     def __repr__(self):
         return f'<User {self.username}>'
         

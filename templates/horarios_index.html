@@ -4,49 +4,293 @@
 
 {% block styles %}
 <style>
-    /* Estilos específicos para el módulo de horarios */
-    #horarios-app {
-        width: 100%;
-        min-height: 80vh;
+    /* Estilos generales para el módulo de horarios */
+    .horarios-container {
         padding: 20px 0;
     }
     
-    .loading-container {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        min-height: 300px;
+    .card {
+        margin-bottom: 20px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        transition: box-shadow 0.3s;
     }
     
-    .loading-spinner {
-        border: 5px solid #f3f3f3;
-        border-top: 5px solid #3498db;
-        border-radius: 50%;
-        width: 50px;
-        height: 50px;
-        animation: spin 1s linear infinite;
+    .card:hover {
+        box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+    }
+    
+    .card-header {
+        background-color: #f8f9fa;
+        padding: 12px 15px;
+        font-weight: bold;
+    }
+    
+    .btn-toolbar {
         margin-bottom: 20px;
     }
     
-    @keyframes spin {
-        0% { transform: rotate(0deg); }
-        100% { transform: rotate(360deg); }
+    /* Estilos para la tabla de horarios */
+    .schedule-table {
+        width: 100%;
+        border-collapse: collapse;
+    }
+    
+    .schedule-table th, .schedule-table td {
+        border: 1px solid #ddd;
+        padding: 8px;
+        text-align: center;
+    }
+    
+    .schedule-table th {
+        background-color: #f2f2f2;
+        position: sticky;
+        top: 0;
+    }
+    
+    .schedule-table .time-cell {
+        width: 100px;
+        background-color: #f8f9fa;
+        font-weight: bold;
+    }
+    
+    .assignment-block {
+        background-color: #4da6ff;
+        color: white;
+        padding: 4px;
+        border-radius: 3px;
+        margin: 2px 0;
+        cursor: pointer;
+    }
+    
+    .employee-list {
+        height: 400px;
+        overflow-y: auto;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        padding: 10px;
+    }
+    
+    .employee-item {
+        padding: 8px;
+        margin-bottom: 5px;
+        border: 1px solid #eee;
+        border-radius: 4px;
+        cursor: pointer;
+    }
+    
+    .employee-item:hover {
+        background-color: #f8f9fa;
+    }
+    
+    .selected {
+        background-color: #e7f3ff;
+        border-color: #4da6ff;
+    }
+    
+    /* Estilos para modal */
+    .modal-backdrop {
+        background-color: rgba(0,0,0,0.5);
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        z-index: 1050;
+    }
+    
+    .modal-dialog {
+        position: relative;
+        width: auto;
+        margin: 30px auto;
+        max-width: 600px;
+        z-index: 1051;
     }
 </style>
 {% endblock %}
 
 {% block content %}
-<div class="container-fluid">
+<div class="container-fluid horarios-container">
     <div class="row">
         <div class="col-md-12">
-            <h1 class="my-4">Gestión de Horarios</h1>
+            <h1 class="mb-4">Gestión de Horarios</h1>
             
-            <!-- Contenedor para la app de React -->
+            <!-- Selector de empresa -->
+            <div class="card mb-4">
+                <div class="card-header">
+                    Seleccionar Empresa
+                </div>
+                <div class="card-body">
+                    <div class="form-group">
+                        <label for="company-select">Empresa:</label>
+                        <select class="form-control" id="company-select">
+                            <option value="">Seleccione una empresa...</option>
+                            <!-- Las opciones se cargarán dinámicamente -->
+                        </select>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Contenedor de la app de horarios -->
             <div id="horarios-app">
-                <div class="loading-container">
-                    <div class="loading-spinner"></div>
-                    <p>Cargando aplicación de horarios...</p>
+                <div class="btn-toolbar mb-3">
+                    <button id="btn-new-schedule" class="btn btn-primary mr-2">Nuevo Horario</button>
+                    <button id="btn-view-schedules" class="btn btn-secondary mr-2">Ver Horarios</button>
+                    <button id="btn-week-prev" class="btn btn-outline-secondary mr-1">◀ Semana Anterior</button>
+                    <button id="btn-week-next" class="btn btn-outline-secondary mr-2">Semana Siguiente ▶</button>
+                    <div class="ml-auto">
+                        <button id="btn-publish" class="btn btn-success">Publicar Horario</button>
+                    </div>
+                </div>
+                
+                <div id="schedule-view" class="card">
+                    <div class="card-header">
+                        <span id="schedule-title">Horario Semanal</span>
+                        <span id="schedule-date-range" class="ml-3 text-muted">10/04/2025 - 16/04/2025</span>
+                    </div>
+                    <div class="card-body p-0">
+                        <div class="row no-gutters">
+                            <!-- Columna de empleados -->
+                            <div class="col-md-3">
+                                <div class="card m-2">
+                                    <div class="card-header">
+                                        Empleados
+                                    </div>
+                                    <div class="employee-list" id="employee-list">
+                                        <!-- Lista de empleados -->
+                                    </div>
+                                </div>
+                            </div>
+                            
+                            <!-- Columna de horario -->
+                            <div class="col-md-9">
+                                <div class="table-responsive">
+                                    <table class="schedule-table" id="schedule-table">
+                                        <thead>
+                                            <tr>
+                                                <th>Hora</th>
+                                                <th>Lunes</th>
+                                                <th>Martes</th>
+                                                <th>Miércoles</th>
+                                                <th>Jueves</th>
+                                                <th>Viernes</th>
+                                                <th>Sábado</th>
+                                                <th>Domingo</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            <!-- Las filas se generarán dinámicamente -->
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- Lista de horarios (inicialmente oculta) -->
+                <div id="schedules-list" class="card mt-4" style="display: none;">
+                    <div class="card-header">
+                        Horarios Existentes
+                    </div>
+                    <div class="card-body">
+                        <div class="table-responsive">
+                            <table class="table table-striped" id="schedules-table">
+                                <thead>
+                                    <tr>
+                                        <th>Nombre</th>
+                                        <th>Fecha Inicio</th>
+                                        <th>Fecha Fin</th>
+                                        <th>Estado</th>
+                                        <th>Acciones</th>
+                                    </tr>
+                                </thead>
+                                <tbody>
+                                    <!-- Las filas se generarán dinámicamente -->
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal para crear/editar asignaciones -->
+            <div id="assignment-modal" style="display: none;">
+                <div class="modal-backdrop"></div>
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Asignar Horario</h5>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="assignment-form">
+                                <div class="form-group">
+                                    <label for="assignment-employee">Empleado:</label>
+                                    <select class="form-control" id="assignment-employee">
+                                        <!-- Opciones generadas dinámicamente -->
+                                    </select>
+                                </div>
+                                <div class="form-group">
+                                    <label for="assignment-day">Día:</label>
+                                    <input type="date" class="form-control" id="assignment-day">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="assignment-start">Hora Inicio:</label>
+                                        <input type="time" class="form-control" id="assignment-start">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="assignment-end">Hora Fin:</label>
+                                        <input type="time" class="form-control" id="assignment-end">
+                                    </div>
+                                </div>
+                                <div class="form-group">
+                                    <label for="assignment-break">Descanso (minutos):</label>
+                                    <input type="number" class="form-control" id="assignment-break" min="0" value="0">
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="save-assignment">Guardar</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Modal para crear nuevo horario -->
+            <div id="new-schedule-modal" style="display: none;">
+                <div class="modal-backdrop"></div>
+                <div class="modal-dialog">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title">Crear Nuevo Horario</h5>
+                            <button type="button" class="close" data-dismiss="modal">&times;</button>
+                        </div>
+                        <div class="modal-body">
+                            <form id="new-schedule-form">
+                                <div class="form-group">
+                                    <label for="schedule-name">Nombre:</label>
+                                    <input type="text" class="form-control" id="schedule-name" placeholder="Ej: Horario Semana 15">
+                                </div>
+                                <div class="form-row">
+                                    <div class="form-group col-md-6">
+                                        <label for="schedule-start">Fecha Inicio:</label>
+                                        <input type="date" class="form-control" id="schedule-start">
+                                    </div>
+                                    <div class="form-group col-md-6">
+                                        <label for="schedule-end">Fecha Fin:</label>
+                                        <input type="date" class="form-control" id="schedule-end">
+                                    </div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancelar</button>
+                            <button type="button" class="btn btn-primary" id="create-schedule">Crear</button>
+                        </div>
+                    </div>
                 </div>
             </div>
         </div>
@@ -56,23 +300,653 @@
 
 {% block scripts %}
 <script>
-    // Datos para la API que se pasarán a la aplicación React
-    window.APP_CONFIG = {
+    // Configuración de la API
+    const API_CONFIG = {
+        baseUrl: "{{ url_for('horarios.index') }}",
         apiBaseUrl: "{{ url_for('horarios.index') }}api",
         csrfToken: "{{ csrf_token() }}",
-        userRole: "{{ current_user.role }}",
-        userId: {{ current_user.id }},
-        userName: "{{ current_user.username }}",
-        baseUrl: "{{ url_for('horarios.index') }}"
+        userId: {{ current_user.id }}
     };
+    
+    // Variables globales
+    let selectedCompanyId = null;
+    let currentSchedule = null;
+    let employees = [];
+    let assignments = [];
+    let selectedEmployee = null;
+    
+    // Elementos del DOM
+    const companySelect = document.getElementById('company-select');
+    const employeeList = document.getElementById('employee-list');
+    const scheduleTable = document.getElementById('schedule-table');
+    const schedulesTable = document.getElementById('schedules-table');
+    const scheduleView = document.getElementById('schedule-view');
+    const schedulesList = document.getElementById('schedules-list');
+    const scheduleTitle = document.getElementById('schedule-title');
+    const scheduleDateRange = document.getElementById('schedule-date-range');
+    
+    // Botones
+    const btnNewSchedule = document.getElementById('btn-new-schedule');
+    const btnViewSchedules = document.getElementById('btn-view-schedules');
+    const btnWeekPrev = document.getElementById('btn-week-prev');
+    const btnWeekNext = document.getElementById('btn-week-next');
+    const btnPublish = document.getElementById('btn-publish');
+    
+    // Modales
+    const assignmentModal = document.getElementById('assignment-modal');
+    const newScheduleModal = document.getElementById('new-schedule-modal');
+    const assignmentForm = document.getElementById('assignment-form');
+    const newScheduleForm = document.getElementById('new-schedule-form');
+    const saveAssignmentBtn = document.getElementById('save-assignment');
+    const createScheduleBtn = document.getElementById('create-schedule');
+    
+    // Función para hacer peticiones fetch con CSRF
+    function fetchWithCSRF(url, options = {}) {
+        // Configuración por defecto para incluir credenciales y CSRF
+        const defaultOptions = {
+            credentials: 'same-origin',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': API_CONFIG.csrfToken
+            }
+        };
+        
+        // Combinar opciones con las predeterminadas
+        const finalOptions = { ...defaultOptions, ...options };
+        
+        // Si hay headers en options, combinarlos con los predeterminados
+        if (options.headers) {
+            finalOptions.headers = { ...defaultOptions.headers, ...options.headers };
+        }
+        
+        return fetch(url, finalOptions);
+    }
+    
+    // Función para cargar empresas
+    function loadCompanies() {
+        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}/companies`)
+            .then(response => {
+                if (!response.ok) {
+                    if (response.status === 401 || response.status === 403) {
+                        console.error('Error de autenticación. Redirigiendo al login...');
+                        window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
+                        return null;
+                    }
+                    throw new Error(`Error HTTP: ${response.status}`);
+                }
+                return response.json();
+            })
+            .then(companies => {
+                if (!companies) return;
+                
+                companySelect.innerHTML = '<option value="">Seleccione una empresa...</option>';
+                companies.forEach(company => {
+                    const option = document.createElement('option');
+                    option.value = company.id;
+                    option.textContent = company.name;
+                    companySelect.appendChild(option);
+                });
+            })
+            .catch(error => console.error('Error al cargar empresas:', error));
+    }
+    
+    // Función para cargar empleados de una empresa
+    function loadEmployees(companyId) {
+        fetch(`${API_CONFIG.apiBaseUrl}/companies/${companyId}/employees`)
+            .then(response => response.json())
+            .then(data => {
+                employees = data;
+                renderEmployeeList();
+            })
+            .catch(error => console.error('Error al cargar empleados:', error));
+    }
+    
+    // Función para renderizar la lista de empleados
+    function renderEmployeeList() {
+        employeeList.innerHTML = '';
+        employees.forEach(employee => {
+            const div = document.createElement('div');
+            div.className = 'employee-item';
+            div.dataset.id = employee.id;
+            if (selectedEmployee === employee.id) {
+                div.classList.add('selected');
+            }
+            div.textContent = `${employee.first_name} ${employee.last_name}`;
+            div.addEventListener('click', () => selectEmployee(employee.id));
+            employeeList.appendChild(div);
+        });
+    }
+    
+    // Función para seleccionar un empleado
+    function selectEmployee(employeeId) {
+        selectedEmployee = employeeId;
+        renderEmployeeList();
+        highlightEmployeeAssignments();
+    }
+    
+    // Función para resaltar asignaciones del empleado seleccionado
+    function highlightEmployeeAssignments() {
+        // Eliminar resaltados anteriores
+        document.querySelectorAll('.assignment-block').forEach(el => {
+            el.style.backgroundColor = '#4da6ff';
+        });
+        
+        // Resaltar asignaciones del empleado seleccionado
+        if (selectedEmployee) {
+            document.querySelectorAll(`.assignment-block[data-employee-id="${selectedEmployee}"]`).forEach(el => {
+                el.style.backgroundColor = '#28a745';
+            });
+        }
+    }
+    
+    // Función para cargar horarios de una empresa
+    function loadSchedules(companyId) {
+        fetch(`${API_CONFIG.apiBaseUrl}/schedules?company_id=${companyId}`)
+            .then(response => response.json())
+            .then(data => {
+                renderSchedulesList(data);
+            })
+            .catch(error => console.error('Error al cargar horarios:', error));
+    }
+    
+    // Función para renderizar la lista de horarios
+    function renderSchedulesList(schedules) {
+        schedulesTable.querySelector('tbody').innerHTML = '';
+        schedules.forEach(schedule => {
+            const tr = document.createElement('tr');
+            
+            const nameCell = document.createElement('td');
+            nameCell.textContent = schedule.name;
+            
+            const startCell = document.createElement('td');
+            startCell.textContent = formatDate(schedule.start_date);
+            
+            const endCell = document.createElement('td');
+            endCell.textContent = formatDate(schedule.end_date);
+            
+            const statusCell = document.createElement('td');
+            statusCell.innerHTML = schedule.published ? 
+                '<span class="badge badge-success">Publicado</span>' : 
+                '<span class="badge badge-secondary">Borrador</span>';
+            
+            const actionsCell = document.createElement('td');
+            const editBtn = document.createElement('button');
+            editBtn.className = 'btn btn-sm btn-primary mr-1';
+            editBtn.textContent = 'Editar';
+            editBtn.addEventListener('click', () => loadSchedule(schedule.id));
+            
+            const deleteBtn = document.createElement('button');
+            deleteBtn.className = 'btn btn-sm btn-danger';
+            deleteBtn.textContent = 'Eliminar';
+            deleteBtn.addEventListener('click', () => deleteSchedule(schedule.id));
+            
+            actionsCell.appendChild(editBtn);
+            actionsCell.appendChild(deleteBtn);
+            
+            tr.appendChild(nameCell);
+            tr.appendChild(startCell);
+            tr.appendChild(endCell);
+            tr.appendChild(statusCell);
+            tr.appendChild(actionsCell);
+            
+            schedulesTable.querySelector('tbody').appendChild(tr);
+        });
+    }
+    
+    // Función para cargar un horario específico
+    function loadSchedule(scheduleId) {
+        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${scheduleId}`)
+            .then(response => response.json())
+            .then(schedule => {
+                currentSchedule = schedule;
+                updateScheduleHeader();
+                loadAssignments(scheduleId);
+                
+                // Mostrar vista de horario
+                scheduleView.style.display = 'block';
+                schedulesList.style.display = 'none';
+            })
+            .catch(error => console.error('Error al cargar horario:', error));
+    }
+    
+    // Función para actualizar el encabezado del horario
+    function updateScheduleHeader() {
+        if (currentSchedule) {
+            scheduleTitle.textContent = currentSchedule.name;
+            scheduleDateRange.textContent = `${formatDate(currentSchedule.start_date)} - ${formatDate(currentSchedule.end_date)}`;
+        }
+    }
+    
+    // Función para cargar asignaciones de un horario
+    function loadAssignments(scheduleId) {
+        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${scheduleId}/assignments`)
+            .then(response => response.json())
+            .then(data => {
+                assignments = data;
+                renderScheduleTable();
+            })
+            .catch(error => console.error('Error al cargar asignaciones:', error));
+    }
+    
+    // Función para renderizar la tabla de horarios
+    function renderScheduleTable() {
+        const tbody = scheduleTable.querySelector('tbody');
+        tbody.innerHTML = '';
+        
+        // Generar intervalos de tiempo (9:00 - 21:00 en incrementos de 30 min)
+        const startHour = 9;
+        const endHour = 21;
+        const increment = 30; // minutos
+        
+        for (let hour = startHour; hour < endHour; hour++) {
+            for (let min = 0; min < 60; min += increment) {
+                const timeString = `${hour.toString().padStart(2, '0')}:${min.toString().padStart(2, '0')}`;
+                const tr = document.createElement('tr');
+                
+                // Celda de hora
+                const timeCell = document.createElement('td');
+                timeCell.className = 'time-cell';
+                timeCell.textContent = timeString;
+                tr.appendChild(timeCell);
+                
+                // Celdas para cada día de la semana
+                for (let day = 0; day < 7; day++) {
+                    const dayCell = document.createElement('td');
+                    dayCell.className = 'day-cell';
+                    dayCell.dataset.day = day;
+                    dayCell.dataset.time = timeString;
+                    
+                    // Evento para agregar asignación al hacer clic
+                    dayCell.addEventListener('click', () => openAssignmentModal(day, timeString));
+                    
+                    tr.appendChild(dayCell);
+                }
+                
+                tbody.appendChild(tr);
+            }
+        }
+        
+        // Insertar asignaciones en la tabla
+        populateAssignments();
+    }
+    
+    // Función para poblar las asignaciones en la tabla
+    function populateAssignments() {
+        // Limpiar asignaciones anteriores
+        document.querySelectorAll('.assignment-block').forEach(el => el.remove());
+        
+        // Si no hay asignaciones, salir
+        if (!assignments || !assignments.length) return;
+        
+        // Para cada asignación
+        assignments.forEach(assignment => {
+            // Obtener fecha y día de la semana (0-6, donde 0 es lunes)
+            const assignmentDate = new Date(assignment.day);
+            const dayOfWeek = (assignmentDate.getDay() + 6) % 7; // Convertir de domingo=0 a lunes=0
+            
+            // Buscar la celda correspondiente para la hora de inicio
+            const startCell = document.querySelector(`.day-cell[data-day="${dayOfWeek}"][data-time="${assignment.start_time}"]`);
+            if (!startCell) return;
+            
+            // Crear bloque de asignación
+            const block = document.createElement('div');
+            block.className = 'assignment-block';
+            block.dataset.id = assignment.id;
+            block.dataset.employeeId = assignment.employee_id;
+            
+            // Obtener nombre del empleado
+            const employee = employees.find(e => e.id === assignment.employee_id);
+            block.textContent = employee ? `${employee.first_name} ${employee.last_name}` : `Empleado #${assignment.employee_id}`;
+            
+            // Añadir tiempo
+            block.textContent += ` (${assignment.start_time} - ${assignment.end_time})`;
+            
+            // Evento para editar
+            block.addEventListener('click', (e) => {
+                e.stopPropagation(); // Evitar activar el evento del día
+                openAssignmentModal(dayOfWeek, assignment.start_time, assignment);
+            });
+            
+            startCell.appendChild(block);
+        });
+        
+        // Resaltar asignaciones del empleado seleccionado
+        highlightEmployeeAssignments();
+    }
+    
+    // Función para abrir el modal de asignación
+    function openAssignmentModal(day, time, existingAssignment = null) {
+        const modal = document.getElementById('assignment-modal');
+        const form = document.getElementById('assignment-form');
+        const employeeSelect = document.getElementById('assignment-employee');
+        const dayInput = document.getElementById('assignment-day');
+        const startInput = document.getElementById('assignment-start');
+        const endInput = document.getElementById('assignment-end');
+        const breakInput = document.getElementById('assignment-break');
+        
+        // Establecer título del modal
+        modal.querySelector('.modal-title').textContent = existingAssignment ? 'Editar Asignación' : 'Nueva Asignación';
+        
+        // Llenar selector de empleados
+        employeeSelect.innerHTML = '';
+        employees.forEach(employee => {
+            const option = document.createElement('option');
+            option.value = employee.id;
+            option.textContent = `${employee.first_name} ${employee.last_name}`;
+            employeeSelect.appendChild(option);
+        });
+        
+        // Calcular fecha para el día seleccionado
+        const startDate = new Date(currentSchedule.start_date);
+        const assignmentDate = new Date(startDate);
+        assignmentDate.setDate(startDate.getDate() + day);
+        const formattedDate = assignmentDate.toISOString().split('T')[0];
+        
+        // Si hay una asignación existente, llenar el formulario con sus datos
+        if (existingAssignment) {
+            employeeSelect.value = existingAssignment.employee_id;
+            dayInput.value = existingAssignment.day.split('T')[0];
+            startInput.value = existingAssignment.start_time;
+            endInput.value = existingAssignment.end_time;
+            breakInput.value = existingAssignment.break_duration || 0;
+            
+            // Guardar ID para actualización
+            saveAssignmentBtn.dataset.id = existingAssignment.id;
+        } else {
+            // Nueva asignación con valores por defecto
+            if (selectedEmployee) {
+                employeeSelect.value = selectedEmployee;
+            }
+            dayInput.value = formattedDate;
+            startInput.value = time;
+            
+            // Calcular hora de fin por defecto (1 hora después)
+            const [hours, minutes] = time.split(':').map(Number);
+            const endTime = new Date();
+            endTime.setHours(hours, minutes + 60);
+            endInput.value = `${endTime.getHours().toString().padStart(2, '0')}:${endTime.getMinutes().toString().padStart(2, '0')}`;
+            
+            breakInput.value = 0;
+            
+            // Quitar ID para creación
+            delete saveAssignmentBtn.dataset.id;
+        }
+        
+        // Mostrar modal
+        modal.style.display = 'block';
+    }
+    
+    // Función para guardar una asignación
+    function saveAssignment() {
+        const modal = document.getElementById('assignment-modal');
+        const employeeSelect = document.getElementById('assignment-employee');
+        const dayInput = document.getElementById('assignment-day');
+        const startInput = document.getElementById('assignment-start');
+        const endInput = document.getElementById('assignment-end');
+        const breakInput = document.getElementById('assignment-break');
+        
+        // Validar formulario
+        if (!employeeSelect.value || !dayInput.value || !startInput.value || !endInput.value) {
+            alert('Por favor complete todos los campos requeridos.');
+            return;
+        }
+        
+        // Preparar datos
+        const assignmentData = {
+            employee_id: parseInt(employeeSelect.value),
+            day: dayInput.value,
+            start_time: startInput.value,
+            end_time: endInput.value,
+            break_duration: parseInt(breakInput.value) || 0
+        };
+        
+        // Determinar si es creación o actualización
+        const assignmentId = saveAssignmentBtn.dataset.id;
+        let url, method;
+        
+        if (assignmentId) {
+            // Actualización
+            url = `${API_CONFIG.apiBaseUrl}/assignments/${assignmentId}`;
+            method = 'PUT';
+        } else {
+            // Creación
+            url = `${API_CONFIG.apiBaseUrl}/schedules/${currentSchedule.id}/assignments`;
+            method = 'POST';
+        }
+        
+        // Enviar solicitud
+        fetch(url, {
+            method: method,
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': API_CONFIG.csrfToken
+            },
+            body: JSON.stringify(assignmentData)
+        })
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('Error al guardar asignación');
+        })
+        .then(data => {
+            // Recargar asignaciones
+            loadAssignments(currentSchedule.id);
+            
+            // Cerrar modal
+            closeModal(modal);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al guardar la asignación. Por favor inténtelo de nuevo.');
+        });
+    }
+    
+    // Función para eliminar un horario
+    function deleteSchedule(scheduleId) {
+        if (!confirm('¿Está seguro de que desea eliminar este horario? Esta acción no se puede deshacer.')) {
+            return;
+        }
+        
+        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${scheduleId}`, {
+            method: 'DELETE',
+            headers: {
+                'X-CSRFToken': API_CONFIG.csrfToken
+            }
+        })
+        .then(response => {
+            if (response.ok) {
+                // Recargar lista de horarios
+                loadSchedules(selectedCompanyId);
+                return;
+            }
+            throw new Error('Error al eliminar horario');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al eliminar el horario. Por favor inténtelo de nuevo.');
+        });
+    }
+    
+    // Función para crear un nuevo horario
+    function createNewSchedule() {
+        const modal = document.getElementById('new-schedule-modal');
+        const nameInput = document.getElementById('schedule-name');
+        const startInput = document.getElementById('schedule-start');
+        const endInput = document.getElementById('schedule-end');
+        
+        // Validar formulario
+        if (!nameInput.value || !startInput.value || !endInput.value || !selectedCompanyId) {
+            alert('Por favor complete todos los campos requeridos.');
+            return;
+        }
+        
+        // Preparar datos
+        const scheduleData = {
+            name: nameInput.value,
+            company_id: selectedCompanyId,
+            start_date: startInput.value,
+            end_date: endInput.value
+        };
+        
+        // Enviar solicitud
+        fetch(`${API_CONFIG.apiBaseUrl}/schedules`, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': API_CONFIG.csrfToken
+            },
+            body: JSON.stringify(scheduleData)
+        })
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('Error al crear horario');
+        })
+        .then(data => {
+            // Cargar el nuevo horario
+            currentSchedule = data;
+            updateScheduleHeader();
+            loadAssignments(data.id);
+            
+            // Mostrar vista de horario
+            scheduleView.style.display = 'block';
+            schedulesList.style.display = 'none';
+            
+            // Cerrar modal
+            closeModal(modal);
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al crear el horario. Por favor inténtelo de nuevo.');
+        });
+    }
+    
+    // Función para publicar un horario
+    function publishSchedule() {
+        if (!currentSchedule) return;
+        
+        if (!confirm('¿Está seguro de que desea publicar este horario? Los empleados podrán verlo una vez publicado.')) {
+            return;
+        }
+        
+        fetch(`${API_CONFIG.apiBaseUrl}/schedules/${currentSchedule.id}`, {
+            method: 'PUT',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-CSRFToken': API_CONFIG.csrfToken
+            },
+            body: JSON.stringify({
+                published: true
+            })
+        })
+        .then(response => {
+            if (response.ok) return response.json();
+            throw new Error('Error al publicar horario');
+        })
+        .then(data => {
+            currentSchedule = data;
+            updateScheduleHeader();
+            alert('Horario publicado correctamente.');
+        })
+        .catch(error => {
+            console.error('Error:', error);
+            alert('Error al publicar el horario. Por favor inténtelo de nuevo.');
+        });
+    }
+    
+    // Función para cerrar cualquier modal
+    function closeModal(modal) {
+        modal.style.display = 'none';
+    }
+    
+    // Función auxiliar para formatear fechas
+    function formatDate(dateString) {
+        if (!dateString) return '';
+        const date = new Date(dateString);
+        return date.toLocaleDateString('es-ES');
+    }
+    
+    // Eventos del DOM
+    document.addEventListener('DOMContentLoaded', function() {
+        // Cargar empresas al inicio
+        loadCompanies();
+        
+        // Evento de cambio de empresa
+        companySelect.addEventListener('change', function() {
+            const companyId = parseInt(this.value);
+            if (companyId) {
+                selectedCompanyId = companyId;
+                loadEmployees(companyId);
+                loadSchedules(companyId);
+                
+                // Mostrar vista de lista de horarios
+                scheduleView.style.display = 'none';
+                schedulesList.style.display = 'block';
+            }
+        });
+        
+        // Eventos de botones
+        btnNewSchedule.addEventListener('click', function() {
+            if (!selectedCompanyId) {
+                alert('Por favor seleccione una empresa primero.');
+                return;
+            }
+            
+            // Limpiar y mostrar formulario
+            const nameInput = document.getElementById('schedule-name');
+            const startInput = document.getElementById('schedule-start');
+            const endInput = document.getElementById('schedule-end');
+            
+            nameInput.value = `Horario Semana ${new Date().getDate()}/${new Date().getMonth() + 1}`;
+            
+            const today = new Date();
+            // Obtener inicio de semana (lunes)
+            const startDate = new Date(today);
+            const day = today.getDay() || 7; // Convertir domingo (0) a 7
+            startDate.setDate(today.getDate() - day + 1); // Ajustar al lunes
+            
+            // Fecha fin (domingo)
+            const endDate = new Date(startDate);
+            endDate.setDate(startDate.getDate() + 6);
+            
+            startInput.value = startDate.toISOString().split('T')[0];
+            endInput.value = endDate.toISOString().split('T')[0];
+            
+            // Mostrar modal
+            newScheduleModal.style.display = 'block';
+        });
+        
+        btnViewSchedules.addEventListener('click', function() {
+            if (!selectedCompanyId) {
+                alert('Por favor seleccione una empresa primero.');
+                return;
+            }
+            
+            // Mostrar vista de lista de horarios
+            scheduleView.style.display = 'none';
+            schedulesList.style.display = 'block';
+        });
+        
+        btnPublish.addEventListener('click', publishSchedule);
+        
+        // Eventos para navegación de semanas (no implementados completamente)
+        btnWeekPrev.addEventListener('click', function() {
+            alert('Funcionalidad en desarrollo: Semana anterior');
+        });
+        
+        btnWeekNext.addEventListener('click', function() {
+            alert('Funcionalidad en desarrollo: Semana siguiente');
+        });
+        
+        // Eventos para modales
+        saveAssignmentBtn.addEventListener('click', saveAssignment);
+        createScheduleBtn.addEventListener('click', createNewSchedule);
+        
+        // Cerrar modales cuando se hace clic en la X o en Cancelar
+        document.querySelectorAll('[data-dismiss="modal"]').forEach(element => {
+            element.addEventListener('click', function() {
+                const modal = this.closest('.modal-content').closest('.modal-dialog').closest('div[id$="-modal"]');
+                closeModal(modal);
+            });
+        });
+    });
 </script>
-
-<!-- Los scripts de React se incluirán aquí dependiendo del entorno -->
-{% if config.ENV == 'development' %}
-    <!-- En desarrollo, carga desde el servidor de desarrollo -->
-    <script src="http://localhost:3000/horarios/static/js/main.js"></script>
-{% else %}
-    <!-- En producción, carga desde el directorio estático -->
-    <script src="{{ url_for('static', filename='horarios/js/main.js') }}"></script>
-{% endif %}
 {% endblock %}
