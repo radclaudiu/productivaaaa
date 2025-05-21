@@ -1,5 +1,7 @@
-import os
+"""
+Configuración para el modo Workflow de Replit.
+Este archivo no afecta la funcionalidad de la aplicación.
+"""
 
-# Definir workflow
-os.system("echo 'run = \"python main.py\"' > .replit")
-print("Workflow configurado correctamente.")
+# Nombre: Aplicación principal en puerto 5000
+run_command = "python main.py"
