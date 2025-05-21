@@ -308,6 +308,18 @@
         userId: {{ current_user.id }}
     };
     
+    // Verificamos y arreglamos la URL base si es necesario
+    if (!API_CONFIG.apiBaseUrl.endsWith('/')) {
+        API_CONFIG.apiBaseUrl += '/';
+    }
+    
+    console.log('API Configuration:', {
+        baseUrl: API_CONFIG.baseUrl,
+        apiBaseUrl: API_CONFIG.apiBaseUrl,
+        csrfTokenPresent: !!API_CONFIG.csrfToken,
+        userId: API_CONFIG.userId
+    });
+    
     // Variables globales
     let selectedCompanyId = null;
     let currentSchedule = null;
@@ -488,11 +500,21 @@
     
     // Función para cargar horarios de una empresa
     function loadSchedules(companyId) {
-        fetchWithCSRF(`${API_CONFIG.apiBaseUrl}schedules?company_id=${companyId}`)
+        const url = `${API_CONFIG.apiBaseUrl}schedules?company_id=${companyId}`;
+        console.log('[loadSchedules] Cargando horarios para empresa:', companyId);
+        console.log('[loadSchedules] URL completa:', url);
+        
+        fetchWithCSRF(url)
             .then(response => {
+                console.log('[loadSchedules] Respuesta recibida:', {
+                    status: response.status,
+                    statusText: response.statusText,
+                    ok: response.ok
+                });
+                
                 if (!response.ok) {
                     if (response.status === 401 || response.status === 403) {
-                        console.error('Error de autenticación al cargar horarios. Redirigiendo al login...');
+                        console.error('[loadSchedules] Error de autenticación al cargar horarios. Redirigiendo al login...');
                         window.location.href = '/login?next=' + encodeURIComponent(window.location.pathname);
                         return null;
                     }
@@ -502,9 +524,13 @@
             })
             .then(data => {
                 if (!data) return;
+                console.log('[loadSchedules] Datos recibidos:', data);
                 renderSchedulesList(data);
             })
-            .catch(error => console.error('Error al cargar horarios:', error));
+            .catch(error => {
+                console.error('[loadSchedules] Error al cargar horarios:', error);
+                alert('Error al cargar los horarios. Por favor, inténtelo de nuevo.');
+            });
     }
     
     // Función para renderizar la lista de horarios
